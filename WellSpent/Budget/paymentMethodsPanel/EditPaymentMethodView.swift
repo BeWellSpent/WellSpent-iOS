@@ -1,0 +1,71 @@
+import SwiftUI
+import WellSpentAPI
+
+struct EditPaymentMethodView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Bindable private var viewModel: EditPaymentMethodViewModel
+    private let onDone: (Wellspent_V1_PaymentMethod) -> Void
+
+    init(
+        method: Wellspent_V1_PaymentMethod,
+        authenticatedClient: ProtocolClient,
+        onDone: @escaping (Wellspent_V1_PaymentMethod) -> Void
+    ) {
+        _viewModel = Bindable(wrappedValue: EditPaymentMethodViewModel(method: method, authenticatedClient: authenticatedClient))
+        self.onDone = onDone
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Name", text: $viewModel.name)
+                        .accessibilityIdentifier("editPaymentMethodNameField")
+
+                    TextField("Alias (optional)", text: $viewModel.alias)
+                        .accessibilityIdentifier("editPaymentMethodAliasField")
+
+                    Picker("Color", selection: $viewModel.color) {
+                        Text("None").tag("")
+                        ForEach(PresetColors.all, id: \.self) { hex in
+                            Text(hex).tag(hex)
+                        }
+                    }
+                    .accessibilityIdentifier("editPaymentMethodColorPicker")
+                }
+
+                if let errorMessage = viewModel.errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .foregroundStyle(.red)
+                            .accessibilityIdentifier("editPaymentMethodErrorMessage")
+                    }
+                }
+            }
+            .navigationTitle("Edit Payment Method")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task {
+                            if let method = await viewModel.submit() {
+                                onDone(method)
+                                dismiss()
+                            }
+                        }
+                    } label: {
+                        if viewModel.isSubmitting {
+                            ProgressView()
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(!viewModel.canSubmit)
+                    .accessibilityIdentifier("saveEditedPaymentMethodButton")
+                }
+            }
+        }
+    }
+}

@@ -62,16 +62,18 @@ Generated Swift code is **not committed** (gitignored, same policy as `src/gen/`
 - `RootView` switches between the login/register flow and `BudgetListView` based on `session.isAuthenticated`, and calls `session.refreshAuthenticationState()` on `scenePhase == .active` — the Swift equivalent of web's `visibilitychange` expiry check.
 - Google OAuth: `GoogleAuthButton` is rendered disabled behind `FeatureFlags.googleAuthEnabled` (reads the `FEATURE_GOOGLE_AUTH` process environment variable, off by default) — matches web's posture exactly. Real `GetGoogleAuthURL`/`ExchangeGoogleCode` wiring (needs its own Google Cloud OAuth client + `ASWebAuthenticationSession`) is out of scope until a later phase.
 
-## Budget flow (Phase 2A)
+## Budget flow (Phase 2A / 2B-1)
 
-Covers budgets/periods, people, and income sources — see the roadmap below for what's still ahead (categories/payment methods/transactions in 2B; expense allocations/settings in 2C).
+Phase 2A covers budgets/periods, people, and income sources; Phase 2B-1 adds categories and payment methods. See the roadmap below for what's still ahead (transactions in 2B-2/2B-3; expense allocations/settings in 2C).
 
-- `WellSpent/Budget/` is the feature folder, one subfolder per management panel (`budgetList/`, `peoplePanel/`, `incomePanel/`), same layout convention as web's `src/components/budget/`.
+- `WellSpent/Budget/` is the feature folder, one subfolder per management panel (`budgetList/`, `peoplePanel/`, `incomePanel/`, `categoriesPanel/`, `paymentMethodsPanel/`), same layout convention as web's `src/components/budget/`.
 - **`BudgetListView`/`BudgetListViewModel`** replaced the Phase 1 `HomePlaceholderView`/`HomeViewModel` stand-in — it now owns the top-level `GetMe` call (verify-email banner + the user's `currency`/`language`, used for money formatting everywhere downstream) alongside `ListBudgetProfiles`.
 - **`BudgetDetailView` is the adaptive navigation shell**, not content itself: a bottom `TabView` on iPhone (`.compact` horizontal size class), a `NavigationSplitView` sidebar on iPad (`.regular`) — `BudgetSection` (`.plan`/`.transactions`/`.manage`) drives both. This collapses web's two independent nav layers (top tabs for Plan/Transactions/... *and* a separate sidebar/drawer for Income/Savings/Payment Methods/Categories/People) into one, since iOS has no good native equivalent of a persistent second nav rail alongside a tab bar. Plan/Transactions are `ComingSoonView` placeholders until Phase 2B/2C; `BudgetManageView` (extracted out, wrapped in its own `NavigationStack`) is today's People/Income content and gets Categories/Payment Methods as they land in 2B. Default selected tab is `.manage` since it's the only one with real content — revisit once Plan/Transactions have content in 2C.
 - **Delete-budget dismiss must be passed down explicitly, not re-declared.** `BudgetManageView` sits inside its own nested `NavigationStack` (so People/Income pushes don't disturb the other tabs), so a locally-declared `@Environment(\.dismiss)` there would only pop within that inner stack. `BudgetDetailView` captures `@Environment(\.dismiss)` at its own outer scope and passes a combined `dismissParent` closure (notify the parent list + actually dismiss) down instead. Apply the same pattern to any future tab/section that needs to close the whole budget detail screen from inside its own nested stack.
-- **Removing a person** only prompts for a replacement when they have income sources attributed to them — payment methods don't exist yet (Phase 2B), so that half of web's `RemovePersonDialog` reassignment logic doesn't apply yet. The decision itself is a pure function, `PersonReplacement.needsReplacement(person:incomeSources:)`, kept in its own file so it's unit-testable without SwiftUI.
-- **Established `Shared/` label/formatting helpers** (all `nonisolated enum`s with a `.text(for:)`/`.format(...)` static function, mirroring web's small formatting hooks): `Money+Formatting.swift`, `BudgetCycleLabel.swift`, `BudgetRoleLabel.swift`, `IncomeTypeLabel.swift`, `RecurringTypeLabel.swift`. Reuse this pattern for any new proto enum that needs display text rather than inlining a `switch` in a view.
+- **Removing a person** only prompts for a replacement when they have income sources attributed to them (`PersonReplacement.needsReplacement(person:incomeSources:)`, kept as a pure function in its own file so it's unit-testable without SwiftUI). **Known gap**: this doesn't check payment-method attribution even though Payment Methods now exist (2B-1) — `RemoveBudgetPersonRequest.replacement_payment_method_id` is never populated by the iOS client. Soft-delete (`is_active = false`, not a hard row delete) likely means this isn't a hard backend requirement the way `DeleteCategory`/`DeletePaymentMethod`'s replacement *is* (confirmed required via a live 401/`invalid_argument` check during 2B-1), but it should be verified and closed before Phase 3 touches People again.
+- **Categories and payment methods always require a replacement on delete** — confirmed directly against the live backend during 2B-1 (`DeleteCategory`/`DeletePaymentMethod` both reject `replacement_id`/`replacement_payment_method_id` left at their zero value), unlike removing a person, where it's conditional. So `DeleteCategoryView`/`DeletePaymentMethodView` always show the picker; no `needsReplacement`-style check for either.
+- **Payment type is immutable after creation** — `AddPaymentMethodView` has a type picker, `EditPaymentMethodView` doesn't (name/alias/color only), same Create/Edit-view split used for budgets in 2A (fields genuinely differ between add and edit, so two view models rather than one shared `Mode` enum like income/categories).
+- **Established `Shared/` label/formatting helpers** (all `nonisolated enum`s with a `.text(for:)`/`.format(...)` static function, mirroring web's small formatting hooks): `Money+Formatting.swift`, `BudgetCycleLabel.swift`, `BudgetRoleLabel.swift`, `IncomeTypeLabel.swift`, `RecurringTypeLabel.swift`, `PaymentTypeLabel.swift`. Reuse this pattern for any new proto enum that needs display text rather than inlining a `switch` in a view. `PresetColors.all` (a fixed hex list, no `Color(hex:)` parser) is the shared source for every optional-color picker (people, categories, payment methods) — extracted out of `EditPersonColorView` when categories/payment methods needed the same list.
 - App version is now surfaced (`BudgetListView`'s footer, reading `Bundle.main.infoDictionary["CFBundleShortVersionString"]`) — bump `MARKETING_VERSION` in the **`WellSpent` app target's** Debug/Release configs only (not the test targets) per the existing patch/minor/major convention, now that there's a UI surface for it.
 
 ## Testing
@@ -105,11 +107,13 @@ git push origin develop
 
 ## Roadmap
 
-"Phase 2 — core budget loop" was too large for one confirmed slice (same reasoning as Phase 0+1), so it's split into three sub-phases:
+"Phase 2 — core budget loop" was too large for one confirmed slice (same reasoning as Phase 0+1), so it's split further:
 
-- **Phase 2A (done)** — budgets/periods, people, income sources. See "Budget flow (Phase 2A)" above.
-- **Phase 2B (not started)** — categories, payment methods, transactions (incl. mark-paid/exclude). Introduces the real tab shell (Expense Plan / Transactions) that `BudgetDetailView` is deliberately deferring.
-- **Phase 2C (not started)** — expense allocations (Plan + Overview tabs), profile/account settings.
+- **Phase 2A (done)** — budgets/periods, people, income sources. See "Budget flow (Phase 2A / 2B-1)" above.
+- **Phase 2B-1 (done)** — categories, payment methods. Same section above.
+- **Phase 2B-2 (not started)** — Variable transactions (create/edit/delete, Spent/Received sign flip, exclude toggle). Fills in the real Transactions tab that `BudgetDetailView` is currently placeholder-only for.
+- **Phase 2B-3 (not started)** — Fixed expense templates (`FixedExpense` CRUD, incl. payment-plan fields) + mark-paid/unmark on their spawned transactions.
+- **Phase 2C (not started)** — expense allocations (Plan + Overview tabs), profile/account settings. Fills in the real Plan tab.
 - **Phase 3 (not started)** — savings, invites, alerts.
 - **Phase 4 (not started)** — Plaid, transaction review, tiers.
 

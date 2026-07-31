@@ -55,6 +55,22 @@ struct BudgetManageView: View {
                         )
                     }
                     .accessibilityIdentifier("incomeNavLink")
+
+                    NavigationLink("Categories") {
+                        CategoriesListView(
+                            budgetProfileID: viewModel.profile.id,
+                            authenticatedClient: authenticatedClient
+                        )
+                    }
+                    .accessibilityIdentifier("categoriesNavLink")
+
+                    NavigationLink("Payment Methods") {
+                        PaymentMethodsListView(
+                            budgetProfileID: viewModel.profile.id,
+                            authenticatedClient: authenticatedClient
+                        )
+                    }
+                    .accessibilityIdentifier("paymentMethodsNavLink")
                 }
             }
 
