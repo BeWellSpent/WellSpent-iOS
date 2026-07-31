@@ -56,6 +56,17 @@ struct BudgetManageView: View {
                     }
                     .accessibilityIdentifier("incomeNavLink")
 
+                    NavigationLink("Savings") {
+                        SavingsListView(
+                            budgetProfileID: viewModel.profile.id,
+                            periodStartDate: viewModel.currentPeriod?.startDate.date,
+                            authenticatedClient: authenticatedClient,
+                            currencyCode: currencyCode,
+                            localeIdentifier: localeIdentifier
+                        )
+                    }
+                    .accessibilityIdentifier("savingsNavLink")
+
                     NavigationLink("Categories") {
                         CategoriesListView(
                             budgetProfileID: viewModel.profile.id,
