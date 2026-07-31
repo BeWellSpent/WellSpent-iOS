@@ -82,6 +82,15 @@ struct BudgetManageView: View {
                         )
                     }
                     .accessibilityIdentifier("paymentMethodsNavLink")
+
+                    NavigationLink("Invitations") {
+                        InvitesListView(
+                            budgetProfileID: viewModel.profile.id,
+                            budgetOwnerUserID: viewModel.profile.userID,
+                            authenticatedClient: authenticatedClient
+                        )
+                    }
+                    .accessibilityIdentifier("invitationsNavLink")
                 }
             }
 
