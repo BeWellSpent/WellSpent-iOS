@@ -28,10 +28,14 @@ final class FixedExpensesViewModel {
         categories.first { $0.isSystem && $0.name == "Income" }?.id
     }
 
+    /// Only paid Fixed transactions count toward the total — `amount` equals
+    /// `planned_amount` until a transaction is actually marked paid, so an
+    /// unpaid row would otherwise be counted as already spent (matches the
+    /// same fix applied to web's `TransactionsPanel.tsx` grand total).
     var totalText: String {
         TransactionAmountFormatting.totalDisplayText(
             amounts: transactions
-                .filter { !ExpenseOverviewCalculations.isTransactionExcluded($0, incomeCategoryID: incomeCategoryID) }
+                .filter { !ExpenseOverviewCalculations.isTransactionExcluded($0, incomeCategoryID: incomeCategoryID) && $0.isPaid }
                 .map { (units: $0.amount.units, nanos: $0.amount.nanos) },
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
