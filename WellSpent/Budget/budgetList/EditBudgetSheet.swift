@@ -61,3 +61,14 @@ struct EditBudgetSheet: View {
         }
     }
 }
+
+#Preview {
+    EditBudgetSheet(
+        profile: .with {
+            $0.id = "preview-budget"
+            $0.name = "Household Budget"
+            $0.cycle = .monthly
+        },
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+    ) { _ in }
+}

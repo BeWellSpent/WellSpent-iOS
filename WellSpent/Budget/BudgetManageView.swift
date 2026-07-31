@@ -117,3 +117,25 @@ struct BudgetManageView: View {
         return "\(start) – \(end)"
     }
 }
+
+#Preview {
+    let client = APIClient.makePublicClient(baseURL: "http://localhost:1")
+    return NavigationStack {
+        BudgetManageView(
+            viewModel: BudgetDetailViewModel(
+                profile: .with {
+                    $0.id = "preview-budget"
+                    $0.name = "Household Budget"
+                    $0.cycle = .monthly
+                    $0.countryCode = "US"
+                },
+                authenticatedClient: client
+            ),
+            authenticatedClient: client,
+            currencyCode: "USD",
+            localeIdentifier: "en",
+            onUpdated: { _ in },
+            dismissParent: {}
+        )
+    }
+}

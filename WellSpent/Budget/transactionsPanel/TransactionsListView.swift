@@ -152,3 +152,15 @@ struct TransactionsListView: View {
         }
     }
 }
+
+#Preview {
+    NavigationStack {
+        TransactionsListView(
+            budgetPeriodID: "preview-period",
+            budgetProfileID: "preview-budget",
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            currencyCode: "USD",
+            localeIdentifier: "en"
+        )
+    }
+}

@@ -69,3 +69,16 @@ struct EditPaymentMethodView: View {
         }
     }
 }
+
+#Preview {
+    EditPaymentMethodView(
+        method: .with {
+            $0.id = "preview-pm"
+            $0.name = "Chase Visa"
+            $0.type = .credit
+            $0.alias = "Household Card"
+            $0.color = PresetColors.all[2]
+        },
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+    ) { _ in }
+}

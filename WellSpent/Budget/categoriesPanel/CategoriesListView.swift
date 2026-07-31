@@ -119,3 +119,12 @@ struct CategoriesListView: View {
         }
     }
 }
+
+#Preview {
+    NavigationStack {
+        CategoriesListView(
+            budgetProfileID: "preview-budget",
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+        )
+    }
+}

@@ -124,3 +124,32 @@ struct AddEditIncomeView: View {
         }
     }
 }
+
+#Preview("Add") {
+    AddEditIncomeView(
+        mode: .add,
+        budgetProfileID: "preview-budget",
+        countryCode: "US",
+        currencyCode: "USD",
+        people: [.with { $0.id = 1; $0.userName = "Jane" }],
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+    ) { _ in }
+}
+
+#Preview("Edit") {
+    AddEditIncomeView(
+        mode: .edit(.with {
+            $0.id = 1
+            $0.name = "Paycheck"
+            $0.incomeType = .salary
+            $0.defaultAmount = .with { $0.units = 2500; $0.currency = "USD" }
+            $0.recurring = true
+            $0.paymentFrequency = .monthly
+        }),
+        budgetProfileID: "preview-budget",
+        countryCode: "US",
+        currencyCode: "USD",
+        people: [.with { $0.id = 1; $0.userName = "Jane" }],
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+    ) { _ in }
+}

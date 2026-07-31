@@ -32,3 +32,11 @@ struct EditPersonColorView: View {
         }
     }
 }
+
+#Preview {
+    EditPersonColorView(person: .with {
+        $0.id = 1
+        $0.userName = "Jane"
+        $0.color = PresetColors.all[2]
+    }) { _ in }
+}

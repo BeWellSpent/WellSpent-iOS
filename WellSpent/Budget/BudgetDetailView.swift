@@ -147,3 +147,21 @@ struct BudgetDetailView: View {
         )
     }
 }
+
+#Preview {
+    NavigationStack {
+        BudgetDetailView(
+            profile: .with {
+                $0.id = "preview-budget"
+                $0.name = "Household Budget"
+                $0.cycle = .monthly
+                $0.countryCode = "US"
+            },
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            currencyCode: "USD",
+            localeIdentifier: "en",
+            onUpdated: { _ in },
+            onDeleted: {}
+        )
+    }
+}

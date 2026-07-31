@@ -143,3 +143,13 @@ struct PeopleListView: View {
         }
     }
 }
+
+#Preview {
+    NavigationStack {
+        PeopleListView(
+            budgetProfileID: "preview-budget",
+            budgetOwnerUserID: "preview-owner",
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+        )
+    }
+}

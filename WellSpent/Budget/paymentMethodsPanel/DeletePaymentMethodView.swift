@@ -3,9 +3,10 @@ import WellSpentAPI
 
 /// `DeletePaymentMethod` unconditionally requires a replacement on the
 /// backend, so this always shows the picker — unlike web, which silently
-/// skips the picker when the method has no transactions. Determining "has
-/// transactions" needs the Transactions feature, which doesn't exist in the
-/// app yet, so always asking is the simpler, still-correct choice for now.
+/// skips the picker when the method has no transactions. Checking "has
+/// transactions" first would need an extra `ListTransactions` call across
+/// every period, not just the current one; always asking is simpler and
+/// still correct against the backend contract.
 struct DeletePaymentMethodView: View {
     @Environment(\.dismiss) private var dismiss
     let method: Wellspent_V1_PaymentMethod
@@ -58,4 +59,12 @@ struct DeletePaymentMethodView: View {
         guard let owner = personName(method.budgetPersonID) else { return name }
         return "\(name) · \(owner)"
     }
+}
+
+#Preview {
+    DeletePaymentMethodView(
+        method: .with { $0.id = "pm-1"; $0.name = "Chase Visa"; $0.budgetPersonID = 1 },
+        otherMethods: [.with { $0.id = "pm-2"; $0.name = "Cash"; $0.budgetPersonID = 1 }],
+        personName: { _ in "Jane" }
+    ) { _ in }
 }

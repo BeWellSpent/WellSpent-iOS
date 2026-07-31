@@ -123,3 +123,12 @@ struct PaymentMethodsListView: View {
         }
     }
 }
+
+#Preview {
+    NavigationStack {
+        PaymentMethodsListView(
+            budgetProfileID: "preview-budget",
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+        )
+    }
+}

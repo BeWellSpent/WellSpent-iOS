@@ -71,3 +71,18 @@ struct AddEditCategoryView: View {
         }
     }
 }
+
+#Preview("Add") {
+    AddEditCategoryView(mode: .add, authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")) { _ in }
+}
+
+#Preview("Edit") {
+    AddEditCategoryView(
+        mode: .edit(.with {
+            $0.id = 1
+            $0.name = "Groceries"
+            $0.color = PresetColors.all[4]
+        }),
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+    ) { _ in }
+}

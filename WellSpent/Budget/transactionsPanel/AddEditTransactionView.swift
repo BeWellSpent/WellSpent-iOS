@@ -124,3 +124,39 @@ struct AddEditTransactionView: View {
         }
     }
 }
+
+private let previewCategories: [Wellspent_V1_Category] = [
+    .with { $0.id = 1; $0.name = "Groceries" },
+    .with { $0.id = 2; $0.name = "Dining" },
+]
+private let previewPaymentMethods: [Wellspent_V1_PaymentMethod] = [
+    .with { $0.id = "pm-1"; $0.name = "Chase Visa" },
+]
+
+#Preview("Add") {
+    AddEditTransactionView(
+        mode: .add,
+        budgetPeriodID: "preview-period",
+        currencyCode: "USD",
+        categories: previewCategories,
+        paymentMethods: previewPaymentMethods,
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+    ) { _ in }
+}
+
+#Preview("Edit — Received") {
+    AddEditTransactionView(
+        mode: .edit(.with {
+            $0.id = "tx-1"
+            $0.name = "Refund"
+            $0.amount = .with { $0.units = -20; $0.currency = "USD" }
+            $0.categoryID = 1
+            $0.paymentMethodID = "pm-1"
+        }),
+        budgetPeriodID: "preview-period",
+        currencyCode: "USD",
+        categories: previewCategories,
+        paymentMethods: previewPaymentMethods,
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+    ) { _ in }
+}

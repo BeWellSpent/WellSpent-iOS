@@ -136,3 +136,8 @@ struct BudgetListView: View {
         }
     }
 }
+
+#Preview {
+    BudgetListView()
+        .environment(SessionStore())
+}

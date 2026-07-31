@@ -124,3 +124,15 @@ struct IncomeListView: View {
         .accessibilityIdentifier("incomeRow_\(source.name)")
     }
 }
+
+#Preview {
+    NavigationStack {
+        IncomeListView(
+            budgetProfileID: "preview-budget",
+            budgetCountryCode: "US",
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            currencyCode: "USD",
+            localeIdentifier: "en"
+        )
+    }
+}

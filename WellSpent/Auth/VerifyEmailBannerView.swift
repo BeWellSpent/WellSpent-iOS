@@ -82,3 +82,8 @@ struct VerifyEmailBannerView: View {
         // XCUITest. UI tests key off resendVerificationButton directly.
     }
 }
+
+#Preview {
+    VerifyEmailBannerView(publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"), email: "user@example.com")
+        .padding()
+}

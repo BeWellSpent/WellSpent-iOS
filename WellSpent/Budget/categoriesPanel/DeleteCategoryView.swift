@@ -47,3 +47,13 @@ struct DeleteCategoryView: View {
         }
     }
 }
+
+#Preview {
+    DeleteCategoryView(
+        category: .with { $0.id = 1; $0.name = "Groceries" },
+        otherCategories: [
+            .with { $0.id = 2; $0.name = "Dining"; $0.isSystem = true },
+            .with { $0.id = 3; $0.name = "Shopping" },
+        ]
+    ) { _ in }
+}

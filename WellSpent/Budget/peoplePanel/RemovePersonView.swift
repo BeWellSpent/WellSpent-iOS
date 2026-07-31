@@ -50,3 +50,19 @@ struct RemovePersonView: View {
         }
     }
 }
+
+#Preview("Needs replacement") {
+    RemovePersonView(
+        person: .with { $0.id = 1; $0.userName = "Jane" },
+        otherPeople: [.with { $0.id = 2; $0.userName = "John" }],
+        needsReplacement: true
+    ) { _ in }
+}
+
+#Preview("No replacement needed") {
+    RemovePersonView(
+        person: .with { $0.id = 1; $0.userName = "Jane" },
+        otherPeople: [],
+        needsReplacement: false
+    ) { _ in }
+}

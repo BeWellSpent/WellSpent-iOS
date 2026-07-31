@@ -83,3 +83,10 @@ struct AddPaymentMethodView: View {
         }
     }
 }
+
+#Preview {
+    AddPaymentMethodView(
+        people: [.with { $0.id = 1; $0.userName = "Jane" }],
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+    ) { _ in }
+}

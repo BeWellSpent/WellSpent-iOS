@@ -61,3 +61,7 @@ struct CreateBudgetSheet: View {
         }
     }
 }
+
+#Preview {
+    CreateBudgetSheet(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")) { _ in }
+}
