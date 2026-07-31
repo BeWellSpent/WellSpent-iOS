@@ -1,0 +1,62 @@
+import XCTest
+
+/// Requires a seeded test account — set `UITEST_EMAIL`/`UITEST_PASSWORD` in
+/// the environment before running (skips itself otherwise rather than
+/// failing, so a plain `xcodebuild test` run without credentials doesn't
+/// report a false failure).
+final class LoginSmokeTests: XCTestCase {
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+    }
+
+    @MainActor
+    func testLoginWithValidCredentialsReachesAuthenticatedScreen() throws {
+        guard let email = ProcessInfo.processInfo.environment["UITEST_EMAIL"],
+              let password = ProcessInfo.processInfo.environment["UITEST_PASSWORD"] else {
+            throw XCTSkip("Set UITEST_EMAIL / UITEST_PASSWORD to run this test against a seeded account.")
+        }
+
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestResetSession"]
+        app.launch()
+
+        let emailField = app.textFields["emailField"]
+        XCTAssertTrue(emailField.waitForExistence(timeout: 5))
+        emailField.tap()
+        emailField.typeText(email)
+
+        let passwordField = app.secureTextFields["passwordField"]
+        passwordField.tap()
+        passwordField.typeText(password)
+
+        app.buttons["loginButton"].tap()
+        dismissSavePasswordPromptIfPresent(app)
+
+        XCTAssertTrue(app.buttons["logoutButton"].waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testLoginWithWrongPasswordShowsAnError() throws {
+        guard let email = ProcessInfo.processInfo.environment["UITEST_EMAIL"] else {
+            throw XCTSkip("Set UITEST_EMAIL to run this test against a seeded account.")
+        }
+
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestResetSession"]
+        app.launch()
+
+        let emailField = app.textFields["emailField"]
+        XCTAssertTrue(emailField.waitForExistence(timeout: 5))
+        emailField.tap()
+        emailField.typeText(email)
+
+        let passwordField = app.secureTextFields["passwordField"]
+        passwordField.tap()
+        passwordField.typeText("definitely-the-wrong-password-1!")
+
+        app.buttons["loginButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["loginErrorMessage"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["logoutButton"].exists)
+    }
+}
