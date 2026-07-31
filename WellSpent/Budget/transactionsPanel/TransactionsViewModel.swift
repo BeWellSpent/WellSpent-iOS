@@ -22,12 +22,19 @@ final class TransactionsViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
 
+    private var incomeCategoryID: Int32? {
+        categories.first { $0.isSystem && $0.name == "Income" }?.id
+    }
+
     /// Sum of every non-excluded transaction's signed amount, formatted.
-    /// Doesn't yet special-case the system "Income" category the way web
-    /// does (see CLAUDE.md) — deferred, not forgotten.
+    /// Uses the same exclusion rule as Expense Overview — manually excluded,
+    /// or the system "Income" category, which is always excluded regardless
+    /// of the flag.
     var totalText: String {
         TransactionAmountFormatting.totalDisplayText(
-            amounts: transactions.filter { !$0.isExcluded }.map { (units: $0.amount.units, nanos: $0.amount.nanos) },
+            amounts: transactions
+                .filter { !ExpenseOverviewCalculations.isTransactionExcluded($0, incomeCategoryID: incomeCategoryID) }
+                .map { (units: $0.amount.units, nanos: $0.amount.nanos) },
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
         )

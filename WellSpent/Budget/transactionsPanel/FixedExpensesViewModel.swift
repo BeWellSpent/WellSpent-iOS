@@ -24,9 +24,15 @@ final class FixedExpensesViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
 
+    private var incomeCategoryID: Int32? {
+        categories.first { $0.isSystem && $0.name == "Income" }?.id
+    }
+
     var totalText: String {
         TransactionAmountFormatting.totalDisplayText(
-            amounts: transactions.filter { !$0.isExcluded }.map { (units: $0.amount.units, nanos: $0.amount.nanos) },
+            amounts: transactions
+                .filter { !ExpenseOverviewCalculations.isTransactionExcluded($0, incomeCategoryID: incomeCategoryID) }
+                .map { (units: $0.amount.units, nanos: $0.amount.nanos) },
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
         )

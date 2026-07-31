@@ -2,6 +2,14 @@ import SwiftUI
 import WellSpentAPI
 
 struct ExpensePlanView: View {
+    /// Local to this file, not a `Shared/` enum — mirrors `TransactionKind`
+    /// in `TransactionsListView.swift`, UI-local tab state rather than a
+    /// reusable domain concept.
+    enum PlanKind: Hashable {
+        case plan
+        case overview
+    }
+
     let budgetPeriodID: String
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
@@ -11,24 +19,48 @@ struct ExpensePlanView: View {
     @State private var viewModel: ExpensePlanViewModel?
     @State private var isAddCategoryPresented = false
     @State private var allocatingCategory: Wellspent_V1_Category?
+    @State private var selectedKind: PlanKind = .plan
 
     var body: some View {
-        Group {
-            if let viewModel {
-                content(viewModel: viewModel)
-            } else {
-                ProgressView()
+        VStack(spacing: 0) {
+            Picker("View", selection: $selectedKind) {
+                Text("Plan").tag(PlanKind.plan)
+                Text("Overview").tag(PlanKind.overview)
+            }
+            .pickerStyle(.segmented)
+            .padding([.horizontal, .top])
+            .accessibilityIdentifier("planKindPicker")
+
+            switch selectedKind {
+            case .plan:
+                Group {
+                    if let viewModel {
+                        content(viewModel: viewModel)
+                    } else {
+                        ProgressView()
+                    }
+                }
+            case .overview:
+                ExpenseOverviewListView(
+                    budgetPeriodID: budgetPeriodID,
+                    budgetProfileID: budgetProfileID,
+                    authenticatedClient: authenticatedClient,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                )
             }
         }
         .navigationTitle("Expense Plan")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isAddCategoryPresented = true
-                } label: {
-                    Image(systemName: "plus")
+            if selectedKind == .plan {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddCategoryPresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("addPlanCategoryButton")
                 }
-                .accessibilityIdentifier("addPlanCategoryButton")
             }
         }
         .task {
