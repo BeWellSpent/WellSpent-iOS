@@ -26,20 +26,8 @@ final class TransactionsViewModel {
     /// Doesn't yet special-case the system "Income" category the way web
     /// does (see CLAUDE.md) — deferred, not forgotten.
     var totalText: String {
-        var units: Int64 = 0
-        var nanos: Int32 = 0
-        for tx in transactions where !tx.isExcluded {
-            units += tx.amount.units
-            nanos += tx.amount.nanos
-        }
-        // Normalize nanos overflow (e.g. two -600,000,000 nanos sums to
-        // -1,200,000,000, which needs to borrow/carry into units).
-        let carried = nanos / 1_000_000_000
-        units += Int64(carried)
-        nanos -= carried * 1_000_000_000
-        return TransactionAmountFormatting.displayText(
-            units: units,
-            nanos: nanos,
+        TransactionAmountFormatting.totalDisplayText(
+            amounts: transactions.filter { !$0.isExcluded }.map { (units: $0.amount.units, nanos: $0.amount.nanos) },
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
         )

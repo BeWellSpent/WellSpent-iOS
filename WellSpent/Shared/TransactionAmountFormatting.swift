@@ -17,4 +17,20 @@ nonisolated enum TransactionAmountFormatting {
         )
         return "\(prefix)\(formatted)"
     }
+
+    /// Sums a list of (units, nanos) pairs, carrying any nanos overflow into
+    /// units, and formats the result. Shared by the Variable and Fixed
+    /// transaction lists' running totals.
+    static func totalDisplayText(amounts: [(units: Int64, nanos: Int32)], currencyCode: String, localeIdentifier: String) -> String {
+        var units: Int64 = 0
+        var nanos: Int32 = 0
+        for amount in amounts {
+            units += amount.units
+            nanos += amount.nanos
+        }
+        let carried = nanos / 1_000_000_000
+        units += Int64(carried)
+        nanos -= carried * 1_000_000_000
+        return displayText(units: units, nanos: nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+    }
 }

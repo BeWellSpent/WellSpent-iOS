@@ -1,70 +1,39 @@
 import SwiftUI
 import WellSpentAPI
 
-struct TransactionsListView: View {
-    /// Local to this file, not a `Shared/` enum like `BudgetSection` — this
-    /// is UI-local tab state, not a reusable domain concept.
-    enum TransactionKind: Hashable {
-        case variable
-        case fixed
-    }
-
+struct FixedExpensesListView: View {
     let budgetPeriodID: String
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
     let currencyCode: String
     let localeIdentifier: String
 
-    @State private var viewModel: TransactionsViewModel?
+    @State private var viewModel: FixedExpensesViewModel?
     @State private var isAddSheetPresented = false
     @State private var editingTransaction: Wellspent_V1_Transaction?
-    @State private var selectedKind: TransactionKind = .variable
+    @State private var markingPaidTransaction: Wellspent_V1_Transaction?
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("Type", selection: $selectedKind) {
-                Text("Variable").tag(TransactionKind.variable)
-                Text("Fixed").tag(TransactionKind.fixed)
-            }
-            .pickerStyle(.segmented)
-            .padding([.horizontal, .top])
-            .accessibilityIdentifier("transactionKindPicker")
-
-            switch selectedKind {
-            case .variable:
-                Group {
-                    if let viewModel {
-                        content(viewModel: viewModel)
-                    } else {
-                        ProgressView()
-                    }
-                }
-            case .fixed:
-                FixedExpensesListView(
-                    budgetPeriodID: budgetPeriodID,
-                    budgetProfileID: budgetProfileID,
-                    authenticatedClient: authenticatedClient,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                )
+        Group {
+            if let viewModel {
+                content(viewModel: viewModel)
+            } else {
+                ProgressView()
             }
         }
-        .navigationTitle("Transactions")
         .toolbar {
-            if selectedKind == .variable {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isAddSheetPresented = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityIdentifier("addTransactionButton")
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isAddSheetPresented = true
+                } label: {
+                    Image(systemName: "plus")
                 }
+                .accessibilityIdentifier("addFixedExpenseButton")
             }
         }
         .task {
             guard viewModel == nil else { return }
-            let model = TransactionsViewModel(
+            let model = FixedExpensesViewModel(
                 budgetPeriodID: budgetPeriodID,
                 budgetProfileID: budgetProfileID,
                 currencyCode: currencyCode,
@@ -77,26 +46,26 @@ struct TransactionsListView: View {
     }
 
     @ViewBuilder
-    private func content(viewModel: TransactionsViewModel) -> some View {
+    private func content(viewModel: FixedExpensesViewModel) -> some View {
         List {
             Section {
                 LabeledContent("Total", value: viewModel.totalText)
-                    .accessibilityIdentifier("transactionsTotal")
+                    .accessibilityIdentifier("fixedExpensesTotal")
             }
 
             if viewModel.transactions.isEmpty && viewModel.isLoading {
                 ProgressView()
             } else if viewModel.transactions.isEmpty {
-                Text("No transactions yet.")
+                Text("No fixed expenses yet.")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(viewModel.transactions, id: \.id) { transaction in
-                    transactionRow(transaction, viewModel: viewModel)
+                    row(transaction, viewModel: viewModel)
                 }
                 .onDelete { offsets in
                     for index in offsets {
                         let transaction = viewModel.transactions[index]
-                        Task { await viewModel.delete(id: transaction.id) }
+                        Task { await viewModel.delete(transaction) }
                     }
                 }
             }
@@ -108,40 +77,46 @@ struct TransactionsListView: View {
             }
         }
         .sheet(isPresented: $isAddSheetPresented) {
-            AddEditTransactionView(
-                mode: .add,
-                budgetPeriodID: budgetPeriodID,
+            AddFixedExpenseView(
+                budgetProfileID: budgetProfileID,
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
                 authenticatedClient: authenticatedClient
-            ) { transaction in
-                viewModel.addTransaction(transaction)
+            ) { expense, transaction in
+                viewModel.addFromCreate(expense: expense, transaction: transaction)
             }
         }
         .sheet(isPresented: Binding(
             get: { editingTransaction != nil },
             set: { if !$0 { editingTransaction = nil } }
         )) {
-            if let editingTransaction {
-                AddEditTransactionView(
-                    mode: .edit(editingTransaction),
-                    budgetPeriodID: budgetPeriodID,
+            if let editingTransaction, let template = viewModel.template(for: editingTransaction) {
+                EditFixedExpenseView(
+                    expense: template,
                     currencyCode: currencyCode,
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
                     authenticatedClient: authenticatedClient
-                ) { updated in
-                    viewModel.replaceTransaction(updated)
+                ) { _ in
+                    Task { await viewModel.handleTemplateUpdated() }
+                }
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { markingPaidTransaction != nil },
+            set: { if !$0 { markingPaidTransaction = nil } }
+        )) {
+            if let markingPaidTransaction {
+                MarkAsPaidView(transaction: markingPaidTransaction, currencyCode: currencyCode) { amount, date in
+                    Task { await viewModel.markPaid(markingPaidTransaction, paidAmount: amount, paidAt: date) }
                 }
             }
         }
     }
 
-    private func transactionRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
-        let isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
-
-        return HStack {
+    private func row(_ transaction: Wellspent_V1_Transaction, viewModel: FixedExpensesViewModel) -> some View {
+        HStack {
             Button {
                 editingTransaction = transaction
             } label: {
@@ -161,17 +136,29 @@ struct TransactionsListView: View {
                 }
             }
             .buttonStyle(.plain)
-            .accessibilityIdentifier("transactionRow_\(transaction.name)")
+            .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
 
             Spacer()
 
-            Text(TransactionAmountFormatting.displayText(
+            Text(MoneyFormatting.format(
                 units: transaction.amount.units,
                 nanos: transaction.amount.nanos,
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier
             ))
-            .foregroundStyle(isReceived ? .green : .red)
+
+            Button {
+                if transaction.isPaid {
+                    Task { await viewModel.unmark(transaction) }
+                } else {
+                    markingPaidTransaction = transaction
+                }
+            } label: {
+                Image(systemName: transaction.isPaid ? "checkmark.circle.fill" : "checkmark.circle")
+                    .foregroundStyle(transaction.isPaid ? .green : .secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(transaction.isPaid ? "unmarkPaid_\(transaction.name)" : "markPaid_\(transaction.name)")
 
             Button {
                 Task { await viewModel.toggleExcluded(transaction) }
@@ -179,14 +166,14 @@ struct TransactionsListView: View {
                 Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
             }
             .buttonStyle(.plain)
-            .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
+            .accessibilityIdentifier("excludeFixedExpense_\(transaction.name)")
         }
     }
 }
 
 #Preview {
     NavigationStack {
-        TransactionsListView(
+        FixedExpensesListView(
             budgetPeriodID: "preview-period",
             budgetProfileID: "preview-budget",
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
