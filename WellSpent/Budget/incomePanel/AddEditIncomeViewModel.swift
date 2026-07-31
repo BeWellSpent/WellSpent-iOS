@@ -36,7 +36,7 @@ final class AddEditIncomeViewModel {
 
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
-            && Self.parseAmount(amountText) != nil
+            && MoneyInput.parseAmount(amountText) != nil
             && !isSubmitting
     }
 
@@ -59,7 +59,7 @@ final class AddEditIncomeViewModel {
         case .edit(let source):
             name = source.name
             incomeType = source.incomeType
-            amountText = Self.formatAmountForEditing(source.defaultAmount)
+            amountText = MoneyInput.formatForEditing(units: source.defaultAmount.units, nanos: source.defaultAmount.nanos)
             recurring = source.recurring
             personID = source.budgetPersonID
             paymentFrequency = source.paymentFrequency
@@ -68,7 +68,7 @@ final class AddEditIncomeViewModel {
     }
 
     func submit() async -> Wellspent_V1_IncomeSource? {
-        guard canSubmit, let amount = Self.parseAmount(amountText) else { return nil }
+        guard canSubmit, let amount = MoneyInput.parseAmount(amountText) else { return nil }
         isSubmitting = true
         errorMessage = nil
         defer { isSubmitting = false }
@@ -124,19 +124,4 @@ final class AddEditIncomeViewModel {
         }
     }
 
-    /// Parses a user-entered decimal string (e.g. "1234.56") into proto
-    /// `Money`'s units/nanos fixed-point pair. `nil` for empty, non-numeric,
-    /// or negative input.
-    static func parseAmount(_ text: String) -> (units: Int64, nanos: Int32)? {
-        let trimmed = text.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, let value = Double(trimmed), value >= 0 else { return nil }
-        let units = Int64(value)
-        let nanos = Int32(((value - Double(units)) * 1_000_000_000).rounded())
-        return (units, nanos)
-    }
-
-    private static func formatAmountForEditing(_ money: Wellspent_V1_Money) -> String {
-        let value = Double(money.units) + Double(money.nanos) / 1_000_000_000
-        return value == value.rounded() ? String(format: "%.0f", value) : String(format: "%.2f", value)
-    }
 }

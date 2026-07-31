@@ -109,9 +109,6 @@ struct BudgetManageView: View {
                 }
             }
         }
-        .task {
-            await viewModel.loadPeriod()
-        }
     }
 
     private func periodRangeText(_ period: Wellspent_V1_BudgetPeriod) -> String {

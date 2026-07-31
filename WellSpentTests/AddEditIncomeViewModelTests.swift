@@ -41,24 +41,6 @@ struct AddEditIncomeViewModelTests {
         #expect(!viewModel.canSubmit)
     }
 
-    @Test("parses whole and fractional amounts into units/nanos")
-    func parseAmount() {
-        let whole = AddEditIncomeViewModel.parseAmount("2500")
-        #expect(whole?.units == 2500)
-        #expect(whole?.nanos == 0)
-
-        let fractional = AddEditIncomeViewModel.parseAmount("2500.5")
-        #expect(fractional?.units == 2500)
-        #expect(fractional?.nanos == 500_000_000)
-    }
-
-    @Test("rejects empty, non-numeric, or negative amounts")
-    func parseAmountRejectsInvalid() {
-        #expect(AddEditIncomeViewModel.parseAmount("") == nil)
-        #expect(AddEditIncomeViewModel.parseAmount("abc") == nil)
-        #expect(AddEditIncomeViewModel.parseAmount("-5") == nil)
-    }
-
     @Test("before-tax toggle only shows for US budgets")
     func beforeTaxVisibility() {
         #expect(makeViewModel(countryCode: "US").showBeforeTaxToggle)

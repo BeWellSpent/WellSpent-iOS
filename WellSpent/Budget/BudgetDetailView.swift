@@ -3,9 +3,9 @@ import WellSpentAPI
 
 /// Adaptive navigation shell for a budget: a bottom tab bar on iPhone
 /// (`.compact` horizontal size class), a `NavigationSplitView` sidebar on
-/// iPad (`.regular`). Plan/Transactions are placeholders until Phase
-/// 2B/2C; Manage already holds People/Income and gets Categories/Payment
-/// Methods as they land in 2B.
+/// iPad (`.regular`). Plan is a placeholder until Phase 2C; Transactions
+/// (Variable only, 2B-2) and Manage (People/Income/Categories/Payment
+/// Methods, 2A/2B-1) are real. Fixed expenses land in 2B-3.
 struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -48,6 +48,13 @@ struct BudgetDetailView: View {
         }
         .navigationTitle(viewModel?.profile.name ?? "")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            // Hoisted up from BudgetManageView so the Transactions tab has
+            // `currentPeriod.id` (needed for `budget_period_id`) available
+            // regardless of which tab is initially selected, not only once
+            // the user happens to open Manage.
+            await viewModel?.loadPeriod()
+        }
     }
 
     /// Combines notifying the parent list (so it drops the deleted profile
@@ -66,9 +73,11 @@ struct BudgetDetailView: View {
                 .tabItem { Label(BudgetSection.plan.title, systemImage: BudgetSection.plan.systemImage) }
                 .tag(BudgetSection.plan)
 
-            ComingSoonView(title: "Transactions", subtitle: "Coming in Phase 2B.")
-                .tabItem { Label(BudgetSection.transactions.title, systemImage: BudgetSection.transactions.systemImage) }
-                .tag(BudgetSection.transactions)
+            NavigationStack {
+                transactionsContent(viewModel: viewModel)
+            }
+            .tabItem { Label(BudgetSection.transactions.title, systemImage: BudgetSection.transactions.systemImage) }
+            .tag(BudgetSection.transactions)
 
             NavigationStack {
                 manageContent(viewModel: viewModel)
@@ -101,12 +110,29 @@ struct BudgetDetailView: View {
             case .plan:
                 ComingSoonView(title: "Expense Plan", subtitle: "Coming in a future phase.")
             case .transactions:
-                ComingSoonView(title: "Transactions", subtitle: "Coming in Phase 2B.")
+                NavigationStack {
+                    transactionsContent(viewModel: viewModel)
+                }
             case .manage:
                 NavigationStack {
                     manageContent(viewModel: viewModel)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func transactionsContent(viewModel: BudgetDetailViewModel) -> some View {
+        if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+            TransactionsListView(
+                budgetPeriodID: period.id,
+                budgetProfileID: viewModel.profile.id,
+                authenticatedClient: authenticatedClient,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier
+            )
+        } else {
+            ProgressView()
         }
     }
 
