@@ -91,6 +91,14 @@ struct BudgetManageView: View {
                         )
                     }
                     .accessibilityIdentifier("invitationsNavLink")
+
+                    NavigationLink("Alert Settings") {
+                        AlertsListView(
+                            budgetProfileID: viewModel.profile.id,
+                            authenticatedClient: authenticatedClient
+                        )
+                    }
+                    .accessibilityIdentifier("alertSettingsNavLink")
                 }
             }
 

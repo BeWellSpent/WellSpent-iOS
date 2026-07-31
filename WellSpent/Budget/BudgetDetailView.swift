@@ -18,6 +18,7 @@ struct BudgetDetailView: View {
 
     @State private var viewModel: BudgetDetailViewModel?
     @State private var selectedSection: BudgetSection = .manage
+    @State private var notificationViewModel: NotificationBellViewModel?
 
     init(
         profile: Wellspent_V1_BudgetProfile,
@@ -55,6 +56,19 @@ struct BudgetDetailView: View {
             // regardless of which tab is initially selected, not only once
             // the user happens to open Manage.
             await viewModel?.loadPeriod()
+        }
+        .task {
+            // Created once and polled for the lifetime of this screen (not
+            // per-toolbar-appearance) — every tab's bell shares this same
+            // instance, so switching tabs never restarts the 30s poll loop.
+            guard let authenticatedClient, let viewModel else { return }
+            if notificationViewModel == nil {
+                notificationViewModel = NotificationBellViewModel(
+                    budgetProfileID: viewModel.profile.id,
+                    authenticatedClient: authenticatedClient
+                )
+            }
+            await notificationViewModel?.pollUnreadCount()
         }
     }
 
@@ -128,32 +142,38 @@ struct BudgetDetailView: View {
 
     @ViewBuilder
     private func planContent(viewModel: BudgetDetailViewModel) -> some View {
-        if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
-            ExpensePlanView(
-                budgetPeriodID: period.id,
-                budgetProfileID: viewModel.profile.id,
-                authenticatedClient: authenticatedClient,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier
-            )
-        } else {
-            ProgressView()
+        Group {
+            if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+                ExpensePlanView(
+                    budgetPeriodID: period.id,
+                    budgetProfileID: viewModel.profile.id,
+                    authenticatedClient: authenticatedClient,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                )
+            } else {
+                ProgressView()
+            }
         }
+        .toolbar { notificationBellToolbarItem }
     }
 
     @ViewBuilder
     private func transactionsContent(viewModel: BudgetDetailViewModel) -> some View {
-        if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
-            TransactionsListView(
-                budgetPeriodID: period.id,
-                budgetProfileID: viewModel.profile.id,
-                authenticatedClient: authenticatedClient,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier
-            )
-        } else {
-            ProgressView()
+        Group {
+            if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+                TransactionsListView(
+                    budgetPeriodID: period.id,
+                    budgetProfileID: viewModel.profile.id,
+                    authenticatedClient: authenticatedClient,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                )
+            } else {
+                ProgressView()
+            }
         }
+        .toolbar { notificationBellToolbarItem }
     }
 
     private func manageContent(viewModel: BudgetDetailViewModel) -> some View {
@@ -165,6 +185,14 @@ struct BudgetDetailView: View {
             onUpdated: onUpdated,
             dismissParent: dismissAfterDelete
         )
+        .toolbar { notificationBellToolbarItem }
+    }
+
+    @ToolbarContentBuilder
+    private var notificationBellToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            NotificationBellButton(viewModel: notificationViewModel)
+        }
     }
 }
 
