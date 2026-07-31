@@ -3,9 +3,10 @@ import WellSpentAPI
 
 /// Adaptive navigation shell for a budget: a bottom tab bar on iPhone
 /// (`.compact` horizontal size class), a `NavigationSplitView` sidebar on
-/// iPad (`.regular`). Plan is a placeholder until Phase 2C; Transactions
-/// (Variable only, 2B-2) and Manage (People/Income/Categories/Payment
-/// Methods, 2A/2B-1) are real. Fixed expenses land in 2B-3.
+/// iPad (`.regular`). Plan (allocations, 2C-1), Transactions (Variable +
+/// Fixed, 2B-2/2B-3), and Manage (People/Income/Categories/Payment Methods,
+/// 2A/2B-1) are all real. Expense Overview (actual vs. planned) lands in
+/// 2C-2.
 struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -69,9 +70,11 @@ struct BudgetDetailView: View {
 
     private func tabView(viewModel: BudgetDetailViewModel) -> some View {
         TabView(selection: $selectedSection) {
-            ComingSoonView(title: "Expense Plan", subtitle: "Coming in a future phase.")
-                .tabItem { Label(BudgetSection.plan.title, systemImage: BudgetSection.plan.systemImage) }
-                .tag(BudgetSection.plan)
+            NavigationStack {
+                planContent(viewModel: viewModel)
+            }
+            .tabItem { Label(BudgetSection.plan.title, systemImage: BudgetSection.plan.systemImage) }
+            .tag(BudgetSection.plan)
 
             NavigationStack {
                 transactionsContent(viewModel: viewModel)
@@ -108,7 +111,9 @@ struct BudgetDetailView: View {
         } detail: {
             switch selectedSection {
             case .plan:
-                ComingSoonView(title: "Expense Plan", subtitle: "Coming in a future phase.")
+                NavigationStack {
+                    planContent(viewModel: viewModel)
+                }
             case .transactions:
                 NavigationStack {
                     transactionsContent(viewModel: viewModel)
@@ -118,6 +123,21 @@ struct BudgetDetailView: View {
                     manageContent(viewModel: viewModel)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func planContent(viewModel: BudgetDetailViewModel) -> some View {
+        if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+            ExpensePlanView(
+                budgetPeriodID: period.id,
+                budgetProfileID: viewModel.profile.id,
+                authenticatedClient: authenticatedClient,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier
+            )
+        } else {
+            ProgressView()
         }
     }
 

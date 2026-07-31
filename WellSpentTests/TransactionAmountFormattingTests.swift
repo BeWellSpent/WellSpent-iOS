@@ -34,4 +34,31 @@ struct TransactionAmountFormattingTests {
         #expect(text.contains("50"))
         #expect(!text.contains("--"))
     }
+
+    @Test("sum carries nanos overflow into units")
+    func sumCarriesOverflow() {
+        let result = TransactionAmountFormatting.sum([
+            (units: 1, nanos: 600_000_000),
+            (units: 1, nanos: 600_000_000)
+        ])
+        #expect(result.units == 3)
+        #expect(result.nanos == 200_000_000)
+    }
+
+    @Test("sum carries nanos underflow into units for negative amounts")
+    func sumCarriesUnderflow() {
+        let result = TransactionAmountFormatting.sum([
+            (units: -1, nanos: -600_000_000),
+            (units: -1, nanos: -600_000_000)
+        ])
+        #expect(result.units == -3)
+        #expect(result.nanos == -200_000_000)
+    }
+
+    @Test("sum of an empty list is zero")
+    func sumOfEmptyIsZero() {
+        let result = TransactionAmountFormatting.sum([])
+        #expect(result.units == 0)
+        #expect(result.nanos == 0)
+    }
 }

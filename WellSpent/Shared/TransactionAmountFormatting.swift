@@ -18,10 +18,11 @@ nonisolated enum TransactionAmountFormatting {
         return "\(prefix)\(formatted)"
     }
 
-    /// Sums a list of (units, nanos) pairs, carrying any nanos overflow into
-    /// units, and formats the result. Shared by the Variable and Fixed
-    /// transaction lists' running totals.
-    static func totalDisplayText(amounts: [(units: Int64, nanos: Int32)], currencyCode: String, localeIdentifier: String) -> String {
+    /// Sums a list of (units, nanos) pairs, carrying any nanos overflow (or
+    /// underflow, for negative amounts) into units. Shared by running totals
+    /// (Variable/Fixed transaction lists) and the Expense Plan's planned-total
+    /// fallback rule.
+    static func sum(_ amounts: [(units: Int64, nanos: Int32)]) -> (units: Int64, nanos: Int32) {
         var units: Int64 = 0
         var nanos: Int32 = 0
         for amount in amounts {
@@ -31,6 +32,13 @@ nonisolated enum TransactionAmountFormatting {
         let carried = nanos / 1_000_000_000
         units += Int64(carried)
         nanos -= carried * 1_000_000_000
-        return displayText(units: units, nanos: nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        return (units, nanos)
+    }
+
+    /// Sums a list of (units, nanos) pairs and formats the result. Shared by
+    /// the Variable and Fixed transaction lists' running totals.
+    static func totalDisplayText(amounts: [(units: Int64, nanos: Int32)], currencyCode: String, localeIdentifier: String) -> String {
+        let total = sum(amounts)
+        return displayText(units: total.units, nanos: total.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 }
