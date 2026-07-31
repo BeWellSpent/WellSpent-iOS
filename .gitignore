@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 # Xcode
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
@@ -30,6 +33,10 @@ playground.xcworkspace
 # .swiftpm
 
 .build/
+build/
+
+# buf-generated Swift code (regenerate with `make generate`)
+Packages/WellSpentAPI/Sources/WellSpentAPI/Gen/
 
 # CocoaPods
 #

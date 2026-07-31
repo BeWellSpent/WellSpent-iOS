@@ -1,0 +1,12 @@
+version: v2
+inputs:
+  - module: buf.build/bewellspent/wellspent
+plugins:
+  - remote: buf.build/apple/swift
+    out: Packages/WellSpentAPI/Sources/WellSpentAPI/Gen
+    opt: Visibility=Public
+  - remote: buf.build/connectrpc/swift
+    out: Packages/WellSpentAPI/Sources/WellSpentAPI/Gen
+    opt:
+      - GenerateAsyncMethods=true
+      - Visibility=Public
