@@ -77,7 +77,8 @@ struct VerifyEmailBannerView: View {
         }
         .padding()
         .background(.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
-        // No container-level identifier here either — see the note in
-        // HomePlaceholderView.swift. UI tests key off resendVerificationButton.
+        // No container-level identifier here — a parent-level identifier can
+        // bleed down and override a child button's own identifier under
+        // XCUITest. UI tests key off resendVerificationButton directly.
     }
 }

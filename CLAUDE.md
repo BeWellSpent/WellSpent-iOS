@@ -59,21 +59,31 @@ Generated Swift code is **not committed** (gitignored, same policy as `src/gen/`
 - `WellSpentApp.swift` owns the single `SessionStore` (`@Observable`, `@MainActor`) for the app's lifetime, injected via `.environment(session)`.
 - `SessionStore` mirrors web's `AuthContext` + `TransportProvider`: `publicClient` (unauthenticated, for Register/Login/ListCountries) and `authenticatedClient` (built fresh on login, torn down on logout).
 - **No proactive token refresh.** `AuthService.RefreshToken` exists on the proto/backend and is available in the generated client, but nothing calls it — this matches the web app's actual current behavior (it has the same RPC available and also never calls it). On expiry, both platforms just force a re-login. If this ever changes, change it on both platforms together or note explicitly why they diverge.
-- `RootView` switches between the login/register flow and `HomePlaceholderView` based on `session.isAuthenticated`, and calls `session.refreshAuthenticationState()` on `scenePhase == .active` — the Swift equivalent of web's `visibilitychange` expiry check.
-- `HomePlaceholderView` (`App/`) stands in for the real budgets list until Phase 2. It calls `GetMe` to prove the authenticated client actually works end-to-end, and shows `VerifyEmailBannerView` when `user.isVerified == false`.
+- `RootView` switches between the login/register flow and `BudgetListView` based on `session.isAuthenticated`, and calls `session.refreshAuthenticationState()` on `scenePhase == .active` — the Swift equivalent of web's `visibilitychange` expiry check.
 - Google OAuth: `GoogleAuthButton` is rendered disabled behind `FeatureFlags.googleAuthEnabled` (reads the `FEATURE_GOOGLE_AUTH` process environment variable, off by default) — matches web's posture exactly. Real `GetGoogleAuthURL`/`ExchangeGoogleCode` wiring (needs its own Google Cloud OAuth client + `ASWebAuthenticationSession`) is out of scope until a later phase.
+
+## Budget flow (Phase 2A)
+
+Covers budgets/periods, people, and income sources — see the roadmap below for what's still ahead (categories/payment methods/transactions in 2B; expense allocations/settings in 2C).
+
+- `WellSpent/Budget/` is the feature folder, one subfolder per management panel (`budgetList/`, `peoplePanel/`, `incomePanel/`), same layout convention as web's `src/components/budget/`.
+- **`BudgetListView`/`BudgetListViewModel`** replaced the Phase 1 `HomePlaceholderView`/`HomeViewModel` stand-in — it now owns the top-level `GetMe` call (verify-email banner + the user's `currency`/`language`, used for money formatting everywhere downstream) alongside `ListBudgetProfiles`.
+- **`BudgetDetailView` is a grouped list, not a tab bar.** There's no Transactions/Expense Plan content to put in tabs until Phase 2B/2C, so the hub is a simple `List` with rows linking to `PeopleListView`/`IncomeListView` (iOS Settings-style navigation) plus a toolbar menu for edit/delete. A real tab shell (Expense Plan / Transactions) replaces this once those screens exist, matching web's current `BudgetView` IA — don't build tab infrastructure ahead of having content for the other tabs.
+- **Removing a person** only prompts for a replacement when they have income sources attributed to them — payment methods don't exist yet (Phase 2B), so that half of web's `RemovePersonDialog` reassignment logic doesn't apply yet. The decision itself is a pure function, `PersonReplacement.needsReplacement(person:incomeSources:)`, kept in its own file so it's unit-testable without SwiftUI.
+- **Established `Shared/` label/formatting helpers** (all `nonisolated enum`s with a `.text(for:)`/`.format(...)` static function, mirroring web's small formatting hooks): `Money+Formatting.swift`, `BudgetCycleLabel.swift`, `BudgetRoleLabel.swift`, `IncomeTypeLabel.swift`, `RecurringTypeLabel.swift`. Reuse this pattern for any new proto enum that needs display text rather than inlining a `switch` in a view.
+- App version is now surfaced (`BudgetListView`'s footer, reading `Bundle.main.infoDictionary["CFBundleShortVersionString"]`) — bump `MARKETING_VERSION` in the **`WellSpent` app target's** Debug/Release configs only (not the test targets) per the existing patch/minor/major convention, now that there's a UI surface for it.
 
 ## Testing
 
 - **Swift Testing**, one `@Suite` per type, in `WellSpentTests/` (app target logic) and `Packages/WellSpentAPI/Tests/WellSpentAPITests/` (networking layer). Covers: JWT decode/expiry edge cases, Keychain round-trips (real Simulator Keychain — works fine under `xcodebuild test`, each test uses a unique service name to avoid cross-test interference), `AuthInterceptor` header injection and 401 handling (constructed `HTTPRequest`/`ResponseMessage` values directly, no network mocking needed), view model validation + error-code-to-message mapping, `SessionStore` state transitions.
 - Deliberately **not** unit tested: SwiftUI view bodies (no assertion value without a UI-test harness) and thin one-line pass-throughs to generated RPC methods.
-- **XCUITest** smoke flows in `WellSpentUITests/`: `LoginSmokeTests` (valid + wrong-password), `RegisterSmokeTests` (fresh timestamp-suffixed email — no seeded account needed), `LogoutSmokeTests` (log out, then relaunch *without* the reset flag to prove the Keychain token was actually cleared, not just in-memory state). Login/Logout tests need a seeded account: `export UITEST_EMAIL=... UITEST_PASSWORD=...` before running. All three need `WellSpent-backend` running locally.
+- **XCUITest** smoke flows in `WellSpentUITests/`: `LoginSmokeTests` (valid + wrong-password), `RegisterSmokeTests` (fresh timestamp-suffixed email — no seeded account needed), `LogoutSmokeTests` (log out, then relaunch *without* the reset flag to prove the Keychain token was actually cleared, not just in-memory state), `BudgetSmokeTests` (create a budget, add a person, add an income source, then delete the budget as cleanup so repeated runs don't leave orphan data on the real backend). Login/Logout/Budget tests need a seeded account: `export UITEST_EMAIL=... UITEST_PASSWORD=...` before running. All need `WellSpent-backend` running locally.
 - The app supports a `-uiTestResetSession` launch argument (checked in `WellSpentApp.init`) that clears the Keychain token before `SessionStore` restores a session — every UI test starts from a known logged-out state instead of inheriting whatever the Simulator's Keychain has from a previous run.
 - Accessibility identifiers are set explicitly on every interactive element and screen-level container (not inferred from label text) — i18n will change label text later, identifiers won't.
 
 ## Version bump
 
-No version-bump convention wired up yet (unlike `WellSpent-web`'s `NEXT_PUBLIC_APP_VERSION`) — `MARKETING_VERSION` in the Xcode project defaults to `1.0` and isn't surfaced in the UI. Add this once there's an actual UI surface to show it in (Phase 2+); bump `MARKETING_VERSION` in both build configurations following the same patch/minor/major convention as the other repos.
+Wired up as of Phase 2A: `MARKETING_VERSION` in the **`WellSpent` app target's** Debug/Release build configs (`WellSpentTests`/`WellSpentUITests` configs are untouched — their version number has no user-facing meaning), read at runtime via `Bundle.main.infoDictionary["CFBundleShortVersionString"]` and shown in `BudgetListView`'s footer. Bump it for every feature going forward, same patch/minor/major convention as the other repos.
 
 ## Git workflow
 
@@ -92,6 +102,14 @@ git push origin develop
 
 `Packages/WellSpentAPI/Sources/WellSpentAPI/Gen/` — generated by `make generate` from `buf.build/bewellspent/wellspent`. Gitignored.
 
-## Roadmap (not started)
+## Roadmap
 
-See the approved implementation plan for the full phase breakdown (Phase 2: core budget loop — budgets/periods/people/income/categories/payment methods/transactions/expense plan; Phase 3: savings, invites, alerts; Phase 4: Plaid, transaction review, tiers). Each phase should update this file's Architecture/Testing sections as new patterns get established, the same way `WellSpent-web/CLAUDE.md` accumulated its "Component composition" and "Mobile + desktop support" sections over time.
+"Phase 2 — core budget loop" was too large for one confirmed slice (same reasoning as Phase 0+1), so it's split into three sub-phases:
+
+- **Phase 2A (done)** — budgets/periods, people, income sources. See "Budget flow (Phase 2A)" above.
+- **Phase 2B (not started)** — categories, payment methods, transactions (incl. mark-paid/exclude). Introduces the real tab shell (Expense Plan / Transactions) that `BudgetDetailView` is deliberately deferring.
+- **Phase 2C (not started)** — expense allocations (Plan + Overview tabs), profile/account settings.
+- **Phase 3 (not started)** — savings, invites, alerts.
+- **Phase 4 (not started)** — Plaid, transaction review, tiers.
+
+Each phase should update this file's Architecture/Testing sections as new patterns get established, the same way `WellSpent-web/CLAUDE.md` accumulated its "Component composition" and "Mobile + desktop support" sections over time.

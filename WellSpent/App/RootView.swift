@@ -7,7 +7,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isAuthenticated {
-                HomePlaceholderView()
+                BudgetListView()
             } else {
                 NavigationStack {
                     LoginView(publicClient: session.publicClient)
