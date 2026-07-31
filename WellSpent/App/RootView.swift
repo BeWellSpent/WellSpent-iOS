@@ -26,6 +26,15 @@ struct RootView: View {
         .onOpenURL { url in
             pendingInviteToken = InviteDeepLink.token(from: url)
         }
+        .task(id: session.isAuthenticated) {
+            // Requesting push permission at cold launch, before the user has
+            // even logged in, would be a jarring first-run experience — ask
+            // once authenticated instead. `.task(id:)` re-fires on every
+            // login (including after a logout/login cycle), which is a
+            // harmless re-registration if already authorized.
+            guard session.isAuthenticated else { return }
+            await PushNotificationRegistrar.requestPermissionIfNeeded()
+        }
         .fullScreenCover(isPresented: Binding(
             get: { session.isAuthenticated && pendingInviteToken != nil },
             set: { if !$0 { pendingInviteToken = nil } }

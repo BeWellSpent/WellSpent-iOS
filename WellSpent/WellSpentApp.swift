@@ -9,6 +9,7 @@ import SwiftUI
 
 @main
 struct WellSpentApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var session: SessionStore
 
     init() {
@@ -19,7 +20,19 @@ struct WellSpentApp: App {
         if ProcessInfo.processInfo.arguments.contains("-uiTestResetSession") {
             tokenStore.deleteToken()
         }
-        _session = State(initialValue: SessionStore(tokenStore: tokenStore))
+        let sessionStore = SessionStore(tokenStore: tokenStore)
+        _session = State(initialValue: sessionStore)
+
+        // Set once at startup rather than held on an AppDelegate instance
+        // property — `weak` since `session`/`sessionStore` already outlive
+        // this closure for the app's whole lifetime; avoids an unnecessary
+        // strong reference from a static var.
+        AppDelegate.onDeviceToken = { [weak sessionStore] data in
+            Task { @MainActor in
+                guard let client = sessionStore?.authenticatedClient else { return }
+                await PushNotificationRegistrar.register(deviceToken: data, authenticatedClient: client)
+            }
+        }
     }
 
     var body: some Scene {
