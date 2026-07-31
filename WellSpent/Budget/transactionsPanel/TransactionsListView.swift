@@ -63,16 +63,19 @@ struct TransactionsListView: View {
             }
         }
         .task {
-            guard viewModel == nil else { return }
-            let model = TransactionsViewModel(
-                budgetPeriodID: budgetPeriodID,
-                budgetProfileID: budgetProfileID,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier,
-                authenticatedClient: authenticatedClient
-            )
-            viewModel = model
-            await model.load()
+            if viewModel == nil {
+                viewModel = TransactionsViewModel(
+                    budgetPeriodID: budgetPeriodID,
+                    budgetProfileID: budgetProfileID,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    authenticatedClient: authenticatedClient
+                )
+            }
+            await viewModel?.load()
+        }
+        .refreshable {
+            await viewModel?.load()
         }
     }
 

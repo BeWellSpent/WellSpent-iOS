@@ -20,14 +20,17 @@ struct PeopleListView: View {
         }
         .navigationTitle("People")
         .task {
-            guard viewModel == nil else { return }
-            let model = PeopleViewModel(
-                budgetProfileID: budgetProfileID,
-                budgetOwnerUserID: budgetOwnerUserID,
-                authenticatedClient: authenticatedClient
-            )
-            viewModel = model
-            await model.load()
+            if viewModel == nil {
+                viewModel = PeopleViewModel(
+                    budgetProfileID: budgetProfileID,
+                    budgetOwnerUserID: budgetOwnerUserID,
+                    authenticatedClient: authenticatedClient
+                )
+            }
+            await viewModel?.load()
+        }
+        .refreshable {
+            await viewModel?.load()
         }
     }
 

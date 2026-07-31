@@ -31,17 +31,20 @@ struct FixedExpensesListView: View {
                 .accessibilityIdentifier("addFixedExpenseButton")
             }
         }
+        .refreshable {
+            await viewModel?.load()
+        }
         .task {
-            guard viewModel == nil else { return }
-            let model = FixedExpensesViewModel(
-                budgetPeriodID: budgetPeriodID,
-                budgetProfileID: budgetProfileID,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier,
-                authenticatedClient: authenticatedClient
-            )
-            viewModel = model
-            await model.load()
+            if viewModel == nil {
+                viewModel = FixedExpensesViewModel(
+                    budgetPeriodID: budgetPeriodID,
+                    budgetProfileID: budgetProfileID,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    authenticatedClient: authenticatedClient
+                )
+            }
+            await viewModel?.load()
         }
     }
 

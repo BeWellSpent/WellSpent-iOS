@@ -20,16 +20,19 @@ struct ExpenseOverviewListView: View {
             }
         }
         .task {
-            guard viewModel == nil else { return }
-            let model = ExpenseOverviewViewModel(
-                budgetPeriodID: budgetPeriodID,
-                budgetProfileID: budgetProfileID,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier,
-                authenticatedClient: authenticatedClient
-            )
-            viewModel = model
-            await model.load()
+            if viewModel == nil {
+                viewModel = ExpenseOverviewViewModel(
+                    budgetPeriodID: budgetPeriodID,
+                    budgetProfileID: budgetProfileID,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    authenticatedClient: authenticatedClient
+                )
+            }
+            await viewModel?.load()
+        }
+        .refreshable {
+            await viewModel?.load()
         }
     }
 

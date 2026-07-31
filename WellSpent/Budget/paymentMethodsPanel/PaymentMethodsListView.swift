@@ -30,10 +30,13 @@ struct PaymentMethodsListView: View {
             }
         }
         .task {
-            guard viewModel == nil else { return }
-            let model = PaymentMethodsViewModel(budgetProfileID: budgetProfileID, authenticatedClient: authenticatedClient)
-            viewModel = model
-            await model.load()
+            if viewModel == nil {
+                viewModel = PaymentMethodsViewModel(budgetProfileID: budgetProfileID, authenticatedClient: authenticatedClient)
+            }
+            await viewModel?.load()
+        }
+        .refreshable {
+            await viewModel?.load()
         }
     }
 
