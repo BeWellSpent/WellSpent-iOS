@@ -65,6 +65,13 @@ final class BudgetListViewModel {
         profiles[index] = profile
     }
 
+    /// Applies a `User` returned from `SettingsView`'s `UpdateMe` call
+    /// without a full `GetMe` refetch, so `currencyCode`/`localeIdentifier`
+    /// (piped into every budget screen) reflect the change immediately.
+    func replaceCurrentUser(_ user: Wellspent_V1_User) {
+        currentUser = user
+    }
+
     /// Removes a profile that was already deleted elsewhere (e.g. from
     /// `BudgetDetailView`'s own delete action) — does not issue another
     /// `DeleteBudgetProfile` call.

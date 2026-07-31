@@ -12,6 +12,18 @@ struct BudgetListView: View {
             content
                 .navigationTitle("Budgets")
                 .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        NavigationLink {
+                            if let authenticatedClient = session.authenticatedClient {
+                                SettingsView(authenticatedClient: authenticatedClient) { updated in
+                                    viewModel?.replaceCurrentUser(updated)
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                        .accessibilityIdentifier("settingsButton")
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Button {
                             isCreateSheetPresented = true
