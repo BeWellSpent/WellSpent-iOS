@@ -67,8 +67,7 @@ struct EditFixedExpenseView: View {
             TextField("Name", text: $viewModel.name)
                 .accessibilityIdentifier("editFixedExpenseNameField")
 
-            TextField("Amount", text: $viewModel.amountText)
-                .keyboardType(.decimalPad)
+            AmountTextField(text: $viewModel.amountText)
                 .accessibilityIdentifier("editFixedExpenseAmountField")
         }
     }

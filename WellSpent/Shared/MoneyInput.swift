@@ -24,4 +24,21 @@ nonisolated enum MoneyInput {
         let value = Double(units) + Double(nanos) / 1_000_000_000
         return value == value.rounded() ? String(format: "%.0f", value) : String(format: "%.2f", value)
     }
+
+    /// Strips characters that can't be part of a valid positive decimal
+    /// amount — digits and at most one decimal point. `.keyboardType(.decimalPad)`
+    /// alone only restricts the on-screen keyboard, not a hardware keyboard
+    /// or paste (see `AmountTextField`) — this is the actual filter;
+    /// `parseAmount` still does the real parse/validate at submit time.
+    static func sanitize(_ text: String) -> String {
+        var seenDecimalPoint = false
+        return text.filter { char in
+            if char.isNumber { return true }
+            if char == "." && !seenDecimalPoint {
+                seenDecimalPoint = true
+                return true
+            }
+            return false
+        }
+    }
 }

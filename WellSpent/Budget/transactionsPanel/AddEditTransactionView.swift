@@ -80,8 +80,7 @@ struct AddEditTransactionView: View {
             .pickerStyle(.segmented)
             .accessibilityIdentifier("transactionFlowPicker")
 
-            TextField("Amount", text: $viewModel.amountText)
-                .keyboardType(.decimalPad)
+            AmountTextField(text: $viewModel.amountText)
                 .accessibilityIdentifier("transactionAmountField")
 
             DatePicker("Date", selection: $viewModel.date, displayedComponents: .date)

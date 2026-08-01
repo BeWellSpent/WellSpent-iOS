@@ -35,8 +35,7 @@ struct AllocateCategoryView: View {
                 Section {
                     ForEach(viewModel.rows) { row in
                         LabeledContent(row.person.userName) {
-                            TextField("Amount", text: viewModel.amountText(for: row.id))
-                                .keyboardType(.decimalPad)
+                            AmountTextField(text: viewModel.amountText(for: row.id))
                                 .multilineTextAlignment(.trailing)
                                 .accessibilityIdentifier("allocateAmountField_\(row.person.userName)")
                         }

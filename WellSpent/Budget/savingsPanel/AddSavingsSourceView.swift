@@ -32,8 +32,7 @@ struct AddSavingsSourceView: View {
                     TextField("Name", text: $viewModel.name)
                         .accessibilityIdentifier("addSavingsNameField")
 
-                    TextField("Amount", text: $viewModel.amountText)
-                        .keyboardType(.decimalPad)
+                    AmountTextField(text: $viewModel.amountText)
                         .accessibilityIdentifier("addSavingsAmountField")
 
                     Picker("Payment Method", selection: $viewModel.paymentMethodID) {
