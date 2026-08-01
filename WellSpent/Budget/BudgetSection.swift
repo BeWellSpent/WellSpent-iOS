@@ -7,12 +7,14 @@
 enum BudgetSection: CaseIterable, Hashable {
     case plan
     case transactions
+    case review
     case manage
 
     var title: String {
         switch self {
         case .plan: return "Plan"
         case .transactions: return "Transactions"
+        case .review: return "Review"
         case .manage: return "Manage"
         }
     }
@@ -21,6 +23,7 @@ enum BudgetSection: CaseIterable, Hashable {
         switch self {
         case .plan: return "chart.pie"
         case .transactions: return "list.bullet"
+        case .review: return "checkmark.circle"
         case .manage: return "slider.horizontal.3"
         }
     }
