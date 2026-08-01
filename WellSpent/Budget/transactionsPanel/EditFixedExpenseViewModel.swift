@@ -41,7 +41,7 @@ final class EditFixedExpenseViewModel {
 
         name = expense.name
         amountText = MoneyInput.formatForEditing(units: expense.plannedAmount.units, nanos: expense.plannedAmount.nanos)
-        startDate = expense.hasAnchorDate ? expense.anchorDate.date : Date()
+        startDate = expense.hasAnchorDate ? expense.anchorDate.dateOnly : Date()
         frequencyUnit = expense.frequencyUnit == .week ? .week : .month
         intervalMonths = expense.intervalMonths > 0 ? Int(expense.intervalMonths) : 1
         intervalWeeks = expense.intervalWeeks > 0 ? Int(expense.intervalWeeks) : 1
@@ -67,7 +67,7 @@ final class EditFixedExpenseViewModel {
             $0.plannedAmount = money
             $0.categoryID = categoryID
             $0.paymentMethodID = paymentMethodID
-            $0.anchorDate = Google_Protobuf_Timestamp(date: startDate)
+            $0.anchorDate = Google_Protobuf_Timestamp(dateOnly: startDate)
             $0.dayOfMonth = FixedExpenseScheduling.dayOfMonth(for: startDate)
             $0.dayOfWeek = FixedExpenseScheduling.dayOfWeek(for: startDate)
             $0.frequencyUnit = frequencyUnit

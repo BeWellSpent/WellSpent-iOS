@@ -5,14 +5,17 @@ import WellSpentAPI
 
 @Suite("TransactionDayGrouping")
 struct TransactionDayGroupingTests {
+    /// Constructs a realistic DATE-only wire value (midnight UTC for
+    /// `date`'s local calendar day) — matching how the real backend actually
+    /// encodes these fields, not an arbitrary local instant.
     private func transaction(id: String, date: Date) -> Wellspent_V1_Transaction {
         .with {
             $0.id = id
-            $0.date = Google_Protobuf_Timestamp(date: date)
+            $0.date = Google_Protobuf_Timestamp(dateOnly: date)
         }
     }
 
-    @Test("transactions on the same calendar day bucket together regardless of time")
+    @Test("transactions on the same calendar day bucket together regardless of time of creation")
     func sameDayDifferentTimeBucketsTogether() {
         let calendar = Calendar.current
         let morning = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!

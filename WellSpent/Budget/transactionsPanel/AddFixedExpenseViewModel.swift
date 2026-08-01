@@ -51,7 +51,7 @@ final class AddFixedExpenseViewModel {
             $0.plannedAmount = money
             $0.categoryID = categoryID
             $0.paymentMethodID = paymentMethodID
-            $0.anchorDate = Google_Protobuf_Timestamp(date: startDate)
+            $0.anchorDate = Google_Protobuf_Timestamp(dateOnly: startDate)
             $0.dayOfMonth = FixedExpenseScheduling.dayOfMonth(for: startDate)
             $0.dayOfWeek = FixedExpenseScheduling.dayOfWeek(for: startDate)
             $0.frequencyUnit = frequencyUnit

@@ -140,7 +140,7 @@ final class FixedExpensesViewModel {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
             $0.paidAmount = paidAmount
-            $0.paidAt = Google_Protobuf_Timestamp(date: paidAt)
+            $0.paidAt = Google_Protobuf_Timestamp(dateOnly: paidAt)
         }
         let response = await client.markTransactionAsPaid(request: request)
 

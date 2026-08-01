@@ -23,7 +23,10 @@ nonisolated enum TransactionDayGrouping {
         let calendar = Calendar.current
 
         for transaction in transactions {
-            let day = calendar.startOfDay(for: transaction.date.date)
+            // `transaction.date` is a DATE-only field (see `DateOnly.swift`)
+            // — `.dateOnly`, not `.date`, or the day boundary is wrong for
+            // any timezone behind UTC.
+            let day = calendar.startOfDay(for: transaction.date.dateOnly)
             buckets[day, default: []].append(transaction)
         }
 

@@ -22,7 +22,7 @@ struct MarkAsPaidView: View {
             units: transaction.plannedAmount.units,
             nanos: transaction.plannedAmount.nanos
         ))
-        _paidDate = State(initialValue: transaction.hasDate ? transaction.date.date : Date())
+        _paidDate = State(initialValue: transaction.hasDate ? transaction.date.dateOnly : Date())
     }
 
     private var canConfirm: Bool {

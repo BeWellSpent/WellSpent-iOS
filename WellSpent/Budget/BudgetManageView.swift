@@ -63,7 +63,7 @@ struct BudgetManageView: View {
                     NavigationLink("Savings") {
                         SavingsListView(
                             budgetProfileID: viewModel.profile.id,
-                            periodStartDate: viewModel.currentPeriod?.startDate.date,
+                            periodStartDate: viewModel.currentPeriod?.startDate.dateOnly,
                             authenticatedClient: authenticatedClient,
                             currencyCode: currencyCode,
                             localeIdentifier: localeIdentifier,
@@ -147,8 +147,8 @@ struct BudgetManageView: View {
     }
 
     private func periodRangeText(_ period: Wellspent_V1_BudgetPeriod) -> String {
-        let start = period.startDate.date.formatted(date: .abbreviated, time: .omitted)
-        let end = period.endDate.date.formatted(date: .abbreviated, time: .omitted)
+        let start = period.startDate.dateOnly.formatted(date: .abbreviated, time: .omitted)
+        let end = period.endDate.dateOnly.formatted(date: .abbreviated, time: .omitted)
         return "\(start) – \(end)"
     }
 }
