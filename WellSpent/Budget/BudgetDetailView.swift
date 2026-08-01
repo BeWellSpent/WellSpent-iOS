@@ -96,7 +96,9 @@ struct BudgetDetailView: View {
         .task {
             // Created once here (not inside `TransactionReviewListView`) so
             // the pending count backs the Review tab's badge — same reasoning
-            // as `notificationViewModel`.
+            // as `notificationViewModel`. Polled (not a one-shot load) so the
+            // badge — visible from every tab — updates without the user
+            // having to enter the Review tab first.
             guard let authenticatedClient, let viewModel else { return }
             if reviewViewModel == nil {
                 reviewViewModel = TransactionReviewViewModel(
@@ -104,7 +106,7 @@ struct BudgetDetailView: View {
                     authenticatedClient: authenticatedClient
                 )
             }
-            await reviewViewModel?.load()
+            await reviewViewModel?.pollPendingCount()
         }
     }
 
@@ -284,7 +286,8 @@ struct BudgetDetailView: View {
                 selectedKind: $transactionsSelectedKind,
                 isAddTransactionPresented: $isAddTransactionPresented,
                 isAddFixedExpensePresented: $isAddFixedExpensePresented,
-                isActive: selectedSection == .transactions
+                isActive: selectedSection == .transactions,
+                reviewViewModel: reviewViewModel
             )
         } else {
             ProgressView()

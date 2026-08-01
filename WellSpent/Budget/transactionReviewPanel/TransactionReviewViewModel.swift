@@ -31,6 +31,19 @@ final class TransactionReviewViewModel {
         self.reviews = reviews
     }
 
+    /// Started once from `BudgetDetailView`'s own `.task` (same shape as
+    /// `NotificationBellViewModel.pollUnreadCount()`) so the Review tab's
+    /// badge — visible from every tab — reflects new matches without the
+    /// user having to enter the tab first. Web gets this for free from React
+    /// Query's cache invalidation across mutations; there's no equivalent
+    /// shared-cache mechanism here, so polling is the direct substitute.
+    func pollPendingCount() async {
+        while !Task.isCancelled {
+            await load()
+            try? await Task.sleep(for: .seconds(30))
+        }
+    }
+
     func load() async {
         isLoading = true
         errorMessage = nil

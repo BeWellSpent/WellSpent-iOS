@@ -22,9 +22,15 @@ struct TransactionsListView: View {
     @Binding var isAddFixedExpensePresented: Bool
     /// See `ExpensePlanView.isActive`.
     let isActive: Bool
+    /// Owned by `BudgetDetailView` (see `TransactionReviewListView`'s doc
+    /// comment) — read here (and passed into `FixedExpensesListView`) to
+    /// filter confirmed-review matches out of the Variable list and show a
+    /// pending-match hint, mirroring web's `TransactionsPanel.tsx`.
+    var reviewViewModel: TransactionReviewViewModel? = nil
 
     @State private var viewModel: TransactionsViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
+    @State private var markReviewTarget: Wellspent_V1_Transaction?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,7 +59,8 @@ struct TransactionsListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     isAddSheetPresented: $isAddFixedExpensePresented,
-                    isActive: isActive && selectedKind == .fixed
+                    isActive: isActive && selectedKind == .fixed,
+                    reviewViewModel: reviewViewModel
                 )
             }
         }
@@ -82,6 +89,9 @@ struct TransactionsListView: View {
 
     @ViewBuilder
     private func content(viewModel: TransactionsViewModel) -> some View {
+        let reviews = reviewViewModel?.reviews ?? []
+        let visibleTransactions = viewModel.visibleTransactions(reviews: reviews)
+
         List {
             Section {
                 LabeledContent("Total", value: viewModel.totalText)
@@ -90,16 +100,16 @@ struct TransactionsListView: View {
 
             if viewModel.transactions.isEmpty && viewModel.isLoading {
                 ProgressView()
-            } else if viewModel.transactions.isEmpty {
+            } else if visibleTransactions.isEmpty {
                 Text("No transactions yet.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(viewModel.transactions, id: \.id) { transaction in
-                    transactionRow(transaction, viewModel: viewModel)
+                ForEach(visibleTransactions, id: \.id) { transaction in
+                    transactionRow(transaction, viewModel: viewModel, reviews: reviews)
                 }
                 .onDelete { offsets in
                     for index in offsets {
-                        let transaction = viewModel.transactions[index]
+                        let transaction = visibleTransactions[index]
                         Task { await viewModel.delete(id: transaction.id) }
                     }
                 }
@@ -140,18 +150,43 @@ struct TransactionsListView: View {
                 }
             }
         }
+        .sheet(isPresented: Binding(
+            get: { markReviewTarget != nil },
+            set: { if !$0 { markReviewTarget = nil } }
+        )) {
+            if let markReviewTarget {
+                MarkForReviewSheet(
+                    transaction: markReviewTarget,
+                    budgetPeriodID: budgetPeriodID,
+                    budgetProfileID: budgetProfileID,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    authenticatedClient: authenticatedClient
+                ) {
+                    Task { await reviewViewModel?.load() }
+                }
+            }
+        }
     }
 
-    private func transactionRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
+    private func transactionRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
         let isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
+        let pendingMatchName = viewModel.pendingMatchName(for: transaction, reviews: reviews)
 
         return HStack {
             Button {
                 editingTransaction = transaction
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(transaction.name)
-                        .foregroundStyle(.primary)
+                    HStack(spacing: 4) {
+                        Text(transaction.name)
+                            .foregroundStyle(.primary)
+                        if let pendingMatchName {
+                            Text("(linked to \(pendingMatchName))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     HStack(spacing: 4) {
                         if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
                             Text(categoryName)
@@ -176,6 +211,14 @@ struct TransactionsListView: View {
                 localeIdentifier: localeIdentifier
             ))
             .foregroundStyle(isReceived ? .green : .red)
+
+            Button {
+                markReviewTarget = transaction
+            } label: {
+                Image(systemName: "flag")
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("flagForReview_\(transaction.name)")
 
             Button {
                 Task { await viewModel.toggleExcluded(transaction) }

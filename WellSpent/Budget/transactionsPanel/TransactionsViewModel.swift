@@ -75,6 +75,18 @@ final class TransactionsViewModel {
         }
     }
 
+    /// Excludes transactions whose review was confirmed — those are shown
+    /// instead as a linked sub-row under the matched Fixed transaction (see
+    /// `TransactionReviewMatching`).
+    func visibleTransactions(reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_Transaction] {
+        let confirmedIDs = TransactionReviewMatching.confirmedTransactionIDs(reviews)
+        return transactions.filter { !confirmedIDs.contains($0.id) }
+    }
+
+    func pendingMatchName(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> String? {
+        TransactionReviewMatching.pendingMatchName(forTransactionID: transaction.id, reviews: reviews)
+    }
+
     func categoryName(for categoryID: Int32) -> String? {
         guard categoryID != 0 else { return nil }
         return categories.first(where: { $0.id == categoryID })?.name

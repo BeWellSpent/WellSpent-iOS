@@ -11,6 +11,9 @@ struct FixedExpensesListView: View {
     /// `BudgetDetailView` and threaded through `TransactionsListView`.
     @Binding var isAddSheetPresented: Bool
     let isActive: Bool
+    /// See `TransactionsListView.reviewViewModel` — used here to render each
+    /// confirmed match as an expandable linked sub-row.
+    var reviewViewModel: TransactionReviewViewModel? = nil
 
     @State private var viewModel: FixedExpensesViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
@@ -61,7 +64,15 @@ struct FixedExpensesListView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(viewModel.transactions, id: \.id) { transaction in
-                    row(transaction, viewModel: viewModel)
+                    FixedExpenseRow(
+                        transaction: transaction,
+                        viewModel: viewModel,
+                        linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviewViewModel?.reviews ?? []),
+                        currencyCode: currencyCode,
+                        localeIdentifier: localeIdentifier,
+                        onEdit: { editingTransaction = transaction },
+                        onMarkPaid: { markingPaidTransaction = transaction }
+                    )
                 }
                 .onDelete { offsets in
                     for index in offsets {
@@ -115,59 +126,113 @@ struct FixedExpensesListView: View {
             }
         }
     }
+}
 
-    private func row(_ transaction: Wellspent_V1_Transaction, viewModel: FixedExpensesViewModel) -> some View {
-        HStack {
-            Button {
-                editingTransaction = transaction
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(transaction.name)
-                        .foregroundStyle(.primary)
-                    HStack(spacing: 4) {
-                        if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
-                            Text(categoryName)
+/// A Fixed transaction row that expands (only when it has confirmed review
+/// matches) to reveal the linked Variable transaction(s) underneath —
+/// mirrors web's `TxRow.tsx` expand/collapse behavior. Each linked review
+/// carries its own denormalized `transactionName`/`transactionAmount`, so no
+/// separate fetch of the (excluded) Variable transaction is needed.
+private struct FixedExpenseRow: View {
+    let transaction: Wellspent_V1_Transaction
+    let viewModel: FixedExpensesViewModel
+    let linkedReviews: [Wellspent_V1_TransactionReview]
+    let currencyCode: String
+    let localeIdentifier: String
+    let onEdit: () -> Void
+    let onMarkPaid: () -> Void
+
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                if !linkedReviews.isEmpty {
+                    Button {
+                        isExpanded.toggle()
+                    } label: {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
+                }
+
+                Button {
+                    onEdit()
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(transaction.name)
+                            .foregroundStyle(.primary)
+                        HStack(spacing: 4) {
+                            if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
+                                Text(categoryName)
+                            }
+                            if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
+                                Text("· \(methodName)")
+                            }
                         }
-                        if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
-                            Text("· \(methodName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
+
+                Spacer()
+
+                Text(MoneyFormatting.format(
+                    units: transaction.amount.units,
+                    nanos: transaction.amount.nanos,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                ))
+
+                Button {
+                    if transaction.isPaid {
+                        Task { await viewModel.unmark(transaction) }
+                    } else {
+                        onMarkPaid()
+                    }
+                } label: {
+                    Image(systemName: transaction.isPaid ? "checkmark.circle.fill" : "checkmark.circle")
+                        .foregroundStyle(transaction.isPaid ? .green : .secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(transaction.isPaid ? "unmarkPaid_\(transaction.name)" : "markPaid_\(transaction.name)")
+
+                Button {
+                    Task { await viewModel.toggleExcluded(transaction) }
+                } label: {
+                    Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("excludeFixedExpense_\(transaction.name)")
+            }
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(linkedReviews, id: \.id) { review in
+                        HStack {
+                            Text(review.transactionName)
+                                .font(.caption)
+                            Spacer()
+                            Text(MoneyFormatting.format(
+                                units: review.transactionAmount.units,
+                                nanos: review.transactionAmount.nanos,
+                                currencyCode: currencyCode,
+                                localeIdentifier: localeIdentifier
+                            ))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         }
                     }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 }
+                .padding(.leading, 20)
+                .padding(.top, 6)
+                .accessibilityIdentifier("linkedTransactions_\(transaction.name)")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
-
-            Spacer()
-
-            Text(MoneyFormatting.format(
-                units: transaction.amount.units,
-                nanos: transaction.amount.nanos,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier
-            ))
-
-            Button {
-                if transaction.isPaid {
-                    Task { await viewModel.unmark(transaction) }
-                } else {
-                    markingPaidTransaction = transaction
-                }
-            } label: {
-                Image(systemName: transaction.isPaid ? "checkmark.circle.fill" : "checkmark.circle")
-                    .foregroundStyle(transaction.isPaid ? .green : .secondary)
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier(transaction.isPaid ? "unmarkPaid_\(transaction.name)" : "markPaid_\(transaction.name)")
-
-            Button {
-                Task { await viewModel.toggleExcluded(transaction) }
-            } label: {
-                Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("excludeFixedExpense_\(transaction.name)")
         }
     }
 }

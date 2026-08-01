@@ -81,6 +81,12 @@ final class FixedExpensesViewModel {
         }
     }
 
+    /// Confirmed review matches for this Fixed transaction, rendered as
+    /// expandable linked sub-rows (see `TransactionReviewMatching`).
+    func linkedReviews(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_TransactionReview] {
+        TransactionReviewMatching.linkedReviews(forFixedTransactionID: transaction.id, reviews: reviews)
+    }
+
     func categoryName(for categoryID: Int32) -> String? {
         guard categoryID != 0 else { return nil }
         return categories.first(where: { $0.id == categoryID })?.name
