@@ -6,16 +6,21 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: SettingsViewModel
     @State private var isDeleteConfirmationPresented = false
+    private let authenticatedClient: ProtocolClient
     private let onUpdated: (Wellspent_V1_User) -> Void
 
     init(authenticatedClient: ProtocolClient, onUpdated: @escaping (Wellspent_V1_User) -> Void) {
         _viewModel = State(initialValue: SettingsViewModel(authenticatedClient: authenticatedClient))
+        self.authenticatedClient = authenticatedClient
         self.onUpdated = onUpdated
     }
 
     var body: some View {
         Form {
             profileSection
+            if viewModel.isUnitedStates {
+                plaidSection
+            }
             subscriptionSection
             passwordSection
             accountManagementSection
@@ -117,6 +122,13 @@ struct SettingsView: View {
             }
             .disabled(viewModel.isSavingProfile)
             .accessibilityIdentifier("saveProfileButton")
+        }
+    }
+
+    @ViewBuilder
+    private var plaidSection: some View {
+        Section("Connected Bank Accounts") {
+            PlaidSectionView(authenticatedClient: authenticatedClient)
         }
     }
 

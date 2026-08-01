@@ -14,6 +14,7 @@
 		CBA61846B7E41E51899E646F /* WellSpentAPI in Frameworks */ = {isa = PBXBuildFile; productRef = 8F689F5874F9421B2BAA3672 /* WellSpentAPI */; };
 		E3311AFD7208DDB82DEA56DC /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 0B50BD53B91943D90645B199 /* SwiftProtobuf */; };
 		E84171120A89BECCDEE3B7AC /* Connect in Frameworks */ = {isa = PBXBuildFile; productRef = 978FC591DDF86444D1D0BB60 /* Connect */; };
+		F7A2E030D1398193AFDE4A72 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 452BD6DDB4172E8A83C7B8E8 /* LinkKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,7 @@
 				E84171120A89BECCDEE3B7AC /* Connect in Frameworks */,
 				B31EA8050D6C2062F3086B23 /* SwiftProtobuf in Frameworks */,
 				5BDD6B86245671A9B3EB8778 /* GoogleMobileAds in Frameworks */,
+				F7A2E030D1398193AFDE4A72 /* LinkKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -135,6 +137,7 @@
 				978FC591DDF86444D1D0BB60 /* Connect */,
 				7BAA0D07F490001EB5036DCD /* SwiftProtobuf */,
 				890D0A1BBC1DEAB3D32AD2ED /* GoogleMobileAds */,
+				452BD6DDB4172E8A83C7B8E8 /* LinkKit */,
 			);
 			productName = WellSpent;
 			productReference = D5838C45301C13BE00DCE115 /* WellSpent.app */;
@@ -226,6 +229,7 @@
 				391B5D6CD4E37CCADC7CBBC5 /* XCRemoteSwiftPackageReference "connect-swift" */,
 				336A1CA2C3D025857E7D022D /* XCRemoteSwiftPackageReference "swift-protobuf" */,
 				8EEDF5053E7428FCCDDD6087 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+				705BCC8503F6A411D8B2E282 /* XCRemoteSwiftPackageReference "plaid-link-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D5838C46301C13BE00DCE115 /* Products */;
@@ -446,7 +450,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.11;
+				MARKETING_VERSION = 1.12;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bewellspent.WellSpent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -492,7 +496,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.11;
+				MARKETING_VERSION = 1.12;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bewellspent.WellSpent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -668,6 +672,14 @@
 				minimumVersion = 1.2.3;
 			};
 		};
+		705BCC8503F6A411D8B2E282 /* XCRemoteSwiftPackageReference "plaid-link-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/plaid/plaid-link-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
 		8EEDF5053E7428FCCDDD6087 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
@@ -688,6 +700,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 391B5D6CD4E37CCADC7CBBC5 /* XCRemoteSwiftPackageReference "connect-swift" */;
 			productName = Connect;
+		};
+		452BD6DDB4172E8A83C7B8E8 /* LinkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 705BCC8503F6A411D8B2E282 /* XCRemoteSwiftPackageReference "plaid-link-ios" */;
+			productName = LinkKit;
 		};
 		7BAA0D07F490001EB5036DCD /* SwiftProtobuf */ = {
 			isa = XCSwiftPackageProductDependency;
