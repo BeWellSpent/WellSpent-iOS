@@ -118,3 +118,10 @@ struct RegisterView: View {
         }
     }
 }
+
+#Preview {
+    NavigationStack {
+        RegisterView(publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+    }
+    .environment(SessionStore())
+}

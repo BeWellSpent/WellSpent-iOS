@@ -1,0 +1,182 @@
+import SwiftUI
+import WellSpentAPI
+
+struct SettingsView: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @State private var viewModel: SettingsViewModel
+    @State private var isDeleteConfirmationPresented = false
+    private let onUpdated: (Wellspent_V1_User) -> Void
+
+    init(authenticatedClient: ProtocolClient, onUpdated: @escaping (Wellspent_V1_User) -> Void) {
+        _viewModel = State(initialValue: SettingsViewModel(authenticatedClient: authenticatedClient))
+        self.onUpdated = onUpdated
+    }
+
+    var body: some View {
+        Form {
+            profileSection
+            passwordSection
+            accountManagementSection
+        }
+        .navigationTitle("Settings")
+        .task {
+            await viewModel.load()
+        }
+        .refreshable {
+            await viewModel.load()
+        }
+        .alert("Delete your account?", isPresented: $isDeleteConfirmationPresented) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Account", role: .destructive) {
+                Task {
+                    if await viewModel.deleteAccount() {
+                        session.endSession()
+                    }
+                }
+            }
+        } message: {
+            Text("This will immediately deactivate your account. You will be signed out and will not be able to log back in. Contact support within 30 days if you want to recover it.")
+        }
+    }
+
+    @ViewBuilder
+    private var profileSection: some View {
+        Section("Profile") {
+            TextField("First name", text: $viewModel.firstName)
+                .accessibilityIdentifier("settingsFirstNameField")
+            TextField("Last name", text: $viewModel.lastName)
+                .accessibilityIdentifier("settingsLastNameField")
+
+            LabeledContent("Email", value: viewModel.email)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("settingsEmailField")
+
+            Picker("Country", selection: $viewModel.countryCode) {
+                Text("Select a country").tag("")
+                ForEach(viewModel.countries, id: \.code) { country in
+                    Text(country.name).tag(country.code)
+                }
+            }
+            .accessibilityIdentifier("settingsCountryPicker")
+
+            if viewModel.isUnitedStates {
+                TextField("State (e.g. CA)", text: $viewModel.stateCode)
+                    .textInputAutocapitalization(.characters)
+                    .accessibilityIdentifier("settingsStateField")
+
+                Picker("Filing status", selection: $viewModel.filingStatus) {
+                    ForEach(FilingStatusLabel.selectable, id: \.self) { status in
+                        Text(FilingStatusLabel.text(for: status)).tag(status)
+                    }
+                }
+                .accessibilityIdentifier("settingsFilingStatusPicker")
+
+                Picker("Tax payment frequency", selection: $viewModel.taxPaymentFrequency) {
+                    ForEach(TaxPaymentFrequencyLabel.selectable, id: \.self) { frequency in
+                        Text(TaxPaymentFrequencyLabel.text(for: frequency)).tag(frequency)
+                    }
+                }
+                .accessibilityIdentifier("settingsTaxFrequencyPicker")
+            }
+
+            Picker("Language", selection: $viewModel.language) {
+                Text("English").tag("en")
+                Text("Español").tag("es")
+            }
+            .accessibilityIdentifier("settingsLanguagePicker")
+
+            Picker("Currency", selection: $viewModel.currency) {
+                Text("USD").tag("USD")
+                Text("ARS").tag("ARS")
+                Text("EUR").tag("EUR")
+            }
+            .accessibilityIdentifier("settingsCurrencyPicker")
+
+            if let profileErrorMessage = viewModel.profileErrorMessage {
+                Text(profileErrorMessage)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("settingsProfileErrorMessage")
+            }
+
+            Button {
+                Task {
+                    if let user = await viewModel.saveProfile() {
+                        onUpdated(user)
+                    }
+                }
+            } label: {
+                HStack {
+                    Text("Save changes")
+                    if viewModel.isSavingProfile {
+                        Spacer()
+                        ProgressView()
+                    }
+                }
+            }
+            .disabled(viewModel.isSavingProfile)
+            .accessibilityIdentifier("saveProfileButton")
+        }
+    }
+
+    @ViewBuilder
+    private var passwordSection: some View {
+        Section("Change Password") {
+            SecureField("Current password", text: $viewModel.currentPassword)
+                .textContentType(.password)
+                .accessibilityIdentifier("currentPasswordField")
+
+            SecureField("New password", text: $viewModel.newPassword)
+                .textContentType(.newPassword)
+                .accessibilityIdentifier("newPasswordField")
+
+            if let passwordHint = RegisterViewModel.passwordError(for: viewModel.newPassword), !viewModel.newPassword.isEmpty {
+                Text(passwordHint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if viewModel.passwordChangeSucceeded {
+                Text("Password updated.")
+                    .foregroundStyle(.green)
+                    .accessibilityIdentifier("passwordChangeSuccessMessage")
+            }
+            if let passwordErrorMessage = viewModel.passwordErrorMessage {
+                Text(passwordErrorMessage)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("passwordChangeErrorMessage")
+            }
+
+            Button {
+                Task { await viewModel.changePassword() }
+            } label: {
+                HStack {
+                    Text("Update password")
+                    if viewModel.isChangingPassword {
+                        Spacer()
+                        ProgressView()
+                    }
+                }
+            }
+            .disabled(!viewModel.canSubmitPassword)
+            .accessibilityIdentifier("changePasswordButton")
+        }
+    }
+
+    @ViewBuilder
+    private var accountManagementSection: some View {
+        Section("Account Management") {
+            Button("Delete Account", role: .destructive) {
+                isDeleteConfirmationPresented = true
+            }
+            .accessibilityIdentifier("deleteAccountButton")
+        }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        SettingsView(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")) { _ in }
+    }
+    .environment(SessionStore())
+}
