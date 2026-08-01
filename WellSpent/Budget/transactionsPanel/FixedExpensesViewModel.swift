@@ -15,6 +15,7 @@ final class FixedExpensesViewModel {
     private(set) var fixedExpenses: [Wellspent_V1_FixedExpense] = []
     private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var paymentMethods: [Wellspent_V1_PaymentMethod] = []
+    private(set) var people: [Wellspent_V1_BudgetPerson] = []
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -62,6 +63,7 @@ final class FixedExpensesViewModel {
         async let fixedExpensesResponse = client.listFixedExpenses(request: .with { $0.budgetProfileID = budgetProfileID })
         async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
         async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
 
         switch await transactionsResponse.result {
         case .success(let message):
@@ -79,6 +81,15 @@ final class FixedExpensesViewModel {
         if case .success(let message) = await paymentMethodsResponse.result {
             paymentMethods = message.methods
         }
+        if case .success(let message) = await peopleResponse.result {
+            people = message.people
+        }
+    }
+
+    /// Confirmed review matches for this Fixed transaction, rendered as
+    /// expandable linked sub-rows (see `TransactionReviewMatching`).
+    func linkedReviews(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_TransactionReview] {
+        TransactionReviewMatching.linkedReviews(forFixedTransactionID: transaction.id, reviews: reviews)
     }
 
     func categoryName(for categoryID: Int32) -> String? {
@@ -90,6 +101,14 @@ final class FixedExpensesViewModel {
         guard !paymentMethodID.isEmpty else { return nil }
         guard let method = paymentMethods.first(where: { $0.id == paymentMethodID }) else { return nil }
         return method.alias.isEmpty ? method.name : method.alias
+    }
+
+    /// Resolves a transaction's owner via its payment method's attributed
+    /// person — mirrors web's `resolveOwnerName`. Used by search, not display.
+    func ownerName(for paymentMethodID: String) -> String? {
+        guard !paymentMethodID.isEmpty else { return nil }
+        guard let method = paymentMethods.first(where: { $0.id == paymentMethodID }), method.budgetPersonID != 0 else { return nil }
+        return people.first(where: { $0.id == method.budgetPersonID })?.userName
     }
 
     /// The template a spawned transaction row came from, for the Edit flow.
@@ -121,7 +140,7 @@ final class FixedExpensesViewModel {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
             $0.paidAmount = paidAmount
-            $0.paidAt = Google_Protobuf_Timestamp(date: paidAt)
+            $0.paidAt = Google_Protobuf_Timestamp(dateOnly: paidAt)
         }
         let response = await client.markTransactionAsPaid(request: request)
 

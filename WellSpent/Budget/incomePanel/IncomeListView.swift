@@ -7,6 +7,7 @@ struct IncomeListView: View {
     let authenticatedClient: ProtocolClient
     let currencyCode: String
     let localeIdentifier: String
+    let canEdit: Bool
 
     @State private var viewModel: IncomeViewModel?
     @State private var isAddSheetPresented = false
@@ -22,13 +23,16 @@ struct IncomeListView: View {
         }
         .navigationTitle("Income")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isAddSheetPresented = true
-                } label: {
-                    Image(systemName: "plus")
+            if canEdit {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddSheetPresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .disabled(viewModel?.isAtLimit ?? false)
+                    .accessibilityIdentifier("addIncomeSourceButton")
                 }
-                .accessibilityIdentifier("addIncomeSourceButton")
             }
         }
         .task {
@@ -45,6 +49,15 @@ struct IncomeListView: View {
     @ViewBuilder
     private func content(viewModel: IncomeViewModel) -> some View {
         List {
+            if viewModel.isAtLimit {
+                Section {
+                    Text("Free plan: income sources are limited to 2. Upgrade to Pro for unlimited sources.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("incomeLimitMessage")
+                }
+            }
+
             if viewModel.sources.isEmpty && viewModel.isLoading {
                 ProgressView()
             } else if viewModel.sources.isEmpty {
@@ -54,12 +67,12 @@ struct IncomeListView: View {
                 ForEach(viewModel.sources, id: \.id) { source in
                     sourceRow(source, viewModel: viewModel)
                 }
-                .onDelete { offsets in
+                .onDelete(perform: canEdit ? { offsets in
                     for index in offsets {
                         let source = viewModel.sources[index]
                         Task { await viewModel.delete(id: source.id) }
                     }
-                }
+                } : nil)
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -100,30 +113,37 @@ struct IncomeListView: View {
     }
 
     private func sourceRow(_ source: Wellspent_V1_IncomeSource, viewModel: IncomeViewModel) -> some View {
-        Button {
-            editingSource = source
-        } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(source.name)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                HStack(spacing: 4) {
-                    Text(MoneyFormatting.format(
-                        units: source.defaultAmount.units,
-                        nanos: source.defaultAmount.nanos,
-                        currencyCode: currencyCode,
-                        localeIdentifier: localeIdentifier
-                    ))
-                    Text("· \(RecurringTypeLabel.text(for: source.paymentFrequency))")
-                    if let personName = viewModel.personName(for: source.budgetPersonID) {
-                        Text("· \(personName)")
-                    }
+        let sourceContent = VStack(alignment: .leading, spacing: 2) {
+            Text(source.name)
+                .font(.headline)
+                .foregroundStyle(.primary)
+            HStack(spacing: 4) {
+                Text(MoneyFormatting.format(
+                    units: source.defaultAmount.units,
+                    nanos: source.defaultAmount.nanos,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                ))
+                Text("· \(RecurringTypeLabel.text(for: source.paymentFrequency))")
+                if let personName = viewModel.personName(for: source.budgetPersonID) {
+                    Text("· \(personName)")
                 }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        return Group {
+            if canEdit {
+                Button {
+                    editingSource = source
+                } label: {
+                    sourceContent
+                }
+                .buttonStyle(.plain)
+            } else {
+                sourceContent
             }
         }
-        .buttonStyle(.plain)
         .accessibilityIdentifier("incomeRow_\(source.name)")
     }
 }
@@ -135,7 +155,8 @@ struct IncomeListView: View {
             budgetCountryCode: "US",
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
-            localeIdentifier: "en"
+            localeIdentifier: "en",
+            canEdit: true
         )
     }
 }

@@ -79,8 +79,7 @@ struct AddEditIncomeView: View {
             }
             .accessibilityIdentifier("incomeTypePicker")
 
-            TextField("Amount", text: $viewModel.amountText)
-                .keyboardType(.decimalPad)
+            AmountTextField(text: $viewModel.amountText)
                 .accessibilityIdentifier("incomeAmountField")
 
             Picker("Frequency", selection: $viewModel.paymentFrequency) {

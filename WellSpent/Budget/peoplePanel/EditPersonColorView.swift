@@ -6,27 +6,33 @@ struct EditPersonColorView: View {
     let person: Wellspent_V1_BudgetPerson
     let onConfirm: (String) -> Void
 
+    @State private var color: String
+
+    init(person: Wellspent_V1_BudgetPerson, onConfirm: @escaping (String) -> Void) {
+        self.person = person
+        self.onConfirm = onConfirm
+        _color = State(initialValue: person.color)
+    }
+
     var body: some View {
         NavigationStack {
-            List(PresetColors.all, id: \.self) { hex in
-                Button {
-                    onConfirm(hex)
-                    dismiss()
-                } label: {
-                    HStack {
-                        Text(hex)
-                        Spacer()
-                        if person.color == hex {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-                .accessibilityIdentifier("colorOption_\(hex)")
+            VStack {
+                PresetColorPickerView(hex: $color)
+                    .padding()
+                Spacer()
             }
             .navigationTitle("Choose Color")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        onConfirm(color)
+                        dismiss()
+                    }
+                    .accessibilityIdentifier("confirmPersonColor")
                 }
             }
         }

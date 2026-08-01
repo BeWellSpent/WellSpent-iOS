@@ -13,12 +13,15 @@ final class AcceptInviteViewModel {
     let token: String
 
     private let publicClient: Wellspent_V1_InviteServiceClient
-    private let authenticatedClient: Wellspent_V1_InviteServiceClient
+    /// `nil` when the invite link was opened before the user is
+    /// authenticated — `load()` (the public preview) still works either way;
+    /// `accept()` requires this to be set.
+    private let authenticatedClient: Wellspent_V1_InviteServiceClient?
 
-    init(token: String, publicClient: ProtocolClient, authenticatedClient: ProtocolClient) {
+    init(token: String, publicClient: ProtocolClient, authenticatedClient: ProtocolClient?) {
         self.token = token
         self.publicClient = Wellspent_V1_InviteServiceClient(client: publicClient)
-        self.authenticatedClient = Wellspent_V1_InviteServiceClient(client: authenticatedClient)
+        self.authenticatedClient = authenticatedClient.map { Wellspent_V1_InviteServiceClient(client: $0) }
     }
 
     func load() async {
@@ -36,6 +39,11 @@ final class AcceptInviteViewModel {
     }
 
     func accept() async {
+        // Defensive only — the UI replaces this action with Sign In/Register
+        // buttons whenever `authenticatedClient` is nil, so this guard
+        // shouldn't be reachable in practice.
+        guard let authenticatedClient else { return }
+
         isAccepting = true
         errorMessage = nil
         defer { isAccepting = false }

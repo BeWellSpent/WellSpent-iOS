@@ -18,6 +18,7 @@ final class SettingsViewModel {
     var newPassword = ""
 
     private(set) var email = ""
+    private(set) var plan: Wellspent_V1_AccountPlan = .unspecified
     private(set) var countries: [Wellspent_V1_Country] = []
     private(set) var isLoading = false
     private(set) var isSavingProfile = false
@@ -58,6 +59,7 @@ final class SettingsViewModel {
     /// step, without needing a live `GetMe` network call.
     func apply(_ user: Wellspent_V1_User) {
         email = user.email
+        plan = user.plan
         firstName = user.firstName
         lastName = user.lastName
         countryCode = user.countryCode

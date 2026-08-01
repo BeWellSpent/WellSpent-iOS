@@ -5,14 +5,22 @@
 //  Created by Mauricio Figueroa on 7/30/26.
 //
 
+import GoogleMobileAds
 import SwiftUI
 
 @main
 struct WellSpentApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var session: SessionStore
+    @AppStorage("themeMode") private var themeMode: ThemePreference = .system
 
     init() {
+        // Doesn't show any UI or require ATT permission itself — safe to
+        // start unconditionally at cold launch, before login. Personalized
+        // ads still require the separate ATT prompt (`TrackingPermission`),
+        // requested after login like the push-notification permission.
+        GADMobileAds.sharedInstance().start(completionHandler: nil)
+
         let tokenStore = KeychainTokenStore()
         // UI tests launch with this argument so each test starts from a
         // known logged-out state instead of inheriting whatever the
@@ -39,6 +47,7 @@ struct WellSpentApp: App {
         WindowGroup {
             RootView()
                 .environment(session)
+                .preferredColorScheme(themeMode.colorScheme)
         }
     }
 }

@@ -4,11 +4,14 @@ import WellSpentAPI
 struct CategoriesListView: View {
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
+    let canEdit: Bool
 
     @State private var viewModel: CategoriesViewModel?
     @State private var isAddSheetPresented = false
     @State private var editingCategory: Wellspent_V1_Category?
     @State private var deletingCategory: Wellspent_V1_Category?
+    @State private var editingSystemCategoryColor: Wellspent_V1_Category?
+    @State private var isRandomizing = false
 
     var body: some View {
         Group {
@@ -20,13 +23,15 @@ struct CategoriesListView: View {
         }
         .navigationTitle("Categories")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isAddSheetPresented = true
-                } label: {
-                    Image(systemName: "plus")
+            if canEdit {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddSheetPresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("addCategoryButton")
                 }
-                .accessibilityIdentifier("addCategoryButton")
             }
         }
         .task {
@@ -46,9 +51,31 @@ struct CategoriesListView: View {
             if viewModel.categories.isEmpty && viewModel.isLoading {
                 ProgressView()
             } else {
-                Section("System") {
+                Section {
                     ForEach(viewModel.systemCategories, id: \.id) { category in
-                        Text(category.name)
+                        systemCategoryRow(category, viewModel: viewModel)
+                    }
+                } header: {
+                    HStack {
+                        Text("System")
+                        Spacer()
+                        if canEdit {
+                            Button {
+                                Task {
+                                    isRandomizing = true
+                                    await viewModel.randomizeSystemColors()
+                                    isRandomizing = false
+                                }
+                            } label: {
+                                if isRandomizing {
+                                    ProgressView()
+                                } else {
+                                    Image(systemName: "shuffle")
+                                }
+                            }
+                            .disabled(isRandomizing || viewModel.systemCategories.isEmpty)
+                            .accessibilityIdentifier("randomizeSystemColorsButton")
+                        }
                     }
                 }
 
@@ -98,27 +125,57 @@ struct CategoriesListView: View {
                 }
             }
         }
+        .sheet(isPresented: Binding(
+            get: { editingSystemCategoryColor != nil },
+            set: { if !$0 { editingSystemCategoryColor = nil } }
+        )) {
+            if let editingSystemCategoryColor {
+                SystemCategoryColorSheet(category: editingSystemCategoryColor) { color in
+                    Task { await viewModel.updateColor(editingSystemCategoryColor, color: color) }
+                }
+            }
+        }
+    }
+
+    private func systemCategoryRow(_ category: Wellspent_V1_Category, viewModel: CategoriesViewModel) -> some View {
+        HStack {
+            ColorDotView(hex: category.color)
+            Text(category.name)
+            Spacer()
+            if canEdit {
+                Button {
+                    editingSystemCategoryColor = category
+                } label: {
+                    Image(systemName: "paintpalette")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("editSystemCategoryColor_\(category.name)")
+            }
+        }
     }
 
     private func categoryRow(_ category: Wellspent_V1_Category, viewModel: CategoriesViewModel) -> some View {
         HStack {
+            ColorDotView(hex: category.color)
             Text(category.name)
             Spacer()
-            Button {
-                editingCategory = category
-            } label: {
-                Image(systemName: "pencil")
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("editCategory_\(category.name)")
+            if canEdit {
+                Button {
+                    editingCategory = category
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("editCategory_\(category.name)")
 
-            Button {
-                deletingCategory = category
-            } label: {
-                Image(systemName: "trash")
+                Button {
+                    deletingCategory = category
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("deleteCategory_\(category.name)")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("deleteCategory_\(category.name)")
         }
     }
 }
@@ -127,7 +184,8 @@ struct CategoriesListView: View {
     NavigationStack {
         CategoriesListView(
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            canEdit: true
         )
     }
 }

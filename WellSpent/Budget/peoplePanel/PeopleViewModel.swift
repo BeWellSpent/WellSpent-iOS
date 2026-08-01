@@ -10,21 +10,37 @@ final class PeopleViewModel {
     private(set) var isLoading = false
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
     private(set) var incomeSources: [Wellspent_V1_IncomeSource] = []
+    private(set) var isFree = false
     private(set) var errorMessage: String?
 
     let budgetProfileID: String
     let budgetOwnerUserID: String
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let userClient: Wellspent_V1_UserServiceClient
 
     var canAddPerson: Bool {
-        !newPersonName.trimmingCharacters(in: .whitespaces).isEmpty
+        !newPersonName.trimmingCharacters(in: .whitespaces).isEmpty && !isAtLimit
+    }
+
+    /// Free tier caps active people at 2 (`docs/features/tiered-subscriptions.md`)
+    /// — client-side UX polish only, the backend is the real enforcement
+    /// boundary (same posture as `AlertsViewModel.isAtLimit`).
+    var isAtLimit: Bool {
+        isFree && people.count >= 2
     }
 
     init(budgetProfileID: String, budgetOwnerUserID: String, authenticatedClient: ProtocolClient) {
         self.budgetProfileID = budgetProfileID
         self.budgetOwnerUserID = budgetOwnerUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+    }
+
+    /// Not private, so `isAtLimit` is testable without a live `GetMe` call.
+    func setStateForTesting(people: [Wellspent_V1_BudgetPerson], isFree: Bool) {
+        self.people = people
+        self.isFree = isFree
     }
 
     func load() async {
@@ -34,6 +50,7 @@ final class PeopleViewModel {
 
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
         async let incomeResponse = client.listIncomeSources(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
 
         switch await peopleResponse.result {
         case .success(let message):
@@ -44,6 +61,10 @@ final class PeopleViewModel {
 
         if case .success(let message) = await incomeResponse.result {
             incomeSources = message.sources
+        }
+
+        if case .success(let message) = await meResponse.result {
+            isFree = message.user.plan == .free
         }
     }
 

@@ -63,7 +63,7 @@ final class AddEditTransactionViewModel {
             categoryID = transaction.categoryID
             paymentMethodID = transaction.paymentMethodID
             recurring = transaction.transactionFrequencyID != 1
-            date = transaction.date.date
+            date = transaction.date.dateOnly
         }
     }
 
@@ -79,7 +79,7 @@ final class AddEditTransactionViewModel {
             $0.currency = currencyCode
         }
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        let timestamp = Google_Protobuf_Timestamp(date: date)
+        let timestamp = Google_Protobuf_Timestamp(dateOnly: date)
 
         switch mode {
         case .add:

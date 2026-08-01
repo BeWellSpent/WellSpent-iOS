@@ -42,7 +42,8 @@ struct BudgetManageView: View {
                         PeopleListView(
                             budgetProfileID: viewModel.profile.id,
                             budgetOwnerUserID: viewModel.profile.userID,
-                            authenticatedClient: authenticatedClient
+                            authenticatedClient: authenticatedClient,
+                            canManageUsers: viewModel.canManageUsers
                         )
                     }
                     .accessibilityIdentifier("peopleNavLink")
@@ -53,7 +54,8 @@ struct BudgetManageView: View {
                             budgetCountryCode: viewModel.profile.countryCode,
                             authenticatedClient: authenticatedClient,
                             currencyCode: currencyCode,
-                            localeIdentifier: localeIdentifier
+                            localeIdentifier: localeIdentifier,
+                            canEdit: viewModel.canEdit
                         )
                     }
                     .accessibilityIdentifier("incomeNavLink")
@@ -61,10 +63,11 @@ struct BudgetManageView: View {
                     NavigationLink("Savings") {
                         SavingsListView(
                             budgetProfileID: viewModel.profile.id,
-                            periodStartDate: viewModel.currentPeriod?.startDate.date,
+                            periodStartDate: viewModel.currentPeriod?.startDate.dateOnly,
                             authenticatedClient: authenticatedClient,
                             currencyCode: currencyCode,
-                            localeIdentifier: localeIdentifier
+                            localeIdentifier: localeIdentifier,
+                            canEdit: viewModel.canEdit
                         )
                     }
                     .accessibilityIdentifier("savingsNavLink")
@@ -72,7 +75,8 @@ struct BudgetManageView: View {
                     NavigationLink("Categories") {
                         CategoriesListView(
                             budgetProfileID: viewModel.profile.id,
-                            authenticatedClient: authenticatedClient
+                            authenticatedClient: authenticatedClient,
+                            canEdit: viewModel.canEdit
                         )
                     }
                     .accessibilityIdentifier("categoriesNavLink")
@@ -80,19 +84,22 @@ struct BudgetManageView: View {
                     NavigationLink("Payment Methods") {
                         PaymentMethodsListView(
                             budgetProfileID: viewModel.profile.id,
-                            authenticatedClient: authenticatedClient
+                            authenticatedClient: authenticatedClient,
+                            canEdit: viewModel.canEdit
                         )
                     }
                     .accessibilityIdentifier("paymentMethodsNavLink")
 
-                    NavigationLink("Invitations") {
-                        InvitesListView(
-                            budgetProfileID: viewModel.profile.id,
-                            budgetOwnerUserID: viewModel.profile.userID,
-                            authenticatedClient: authenticatedClient
-                        )
+                    if viewModel.canManageUsers {
+                        NavigationLink("Invitations") {
+                            InvitesListView(
+                                budgetProfileID: viewModel.profile.id,
+                                budgetOwnerUserID: viewModel.profile.userID,
+                                authenticatedClient: authenticatedClient
+                            )
+                        }
+                        .accessibilityIdentifier("invitationsNavLink")
                     }
-                    .accessibilityIdentifier("invitationsNavLink")
 
                     NavigationLink("Alert Settings") {
                         AlertsListView(
@@ -101,6 +108,15 @@ struct BudgetManageView: View {
                         )
                     }
                     .accessibilityIdentifier("alertSettingsNavLink")
+                }
+            }
+
+            if let authenticatedClient {
+                Section("Reports") {
+                    NavigationLink("Reports") {
+                        ReportsPlaceholderView(authenticatedClient: authenticatedClient)
+                    }
+                    .accessibilityIdentifier("reportsNavLink")
                 }
             }
 
@@ -131,8 +147,8 @@ struct BudgetManageView: View {
     }
 
     private func periodRangeText(_ period: Wellspent_V1_BudgetPeriod) -> String {
-        let start = period.startDate.date.formatted(date: .abbreviated, time: .omitted)
-        let end = period.endDate.date.formatted(date: .abbreviated, time: .omitted)
+        let start = period.startDate.dateOnly.formatted(date: .abbreviated, time: .omitted)
+        let end = period.endDate.dateOnly.formatted(date: .abbreviated, time: .omitted)
         return "\(start) – \(end)"
     }
 }

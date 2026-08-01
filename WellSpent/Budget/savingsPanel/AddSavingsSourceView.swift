@@ -32,12 +32,11 @@ struct AddSavingsSourceView: View {
                     TextField("Name", text: $viewModel.name)
                         .accessibilityIdentifier("addSavingsNameField")
 
-                    TextField("Amount", text: $viewModel.amountText)
-                        .keyboardType(.decimalPad)
+                    AmountTextField(text: $viewModel.amountText)
                         .accessibilityIdentifier("addSavingsAmountField")
 
                     Picker("Payment Method", selection: $viewModel.paymentMethodID) {
-                        Text("Select a payment method").tag("")
+                        Text("None").tag("")
                         ForEach(paymentMethods, id: \.id) { method in
                             Text(method.alias.isEmpty ? method.name : method.alias).tag(method.id)
                         }

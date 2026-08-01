@@ -22,7 +22,7 @@ struct MarkAsPaidView: View {
             units: transaction.plannedAmount.units,
             nanos: transaction.plannedAmount.nanos
         ))
-        _paidDate = State(initialValue: transaction.hasDate ? transaction.date.date : Date())
+        _paidDate = State(initialValue: transaction.hasDate ? transaction.date.dateOnly : Date())
     }
 
     private var canConfirm: Bool {
@@ -32,8 +32,7 @@ struct MarkAsPaidView: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Amount", text: $amountText)
-                    .keyboardType(.decimalPad)
+                AmountTextField(text: $amountText)
                     .accessibilityIdentifier("markAsPaidAmountField")
 
                 DatePicker("Paid date", selection: $paidDate, displayedComponents: .date)

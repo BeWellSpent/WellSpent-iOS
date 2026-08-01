@@ -23,6 +23,7 @@ import WellSpentAPI
 struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(SessionStore.self) private var session
     private let authenticatedClient: ProtocolClient?
     private let currencyCode: String
     private let localeIdentifier: String
@@ -30,11 +31,14 @@ struct BudgetDetailView: View {
     private let onDeleted: () -> Void
 
     @State private var viewModel: BudgetDetailViewModel?
-    @State private var selectedSection: BudgetSection = .manage
+    @State private var selectedSection: BudgetSection = .plan
     @State private var notificationViewModel: NotificationBellViewModel?
+    @State private var reviewViewModel: TransactionReviewViewModel?
 
-    @State private var planSelectedKind: ExpensePlanView.PlanKind = .plan
+    @State private var planSelectedKind: ExpensePlanView.PlanKind = .overview
     @State private var transactionsSelectedKind: TransactionsListView.TransactionKind = .variable
+    @State private var transactionsSearchQuery = ""
+    @State private var transactionsFilter: TransactionFilterOption = .none
     @State private var isAddCategoryPresented = false
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
@@ -58,6 +62,20 @@ struct BudgetDetailView: View {
     }
 
     var body: some View {
+        if selectedSection == .transactions {
+            content.searchable(text: $transactionsSearchQuery, prompt: "Search by name, category, or owner")
+        } else {
+            content
+        }
+    }
+
+    /// Split out of `body` so `.searchable` can be attached conditionally
+    /// (only while the Transactions tab is active) without duplicating the
+    /// rest of this screen's chrome — this is the same outer level the
+    /// `.toolbar`/`.navigationTitle` below already reliably render from, per
+    /// the nested-NavigationStack chrome-bug fix (see the type-level doc
+    /// comment), so attaching `.searchable` here carries no new risk.
+    private var content: some View {
         Group {
             if let viewModel {
                 if horizontalSizeClass == .regular {
@@ -72,12 +90,20 @@ struct BudgetDetailView: View {
         .navigationTitle(currentTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
+        .onChange(of: transactionsSelectedKind) { _, _ in
+            // Switching Variable <-> Fixed resets the filter rather than
+            // silently carrying over an option the other tab doesn't offer.
+            transactionsFilter = .none
+        }
         .task {
             // Hoisted up from BudgetManageView so the Transactions tab has
             // `currentPeriod.id` (needed for `budget_period_id`) available
             // regardless of which tab is initially selected, not only once
             // the user happens to open Manage.
             await viewModel?.loadPeriod()
+        }
+        .task {
+            await viewModel?.loadRole(currentUserID: session.userID)
         }
         .task {
             // Created once and polled for the lifetime of this screen (not
@@ -91,6 +117,21 @@ struct BudgetDetailView: View {
                 )
             }
             await notificationViewModel?.pollUnreadCount()
+        }
+        .task {
+            // Created once here (not inside `TransactionReviewListView`) so
+            // the pending count backs the Review tab's badge — same reasoning
+            // as `notificationViewModel`. Polled (not a one-shot load) so the
+            // badge — visible from every tab — updates without the user
+            // having to enter the Review tab first.
+            guard let authenticatedClient, let viewModel else { return }
+            if reviewViewModel == nil {
+                reviewViewModel = TransactionReviewViewModel(
+                    budgetProfileID: viewModel.profile.id,
+                    authenticatedClient: authenticatedClient
+                )
+            }
+            await reviewViewModel?.pollPendingCount()
         }
     }
 
@@ -119,6 +160,13 @@ struct BudgetDetailView: View {
             .tag(BudgetSection.transactions)
 
             NavigationStack {
+                reviewContent(viewModel: viewModel)
+            }
+            .tabItem { Label(BudgetSection.review.title, systemImage: BudgetSection.review.systemImage) }
+            .tag(BudgetSection.review)
+            .badge(reviewViewModel?.pendingReviews.count ?? 0)
+
+            NavigationStack {
                 manageContent(viewModel: viewModel)
             }
             .tabItem { Label(BudgetSection.manage.title, systemImage: BudgetSection.manage.systemImage) }
@@ -133,6 +181,7 @@ struct BudgetDetailView: View {
         switch selectedSection {
         case .plan: "Expense Plan"
         case .transactions: "Transactions"
+        case .review: "Review"
         case .manage: viewModel?.profile.name ?? ""
         }
     }
@@ -142,9 +191,11 @@ struct BudgetDetailView: View {
     /// to declare in its own (non-rendering) `.toolbar`.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        let canEdit = viewModel?.canEdit ?? true
+        let canManageUsers = viewModel?.canManageUsers ?? true
         switch selectedSection {
         case .plan:
-            if planSelectedKind == .plan {
+            if canEdit && planSelectedKind == .plan {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddCategoryPresented = true
@@ -155,7 +206,7 @@ struct BudgetDetailView: View {
                 }
             }
         case .transactions:
-            if transactionsSelectedKind == .variable {
+            if canEdit && transactionsSelectedKind == .variable {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddTransactionPresented = true
@@ -164,7 +215,7 @@ struct BudgetDetailView: View {
                     }
                     .accessibilityIdentifier("addTransactionButton")
                 }
-            } else {
+            } else if canEdit {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddFixedExpensePresented = true
@@ -174,15 +225,32 @@ struct BudgetDetailView: View {
                     .accessibilityIdentifier("addFixedExpenseButton")
                 }
             }
-        case .manage:
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Edit Budget") { isEditBudgetPresented = true }
-                    Button("Delete Budget", role: .destructive) { isDeleteBudgetConfirmationPresented = true }
+                    Button(TransactionFilterOption.none.label) { transactionsFilter = .none }
+                    if transactionsSelectedKind == .variable {
+                        Button(TransactionFilterOption.spentOnly.label) { transactionsFilter = .spentOnly }
+                        Button(TransactionFilterOption.exceededOnly.label) { transactionsFilter = .exceededOnly }
+                    }
+                    Button(TransactionFilterOption.excludedOnly.label) { transactionsFilter = .excludedOnly }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: transactionsFilter == .none ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
                 }
-                .accessibilityIdentifier("budgetDetailMenu")
+                .accessibilityIdentifier("transactionsFilterMenu")
+            }
+        case .review:
+            ToolbarItemGroup {}
+        case .manage:
+            if canManageUsers {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button("Edit Budget") { isEditBudgetPresented = true }
+                        Button("Delete Budget", role: .destructive) { isDeleteBudgetConfirmationPresented = true }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityIdentifier("budgetDetailMenu")
+                }
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -218,6 +286,10 @@ struct BudgetDetailView: View {
                 NavigationStack {
                     transactionsContent(viewModel: viewModel)
                 }
+            case .review:
+                NavigationStack {
+                    reviewContent(viewModel: viewModel)
+                }
             case .manage:
                 NavigationStack {
                     manageContent(viewModel: viewModel)
@@ -237,7 +309,8 @@ struct BudgetDetailView: View {
                 localeIdentifier: localeIdentifier,
                 selectedKind: $planSelectedKind,
                 isAddCategoryPresented: $isAddCategoryPresented,
-                isActive: selectedSection == .plan
+                isActive: selectedSection == .plan,
+                canEdit: viewModel.canEdit
             )
         } else {
             ProgressView()
@@ -256,11 +329,25 @@ struct BudgetDetailView: View {
                 selectedKind: $transactionsSelectedKind,
                 isAddTransactionPresented: $isAddTransactionPresented,
                 isAddFixedExpensePresented: $isAddFixedExpensePresented,
-                isActive: selectedSection == .transactions
+                isActive: selectedSection == .transactions,
+                reviewViewModel: reviewViewModel,
+                canEdit: viewModel.canEdit,
+                searchQuery: transactionsSearchQuery,
+                filter: transactionsFilter
             )
         } else {
             ProgressView()
         }
+    }
+
+    private func reviewContent(viewModel: BudgetDetailViewModel) -> some View {
+        TransactionReviewListView(
+            viewModel: reviewViewModel,
+            currencyCode: currencyCode,
+            localeIdentifier: localeIdentifier,
+            isActive: selectedSection == .review,
+            canEdit: viewModel.canEdit
+        )
     }
 
     private func manageContent(viewModel: BudgetDetailViewModel) -> some View {
@@ -293,4 +380,5 @@ struct BudgetDetailView: View {
             onDeleted: {}
         )
     }
+    .environment(SessionStore())
 }

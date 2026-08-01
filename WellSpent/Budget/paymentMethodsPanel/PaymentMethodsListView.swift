@@ -4,6 +4,7 @@ import WellSpentAPI
 struct PaymentMethodsListView: View {
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
+    let canEdit: Bool
 
     @State private var viewModel: PaymentMethodsViewModel?
     @State private var isAddSheetPresented = false
@@ -20,13 +21,15 @@ struct PaymentMethodsListView: View {
         }
         .navigationTitle("Payment Methods")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isAddSheetPresented = true
-                } label: {
-                    Image(systemName: "plus")
+            if canEdit {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddSheetPresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("addPaymentMethodButton")
                 }
-                .accessibilityIdentifier("addPaymentMethodButton")
             }
         }
         .task {
@@ -93,6 +96,8 @@ struct PaymentMethodsListView: View {
 
     private func methodRow(_ method: Wellspent_V1_PaymentMethod, viewModel: PaymentMethodsViewModel) -> some View {
         HStack {
+            ColorDotView(hex: method.color)
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(method.alias.isEmpty ? method.name : method.alias)
                 HStack(spacing: 4) {
@@ -107,22 +112,24 @@ struct PaymentMethodsListView: View {
 
             Spacer()
 
-            Button {
-                editingMethod = method
-            } label: {
-                Image(systemName: "pencil")
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("editPaymentMethod_\(method.name)")
+            if canEdit {
+                Button {
+                    editingMethod = method
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("editPaymentMethod_\(method.name)")
 
-            Button {
-                deletingMethod = method
-            } label: {
-                Image(systemName: "trash")
+                Button {
+                    deletingMethod = method
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.plain)
+                .disabled(!viewModel.canDelete)
+                .accessibilityIdentifier("deletePaymentMethod_\(method.name)")
             }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canDelete)
-            .accessibilityIdentifier("deletePaymentMethod_\(method.name)")
         }
     }
 }
@@ -131,7 +138,8 @@ struct PaymentMethodsListView: View {
     NavigationStack {
         PaymentMethodsListView(
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            canEdit: true
         )
     }
 }

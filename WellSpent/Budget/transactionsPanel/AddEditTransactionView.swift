@@ -80,8 +80,7 @@ struct AddEditTransactionView: View {
             .pickerStyle(.segmented)
             .accessibilityIdentifier("transactionFlowPicker")
 
-            TextField("Amount", text: $viewModel.amountText)
-                .keyboardType(.decimalPad)
+            AmountTextField(text: $viewModel.amountText)
                 .accessibilityIdentifier("transactionAmountField")
 
             DatePicker("Date", selection: $viewModel.date, displayedComponents: .date)
@@ -104,7 +103,7 @@ struct AddEditTransactionView: View {
             .accessibilityIdentifier("transactionCategoryPicker")
 
             Picker("Payment Method", selection: $viewModel.paymentMethodID) {
-                Text("Select a payment method").tag("")
+                Text("None").tag("")
                 ForEach(paymentMethods, id: \.id) { method in
                     Text(method.alias.isEmpty ? method.name : method.alias).tag(method.id)
                 }

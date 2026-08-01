@@ -20,6 +20,7 @@ struct SettingsViewModelTests {
             $0.taxPaymentFrequency = .quarterly
             $0.language = "en"
             $0.currency = "USD"
+            $0.plan = .pro
         }
     }
 
@@ -37,6 +38,7 @@ struct SettingsViewModelTests {
         #expect(viewModel.taxPaymentFrequency == .quarterly)
         #expect(viewModel.language == "en")
         #expect(viewModel.currency == "USD")
+        #expect(viewModel.plan == .pro)
     }
 
     @Test("apply defaults blank language/currency to en/USD, matching the backend's default")

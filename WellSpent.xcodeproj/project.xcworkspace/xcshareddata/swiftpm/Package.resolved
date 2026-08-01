@@ -1,5 +1,5 @@
 {
-  "originHash" : "6da13fd60a98ba85b8c34952c9bab4aefa79e91393d2b9941aa8e54849a7581c",
+  "originHash" : "abad9db1e297f43f4148b0570d2b28ce328f4ac0164931212233a02d0008bfbd",
   "pins" : [
     {
       "identity" : "connect-swift",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "ed56816fe90ab872566f09ed73e28ae078057e3d",
         "version" : "1.2.3"
+      }
+    },
+    {
+      "identity" : "plaid-link-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/plaid/plaid-link-ios",
+      "state" : {
+        "revision" : "d4dab2a05a745b1e8a6a115dee0277bcad261f5f",
+        "version" : "7.0.5"
       }
     },
     {
@@ -53,6 +62,24 @@
       "state" : {
         "revision" : "d930168b86f46ca51a4bc09c5ca45c1833db8067",
         "version" : "2.37.2"
+      }
+    },
+    {
+      "identity" : "swift-package-manager-google-mobile-ads",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
+      "state" : {
+        "revision" : "7778cc1ab037c10dbbe026959e51e616bd961be9",
+        "version" : "11.13.0"
+      }
+    },
+    {
+      "identity" : "swift-package-manager-google-user-messaging-platform",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git",
+      "state" : {
+        "revision" : "708a282840c2171ee63bd93b87afa49fe507d70e",
+        "version" : "2.7.0"
       }
     },
     {

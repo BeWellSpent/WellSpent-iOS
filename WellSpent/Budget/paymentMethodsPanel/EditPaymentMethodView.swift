@@ -25,13 +25,10 @@ struct EditPaymentMethodView: View {
                     TextField("Alias (optional)", text: $viewModel.alias)
                         .accessibilityIdentifier("editPaymentMethodAliasField")
 
-                    Picker("Color", selection: $viewModel.color) {
-                        Text("None").tag("")
-                        ForEach(PresetColors.all, id: \.self) { hex in
-                            Text(hex).tag(hex)
-                        }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Color").font(.caption).foregroundStyle(.secondary)
+                        PresetColorPickerView(hex: $viewModel.color)
                     }
-                    .accessibilityIdentifier("editPaymentMethodColorPicker")
                 }
 
                 if let errorMessage = viewModel.errorMessage {
