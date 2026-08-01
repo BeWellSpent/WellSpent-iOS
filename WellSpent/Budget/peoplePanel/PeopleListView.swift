@@ -51,17 +51,24 @@ struct PeopleListView: View {
             }
 
             Section("Add person") {
-                HStack {
-                    TextField("Name", text: Binding(
-                        get: { viewModel.newPersonName },
-                        set: { viewModel.newPersonName = $0 }
-                    ))
-                        .accessibilityIdentifier("addPersonNameField")
-                    Button("Add") {
-                        Task { await viewModel.addPerson() }
+                if viewModel.isAtLimit {
+                    Text("Free plan: budgets are limited to 2 people. Upgrade to Pro for unlimited members.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("peopleLimitMessage")
+                } else {
+                    HStack {
+                        TextField("Name", text: Binding(
+                            get: { viewModel.newPersonName },
+                            set: { viewModel.newPersonName = $0 }
+                        ))
+                            .accessibilityIdentifier("addPersonNameField")
+                        Button("Add") {
+                            Task { await viewModel.addPerson() }
+                        }
+                        .disabled(!viewModel.canAddPerson)
+                        .accessibilityIdentifier("addPersonButton")
                     }
-                    .disabled(!viewModel.canAddPerson)
-                    .accessibilityIdentifier("addPersonButton")
                 }
             }
 

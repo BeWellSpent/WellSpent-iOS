@@ -16,6 +16,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             profileSection
+            subscriptionSection
             passwordSection
             accountManagementSection
         }
@@ -116,6 +117,28 @@ struct SettingsView: View {
             }
             .disabled(viewModel.isSavingProfile)
             .accessibilityIdentifier("saveProfileButton")
+        }
+    }
+
+    @ViewBuilder
+    private var subscriptionSection: some View {
+        Section("Subscription") {
+            HStack {
+                Label(PlanLabel.text(for: viewModel.plan), systemImage: PlanLabel.systemImage(for: viewModel.plan))
+                    .foregroundStyle(PlanLabel.tint(for: viewModel.plan))
+                    .accessibilityIdentifier("subscriptionPlanBadge")
+                Spacer()
+            }
+
+            if viewModel.plan == .unspecified || viewModel.plan == .free {
+                Text("Upgrade to Pro for unlimited people, income sources, and alerts, plus Plaid bank sync.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Button("Upgrade to Pro — Coming Soon") {}
+                    .disabled(true)
+                    .accessibilityIdentifier("upgradeToProButton")
+            }
         }
     }
 

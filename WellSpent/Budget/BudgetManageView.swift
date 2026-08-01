@@ -104,6 +104,15 @@ struct BudgetManageView: View {
                 }
             }
 
+            if let authenticatedClient {
+                Section("Reports") {
+                    NavigationLink("Reports") {
+                        ReportsPlaceholderView(authenticatedClient: authenticatedClient)
+                    }
+                    .accessibilityIdentifier("reportsNavLink")
+                }
+            }
+
             if let errorMessage = viewModel.errorMessage {
                 Section {
                     Text(errorMessage).foregroundStyle(.red)

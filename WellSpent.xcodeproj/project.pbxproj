@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5BDD6B86245671A9B3EB8778 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 890D0A1BBC1DEAB3D32AD2ED /* GoogleMobileAds */; };
 		7C750AB0B9F35275D2999B5E /* Connect in Frameworks */ = {isa = PBXBuildFile; productRef = 1D00A22B34D6797B81F033E6 /* Connect */; };
 		B31EA8050D6C2062F3086B23 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 7BAA0D07F490001EB5036DCD /* SwiftProtobuf */; };
 		C00A4A212AF9342D18646DD4 /* WellSpentAPI in Frameworks */ = {isa = PBXBuildFile; productRef = BEDFF6349CA442B6388F4A10 /* WellSpentAPI */; };
@@ -64,6 +65,7 @@
 				CBA61846B7E41E51899E646F /* WellSpentAPI in Frameworks */,
 				E84171120A89BECCDEE3B7AC /* Connect in Frameworks */,
 				B31EA8050D6C2062F3086B23 /* SwiftProtobuf in Frameworks */,
+				5BDD6B86245671A9B3EB8778 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,6 +132,7 @@
 				8F689F5874F9421B2BAA3672 /* WellSpentAPI */,
 				978FC591DDF86444D1D0BB60 /* Connect */,
 				7BAA0D07F490001EB5036DCD /* SwiftProtobuf */,
+				890D0A1BBC1DEAB3D32AD2ED /* GoogleMobileAds */,
 			);
 			productName = WellSpent;
 			productReference = D5838C45301C13BE00DCE115 /* WellSpent.app */;
@@ -220,6 +223,7 @@
 				CA3D00EB3B79D7B7B430E074 /* XCLocalSwiftPackageReference "Packages/WellSpentAPI" */,
 				391B5D6CD4E37CCADC7CBBC5 /* XCRemoteSwiftPackageReference "connect-swift" */,
 				336A1CA2C3D025857E7D022D /* XCRemoteSwiftPackageReference "swift-protobuf" */,
+				8EEDF5053E7428FCCDDD6087 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D5838C46301C13BE00DCE115 /* Products */;
@@ -414,6 +418,7 @@
 		D5838C67301C13BF00DCE115 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				API_BASE_URL = "http://localhost:8080";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = WellSpent/WellSpent.entitlements;
@@ -425,7 +430,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_APIBaseURL = "http://localhost:8080";
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "This identifier is used to show you more relevant ads.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -438,7 +444,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.9.1;
+				MARKETING_VERSION = 1.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bewellspent.WellSpent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -458,6 +464,7 @@
 		D5838C68301C13BF00DCE115 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				API_BASE_URL = "http://localhost:8080";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = WellSpent/WellSpent.entitlements;
@@ -469,7 +476,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_APIBaseURL = "http://localhost:8080";
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "This identifier is used to show you more relevant ads.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -482,7 +490,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.9.1;
+				MARKETING_VERSION = 1.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bewellspent.WellSpent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -658,6 +666,14 @@
 				minimumVersion = 1.2.3;
 			};
 		};
+		8EEDF5053E7428FCCDDD6087 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -675,6 +691,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 336A1CA2C3D025857E7D022D /* XCRemoteSwiftPackageReference "swift-protobuf" */;
 			productName = SwiftProtobuf;
+		};
+		890D0A1BBC1DEAB3D32AD2ED /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8EEDF5053E7428FCCDDD6087 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
 		};
 		8F689F5874F9421B2BAA3672 /* WellSpentAPI */ = {
 			isa = XCSwiftPackageProductDependency;

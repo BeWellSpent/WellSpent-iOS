@@ -35,6 +35,14 @@ struct RootView: View {
             guard session.isAuthenticated else { return }
             await PushNotificationRegistrar.requestPermissionIfNeeded()
         }
+        .task(id: session.isAuthenticated) {
+            // Same "after login, not at cold launch" posture as push —
+            // a separate `.task(id:)` block (not folded into the one above)
+            // so a future change to either permission's timing doesn't
+            // accidentally couple the two.
+            guard session.isAuthenticated else { return }
+            await TrackingPermission.requestIfNeeded()
+        }
         .fullScreenCover(isPresented: Binding(
             get: { session.isAuthenticated && pendingInviteToken != nil },
             set: { if !$0 { pendingInviteToken = nil } }

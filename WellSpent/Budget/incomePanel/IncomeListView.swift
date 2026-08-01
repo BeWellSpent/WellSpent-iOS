@@ -28,6 +28,7 @@ struct IncomeListView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .disabled(viewModel?.isAtLimit ?? false)
                 .accessibilityIdentifier("addIncomeSourceButton")
             }
         }
@@ -45,6 +46,15 @@ struct IncomeListView: View {
     @ViewBuilder
     private func content(viewModel: IncomeViewModel) -> some View {
         List {
+            if viewModel.isAtLimit {
+                Section {
+                    Text("Free plan: income sources are limited to 2. Upgrade to Pro for unlimited sources.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("incomeLimitMessage")
+                }
+            }
+
             if viewModel.sources.isEmpty && viewModel.isLoading {
                 ProgressView()
             } else if viewModel.sources.isEmpty {
