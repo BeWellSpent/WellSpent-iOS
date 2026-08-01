@@ -110,6 +110,8 @@ struct PeopleListView: View {
         let canEditRole = !isOwner && !person.userID.isEmpty && person.role != .unspecified
 
         HStack {
+            ColorDotView(hex: person.color)
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(person.userName)
                 if isOwner {

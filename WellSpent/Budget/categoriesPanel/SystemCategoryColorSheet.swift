@@ -1,17 +1,20 @@
 import SwiftUI
 import WellSpentAPI
 
-struct EditPersonColorView: View {
+/// Color-only editor for a system category — mirrors web's
+/// `SystemColorDialog.tsx`. System categories can't be renamed or deleted,
+/// but each user can still color-code them for their own view.
+struct SystemCategoryColorSheet: View {
     @Environment(\.dismiss) private var dismiss
-    let person: Wellspent_V1_BudgetPerson
+    let category: Wellspent_V1_Category
     let onConfirm: (String) -> Void
 
     @State private var color: String
 
-    init(person: Wellspent_V1_BudgetPerson, onConfirm: @escaping (String) -> Void) {
-        self.person = person
+    init(category: Wellspent_V1_Category, onConfirm: @escaping (String) -> Void) {
+        self.category = category
         self.onConfirm = onConfirm
-        _color = State(initialValue: person.color)
+        _color = State(initialValue: category.color)
     }
 
     var body: some View {
@@ -21,7 +24,7 @@ struct EditPersonColorView: View {
                     .padding()
                 Spacer()
             }
-            .navigationTitle("Choose Color")
+            .navigationTitle(category.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -32,7 +35,7 @@ struct EditPersonColorView: View {
                         onConfirm(color)
                         dismiss()
                     }
-                    .accessibilityIdentifier("confirmPersonColor")
+                    .accessibilityIdentifier("confirmSystemCategoryColor")
                 }
             }
         }
@@ -40,9 +43,10 @@ struct EditPersonColorView: View {
 }
 
 #Preview {
-    EditPersonColorView(person: .with {
+    SystemCategoryColorSheet(category: .with {
         $0.id = 1
-        $0.userName = "Jane"
+        $0.name = "Groceries"
+        $0.isSystem = true
         $0.color = PresetColors.all[2]
     }) { _ in }
 }

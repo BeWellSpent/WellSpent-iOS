@@ -9,6 +9,8 @@ struct CategoriesListView: View {
     @State private var isAddSheetPresented = false
     @State private var editingCategory: Wellspent_V1_Category?
     @State private var deletingCategory: Wellspent_V1_Category?
+    @State private var editingSystemCategoryColor: Wellspent_V1_Category?
+    @State private var isRandomizing = false
 
     var body: some View {
         Group {
@@ -46,9 +48,29 @@ struct CategoriesListView: View {
             if viewModel.categories.isEmpty && viewModel.isLoading {
                 ProgressView()
             } else {
-                Section("System") {
+                Section {
                     ForEach(viewModel.systemCategories, id: \.id) { category in
-                        Text(category.name)
+                        systemCategoryRow(category, viewModel: viewModel)
+                    }
+                } header: {
+                    HStack {
+                        Text("System")
+                        Spacer()
+                        Button {
+                            Task {
+                                isRandomizing = true
+                                await viewModel.randomizeSystemColors()
+                                isRandomizing = false
+                            }
+                        } label: {
+                            if isRandomizing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "shuffle")
+                            }
+                        }
+                        .disabled(isRandomizing || viewModel.systemCategories.isEmpty)
+                        .accessibilityIdentifier("randomizeSystemColorsButton")
                     }
                 }
 
@@ -98,10 +120,36 @@ struct CategoriesListView: View {
                 }
             }
         }
+        .sheet(isPresented: Binding(
+            get: { editingSystemCategoryColor != nil },
+            set: { if !$0 { editingSystemCategoryColor = nil } }
+        )) {
+            if let editingSystemCategoryColor {
+                SystemCategoryColorSheet(category: editingSystemCategoryColor) { color in
+                    Task { await viewModel.updateColor(editingSystemCategoryColor, color: color) }
+                }
+            }
+        }
+    }
+
+    private func systemCategoryRow(_ category: Wellspent_V1_Category, viewModel: CategoriesViewModel) -> some View {
+        HStack {
+            ColorDotView(hex: category.color)
+            Text(category.name)
+            Spacer()
+            Button {
+                editingSystemCategoryColor = category
+            } label: {
+                Image(systemName: "paintpalette")
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("editSystemCategoryColor_\(category.name)")
+        }
     }
 
     private func categoryRow(_ category: Wellspent_V1_Category, viewModel: CategoriesViewModel) -> some View {
         HStack {
+            ColorDotView(hex: category.color)
             Text(category.name)
             Spacer()
             Button {

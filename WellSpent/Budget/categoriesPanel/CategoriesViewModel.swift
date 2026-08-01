@@ -50,6 +50,35 @@ final class CategoriesViewModel {
         categories[index] = category
     }
 
+    /// Color-only update — used by the system-category color editor, where
+    /// name/deletion aren't editable but color still is (each user can
+    /// color-code the shared global categories for their own view).
+    func updateColor(_ category: Wellspent_V1_Category, color: String) async {
+        errorMessage = nil
+        let request = Wellspent_V1_UpdateCategoryRequest.with {
+            $0.id = category.id
+            $0.name = category.name
+            $0.color = color
+        }
+        let response = await client.updateCategory(request: request)
+
+        switch response.result {
+        case .success(let message):
+            replaceCategory(message.category)
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't update that category's color."
+        }
+    }
+
+    /// Mirrors web's `handleRandomizeSystemColors` — assigns each system
+    /// category an evenly-spaced distinct color in one action.
+    func randomizeSystemColors() async {
+        let colors = DistinctColorGenerator.generate(count: systemCategories.count)
+        for (category, color) in zip(systemCategories, colors) {
+            await updateColor(category, color: color)
+        }
+    }
+
     @discardableResult
     func delete(id: Int32, replacementID: Int32) async -> Bool {
         errorMessage = nil

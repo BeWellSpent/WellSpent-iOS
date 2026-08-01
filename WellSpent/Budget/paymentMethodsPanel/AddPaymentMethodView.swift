@@ -39,13 +39,10 @@ struct AddPaymentMethodView: View {
                     }
                     .accessibilityIdentifier("paymentMethodOwnerPicker")
 
-                    Picker("Color", selection: $viewModel.color) {
-                        Text("None").tag("")
-                        ForEach(PresetColors.all, id: \.self) { hex in
-                            Text(hex).tag(hex)
-                        }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Color").font(.caption).foregroundStyle(.secondary)
+                        PresetColorPickerView(hex: $viewModel.color)
                     }
-                    .accessibilityIdentifier("paymentMethodColorPicker")
                 }
 
                 if let errorMessage = viewModel.errorMessage {

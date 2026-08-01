@@ -93,6 +93,8 @@ struct PaymentMethodsListView: View {
 
     private func methodRow(_ method: Wellspent_V1_PaymentMethod, viewModel: PaymentMethodsViewModel) -> some View {
         HStack {
+            ColorDotView(hex: method.color)
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(method.alias.isEmpty ? method.name : method.alias)
                 HStack(spacing: 4) {
