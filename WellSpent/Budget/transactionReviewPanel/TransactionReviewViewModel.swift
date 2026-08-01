@@ -73,7 +73,19 @@ final class TransactionReviewViewModel {
         })
         switch response.result {
         case .success:
-            reviews.removeAll { $0.id == review.id }
+            // `ConfirmTransactionReviewResponse` carries no body, so the
+            // updated review is synthesized locally rather than removed.
+            // `TransactionReviewMatching.confirmedTransactionIDs`/
+            // `linkedReviews` (consumed by the Transactions tab, sharing
+            // this same view model instance) key off a *present* review
+            // with `status == "confirmed"` — removing the row outright (as
+            // this used to do) meant the Variable row only disappeared and
+            // the Fixed sub-row only appeared once the next `pollPendingCount()`
+            // tick refetched from the server, up to 30s later, instead of
+            // immediately.
+            if let index = reviews.firstIndex(where: { $0.id == review.id }) {
+                reviews[index].status = "confirmed"
+            }
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't confirm that match."
         }
