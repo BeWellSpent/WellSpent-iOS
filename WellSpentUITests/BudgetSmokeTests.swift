@@ -44,6 +44,16 @@ final class BudgetSmokeTests: XCTestCase {
         nameField.typeText(budgetName)
         app.buttons["createBudgetButton"].tap()
 
+        // The setup wizard opens on step 2 (People) once the budget is
+        // created; skip through People/Income/Payment Methods here and add
+        // the person/income source afterward via the regular panels, same
+        // as before the wizard existed.
+        for _ in 0..<3 {
+            let skipButton = app.buttons["setupSkipButton"]
+            XCTAssertTrue(skipButton.waitForExistence(timeout: 5))
+            skipButton.tap()
+        }
+
         let budgetRow = app.buttons["budgetRow_\(budgetName)"]
         XCTAssertTrue(budgetRow.waitForExistence(timeout: 10))
         budgetRow.tap()

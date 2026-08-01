@@ -41,7 +41,11 @@ struct BudgetListView: View {
                 }
                 .sheet(isPresented: $isCreateSheetPresented) {
                     if let authenticatedClient = session.authenticatedClient {
-                        CreateBudgetSheet(authenticatedClient: authenticatedClient) { profile in
+                        BudgetSetupFlow(
+                            authenticatedClient: authenticatedClient,
+                            currencyCode: viewModel?.currencyCode ?? "USD",
+                            localeIdentifier: viewModel?.localeIdentifier ?? "en"
+                        ) { profile in
                             viewModel?.addCreatedProfile(profile)
                         }
                     }
