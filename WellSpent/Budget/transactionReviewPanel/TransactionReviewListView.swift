@@ -14,6 +14,7 @@ struct TransactionReviewListView: View {
     /// See `ExpensePlanView.isActive` — reloads when this tab becomes
     /// selected again, since `TabView` keeps every tab mounted.
     let isActive: Bool
+    let canEdit: Bool
 
     var body: some View {
         Group {
@@ -103,17 +104,19 @@ struct TransactionReviewListView: View {
 
                 Spacer()
 
-                Button("Dismiss") {
-                    Task { await viewModel.dismiss(review) }
-                }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("dismissReview_\(review.id)")
+                if canEdit {
+                    Button("Dismiss") {
+                        Task { await viewModel.dismiss(review) }
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("dismissReview_\(review.id)")
 
-                Button("Confirm") {
-                    Task { await viewModel.confirm(review) }
+                    Button("Confirm") {
+                        Task { await viewModel.confirm(review) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("confirmReview_\(review.id)")
                 }
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("confirmReview_\(review.id)")
             }
         }
         .padding(.vertical, 4)
@@ -130,7 +133,8 @@ struct TransactionReviewListView: View {
             ),
             currencyCode: "USD",
             localeIdentifier: "en",
-            isActive: true
+            isActive: true,
+            canEdit: true
         )
     }
 }

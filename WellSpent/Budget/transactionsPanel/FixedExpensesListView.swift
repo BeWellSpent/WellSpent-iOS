@@ -14,6 +14,7 @@ struct FixedExpensesListView: View {
     /// See `TransactionsListView.reviewViewModel` — used here to render each
     /// confirmed match as an expandable linked sub-row.
     var reviewViewModel: TransactionReviewViewModel? = nil
+    let canEdit: Bool
 
     @State private var viewModel: FixedExpensesViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
@@ -70,16 +71,17 @@ struct FixedExpensesListView: View {
                         linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviewViewModel?.reviews ?? []),
                         currencyCode: currencyCode,
                         localeIdentifier: localeIdentifier,
+                        canEdit: canEdit,
                         onEdit: { editingTransaction = transaction },
                         onMarkPaid: { markingPaidTransaction = transaction }
                     )
                 }
-                .onDelete { offsets in
+                .onDelete(perform: canEdit ? { offsets in
                     for index in offsets {
                         let transaction = viewModel.transactions[index]
                         Task { await viewModel.delete(transaction) }
                     }
-                }
+                } : nil)
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -139,6 +141,7 @@ private struct FixedExpenseRow: View {
     let linkedReviews: [Wellspent_V1_TransactionReview]
     let currencyCode: String
     let localeIdentifier: String
+    let canEdit: Bool
     let onEdit: () -> Void
     let onMarkPaid: () -> Void
 
@@ -159,25 +162,18 @@ private struct FixedExpenseRow: View {
                     .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
                 }
 
-                Button {
-                    onEdit()
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(transaction.name)
-                            .foregroundStyle(.primary)
-                        HStack(spacing: 4) {
-                            if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
-                                Text(categoryName)
-                            }
-                            if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
-                                Text("· \(methodName)")
-                            }
+                Group {
+                    if canEdit {
+                        Button {
+                            onEdit()
+                        } label: {
+                            fixedExpenseNameContent
                         }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .buttonStyle(.plain)
+                    } else {
+                        fixedExpenseNameContent
                     }
                 }
-                .buttonStyle(.plain)
                 .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
 
                 Spacer()
@@ -189,26 +185,28 @@ private struct FixedExpenseRow: View {
                     localeIdentifier: localeIdentifier
                 ))
 
-                Button {
-                    if transaction.isPaid {
-                        Task { await viewModel.unmark(transaction) }
-                    } else {
-                        onMarkPaid()
+                if canEdit {
+                    Button {
+                        if transaction.isPaid {
+                            Task { await viewModel.unmark(transaction) }
+                        } else {
+                            onMarkPaid()
+                        }
+                    } label: {
+                        Image(systemName: transaction.isPaid ? "checkmark.circle.fill" : "checkmark.circle")
+                            .foregroundStyle(transaction.isPaid ? .green : .secondary)
                     }
-                } label: {
-                    Image(systemName: transaction.isPaid ? "checkmark.circle.fill" : "checkmark.circle")
-                        .foregroundStyle(transaction.isPaid ? .green : .secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier(transaction.isPaid ? "unmarkPaid_\(transaction.name)" : "markPaid_\(transaction.name)")
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier(transaction.isPaid ? "unmarkPaid_\(transaction.name)" : "markPaid_\(transaction.name)")
 
-                Button {
-                    Task { await viewModel.toggleExcluded(transaction) }
-                } label: {
-                    Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
+                    Button {
+                        Task { await viewModel.toggleExcluded(transaction) }
+                    } label: {
+                        Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("excludeFixedExpense_\(transaction.name)")
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("excludeFixedExpense_\(transaction.name)")
             }
 
             if isExpanded {
@@ -235,6 +233,23 @@ private struct FixedExpenseRow: View {
             }
         }
     }
+
+    private var fixedExpenseNameContent: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(transaction.name)
+                .foregroundStyle(.primary)
+            HStack(spacing: 4) {
+                if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
+                    Text(categoryName)
+                }
+                if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
+                    Text("· \(methodName)")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
 }
 
 #Preview {
@@ -246,7 +261,8 @@ private struct FixedExpenseRow: View {
             currencyCode: "USD",
             localeIdentifier: "en",
             isAddSheetPresented: .constant(false),
-            isActive: true
+            isActive: true,
+            canEdit: true
         )
     }
 }

@@ -29,6 +29,7 @@ struct ExpensePlanView: View {
     /// `.task` only fires once on first mount — this drives a reload every
     /// time the tab becomes active again, not just on first appearance.
     let isActive: Bool
+    let canEdit: Bool
 
     @State private var viewModel: ExpensePlanViewModel?
     @State private var allocatingCategory: Wellspent_V1_Category?
@@ -96,7 +97,7 @@ struct ExpensePlanView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(viewModel.visibleCategories, id: \.id) { category in
-                        categoryRow(category, viewModel: viewModel)
+                        categoryRow(category, viewModel: viewModel, canEdit: canEdit)
                     }
                 }
             }
@@ -144,19 +145,26 @@ struct ExpensePlanView: View {
         }
     }
 
-    private func categoryRow(_ category: Wellspent_V1_Category, viewModel: ExpensePlanViewModel) -> some View {
-        Button {
-            allocatingCategory = category
-        } label: {
-            HStack {
-                Text(category.name)
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text(displayText(viewModel.plannedTotal(for: category)))
-                    .foregroundStyle(.secondary)
+    private func categoryRow(_ category: Wellspent_V1_Category, viewModel: ExpensePlanViewModel, canEdit: Bool) -> some View {
+        let row = HStack {
+            Text(category.name)
+                .foregroundStyle(.primary)
+            Spacer()
+            Text(displayText(viewModel.plannedTotal(for: category)))
+                .foregroundStyle(.secondary)
+        }
+        return Group {
+            if canEdit {
+                Button {
+                    allocatingCategory = category
+                } label: {
+                    row
+                }
+                .buttonStyle(.plain)
+            } else {
+                row
             }
         }
-        .buttonStyle(.plain)
         .accessibilityIdentifier("planCategoryRow_\(category.name)")
     }
 
@@ -175,7 +183,8 @@ struct ExpensePlanView: View {
             localeIdentifier: "en",
             selectedKind: .constant(.plan),
             isAddCategoryPresented: .constant(false),
-            isActive: true
+            isActive: true,
+            canEdit: true
         )
     }
 }

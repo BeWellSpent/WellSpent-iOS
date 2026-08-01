@@ -22,12 +22,10 @@ final class InvitesViewModel {
     private let client: Wellspent_V1_InviteServiceClient
     private let budgetClient: Wellspent_V1_BudgetServiceClient
 
-    /// Mirrors web's `useBudgetRole`: the profile owner is always Admin;
-    /// otherwise resolved from the matching linked `BudgetPerson`'s role.
     var isAdmin: Bool {
-        guard let currentUserID, !currentUserID.isEmpty else { return false }
-        if currentUserID == budgetOwnerUserID { return true }
-        return people.first(where: { !$0.userID.isEmpty && $0.userID == currentUserID })?.role == .admin
+        BudgetRoleResolver.canManageUsers(
+            BudgetRoleResolver.role(currentUserID: currentUserID, budgetOwnerUserID: budgetOwnerUserID, people: people)
+        )
     }
 
     /// Budget people with no linked user account yet — offered as the

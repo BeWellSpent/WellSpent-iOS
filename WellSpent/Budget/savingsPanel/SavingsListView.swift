@@ -7,6 +7,7 @@ struct SavingsListView: View {
     let authenticatedClient: ProtocolClient
     let currencyCode: String
     let localeIdentifier: String
+    let canEdit: Bool
 
     @State private var viewModel: SavingsViewModel?
     @State private var isAddSheetPresented = false
@@ -22,13 +23,15 @@ struct SavingsListView: View {
         }
         .navigationTitle("Savings")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isAddSheetPresented = true
-                } label: {
-                    Image(systemName: "plus")
+            if canEdit {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddSheetPresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("addSavingsButton")
                 }
-                .accessibilityIdentifier("addSavingsButton")
             }
         }
         .task {
@@ -65,7 +68,7 @@ struct SavingsListView: View {
                     ForEach(viewModel.sources, id: \.id) { source in
                         sourceRow(source, viewModel: viewModel)
                             .swipeActions(edge: .trailing) {
-                                if !source.isTaxReserve {
+                                if canEdit && !source.isTaxReserve {
                                     Button("Delete", role: .destructive) {
                                         Task { await viewModel.delete(id: source.id) }
                                     }
@@ -114,7 +117,7 @@ struct SavingsListView: View {
     private func sourceRow(_ source: Wellspent_V1_SavingsSource, viewModel: SavingsViewModel) -> some View {
         if source.isTaxReserve {
             taxReserveRow(source, viewModel: viewModel)
-        } else {
+        } else if canEdit {
             Button {
                 editingSource = source
             } label: {
@@ -122,6 +125,9 @@ struct SavingsListView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("savingsRow_\(source.name)")
+        } else {
+            normalRow(source, viewModel: viewModel)
+                .accessibilityIdentifier("savingsRow_\(source.name)")
         }
     }
 
@@ -208,7 +214,8 @@ struct SavingsListView: View {
             periodStartDate: nil,
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
-            localeIdentifier: "en"
+            localeIdentifier: "en",
+            canEdit: true
         )
     }
 }

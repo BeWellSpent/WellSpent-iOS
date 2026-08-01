@@ -8,6 +8,11 @@ final class BudgetDetailViewModel {
     private(set) var isLoading = false
     private(set) var currentPeriod: Wellspent_V1_BudgetPeriod?
     private(set) var errorMessage: String?
+    /// Default to `true` (optimistic) while `ListBudgetPeople` is still
+    /// loading, mirroring web's `useBudgetRole` returning `ADMIN` before its
+    /// queries resolve — avoids every gated button flashing away then back.
+    private(set) var canEdit = true
+    private(set) var canManageUsers = true
 
     private let client: Wellspent_V1_BudgetServiceClient
 
@@ -37,6 +42,14 @@ final class BudgetDetailViewModel {
 
     func applyUpdatedProfile(_ updated: Wellspent_V1_BudgetProfile) {
         profile = updated
+    }
+
+    func loadRole(currentUserID: String?) async {
+        let response = await client.listBudgetPeople(request: .with { $0.budgetProfileID = profile.id })
+        guard case .success(let message) = response.result else { return }
+        let role = BudgetRoleResolver.role(currentUserID: currentUserID, budgetOwnerUserID: profile.userID, people: message.people)
+        canEdit = BudgetRoleResolver.canEdit(role)
+        canManageUsers = BudgetRoleResolver.canManageUsers(role)
     }
 
     func delete() async -> Bool {

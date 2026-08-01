@@ -23,6 +23,7 @@ import WellSpentAPI
 struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(SessionStore.self) private var session
     private let authenticatedClient: ProtocolClient?
     private let currencyCode: String
     private let localeIdentifier: String
@@ -79,6 +80,9 @@ struct BudgetDetailView: View {
             // regardless of which tab is initially selected, not only once
             // the user happens to open Manage.
             await viewModel?.loadPeriod()
+        }
+        .task {
+            await viewModel?.loadRole(currentUserID: session.userID)
         }
         .task {
             // Created once and polled for the lifetime of this screen (not
@@ -166,9 +170,11 @@ struct BudgetDetailView: View {
     /// to declare in its own (non-rendering) `.toolbar`.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        let canEdit = viewModel?.canEdit ?? true
+        let canManageUsers = viewModel?.canManageUsers ?? true
         switch selectedSection {
         case .plan:
-            if planSelectedKind == .plan {
+            if canEdit && planSelectedKind == .plan {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddCategoryPresented = true
@@ -179,7 +185,7 @@ struct BudgetDetailView: View {
                 }
             }
         case .transactions:
-            if transactionsSelectedKind == .variable {
+            if canEdit && transactionsSelectedKind == .variable {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddTransactionPresented = true
@@ -188,7 +194,7 @@ struct BudgetDetailView: View {
                     }
                     .accessibilityIdentifier("addTransactionButton")
                 }
-            } else {
+            } else if canEdit {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddFixedExpensePresented = true
@@ -201,14 +207,16 @@ struct BudgetDetailView: View {
         case .review:
             ToolbarItemGroup {}
         case .manage:
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button("Edit Budget") { isEditBudgetPresented = true }
-                    Button("Delete Budget", role: .destructive) { isDeleteBudgetConfirmationPresented = true }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
+            if canManageUsers {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button("Edit Budget") { isEditBudgetPresented = true }
+                        Button("Delete Budget", role: .destructive) { isDeleteBudgetConfirmationPresented = true }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityIdentifier("budgetDetailMenu")
                 }
-                .accessibilityIdentifier("budgetDetailMenu")
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -267,7 +275,8 @@ struct BudgetDetailView: View {
                 localeIdentifier: localeIdentifier,
                 selectedKind: $planSelectedKind,
                 isAddCategoryPresented: $isAddCategoryPresented,
-                isActive: selectedSection == .plan
+                isActive: selectedSection == .plan,
+                canEdit: viewModel.canEdit
             )
         } else {
             ProgressView()
@@ -287,7 +296,8 @@ struct BudgetDetailView: View {
                 isAddTransactionPresented: $isAddTransactionPresented,
                 isAddFixedExpensePresented: $isAddFixedExpensePresented,
                 isActive: selectedSection == .transactions,
-                reviewViewModel: reviewViewModel
+                reviewViewModel: reviewViewModel,
+                canEdit: viewModel.canEdit
             )
         } else {
             ProgressView()
@@ -299,7 +309,8 @@ struct BudgetDetailView: View {
             viewModel: reviewViewModel,
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier,
-            isActive: selectedSection == .review
+            isActive: selectedSection == .review,
+            canEdit: viewModel.canEdit
         )
     }
 
@@ -333,4 +344,5 @@ struct BudgetDetailView: View {
             onDeleted: {}
         )
     }
+    .environment(SessionStore())
 }

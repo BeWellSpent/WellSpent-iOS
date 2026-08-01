@@ -4,6 +4,7 @@ import WellSpentAPI
 struct CategoriesListView: View {
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
+    let canEdit: Bool
 
     @State private var viewModel: CategoriesViewModel?
     @State private var isAddSheetPresented = false
@@ -22,13 +23,15 @@ struct CategoriesListView: View {
         }
         .navigationTitle("Categories")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isAddSheetPresented = true
-                } label: {
-                    Image(systemName: "plus")
+            if canEdit {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddSheetPresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("addCategoryButton")
                 }
-                .accessibilityIdentifier("addCategoryButton")
             }
         }
         .task {
@@ -56,21 +59,23 @@ struct CategoriesListView: View {
                     HStack {
                         Text("System")
                         Spacer()
-                        Button {
-                            Task {
-                                isRandomizing = true
-                                await viewModel.randomizeSystemColors()
-                                isRandomizing = false
+                        if canEdit {
+                            Button {
+                                Task {
+                                    isRandomizing = true
+                                    await viewModel.randomizeSystemColors()
+                                    isRandomizing = false
+                                }
+                            } label: {
+                                if isRandomizing {
+                                    ProgressView()
+                                } else {
+                                    Image(systemName: "shuffle")
+                                }
                             }
-                        } label: {
-                            if isRandomizing {
-                                ProgressView()
-                            } else {
-                                Image(systemName: "shuffle")
-                            }
+                            .disabled(isRandomizing || viewModel.systemCategories.isEmpty)
+                            .accessibilityIdentifier("randomizeSystemColorsButton")
                         }
-                        .disabled(isRandomizing || viewModel.systemCategories.isEmpty)
-                        .accessibilityIdentifier("randomizeSystemColorsButton")
                     }
                 }
 
@@ -137,13 +142,15 @@ struct CategoriesListView: View {
             ColorDotView(hex: category.color)
             Text(category.name)
             Spacer()
-            Button {
-                editingSystemCategoryColor = category
-            } label: {
-                Image(systemName: "paintpalette")
+            if canEdit {
+                Button {
+                    editingSystemCategoryColor = category
+                } label: {
+                    Image(systemName: "paintpalette")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("editSystemCategoryColor_\(category.name)")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("editSystemCategoryColor_\(category.name)")
         }
     }
 
@@ -152,21 +159,23 @@ struct CategoriesListView: View {
             ColorDotView(hex: category.color)
             Text(category.name)
             Spacer()
-            Button {
-                editingCategory = category
-            } label: {
-                Image(systemName: "pencil")
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("editCategory_\(category.name)")
+            if canEdit {
+                Button {
+                    editingCategory = category
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("editCategory_\(category.name)")
 
-            Button {
-                deletingCategory = category
-            } label: {
-                Image(systemName: "trash")
+                Button {
+                    deletingCategory = category
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("deleteCategory_\(category.name)")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("deleteCategory_\(category.name)")
         }
     }
 }
@@ -175,7 +184,8 @@ struct CategoriesListView: View {
     NavigationStack {
         CategoriesListView(
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            canEdit: true
         )
     }
 }

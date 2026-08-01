@@ -4,8 +4,24 @@ struct RootView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var pendingInviteToken: String?
+    /// Non-sensitive (a shareable invite-link token), persisted so it
+    /// survives the app being killed mid-login/register — e.g. the user taps
+    /// an invite link, switches to Mail, the app gets purged from memory,
+    /// then they relaunch it directly instead of re-tapping the link.
+    @State private var pendingInviteToken: String? = UserDefaults.standard.string(forKey: RootView.pendingInviteTokenKey) {
+        didSet {
+            UserDefaults.standard.set(pendingInviteToken, forKey: Self.pendingInviteTokenKey)
+        }
+    }
     @State private var budgetListRefreshTrigger = 0
+    /// Distinct from `pendingInviteToken != nil` — decouples "is there a
+    /// pending invite" (persisted data) from "is the cover on screen right
+    /// now" (transient UI state), since the Sign In/Register CTAs need to
+    /// hide the cover (revealing the already-mounted `LoginView`) *without*
+    /// forgetting the pending invite, so it can auto-reappear post-login.
+    @State private var isInvitePreviewPresented: Bool = UserDefaults.standard.string(forKey: RootView.pendingInviteTokenKey) != nil
+
+    private static let pendingInviteTokenKey = "pendingInviteToken"
 
     var body: some View {
         Group {
@@ -24,7 +40,19 @@ struct RootView: View {
             }
         }
         .onOpenURL { url in
-            pendingInviteToken = InviteDeepLink.token(from: url)
+            guard let token = InviteDeepLink.token(from: url) else { return }
+            pendingInviteToken = token
+            isInvitePreviewPresented = true
+        }
+        .onChange(of: session.isAuthenticated) { _, isAuthenticated in
+            // Re-present the cover once login/register completes, if the
+            // user stepped aside from it via the Sign In/Register CTAs
+            // (which hide the cover but deliberately keep the token) —
+            // mirrors web's "land back on the invite page, tap Accept
+            // again" behavior, just without a full page reload.
+            if isAuthenticated, pendingInviteToken != nil {
+                isInvitePreviewPresented = true
+            }
         }
         .task(id: session.isAuthenticated) {
             // Requesting push permission at cold launch, before the user has
@@ -43,21 +71,30 @@ struct RootView: View {
             guard session.isAuthenticated else { return }
             await TrackingPermission.requestIfNeeded()
         }
-        .fullScreenCover(isPresented: Binding(
-            get: { session.isAuthenticated && pendingInviteToken != nil },
-            set: { if !$0 { pendingInviteToken = nil } }
-        )) {
-            if let pendingInviteToken, let authenticatedClient = session.authenticatedClient {
+        .fullScreenCover(isPresented: $isInvitePreviewPresented) {
+            if let pendingInviteToken {
                 AcceptInviteView(
                     token: pendingInviteToken,
                     publicClient: session.publicClient,
-                    authenticatedClient: authenticatedClient,
+                    authenticatedClient: session.authenticatedClient,
                     onAccepted: {
                         self.pendingInviteToken = nil
+                        isInvitePreviewPresented = false
                         budgetListRefreshTrigger += 1
                     },
                     onDismiss: {
+                        // True cancel (toolbar "Close") — forgets the invite
+                        // entirely, unlike `onRequestAuth` below.
                         self.pendingInviteToken = nil
+                        isInvitePreviewPresented = false
+                    },
+                    onRequestAuth: {
+                        // Sign In / Register — only hides the cover so
+                        // `LoginView` (already mounted underneath) becomes
+                        // reachable; keeps `pendingInviteToken` so the
+                        // `onChange(of: session.isAuthenticated)` above
+                        // re-presents this same screen post-login.
+                        isInvitePreviewPresented = false
                     }
                 )
             }

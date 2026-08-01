@@ -27,6 +27,7 @@ struct TransactionsListView: View {
     /// filter confirmed-review matches out of the Variable list and show a
     /// pending-match hint, mirroring web's `TransactionsPanel.tsx`.
     var reviewViewModel: TransactionReviewViewModel? = nil
+    let canEdit: Bool
 
     @State private var viewModel: TransactionsViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
@@ -60,7 +61,8 @@ struct TransactionsListView: View {
                     localeIdentifier: localeIdentifier,
                     isAddSheetPresented: $isAddFixedExpensePresented,
                     isActive: isActive && selectedKind == .fixed,
-                    reviewViewModel: reviewViewModel
+                    reviewViewModel: reviewViewModel,
+                    canEdit: canEdit
                 )
             }
         }
@@ -107,12 +109,12 @@ struct TransactionsListView: View {
                 ForEach(visibleTransactions, id: \.id) { transaction in
                     transactionRow(transaction, viewModel: viewModel, reviews: reviews)
                 }
-                .onDelete { offsets in
+                .onDelete(perform: canEdit ? { offsets in
                     for index in offsets {
                         let transaction = visibleTransactions[index]
                         Task { await viewModel.delete(id: transaction.id) }
                     }
-                }
+                } : nil)
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -173,33 +175,41 @@ struct TransactionsListView: View {
         let isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
         let pendingMatchName = viewModel.pendingMatchName(for: transaction, reviews: reviews)
 
-        return HStack {
-            Button {
-                editingTransaction = transaction
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(transaction.name)
-                            .foregroundStyle(.primary)
-                        if let pendingMatchName {
-                            Text("(linked to \(pendingMatchName))")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    HStack(spacing: 4) {
-                        if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
-                            Text(categoryName)
-                        }
-                        if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
-                            Text("· \(methodName)")
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        let nameContent = VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Text(transaction.name)
+                    .foregroundStyle(.primary)
+                if let pendingMatchName {
+                    Text("(linked to \(pendingMatchName))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .buttonStyle(.plain)
+            HStack(spacing: 4) {
+                if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
+                    Text(categoryName)
+                }
+                if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
+                    Text("· \(methodName)")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+
+        return HStack {
+            Group {
+                if canEdit {
+                    Button {
+                        editingTransaction = transaction
+                    } label: {
+                        nameContent
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    nameContent
+                }
+            }
             .accessibilityIdentifier("transactionRow_\(transaction.name)")
 
             Spacer()
@@ -212,21 +222,23 @@ struct TransactionsListView: View {
             ))
             .foregroundStyle(isReceived ? .green : .red)
 
-            Button {
-                markReviewTarget = transaction
-            } label: {
-                Image(systemName: "flag")
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("flagForReview_\(transaction.name)")
+            if canEdit {
+                Button {
+                    markReviewTarget = transaction
+                } label: {
+                    Image(systemName: "flag")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("flagForReview_\(transaction.name)")
 
-            Button {
-                Task { await viewModel.toggleExcluded(transaction) }
-            } label: {
-                Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
+                Button {
+                    Task { await viewModel.toggleExcluded(transaction) }
+                } label: {
+                    Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
         }
     }
 }
@@ -242,7 +254,8 @@ struct TransactionsListView: View {
             selectedKind: .constant(.variable),
             isAddTransactionPresented: .constant(false),
             isAddFixedExpensePresented: .constant(false),
-            isActive: true
+            isActive: true,
+            canEdit: true
         )
     }
 }

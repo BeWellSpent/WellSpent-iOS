@@ -42,7 +42,8 @@ struct BudgetManageView: View {
                         PeopleListView(
                             budgetProfileID: viewModel.profile.id,
                             budgetOwnerUserID: viewModel.profile.userID,
-                            authenticatedClient: authenticatedClient
+                            authenticatedClient: authenticatedClient,
+                            canManageUsers: viewModel.canManageUsers
                         )
                     }
                     .accessibilityIdentifier("peopleNavLink")
@@ -53,7 +54,8 @@ struct BudgetManageView: View {
                             budgetCountryCode: viewModel.profile.countryCode,
                             authenticatedClient: authenticatedClient,
                             currencyCode: currencyCode,
-                            localeIdentifier: localeIdentifier
+                            localeIdentifier: localeIdentifier,
+                            canEdit: viewModel.canEdit
                         )
                     }
                     .accessibilityIdentifier("incomeNavLink")
@@ -64,7 +66,8 @@ struct BudgetManageView: View {
                             periodStartDate: viewModel.currentPeriod?.startDate.date,
                             authenticatedClient: authenticatedClient,
                             currencyCode: currencyCode,
-                            localeIdentifier: localeIdentifier
+                            localeIdentifier: localeIdentifier,
+                            canEdit: viewModel.canEdit
                         )
                     }
                     .accessibilityIdentifier("savingsNavLink")
@@ -72,7 +75,8 @@ struct BudgetManageView: View {
                     NavigationLink("Categories") {
                         CategoriesListView(
                             budgetProfileID: viewModel.profile.id,
-                            authenticatedClient: authenticatedClient
+                            authenticatedClient: authenticatedClient,
+                            canEdit: viewModel.canEdit
                         )
                     }
                     .accessibilityIdentifier("categoriesNavLink")
@@ -80,19 +84,22 @@ struct BudgetManageView: View {
                     NavigationLink("Payment Methods") {
                         PaymentMethodsListView(
                             budgetProfileID: viewModel.profile.id,
-                            authenticatedClient: authenticatedClient
+                            authenticatedClient: authenticatedClient,
+                            canEdit: viewModel.canEdit
                         )
                     }
                     .accessibilityIdentifier("paymentMethodsNavLink")
 
-                    NavigationLink("Invitations") {
-                        InvitesListView(
-                            budgetProfileID: viewModel.profile.id,
-                            budgetOwnerUserID: viewModel.profile.userID,
-                            authenticatedClient: authenticatedClient
-                        )
+                    if viewModel.canManageUsers {
+                        NavigationLink("Invitations") {
+                            InvitesListView(
+                                budgetProfileID: viewModel.profile.id,
+                                budgetOwnerUserID: viewModel.profile.userID,
+                                authenticatedClient: authenticatedClient
+                            )
+                        }
+                        .accessibilityIdentifier("invitationsNavLink")
                     }
-                    .accessibilityIdentifier("invitationsNavLink")
 
                     NavigationLink("Alert Settings") {
                         AlertsListView(

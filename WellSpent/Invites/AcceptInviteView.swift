@@ -3,23 +3,35 @@ import WellSpentAPI
 
 struct AcceptInviteView: View {
     @State private var viewModel: AcceptInviteViewModel
+    /// `nil` when the invite link was opened while unauthenticated — the
+    /// view shows Sign In/Register buttons instead of an Accept button.
+    private let isAuthenticated: Bool
     private let onAccepted: () -> Void
+    /// Toolbar "Close" — a true cancel, forgets the pending invite entirely.
     private let onDismiss: () -> Void
+    /// Sign In / Register CTAs — hides this screen so the caller's own
+    /// login/register UI underneath becomes reachable, *without* forgetting
+    /// the pending invite (the caller re-presents this same screen once
+    /// authenticated).
+    private let onRequestAuth: () -> Void
 
     init(
         token: String,
         publicClient: ProtocolClient,
-        authenticatedClient: ProtocolClient,
+        authenticatedClient: ProtocolClient?,
         onAccepted: @escaping () -> Void,
-        onDismiss: @escaping () -> Void
+        onDismiss: @escaping () -> Void,
+        onRequestAuth: @escaping () -> Void
     ) {
         _viewModel = State(initialValue: AcceptInviteViewModel(
             token: token,
             publicClient: publicClient,
             authenticatedClient: authenticatedClient
         ))
+        self.isAuthenticated = authenticatedClient != nil
         self.onAccepted = onAccepted
         self.onDismiss = onDismiss
+        self.onRequestAuth = onRequestAuth
     }
 
     var body: some View {
@@ -77,20 +89,38 @@ struct AcceptInviteView: View {
                     .accessibilityIdentifier("acceptInviteErrorMessage")
             }
 
-            Button {
-                Task { await viewModel.accept() }
-            } label: {
-                HStack {
-                    Text("Accept Invite")
-                    if viewModel.isAccepting {
-                        Spacer()
-                        ProgressView()
+            if isAuthenticated {
+                Button {
+                    Task { await viewModel.accept() }
+                } label: {
+                    HStack {
+                        Text("Accept Invite")
+                        if viewModel.isAccepting {
+                            Spacer()
+                            ProgressView()
+                        }
                     }
                 }
+                .buttonStyle(.borderedProminent)
+                .disabled(viewModel.isAccepting)
+                .accessibilityIdentifier("acceptInviteButton")
+            } else {
+                Text("Sign in or create an account to accept")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Button("Sign In") {
+                    onRequestAuth()
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("acceptInviteSignInButton")
+
+                Button("Register") {
+                    onRequestAuth()
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("acceptInviteRegisterButton")
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(viewModel.isAccepting)
-            .accessibilityIdentifier("acceptInviteButton")
 
             Spacer()
         }
@@ -104,6 +134,7 @@ struct AcceptInviteView: View {
         publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         onAccepted: {},
-        onDismiss: {}
+        onDismiss: {},
+        onRequestAuth: {}
     )
 }

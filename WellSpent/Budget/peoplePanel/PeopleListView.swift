@@ -5,6 +5,7 @@ struct PeopleListView: View {
     let budgetProfileID: String
     let budgetOwnerUserID: String
     let authenticatedClient: ProtocolClient
+    let canManageUsers: Bool
 
     @State private var viewModel: PeopleViewModel?
     @State private var editingPerson: Wellspent_V1_BudgetPerson?
@@ -50,24 +51,26 @@ struct PeopleListView: View {
                 }
             }
 
-            Section("Add person") {
-                if viewModel.isAtLimit {
-                    Text("Free plan: budgets are limited to 2 people. Upgrade to Pro for unlimited members.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("peopleLimitMessage")
-                } else {
-                    HStack {
-                        TextField("Name", text: Binding(
-                            get: { viewModel.newPersonName },
-                            set: { viewModel.newPersonName = $0 }
-                        ))
-                            .accessibilityIdentifier("addPersonNameField")
-                        Button("Add") {
-                            Task { await viewModel.addPerson() }
+            if canManageUsers {
+                Section("Add person") {
+                    if viewModel.isAtLimit {
+                        Text("Free plan: budgets are limited to 2 people. Upgrade to Pro for unlimited members.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("peopleLimitMessage")
+                    } else {
+                        HStack {
+                            TextField("Name", text: Binding(
+                                get: { viewModel.newPersonName },
+                                set: { viewModel.newPersonName = $0 }
+                            ))
+                                .accessibilityIdentifier("addPersonNameField")
+                            Button("Add") {
+                                Task { await viewModel.addPerson() }
+                            }
+                            .disabled(!viewModel.canAddPerson)
+                            .accessibilityIdentifier("addPersonButton")
                         }
-                        .disabled(!viewModel.canAddPerson)
-                        .accessibilityIdentifier("addPersonButton")
                     }
                 }
             }
@@ -107,7 +110,7 @@ struct PeopleListView: View {
     @ViewBuilder
     private func personRow(_ person: Wellspent_V1_BudgetPerson, viewModel: PeopleViewModel) -> some View {
         let isOwner = !viewModel.budgetOwnerUserID.isEmpty && person.userID == viewModel.budgetOwnerUserID
-        let canEditRole = !isOwner && !person.userID.isEmpty && person.role != .unspecified
+        let canEditRole = canManageUsers && !isOwner && !person.userID.isEmpty && person.role != .unspecified
 
         HStack {
             ColorDotView(hex: person.color)
@@ -138,16 +141,18 @@ struct PeopleListView: View {
                 .accessibilityIdentifier("rolePicker_\(person.id)")
             }
 
-            Button {
-                editingPerson = person
-            } label: {
-                Image(systemName: "paintpalette")
+            if canManageUsers {
+                Button {
+                    editingPerson = person
+                } label: {
+                    Image(systemName: "paintpalette")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("editPersonColor_\(person.id)")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("editPersonColor_\(person.id)")
         }
         .swipeActions {
-            if !isOwner {
+            if canManageUsers && !isOwner {
                 Button("Remove", role: .destructive) {
                     removingPerson = person
                 }
@@ -161,7 +166,8 @@ struct PeopleListView: View {
         PeopleListView(
             budgetProfileID: "preview-budget",
             budgetOwnerUserID: "preview-owner",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            canManageUsers: true
         )
     }
 }

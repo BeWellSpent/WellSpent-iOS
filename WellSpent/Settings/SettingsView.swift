@@ -6,6 +6,9 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: SettingsViewModel
     @State private var isDeleteConfirmationPresented = false
+    /// Same storage key as `WellSpentApp`'s `@AppStorage("themeMode")` — a
+    /// pure local preference, no network round trip through `SettingsViewModel`.
+    @AppStorage("themeMode") private var themeMode: ThemePreference = .system
     private let authenticatedClient: ProtocolClient
     private let onUpdated: (Wellspent_V1_User) -> Void
 
@@ -18,6 +21,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             profileSection
+            appearanceSection
             if viewModel.isUnitedStates {
                 plaidSection
             }
@@ -122,6 +126,18 @@ struct SettingsView: View {
             }
             .disabled(viewModel.isSavingProfile)
             .accessibilityIdentifier("saveProfileButton")
+        }
+    }
+
+    @ViewBuilder
+    private var appearanceSection: some View {
+        Section("Appearance") {
+            Picker("Theme", selection: $themeMode) {
+                ForEach(ThemePreference.allCases, id: \.self) { mode in
+                    Label(mode.label, systemImage: mode.systemImage).tag(mode)
+                }
+            }
+            .accessibilityIdentifier("themePicker")
         }
     }
 
