@@ -14,11 +14,17 @@ struct TransactionsListView: View {
     let authenticatedClient: ProtocolClient
     let currencyCode: String
     let localeIdentifier: String
+    /// See `ExpensePlanView.selectedKind` — owned by `BudgetDetailView` so it
+    /// can decide which toolbar button to show at the one nav-bar level
+    /// that's actually rendered.
+    @Binding var selectedKind: TransactionKind
+    @Binding var isAddTransactionPresented: Bool
+    @Binding var isAddFixedExpensePresented: Bool
+    /// See `ExpensePlanView.isActive`.
+    let isActive: Bool
 
     @State private var viewModel: TransactionsViewModel?
-    @State private var isAddSheetPresented = false
     @State private var editingTransaction: Wellspent_V1_Transaction?
-    @State private var selectedKind: TransactionKind = .variable
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,23 +51,13 @@ struct TransactionsListView: View {
                     budgetProfileID: budgetProfileID,
                     authenticatedClient: authenticatedClient,
                     currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
+                    localeIdentifier: localeIdentifier,
+                    isAddSheetPresented: $isAddFixedExpensePresented,
+                    isActive: isActive && selectedKind == .fixed
                 )
             }
         }
         .navigationTitle("Transactions")
-        .toolbar {
-            if selectedKind == .variable {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isAddSheetPresented = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityIdentifier("addTransactionButton")
-                }
-            }
-        }
         .task {
             if viewModel == nil {
                 viewModel = TransactionsViewModel(
@@ -73,6 +69,11 @@ struct TransactionsListView: View {
                 )
             }
             await viewModel?.load()
+        }
+        .onChange(of: isActive) { _, newValue in
+            if newValue {
+                Task { await viewModel?.load() }
+            }
         }
         .refreshable {
             await viewModel?.load()
@@ -110,7 +111,7 @@ struct TransactionsListView: View {
                 }
             }
         }
-        .sheet(isPresented: $isAddSheetPresented) {
+        .sheet(isPresented: $isAddTransactionPresented) {
             AddEditTransactionView(
                 mode: .add,
                 budgetPeriodID: budgetPeriodID,
@@ -194,7 +195,11 @@ struct TransactionsListView: View {
             budgetProfileID: "preview-budget",
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
-            localeIdentifier: "en"
+            localeIdentifier: "en",
+            selectedKind: .constant(.variable),
+            isAddTransactionPresented: .constant(false),
+            isAddFixedExpensePresented: .constant(false),
+            isActive: true
         )
     }
 }

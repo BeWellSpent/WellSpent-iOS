@@ -12,6 +12,11 @@ struct BudgetManageView: View {
     let currencyCode: String
     let localeIdentifier: String
     let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
+    /// See `ExpensePlanView.isAddCategoryPresented` — the "Edit"/"Delete"
+    /// menu itself lives in `BudgetDetailView`'s toolbar now (the one level
+    /// that's actually rendered); these just get flipped from there.
+    @Binding var isEditSheetPresented: Bool
+    @Binding var isDeleteConfirmationPresented: Bool
     /// Called after a successful delete. Deliberately a closure captured by
     /// the caller from *its own* outer scope, not a locally-declared
     /// `@Environment(\.dismiss)` here — this view sits inside its own nested
@@ -19,9 +24,6 @@ struct BudgetManageView: View {
     /// stack rather than removing the whole budget detail screen from the
     /// budget list's stack.
     let dismissParent: () -> Void
-
-    @State private var isEditSheetPresented = false
-    @State private var isDeleteConfirmationPresented = false
 
     var body: some View {
         List {
@@ -109,17 +111,6 @@ struct BudgetManageView: View {
             }
         }
         .navigationTitle(viewModel.profile.name)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button("Edit Budget") { isEditSheetPresented = true }
-                    Button("Delete Budget", role: .destructive) { isDeleteConfirmationPresented = true }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                }
-                .accessibilityIdentifier("budgetDetailMenu")
-            }
-        }
         .sheet(isPresented: $isEditSheetPresented) {
             if let authenticatedClient {
                 EditBudgetSheet(profile: viewModel.profile, authenticatedClient: authenticatedClient) { updated in
@@ -163,6 +154,8 @@ struct BudgetManageView: View {
             currencyCode: "USD",
             localeIdentifier: "en",
             onUpdated: { _ in },
+            isEditSheetPresented: .constant(false),
+            isDeleteConfirmationPresented: .constant(false),
             dismissParent: {}
         )
     }

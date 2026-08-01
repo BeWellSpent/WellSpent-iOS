@@ -7,9 +7,12 @@ struct FixedExpensesListView: View {
     let authenticatedClient: ProtocolClient
     let currencyCode: String
     let localeIdentifier: String
+    /// See `ExpensePlanView.isAddCategoryPresented` / `.isActive` — owned by
+    /// `BudgetDetailView` and threaded through `TransactionsListView`.
+    @Binding var isAddSheetPresented: Bool
+    let isActive: Bool
 
     @State private var viewModel: FixedExpensesViewModel?
-    @State private var isAddSheetPresented = false
     @State private var editingTransaction: Wellspent_V1_Transaction?
     @State private var markingPaidTransaction: Wellspent_V1_Transaction?
 
@@ -19,16 +22,6 @@ struct FixedExpensesListView: View {
                 content(viewModel: viewModel)
             } else {
                 ProgressView()
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isAddSheetPresented = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .accessibilityIdentifier("addFixedExpenseButton")
             }
         }
         .refreshable {
@@ -45,6 +38,11 @@ struct FixedExpensesListView: View {
                 )
             }
             await viewModel?.load()
+        }
+        .onChange(of: isActive) { _, newValue in
+            if newValue {
+                Task { await viewModel?.load() }
+            }
         }
     }
 
@@ -181,7 +179,9 @@ struct FixedExpensesListView: View {
             budgetProfileID: "preview-budget",
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
-            localeIdentifier: "en"
+            localeIdentifier: "en",
+            isAddSheetPresented: .constant(false),
+            isActive: true
         )
     }
 }

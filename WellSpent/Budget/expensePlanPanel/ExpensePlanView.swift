@@ -15,11 +15,23 @@ struct ExpensePlanView: View {
     let authenticatedClient: ProtocolClient
     let currencyCode: String
     let localeIdentifier: String
+    /// Owned by `BudgetDetailView`, not locally — the visible nav bar belongs
+    /// to the *outer* `NavigationStack` this view is nested two levels
+    /// inside (per-tab stack → pushed budget detail screen), and neither
+    /// `.toolbar` items nor this picker's selection reliably surface from
+    /// here on their own. `BudgetDetailView` needs `selectedKind` itself to
+    /// decide which toolbar button to show, so it owns the state and this
+    /// view just binds to it.
+    @Binding var selectedKind: PlanKind
+    @Binding var isAddCategoryPresented: Bool
+    /// True while the Plan tab is the selected `BudgetSection` in
+    /// `BudgetDetailView`. `TabView` keeps every tab's content mounted, so
+    /// `.task` only fires once on first mount — this drives a reload every
+    /// time the tab becomes active again, not just on first appearance.
+    let isActive: Bool
 
     @State private var viewModel: ExpensePlanViewModel?
-    @State private var isAddCategoryPresented = false
     @State private var allocatingCategory: Wellspent_V1_Category?
-    @State private var selectedKind: PlanKind = .plan
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,18 +63,6 @@ struct ExpensePlanView: View {
             }
         }
         .navigationTitle("Expense Plan")
-        .toolbar {
-            if selectedKind == .plan {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isAddCategoryPresented = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityIdentifier("addPlanCategoryButton")
-                }
-            }
-        }
         .task {
             if viewModel == nil {
                 viewModel = ExpensePlanViewModel(
@@ -74,6 +74,11 @@ struct ExpensePlanView: View {
                 )
             }
             await viewModel?.load()
+        }
+        .onChange(of: isActive) { _, newValue in
+            if newValue {
+                Task { await viewModel?.load() }
+            }
         }
         .refreshable {
             await viewModel?.load()
@@ -167,7 +172,10 @@ struct ExpensePlanView: View {
             budgetProfileID: "preview-budget",
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
-            localeIdentifier: "en"
+            localeIdentifier: "en",
+            selectedKind: .constant(.plan),
+            isAddCategoryPresented: .constant(false),
+            isActive: true
         )
     }
 }

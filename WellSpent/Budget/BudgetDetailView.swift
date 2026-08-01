@@ -7,6 +7,19 @@ import WellSpentAPI
 /// Fixed, 2B-2/2B-3), and Manage (People/Income/Categories/Payment Methods,
 /// 2A/2B-1) are all real. Expense Overview (actual vs. planned) lands in
 /// 2C-2.
+///
+/// This view is pushed via `NavigationLink` onto `BudgetListView`'s
+/// `NavigationStack`, but also nests its own per-tab `NavigationStack`s
+/// inside a `TabView` (`tabView`/`splitView`) so each tab keeps independent
+/// push state. That nesting means the *outer* stack owns the only nav bar
+/// that's actually rendered: `.toolbar` items from an inner stack surface
+/// only transiently (visible during the push-in transition, then dropped),
+/// and `.navigationTitle` from an inner stack never surfaces at all. So all
+/// title/toolbar content lives here, driven by `selectedSection` and the
+/// per-tab sub-state below, rather than on `ExpensePlanView` /
+/// `TransactionsListView` / `FixedExpensesListView` / `BudgetManageView`
+/// themselves (which still declare their own for canvas-preview accuracy in
+/// isolation, but those never render in the real, nested app).
 struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -19,6 +32,14 @@ struct BudgetDetailView: View {
     @State private var viewModel: BudgetDetailViewModel?
     @State private var selectedSection: BudgetSection = .manage
     @State private var notificationViewModel: NotificationBellViewModel?
+
+    @State private var planSelectedKind: ExpensePlanView.PlanKind = .plan
+    @State private var transactionsSelectedKind: TransactionsListView.TransactionKind = .variable
+    @State private var isAddCategoryPresented = false
+    @State private var isAddTransactionPresented = false
+    @State private var isAddFixedExpensePresented = false
+    @State private var isEditBudgetPresented = false
+    @State private var isDeleteBudgetConfirmationPresented = false
 
     init(
         profile: Wellspent_V1_BudgetProfile,
@@ -48,8 +69,9 @@ struct BudgetDetailView: View {
                 ProgressView()
             }
         }
-        .navigationTitle(viewModel?.profile.name ?? "")
+        .navigationTitle(currentTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbarContent }
         .task {
             // Hoisted up from BudgetManageView so the Transactions tab has
             // `currentPeriod.id` (needed for `budget_period_id`) available
@@ -104,6 +126,70 @@ struct BudgetDetailView: View {
         }
     }
 
+    /// See the type-level doc comment — this tracks `selectedSection` to
+    /// reproduce the per-tab title at the one level that's actually
+    /// displayed.
+    private var currentTitle: String {
+        switch selectedSection {
+        case .plan: "Expense Plan"
+        case .transactions: "Transactions"
+        case .manage: viewModel?.profile.name ?? ""
+        }
+    }
+
+    /// Same reasoning as `currentTitle`, for the primary action button (+
+    /// bell, common to every tab). Mirrors exactly what each leaf view used
+    /// to declare in its own (non-rendering) `.toolbar`.
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        switch selectedSection {
+        case .plan:
+            if planSelectedKind == .plan {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddCategoryPresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("addPlanCategoryButton")
+                }
+            }
+        case .transactions:
+            if transactionsSelectedKind == .variable {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddTransactionPresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("addTransactionButton")
+                }
+            } else {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddFixedExpensePresented = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityIdentifier("addFixedExpenseButton")
+                }
+            }
+        case .manage:
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("Edit Budget") { isEditBudgetPresented = true }
+                    Button("Delete Budget", role: .destructive) { isDeleteBudgetConfirmationPresented = true }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityIdentifier("budgetDetailMenu")
+            }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            NotificationBellButton(viewModel: notificationViewModel)
+        }
+    }
+
     /// `List(selection:)` on iOS requires an optional-selection binding (the
     /// non-optional overload is macOS/tvOS-only) — `selectedSection` itself
     /// stays non-optional since `TabView`'s selection doesn't have that
@@ -142,38 +228,39 @@ struct BudgetDetailView: View {
 
     @ViewBuilder
     private func planContent(viewModel: BudgetDetailViewModel) -> some View {
-        Group {
-            if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
-                ExpensePlanView(
-                    budgetPeriodID: period.id,
-                    budgetProfileID: viewModel.profile.id,
-                    authenticatedClient: authenticatedClient,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                )
-            } else {
-                ProgressView()
-            }
+        if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+            ExpensePlanView(
+                budgetPeriodID: period.id,
+                budgetProfileID: viewModel.profile.id,
+                authenticatedClient: authenticatedClient,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                selectedKind: $planSelectedKind,
+                isAddCategoryPresented: $isAddCategoryPresented,
+                isActive: selectedSection == .plan
+            )
+        } else {
+            ProgressView()
         }
-        .toolbar { notificationBellToolbarItem }
     }
 
     @ViewBuilder
     private func transactionsContent(viewModel: BudgetDetailViewModel) -> some View {
-        Group {
-            if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
-                TransactionsListView(
-                    budgetPeriodID: period.id,
-                    budgetProfileID: viewModel.profile.id,
-                    authenticatedClient: authenticatedClient,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                )
-            } else {
-                ProgressView()
-            }
+        if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+            TransactionsListView(
+                budgetPeriodID: period.id,
+                budgetProfileID: viewModel.profile.id,
+                authenticatedClient: authenticatedClient,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                selectedKind: $transactionsSelectedKind,
+                isAddTransactionPresented: $isAddTransactionPresented,
+                isAddFixedExpensePresented: $isAddFixedExpensePresented,
+                isActive: selectedSection == .transactions
+            )
+        } else {
+            ProgressView()
         }
-        .toolbar { notificationBellToolbarItem }
     }
 
     private func manageContent(viewModel: BudgetDetailViewModel) -> some View {
@@ -183,16 +270,10 @@ struct BudgetDetailView: View {
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier,
             onUpdated: onUpdated,
+            isEditSheetPresented: $isEditBudgetPresented,
+            isDeleteConfirmationPresented: $isDeleteBudgetConfirmationPresented,
             dismissParent: dismissAfterDelete
         )
-        .toolbar { notificationBellToolbarItem }
-    }
-
-    @ToolbarContentBuilder
-    private var notificationBellToolbarItem: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            NotificationBellButton(viewModel: notificationViewModel)
-        }
     }
 }
 
