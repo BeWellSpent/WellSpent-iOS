@@ -15,6 +15,8 @@ struct FixedExpensesListView: View {
     /// confirmed match as an expandable linked sub-row.
     var reviewViewModel: TransactionReviewViewModel? = nil
     let canEdit: Bool
+    let searchQuery: String
+    let filter: TransactionFilterOption
 
     @State private var viewModel: FixedExpensesViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
@@ -52,6 +54,17 @@ struct FixedExpensesListView: View {
 
     @ViewBuilder
     private func content(viewModel: FixedExpensesViewModel) -> some View {
+        let visibleTransactions = TransactionFiltering.apply(
+            viewModel.transactions,
+            filter: filter,
+            searchQuery: searchQuery,
+            incomeCategoryID: viewModel.categories.first { $0.isSystem && $0.name == "Income" }?.id,
+            overBudgetTransactionIDs: [],
+            categoryName: viewModel.categoryName,
+            ownerName: viewModel.ownerName
+        )
+        let dayGroups = TransactionDayGrouping.group(visibleTransactions)
+
         List {
             Section {
                 LabeledContent("Total", value: viewModel.totalText)
@@ -60,28 +73,34 @@ struct FixedExpensesListView: View {
 
             if viewModel.transactions.isEmpty && viewModel.isLoading {
                 ProgressView()
-            } else if viewModel.transactions.isEmpty {
+            } else if visibleTransactions.isEmpty {
                 Text("No fixed expenses yet.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(viewModel.transactions, id: \.id) { transaction in
-                    FixedExpenseRow(
-                        transaction: transaction,
-                        viewModel: viewModel,
-                        linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviewViewModel?.reviews ?? []),
-                        currencyCode: currencyCode,
-                        localeIdentifier: localeIdentifier,
-                        canEdit: canEdit,
-                        onEdit: { editingTransaction = transaction },
-                        onMarkPaid: { markingPaidTransaction = transaction }
-                    )
-                }
-                .onDelete(perform: canEdit ? { offsets in
-                    for index in offsets {
-                        let transaction = viewModel.transactions[index]
-                        Task { await viewModel.delete(transaction) }
+                ForEach(dayGroups) { group in
+                    Section {
+                        ForEach(group.transactions, id: \.id) { transaction in
+                            FixedExpenseRow(
+                                transaction: transaction,
+                                viewModel: viewModel,
+                                linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviewViewModel?.reviews ?? []),
+                                currencyCode: currencyCode,
+                                localeIdentifier: localeIdentifier,
+                                canEdit: canEdit,
+                                onEdit: { editingTransaction = transaction },
+                                onMarkPaid: { markingPaidTransaction = transaction }
+                            )
+                        }
+                        .onDelete(perform: canEdit ? { offsets in
+                            for index in offsets {
+                                let transaction = group.transactions[index]
+                                Task { await viewModel.delete(transaction) }
+                            }
+                        } : nil)
+                    } header: {
+                        Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
                     }
-                } : nil)
+                }
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -90,6 +109,7 @@ struct FixedExpensesListView: View {
                 }
             }
         }
+        .listStyle(.plain)
         .sheet(isPresented: $isAddSheetPresented) {
             AddFixedExpenseView(
                 budgetProfileID: budgetProfileID,
@@ -262,7 +282,9 @@ private struct FixedExpenseRow: View {
             localeIdentifier: "en",
             isAddSheetPresented: .constant(false),
             isActive: true,
-            canEdit: true
+            canEdit: true,
+            searchQuery: "",
+            filter: .none
         )
     }
 }

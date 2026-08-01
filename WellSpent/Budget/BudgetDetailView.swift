@@ -31,12 +31,14 @@ struct BudgetDetailView: View {
     private let onDeleted: () -> Void
 
     @State private var viewModel: BudgetDetailViewModel?
-    @State private var selectedSection: BudgetSection = .manage
+    @State private var selectedSection: BudgetSection = .plan
     @State private var notificationViewModel: NotificationBellViewModel?
     @State private var reviewViewModel: TransactionReviewViewModel?
 
-    @State private var planSelectedKind: ExpensePlanView.PlanKind = .plan
+    @State private var planSelectedKind: ExpensePlanView.PlanKind = .overview
     @State private var transactionsSelectedKind: TransactionsListView.TransactionKind = .variable
+    @State private var transactionsSearchQuery = ""
+    @State private var transactionsFilter: TransactionFilterOption = .none
     @State private var isAddCategoryPresented = false
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
@@ -60,6 +62,20 @@ struct BudgetDetailView: View {
     }
 
     var body: some View {
+        if selectedSection == .transactions {
+            content.searchable(text: $transactionsSearchQuery, prompt: "Search by name, category, or owner")
+        } else {
+            content
+        }
+    }
+
+    /// Split out of `body` so `.searchable` can be attached conditionally
+    /// (only while the Transactions tab is active) without duplicating the
+    /// rest of this screen's chrome — this is the same outer level the
+    /// `.toolbar`/`.navigationTitle` below already reliably render from, per
+    /// the nested-NavigationStack chrome-bug fix (see the type-level doc
+    /// comment), so attaching `.searchable` here carries no new risk.
+    private var content: some View {
         Group {
             if let viewModel {
                 if horizontalSizeClass == .regular {
@@ -74,6 +90,11 @@ struct BudgetDetailView: View {
         .navigationTitle(currentTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
+        .onChange(of: transactionsSelectedKind) { _, _ in
+            // Switching Variable <-> Fixed resets the filter rather than
+            // silently carrying over an option the other tab doesn't offer.
+            transactionsFilter = .none
+        }
         .task {
             // Hoisted up from BudgetManageView so the Transactions tab has
             // `currentPeriod.id` (needed for `budget_period_id`) available
@@ -204,6 +225,19 @@ struct BudgetDetailView: View {
                     .accessibilityIdentifier("addFixedExpenseButton")
                 }
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(TransactionFilterOption.none.label) { transactionsFilter = .none }
+                    if transactionsSelectedKind == .variable {
+                        Button(TransactionFilterOption.spentOnly.label) { transactionsFilter = .spentOnly }
+                        Button(TransactionFilterOption.exceededOnly.label) { transactionsFilter = .exceededOnly }
+                    }
+                    Button(TransactionFilterOption.excludedOnly.label) { transactionsFilter = .excludedOnly }
+                } label: {
+                    Image(systemName: transactionsFilter == .none ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                }
+                .accessibilityIdentifier("transactionsFilterMenu")
+            }
         case .review:
             ToolbarItemGroup {}
         case .manage:
@@ -297,7 +331,9 @@ struct BudgetDetailView: View {
                 isAddFixedExpensePresented: $isAddFixedExpensePresented,
                 isActive: selectedSection == .transactions,
                 reviewViewModel: reviewViewModel,
-                canEdit: viewModel.canEdit
+                canEdit: viewModel.canEdit,
+                searchQuery: transactionsSearchQuery,
+                filter: transactionsFilter
             )
         } else {
             ProgressView()

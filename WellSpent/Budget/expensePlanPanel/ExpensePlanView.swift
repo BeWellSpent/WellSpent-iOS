@@ -37,8 +37,8 @@ struct ExpensePlanView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("View", selection: $selectedKind) {
-                Text("Plan").tag(PlanKind.plan)
                 Text("Overview").tag(PlanKind.overview)
+                Text("Plan").tag(PlanKind.plan)
             }
             .pickerStyle(.segmented)
             .padding([.horizontal, .top])

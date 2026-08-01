@@ -28,6 +28,8 @@ struct TransactionsListView: View {
     /// pending-match hint, mirroring web's `TransactionsPanel.tsx`.
     var reviewViewModel: TransactionReviewViewModel? = nil
     let canEdit: Bool
+    let searchQuery: String
+    let filter: TransactionFilterOption
 
     @State private var viewModel: TransactionsViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
@@ -62,7 +64,9 @@ struct TransactionsListView: View {
                     isAddSheetPresented: $isAddFixedExpensePresented,
                     isActive: isActive && selectedKind == .fixed,
                     reviewViewModel: reviewViewModel,
-                    canEdit: canEdit
+                    canEdit: canEdit,
+                    searchQuery: searchQuery,
+                    filter: filter
                 )
             }
         }
@@ -92,7 +96,17 @@ struct TransactionsListView: View {
     @ViewBuilder
     private func content(viewModel: TransactionsViewModel) -> some View {
         let reviews = reviewViewModel?.reviews ?? []
-        let visibleTransactions = viewModel.visibleTransactions(reviews: reviews)
+        let confirmedFiltered = viewModel.visibleTransactions(reviews: reviews)
+        let visibleTransactions = TransactionFiltering.apply(
+            confirmedFiltered,
+            filter: filter,
+            searchQuery: searchQuery,
+            incomeCategoryID: viewModel.categories.first { $0.isSystem && $0.name == "Income" }?.id,
+            overBudgetTransactionIDs: filter == .exceededOnly ? viewModel.overBudgetTransactionIDs : [],
+            categoryName: viewModel.categoryName,
+            ownerName: viewModel.ownerName
+        )
+        let dayGroups = TransactionDayGrouping.group(visibleTransactions)
 
         List {
             Section {
@@ -106,15 +120,21 @@ struct TransactionsListView: View {
                 Text("No transactions yet.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(visibleTransactions, id: \.id) { transaction in
-                    transactionRow(transaction, viewModel: viewModel, reviews: reviews)
-                }
-                .onDelete(perform: canEdit ? { offsets in
-                    for index in offsets {
-                        let transaction = visibleTransactions[index]
-                        Task { await viewModel.delete(id: transaction.id) }
+                ForEach(dayGroups) { group in
+                    Section {
+                        ForEach(group.transactions, id: \.id) { transaction in
+                            transactionRow(transaction, viewModel: viewModel, reviews: reviews)
+                        }
+                        .onDelete(perform: canEdit ? { offsets in
+                            for index in offsets {
+                                let transaction = group.transactions[index]
+                                Task { await viewModel.delete(id: transaction.id) }
+                            }
+                        } : nil)
+                    } header: {
+                        Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
                     }
-                } : nil)
+                }
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -123,6 +143,7 @@ struct TransactionsListView: View {
                 }
             }
         }
+        .listStyle(.plain)
         .sheet(isPresented: $isAddTransactionPresented) {
             AddEditTransactionView(
                 mode: .add,
@@ -255,7 +276,9 @@ struct TransactionsListView: View {
             isAddTransactionPresented: .constant(false),
             isAddFixedExpensePresented: .constant(false),
             isActive: true,
-            canEdit: true
+            canEdit: true,
+            searchQuery: "",
+            filter: .none
         )
     }
 }
