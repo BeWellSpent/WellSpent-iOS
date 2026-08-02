@@ -260,10 +260,13 @@ private struct FixedExpenseRow: View {
                 .foregroundStyle(.primary)
             HStack(spacing: 4) {
                 if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
+                    ColorDotView(hex: viewModel.categoryColor(for: transaction.categoryID), diameter: 8)
                     Text(categoryName)
                 }
                 if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
-                    Text("· \(methodName)")
+                    Text("·")
+                    ColorDotView(hex: viewModel.paymentMethodColor(for: transaction.paymentMethodID), diameter: 8)
+                    Text(methodName)
                 }
             }
             .font(.caption)

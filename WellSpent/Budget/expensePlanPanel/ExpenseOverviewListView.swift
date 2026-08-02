@@ -112,6 +112,7 @@ struct ExpenseOverviewListView: View {
         let isOver = viewModel.isOver(for: category)
 
         return HStack {
+            ColorDotView(hex: category.color)
             Text(category.name)
             Spacer()
             overspendChip(actual: actual, planned: planned, isOver: isOver)
@@ -126,6 +127,7 @@ struct ExpenseOverviewListView: View {
         let isOver = viewModel.isOver(for: category, person: person)
 
         return HStack {
+            ColorDotView(hex: person.color, diameter: 8)
             Text(person.userName)
                 .foregroundStyle(.secondary)
             Spacer()

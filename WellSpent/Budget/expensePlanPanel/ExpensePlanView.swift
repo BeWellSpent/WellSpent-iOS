@@ -147,6 +147,7 @@ struct ExpensePlanView: View {
 
     private func categoryRow(_ category: Wellspent_V1_Category, viewModel: ExpensePlanViewModel, canEdit: Bool) -> some View {
         let row = HStack {
+            ColorDotView(hex: category.color)
             Text(category.name)
                 .foregroundStyle(.primary)
             Spacer()

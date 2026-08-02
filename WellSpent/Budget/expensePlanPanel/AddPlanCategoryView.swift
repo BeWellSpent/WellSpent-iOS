@@ -22,7 +22,10 @@ struct AddPlanCategoryView: View {
                             onSelect(category)
                             dismiss()
                         } label: {
-                            Text(category.name)
+                            HStack {
+                                ColorDotView(hex: category.color)
+                                Text(category.name)
+                            }
                         }
                         .accessibilityIdentifier("addPlanCategory_\(category.name)")
                     }

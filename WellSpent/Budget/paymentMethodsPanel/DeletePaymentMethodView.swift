@@ -31,7 +31,7 @@ struct DeletePaymentMethodView: View {
                     Picker("Replacement", selection: $replacementID) {
                         Text("Select a payment method").tag("")
                         ForEach(otherMethods, id: \.id) { other in
-                            Text(rowLabel(for: other)).tag(other.id)
+                            ColorDotLabel(title: rowLabel(for: other), hex: other.color).tag(other.id)
                         }
                     }
                     .accessibilityIdentifier("replacementPaymentMethodPicker")

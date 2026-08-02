@@ -22,7 +22,7 @@ struct RemovePersonView: View {
                         Picker("Reassign to", selection: $replacementID) {
                             Text("Select a person").tag(Int64(0))
                             ForEach(otherPeople, id: \.id) { p in
-                                Text(p.userName).tag(p.id)
+                                ColorDotLabel(title: p.userName, hex: p.color).tag(p.id)
                             }
                         }
                         .accessibilityIdentifier("replacementPersonPicker")

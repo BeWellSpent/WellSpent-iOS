@@ -90,7 +90,7 @@ struct InvitesListView: View {
                 )) {
                     Text("No person").tag(Int64(0))
                     ForEach(viewModel.guestPeople, id: \.id) { person in
-                        Text(person.userName).tag(person.id)
+                        ColorDotLabel(title: person.userName, hex: person.color).tag(person.id)
                     }
                 }
                 .accessibilityIdentifier("inviteLinkPersonPicker")

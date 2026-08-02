@@ -148,10 +148,13 @@ struct SavingsListView: View {
                 }
                 HStack(spacing: 4) {
                     if let personName = viewModel.personName(for: source.budgetPersonID) {
+                        ColorDotView(hex: viewModel.personColor(for: source.budgetPersonID), diameter: 8)
                         Text(personName)
                     }
                     if let methodName = viewModel.paymentMethodName(for: source.paymentMethodID) {
-                        Text("· \(methodName)")
+                        Text("·")
+                        ColorDotView(hex: viewModel.paymentMethodColor(for: source.paymentMethodID), diameter: 8)
+                        Text(methodName)
                     }
                 }
                 .font(.caption)

@@ -17,7 +17,10 @@ struct PeopleSetupStepView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(viewModel.people, id: \.id) { person in
-                        Text(person.userName)
+                        HStack {
+                            ColorDotView(hex: person.color)
+                            Text(person.userName)
+                        }
                     }
                 }
             }
