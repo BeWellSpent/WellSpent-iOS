@@ -97,7 +97,7 @@ struct AddEditTransactionView: View {
             Picker("Category", selection: $viewModel.categoryID) {
                 Text("None").tag(Int32(0))
                 ForEach(categories, id: \.id) { category in
-                    Text(category.name).tag(category.id)
+                    ColorDotLabel(title: category.name, hex: category.color).tag(category.id)
                 }
             }
             .accessibilityIdentifier("transactionCategoryPicker")
@@ -105,7 +105,7 @@ struct AddEditTransactionView: View {
             Picker("Payment Method", selection: $viewModel.paymentMethodID) {
                 Text("None").tag("")
                 ForEach(paymentMethods, id: \.id) { method in
-                    Text(method.alias.isEmpty ? method.name : method.alias).tag(method.id)
+                    ColorDotLabel(title: method.alias.isEmpty ? method.name : method.alias, hex: method.color).tag(method.id)
                 }
             }
             .accessibilityIdentifier("transactionPaymentMethodPicker")

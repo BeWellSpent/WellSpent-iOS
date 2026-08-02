@@ -66,6 +66,10 @@ final class IncomeViewModel {
         return people.first(where: { $0.id == budgetPersonID })?.userName
     }
 
+    func personColor(for budgetPersonID: Int64) -> String {
+        people.first(where: { $0.id == budgetPersonID })?.color ?? ""
+    }
+
     func addSource(_ source: Wellspent_V1_IncomeSource) {
         sources.append(source)
     }

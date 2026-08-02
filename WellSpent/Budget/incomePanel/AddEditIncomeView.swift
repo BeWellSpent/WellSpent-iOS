@@ -105,7 +105,7 @@ struct AddEditIncomeView: View {
             Picker("Person", selection: $viewModel.personID) {
                 Text("Unattributed").tag(Int64(0))
                 ForEach(people, id: \.id) { person in
-                    Text(person.userName).tag(person.id)
+                    ColorDotLabel(title: person.userName, hex: person.color).tag(person.id)
                 }
             }
             .accessibilityIdentifier("incomePersonPicker")

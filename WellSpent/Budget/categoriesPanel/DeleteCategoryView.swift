@@ -24,7 +24,7 @@ struct DeleteCategoryView: View {
                     Picker("Replacement", selection: $replacementID) {
                         Text("Select a category").tag(Int32(0))
                         ForEach(otherCategories, id: \.id) { other in
-                            Text(other.isSystem ? "\(other.name) (System)" : other.name).tag(other.id)
+                            ColorDotLabel(title: other.isSystem ? "\(other.name) (System)" : other.name, hex: other.color).tag(other.id)
                         }
                     }
                     .accessibilityIdentifier("replacementCategoryPicker")

@@ -137,10 +137,18 @@ final class TransactionsViewModel {
         return categories.first(where: { $0.id == categoryID })?.name
     }
 
+    func categoryColor(for categoryID: Int32) -> String {
+        categories.first(where: { $0.id == categoryID })?.color ?? ""
+    }
+
     func paymentMethodName(for paymentMethodID: String) -> String? {
         guard !paymentMethodID.isEmpty else { return nil }
         guard let method = paymentMethods.first(where: { $0.id == paymentMethodID }) else { return nil }
         return method.alias.isEmpty ? method.name : method.alias
+    }
+
+    func paymentMethodColor(for paymentMethodID: String) -> String {
+        paymentMethods.first(where: { $0.id == paymentMethodID })?.color ?? ""
     }
 
     /// Resolves a transaction's owner via its payment method's attributed

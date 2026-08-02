@@ -126,7 +126,9 @@ struct IncomeListView: View {
                 ))
                 Text("· \(RecurringTypeLabel.text(for: source.paymentFrequency))")
                 if let personName = viewModel.personName(for: source.budgetPersonID) {
-                    Text("· \(personName)")
+                    Text("·")
+                    ColorDotView(hex: viewModel.personColor(for: source.budgetPersonID), diameter: 8)
+                    Text(personName)
                 }
             }
             .font(.subheadline)

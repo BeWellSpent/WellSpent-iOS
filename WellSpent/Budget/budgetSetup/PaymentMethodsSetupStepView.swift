@@ -46,7 +46,7 @@ struct PaymentMethodsSetupStepView: View {
                 if people.count > 1 {
                     Picker("Owner", selection: $viewModel.personID) {
                         ForEach(people, id: \.id) { person in
-                            Text(person.userName).tag(person.id)
+                            ColorDotLabel(title: person.userName, hex: person.color).tag(person.id)
                         }
                     }
                 }

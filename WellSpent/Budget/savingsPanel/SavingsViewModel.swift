@@ -61,10 +61,18 @@ final class SavingsViewModel {
         return people.first(where: { $0.id == personID })?.userName
     }
 
+    func personColor(for personID: Int64) -> String {
+        people.first(where: { $0.id == personID })?.color ?? ""
+    }
+
     func paymentMethodName(for paymentMethodID: String) -> String? {
         guard !paymentMethodID.isEmpty else { return nil }
         guard let method = paymentMethods.first(where: { $0.id == paymentMethodID }) else { return nil }
         return method.alias.isEmpty ? method.name : method.alias
+    }
+
+    func paymentMethodColor(for paymentMethodID: String) -> String {
+        paymentMethods.first(where: { $0.id == paymentMethodID })?.color ?? ""
     }
 
     func addSource(_ source: Wellspent_V1_SavingsSource) {

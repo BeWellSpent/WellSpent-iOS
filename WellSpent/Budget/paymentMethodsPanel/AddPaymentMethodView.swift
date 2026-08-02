@@ -34,7 +34,7 @@ struct AddPaymentMethodView: View {
                     Picker("Owner", selection: $viewModel.personID) {
                         Text("Select a person").tag(Int64(0))
                         ForEach(people, id: \.id) { person in
-                            Text(person.userName).tag(person.id)
+                            ColorDotLabel(title: person.userName, hex: person.color).tag(person.id)
                         }
                     }
                     .accessibilityIdentifier("paymentMethodOwnerPicker")

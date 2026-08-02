@@ -38,7 +38,7 @@ struct EditSavingsSourceView: View {
                     Picker("Payment Method", selection: $viewModel.paymentMethodID) {
                         Text("No payment method").tag("")
                         ForEach(paymentMethods, id: \.id) { method in
-                            Text(method.alias.isEmpty ? method.name : method.alias).tag(method.id)
+                            ColorDotLabel(title: method.alias.isEmpty ? method.name : method.alias, hex: method.color).tag(method.id)
                         }
                     }
                     .accessibilityIdentifier("editSavingsPaymentMethodPicker")
