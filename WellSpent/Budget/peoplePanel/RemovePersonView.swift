@@ -19,13 +19,13 @@ struct RemovePersonView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
-                        Picker("Reassign to", selection: $replacementID) {
-                            Text("Select a person").tag(Int64(0))
-                            ForEach(otherPeople, id: \.id) { p in
-                                ColorDotLabel(title: p.userName, hex: p.color).tag(p.id)
-                            }
-                        }
-                        .accessibilityIdentifier("replacementPersonPicker")
+                        ColorDotPickerField(
+                            title: "Reassign to",
+                            selection: $replacementID,
+                            options: otherPeople.map { ColorDotOption(id: $0.id, name: $0.userName, hex: $0.color) },
+                            noneOption: (id: Int64(0), label: "Select a person"),
+                            accessibilityIdentifier: "replacementPersonPicker"
+                        )
                     }
                 } else {
                     Section {

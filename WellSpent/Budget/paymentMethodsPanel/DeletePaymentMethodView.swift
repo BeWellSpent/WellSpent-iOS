@@ -28,13 +28,13 @@ struct DeletePaymentMethodView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    Picker("Replacement", selection: $replacementID) {
-                        Text("Select a payment method").tag("")
-                        ForEach(otherMethods, id: \.id) { other in
-                            ColorDotLabel(title: rowLabel(for: other), hex: other.color).tag(other.id)
-                        }
-                    }
-                    .accessibilityIdentifier("replacementPaymentMethodPicker")
+                    ColorDotPickerField(
+                        title: "Replacement",
+                        selection: $replacementID,
+                        options: otherMethods.map { ColorDotOption(id: $0.id, name: rowLabel(for: $0), hex: $0.color) },
+                        noneOption: (id: "", label: "Select a payment method"),
+                        accessibilityIdentifier: "replacementPaymentMethodPicker"
+                    )
                 }
             }
             .navigationTitle("Delete Payment Method")

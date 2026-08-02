@@ -94,21 +94,23 @@ struct AddEditTransactionView: View {
     @ViewBuilder
     private var attributionSection: some View {
         Section {
-            Picker("Category", selection: $viewModel.categoryID) {
-                Text("None").tag(Int32(0))
-                ForEach(categories, id: \.id) { category in
-                    ColorDotLabel(title: category.name, hex: category.color).tag(category.id)
-                }
-            }
-            .accessibilityIdentifier("transactionCategoryPicker")
+            ColorDotPickerField(
+                title: "Category",
+                selection: $viewModel.categoryID,
+                options: categories.map { ColorDotOption(id: $0.id, name: $0.name, hex: $0.color) },
+                noneOption: (id: Int32(0), label: "None"),
+                accessibilityIdentifier: "transactionCategoryPicker"
+            )
 
-            Picker("Payment Method", selection: $viewModel.paymentMethodID) {
-                Text("None").tag("")
-                ForEach(paymentMethods, id: \.id) { method in
-                    ColorDotLabel(title: method.alias.isEmpty ? method.name : method.alias, hex: method.color).tag(method.id)
-                }
-            }
-            .accessibilityIdentifier("transactionPaymentMethodPicker")
+            ColorDotPickerField(
+                title: "Payment Method",
+                selection: $viewModel.paymentMethodID,
+                options: paymentMethods.map {
+                    ColorDotOption(id: $0.id, name: $0.alias.isEmpty ? $0.name : $0.alias, hex: $0.color)
+                },
+                noneOption: (id: "", label: "None"),
+                accessibilityIdentifier: "transactionPaymentMethodPicker"
+            )
         }
     }
 

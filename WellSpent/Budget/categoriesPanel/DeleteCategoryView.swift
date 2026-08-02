@@ -21,13 +21,15 @@ struct DeleteCategoryView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    Picker("Replacement", selection: $replacementID) {
-                        Text("Select a category").tag(Int32(0))
-                        ForEach(otherCategories, id: \.id) { other in
-                            ColorDotLabel(title: other.isSystem ? "\(other.name) (System)" : other.name, hex: other.color).tag(other.id)
-                        }
-                    }
-                    .accessibilityIdentifier("replacementCategoryPicker")
+                    ColorDotPickerField(
+                        title: "Replacement",
+                        selection: $replacementID,
+                        options: otherCategories.map {
+                            ColorDotOption(id: $0.id, name: $0.isSystem ? "\($0.name) (System)" : $0.name, hex: $0.color)
+                        },
+                        noneOption: (id: Int32(0), label: "Select a category"),
+                        accessibilityIdentifier: "replacementCategoryPicker"
+                    )
                 }
             }
             .navigationTitle("Delete Category")
