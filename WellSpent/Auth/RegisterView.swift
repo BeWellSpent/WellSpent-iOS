@@ -114,7 +114,7 @@ struct RegisterView: View {
             .disabled(!viewModel.canSubmit)
             .accessibilityIdentifier("registerButton")
 
-            GoogleAuthButton()
+            GoogleAuthButton(publicClient: session.publicClient)
         }
     }
 }
