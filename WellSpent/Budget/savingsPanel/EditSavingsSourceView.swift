@@ -35,13 +35,15 @@ struct EditSavingsSourceView: View {
                     AmountTextField(text: $viewModel.amountText)
                         .accessibilityIdentifier("editSavingsAmountField")
 
-                    Picker("Payment Method", selection: $viewModel.paymentMethodID) {
-                        Text("No payment method").tag("")
-                        ForEach(paymentMethods, id: \.id) { method in
-                            ColorDotLabel(title: method.alias.isEmpty ? method.name : method.alias, hex: method.color).tag(method.id)
-                        }
-                    }
-                    .accessibilityIdentifier("editSavingsPaymentMethodPicker")
+                    ColorDotPickerField(
+                        title: "Payment Method",
+                        selection: $viewModel.paymentMethodID,
+                        options: paymentMethods.map {
+                            ColorDotOption(id: $0.id, name: $0.alias.isEmpty ? $0.name : $0.alias, hex: $0.color)
+                        },
+                        noneOption: (id: "", label: "No payment method"),
+                        accessibilityIdentifier: "editSavingsPaymentMethodPicker"
+                    )
                 }
 
                 Section {

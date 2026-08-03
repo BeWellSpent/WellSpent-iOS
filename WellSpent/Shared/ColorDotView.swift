@@ -16,23 +16,6 @@ struct ColorDotView: View {
     }
 }
 
-/// A `Picker`/`Menu` option combining a color dot + label — the same visual
-/// pairing `ColorDotView` provides for list rows, packaged for use inside a
-/// `ForEach` building `Picker` options (category/person/payment-method
-/// selection menus throughout the app).
-struct ColorDotLabel: View {
-    let title: String
-    let hex: String
-
-    var body: some View {
-        Label {
-            Text(title)
-        } icon: {
-            ColorDotView(hex: hex, diameter: 10)
-        }
-    }
-}
-
 #Preview {
     HStack {
         ColorDotView(hex: "#EF5350")

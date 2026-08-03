@@ -84,16 +84,16 @@ struct InvitesListView: View {
             .accessibilityIdentifier("inviteRolePicker")
 
             if !viewModel.guestPeople.isEmpty {
-                Picker("Link to person", selection: Binding(
-                    get: { viewModel.draftBudgetPersonID },
-                    set: { viewModel.draftBudgetPersonID = $0 }
-                )) {
-                    Text("No person").tag(Int64(0))
-                    ForEach(viewModel.guestPeople, id: \.id) { person in
-                        ColorDotLabel(title: person.userName, hex: person.color).tag(person.id)
-                    }
-                }
-                .accessibilityIdentifier("inviteLinkPersonPicker")
+                ColorDotPickerField(
+                    title: "Link to person",
+                    selection: Binding(
+                        get: { viewModel.draftBudgetPersonID },
+                        set: { viewModel.draftBudgetPersonID = $0 }
+                    ),
+                    options: viewModel.guestPeople.map { ColorDotOption(id: $0.id, name: $0.userName, hex: $0.color) },
+                    noneOption: (id: Int64(0), label: "No person"),
+                    accessibilityIdentifier: "inviteLinkPersonPicker"
+                )
             }
 
             Button {

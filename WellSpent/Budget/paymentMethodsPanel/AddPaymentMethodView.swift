@@ -31,13 +31,13 @@ struct AddPaymentMethodView: View {
                     }
                     .accessibilityIdentifier("paymentMethodTypePicker")
 
-                    Picker("Owner", selection: $viewModel.personID) {
-                        Text("Select a person").tag(Int64(0))
-                        ForEach(people, id: \.id) { person in
-                            ColorDotLabel(title: person.userName, hex: person.color).tag(person.id)
-                        }
-                    }
-                    .accessibilityIdentifier("paymentMethodOwnerPicker")
+                    ColorDotPickerField(
+                        title: "Owner",
+                        selection: $viewModel.personID,
+                        options: people.map { ColorDotOption(id: $0.id, name: $0.userName, hex: $0.color) },
+                        noneOption: (id: Int64(0), label: "Select a person"),
+                        accessibilityIdentifier: "paymentMethodOwnerPicker"
+                    )
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Color").font(.caption).foregroundStyle(.secondary)

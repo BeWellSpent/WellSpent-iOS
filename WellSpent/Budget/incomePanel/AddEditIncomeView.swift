@@ -102,13 +102,13 @@ struct AddEditIncomeView: View {
     @ViewBuilder
     private var attributionSection: some View {
         Section {
-            Picker("Person", selection: $viewModel.personID) {
-                Text("Unattributed").tag(Int64(0))
-                ForEach(people, id: \.id) { person in
-                    ColorDotLabel(title: person.userName, hex: person.color).tag(person.id)
-                }
-            }
-            .accessibilityIdentifier("incomePersonPicker")
+            ColorDotPickerField(
+                title: "Person",
+                selection: $viewModel.personID,
+                options: people.map { ColorDotOption(id: $0.id, name: $0.userName, hex: $0.color) },
+                noneOption: (id: Int64(0), label: "Unattributed"),
+                accessibilityIdentifier: "incomePersonPicker"
+            )
         }
     }
 

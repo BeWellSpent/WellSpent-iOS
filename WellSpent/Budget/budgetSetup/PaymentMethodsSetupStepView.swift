@@ -44,11 +44,12 @@ struct PaymentMethodsSetupStepView: View {
                 }
 
                 if people.count > 1 {
-                    Picker("Owner", selection: $viewModel.personID) {
-                        ForEach(people, id: \.id) { person in
-                            ColorDotLabel(title: person.userName, hex: person.color).tag(person.id)
-                        }
-                    }
+                    ColorDotPickerField(
+                        title: "Owner",
+                        selection: $viewModel.personID,
+                        options: people.map { ColorDotOption(id: $0.id, name: $0.userName, hex: $0.color) },
+                        accessibilityIdentifier: "setupOwnerPicker"
+                    )
                 }
 
                 Button {

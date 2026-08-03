@@ -26,11 +26,32 @@ final class EditFixedExpenseViewModel {
     private let currencyCode: String
     private let client: Wellspent_V1_BudgetServiceClient
 
+    /// Whether the template already had an explicit `anchor_date` when this
+    /// view model was created, and what `startDate` was initially prefilled
+    /// to. Legacy expenses (created before `anchor_date` existed, or without
+    /// one set) have neither — `startDate` in that case is a display-only
+    /// reconstruction from `day_of_month`/`day_of_week`, not a real stored
+    /// value. `submit()` only sends `anchor_date` back to the server if the
+    /// expense already had one, or the user actually changed the date field
+    /// — otherwise saving an unrelated edit (renaming, category change)
+    /// would silently give the template a brand-new anchor_date, which can
+    /// reschedule its entire due-month cadence for interval>1 expenses (see
+    /// `fixedExpenseAnchor` in the backend's `budget_profile_service.go`).
+    private let hadAnchorDate: Bool
+    private let initialStartDate: Date
+
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
             && MoneyInput.parseAmount(amountText) != nil
             && !paymentMethodID.isEmpty
             && !isSubmitting
+    }
+
+    /// Whether `submit()` will include `anchor_date` in the update request —
+    /// exposed so the core bug-fix decision is directly unit-testable
+    /// without needing to mock the network call.
+    var shouldSendAnchorDate: Bool {
+        hadAnchorDate || startDate != initialStartDate
     }
 
     init(expense: Wellspent_V1_FixedExpense, currencyCode: String, authenticatedClient: ProtocolClient) {
@@ -41,7 +62,16 @@ final class EditFixedExpenseViewModel {
 
         name = expense.name
         amountText = MoneyInput.formatForEditing(units: expense.plannedAmount.units, nanos: expense.plannedAmount.nanos)
-        startDate = expense.hasAnchorDate ? expense.anchorDate.dateOnly : Date()
+        hadAnchorDate = expense.hasAnchorDate
+        let resolvedStartDate = expense.hasAnchorDate
+            ? expense.anchorDate.dateOnly
+            : FixedExpenseScheduling.displayDate(
+                dayOfMonth: expense.dayOfMonth,
+                dayOfWeek: expense.dayOfWeek,
+                isWeekly: expense.frequencyUnit == .week
+            )
+        initialStartDate = resolvedStartDate
+        startDate = resolvedStartDate
         frequencyUnit = expense.frequencyUnit == .week ? .week : .month
         intervalMonths = expense.intervalMonths > 0 ? Int(expense.intervalMonths) : 1
         intervalWeeks = expense.intervalWeeks > 0 ? Int(expense.intervalWeeks) : 1
@@ -60,19 +90,21 @@ final class EditFixedExpenseViewModel {
             $0.nanos = amount.nanos
             $0.currency = currencyCode
         }
-        let request = Wellspent_V1_UpdateFixedExpenseRequest.with {
+        var request = Wellspent_V1_UpdateFixedExpenseRequest.with {
             $0.id = expenseID
             $0.budgetProfileID = budgetProfileID
             $0.name = name.trimmingCharacters(in: .whitespaces)
             $0.plannedAmount = money
             $0.categoryID = categoryID
             $0.paymentMethodID = paymentMethodID
-            $0.anchorDate = Google_Protobuf_Timestamp(dateOnly: startDate)
             $0.dayOfMonth = FixedExpenseScheduling.dayOfMonth(for: startDate)
             $0.dayOfWeek = FixedExpenseScheduling.dayOfWeek(for: startDate)
             $0.frequencyUnit = frequencyUnit
             $0.intervalMonths = Int32(intervalMonths)
             $0.intervalWeeks = Int32(intervalWeeks)
+        }
+        if shouldSendAnchorDate {
+            request.anchorDate = Google_Protobuf_Timestamp(dateOnly: startDate)
         }
         let response = await client.updateFixedExpense(request: request)
 
