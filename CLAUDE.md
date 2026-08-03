@@ -246,6 +246,7 @@ Phase 2A covers budgets/periods, people, and income sources; 2B-1 adds categorie
 - The app supports a `-uiTestResetSession` launch argument (checked in `WellSpentApp.init`) that clears the Keychain token before `SessionStore` restores a session — every UI test starts from a known logged-out state instead of inheriting whatever the Simulator's Keychain has from a previous run.
 - Accessibility identifiers are set explicitly on every interactive element and screen-level container (not inferred from label text) — i18n will change label text later, identifiers won't.
 - **Never use screenshots to verify UI behavior** (`xcrun simctl io screenshot`, AppleScript/System Events clicks, or any other visual-inspection loop) — reading an image back into context is expensive, and a single verification pass can burn a large amount of context for one data point. If you need to confirm rendering behavior empirically (e.g. "does this SwiftUI view actually render X"), write it as an XCUITest assertion instead (`XCTAssertTrue(element.exists)`, `.isHittable`, accessibility-tree queries) — these are cheap, repeatable, and don't require reading pixels back into context. If no automatable signal exists for what you're checking, say so explicitly and ask the user to look rather than screenshotting yourself.
+- **Never quit or close Xcode (or any other GUI app the user has open) without asking first** — even when it looks like the correct fix for stale project state (e.g. after moving/renaming the project directory, or heavy `project.pbxproj` edits made while Xcode was open). Claude Code's own file writes go straight to disk and are safe regardless, but the user's own unsaved in-editor work is not — quitting risks losing it. If a restart is genuinely needed to pick up structural changes (moved/renamed folder, hand-edited `project.pbxproj`, new Swift Package dependencies), explain what's needed and either ask the user to quit/reopen it themselves or get explicit permission first.
 
 ## Version bump
 
@@ -253,7 +254,7 @@ Wired up as of Phase 2A: `MARKETING_VERSION` in the **`WellSpent` app target's**
 
 ## Git workflow
 
-Same convention as the other sub-repos: work happens on `develop`, never directly on `main`.
+Same convention as the other sub-repos: work happens on `develop`, never directly on `main`. Never add a `Co-Authored-By: Claude` (or any AI attribution) trailer to commit messages — standing rule across the whole workspace.
 
 ```bash
 git checkout develop   # or: git checkout -b develop, if it doesn't exist yet locally
