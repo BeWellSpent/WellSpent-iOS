@@ -16,11 +16,23 @@ import WellSpentAPI
 /// scheme-per-client approach isn't actually viable without a backend
 /// change. Instead this relies on the app's existing `applinks:bewellspent.com`
 /// associated domain (already used for invite links and Plaid's OAuth
-/// continuation, see `PlaidSectionViewModel.redirectURI`'s doc comment) —
-/// passing `nil` for `callbackURLScheme` tells `ASWebAuthenticationSession`
-/// to complete via Universal Link instead of a custom scheme. Requires
-/// `/auth/callback` to be listed in `WellSpent-web`'s
-/// `apple-app-site-association` file (added alongside this).
+/// continuation, see `PlaidSectionViewModel.redirectURI`'s doc comment).
+///
+/// **Universal Link completion — use `Callback.https`, not `callbackURLScheme: nil`
+/// (fixed after real-device testing, see CLAUDE.md v1.22.1).** The original
+/// implementation passed `nil` for `callbackURLScheme`, on the assumption
+/// that this makes `ASWebAuthenticationSession` complete via Universal Link.
+/// Confirmed live on TestFlight that it doesn't: even with the AASA entry
+/// present and Apple's CDN caches confirmed current, the session fully
+/// loaded `bewellspent.com/auth/callback` as an ordinary page inside its own
+/// browser chrome instead of short-circuiting — `nil` just means "no custom
+/// scheme configured," not "complete via Universal Link." The real,
+/// documented mechanism for HTTPS/Universal-Link callback completion is the
+/// explicit `ASWebAuthenticationSession.Callback.https(host:path:)`-based
+/// initializer, available iOS 17.4+. Below that (this app's min deployment
+/// target is 17.0), there's no supported way to get this behavior, so it
+/// falls back to the legacy `nil` form, which is no worse than before for
+/// that now-tiny slice of devices.
 ///
 /// Language/currency are left empty on the exchange call — same as this
 /// app's own `RegisterViewModel` for manual sign-up, which also leaves them
@@ -29,7 +41,9 @@ import WellSpentAPI
 @MainActor
 @Observable
 final class GoogleAuthCoordinator: NSObject {
-    private static let redirectURI = "https://bewellspent.com/auth/callback"
+    private static let redirectHost = "bewellspent.com"
+    private static let redirectPath = "/auth/callback"
+    private static let redirectURI = "https://\(redirectHost)\(redirectPath)"
 
     private(set) var isSigningIn = false
     private(set) var errorMessage: String?
@@ -120,12 +134,23 @@ final class GoogleAuthCoordinator: NSObject {
 
     private func authenticate(url: URL) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
-            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: nil) { callbackURL, error in
+            let completionHandler: (URL?, Error?) -> Void = { callbackURL, error in
                 if let callbackURL {
                     continuation.resume(returning: callbackURL)
                 } else {
                     continuation.resume(throwing: error ?? URLError(.badServerResponse))
                 }
+            }
+
+            let session: ASWebAuthenticationSession
+            if #available(iOS 17.4, *) {
+                session = ASWebAuthenticationSession(
+                    url: url,
+                    callback: .https(host: Self.redirectHost, path: Self.redirectPath),
+                    completionHandler: completionHandler
+                )
+            } else {
+                session = ASWebAuthenticationSession(url: url, callbackURLScheme: nil, completionHandler: completionHandler)
             }
             session.presentationContextProvider = self
             activeSession = session
