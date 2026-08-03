@@ -28,8 +28,18 @@ struct TransactionsListView: View {
     /// pending-match hint, mirroring web's `TransactionsPanel.tsx`.
     var reviewViewModel: TransactionReviewViewModel? = nil
     let canEdit: Bool
+    /// True when viewing an archived (past) period — see
+    /// docs/features/budget-list-view-rework.md. Editing a Variable row's
+    /// category stays reachable via `canEdit` alone (see
+    /// `AddEditTransactionViewModel`'s `isLocked`); `canMutate` additionally
+    /// requires the period not be archived, gating delete/exclude
+    /// specifically (flag-for-review is left ungated by this, matching the
+    /// backend, which doesn't restrict it).
+    var isArchivedPeriod: Bool = false
     let searchQuery: String
     let filter: TransactionFilterOption
+
+    private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
     @State private var viewModel: TransactionsViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
@@ -65,6 +75,7 @@ struct TransactionsListView: View {
                     isActive: isActive && selectedKind == .fixed,
                     reviewViewModel: reviewViewModel,
                     canEdit: canEdit,
+                    isArchivedPeriod: isArchivedPeriod,
                     searchQuery: searchQuery,
                     filter: filter
                 )
@@ -125,7 +136,7 @@ struct TransactionsListView: View {
                         ForEach(group.transactions, id: \.id) { transaction in
                             transactionRow(transaction, viewModel: viewModel, reviews: reviews)
                         }
-                        .onDelete(perform: canEdit ? { offsets in
+                        .onDelete(perform: canMutate ? { offsets in
                             for index in offsets {
                                 let transaction = group.transactions[index]
                                 Task { await viewModel.delete(id: transaction.id) }
@@ -167,6 +178,7 @@ struct TransactionsListView: View {
                     currencyCode: currencyCode,
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
+                    isArchivedPeriod: isArchivedPeriod,
                     authenticatedClient: authenticatedClient
                 ) { updated in
                     viewModel.replaceTransaction(updated)
@@ -254,7 +266,9 @@ struct TransactionsListView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("flagForReview_\(transaction.name)")
+            }
 
+            if canMutate {
                 Button {
                     Task { await viewModel.toggleExcluded(transaction) }
                 } label: {

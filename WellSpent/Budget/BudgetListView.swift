@@ -6,6 +6,8 @@ struct BudgetListView: View {
     @Environment(SessionStore.self) private var session
     @State private var viewModel: BudgetListViewModel?
     @State private var isCreateSheetPresented = false
+    @State private var isDeleteConfirmationPresented = false
+    @State private var selectedYear: Int?
 
     var body: some View {
         NavigationStack {
@@ -24,13 +26,18 @@ struct BudgetListView: View {
                         }
                         .accessibilityIdentifier("settingsButton")
                     }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            isCreateSheetPresented = true
-                        } label: {
-                            Image(systemName: "plus")
+                    // Only one owned budget profile is allowed per account —
+                    // see docs/features/budget-list-view-rework.md — so "Add"
+                    // only shows once the user has none.
+                    if viewModel?.profiles.isEmpty != false {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button {
+                                isCreateSheetPresented = true
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityIdentifier("addBudgetButton")
                         }
-                        .accessibilityIdentifier("addBudgetButton")
                     }
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Log Out", role: .destructive) {
@@ -38,6 +45,16 @@ struct BudgetListView: View {
                         }
                         .accessibilityIdentifier("logoutButton")
                     }
+                }
+                .alert("Delete Budget", isPresented: $isDeleteConfirmationPresented) {
+                    Button("Cancel", role: .cancel) {}
+                    Button("Delete", role: .destructive) {
+                        if let profile = viewModel?.profile {
+                            Task { await viewModel?.delete(profile) }
+                        }
+                    }
+                } message: {
+                    Text("This will permanently delete \(viewModel?.profile?.name ?? "this budget") and everything in it. This cannot be undone.")
                 }
                 .sheet(isPresented: $isCreateSheetPresented) {
                     if let authenticatedClient = session.authenticatedClient {
@@ -108,37 +125,91 @@ struct BudgetListView: View {
         .accessibilityIdentifier("emptyBudgetsState")
     }
 
+    private var years: [Int] { viewModel?.yearGroups.map(\.year) ?? [] }
+
+    private var effectiveYear: Int? {
+        if let selectedYear, years.contains(selectedYear) { return selectedYear }
+        return years.first
+    }
+
+    private func periodsForYear(_ viewModel: BudgetListViewModel) -> [Wellspent_V1_BudgetPeriod] {
+        viewModel.yearGroups.first { $0.year == effectiveYear }?.periods ?? []
+    }
+
+    /// Shows the (at most one) owned profile's periods, grouped by year with
+    /// a year picker — replaces the old profile-card list now that a user
+    /// only ever has one budget. See docs/features/budget-list-view-rework.md.
     private func budgetList(viewModel: BudgetListViewModel) -> some View {
         List {
-            ForEach(viewModel.profiles, id: \.id) { profile in
-                NavigationLink {
-                    BudgetDetailView(
-                        profile: profile,
-                        authenticatedClient: session.authenticatedClient,
-                        currencyCode: viewModel.currencyCode,
-                        localeIdentifier: viewModel.localeIdentifier,
-                        onUpdated: { updated in viewModel.replaceProfile(updated) },
-                        onDeleted: { viewModel.removeProfile(id: profile.id) }
-                    )
-                } label: {
-                    VStack(alignment: .leading) {
+            if let profile = viewModel.profile {
+                Section {
+                    HStack {
                         Text(profile.name)
                             .font(.headline)
-                        Text(BudgetCycleLabel.text(for: profile.cycle))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button(role: .destructive) {
+                            isDeleteConfirmationPresented = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .accessibilityIdentifier("deleteBudgetButton")
                     }
                 }
-                .accessibilityIdentifier("budgetRow_\(profile.name)")
-            }
-            .onDelete { offsets in
-                for index in offsets {
-                    let profile = viewModel.profiles[index]
-                    Task { await viewModel.delete(profile) }
+
+                if years.isEmpty {
+                    Section {
+                        Text("No periods yet.")
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Section {
+                        Picker("Year", selection: Binding(
+                            get: { effectiveYear ?? years[0] },
+                            set: { selectedYear = $0 }
+                        )) {
+                            ForEach(years, id: \.self) { year in
+                                Text(String(year)).tag(year)
+                            }
+                        }
+                        .accessibilityIdentifier("yearPicker")
+                    }
+
+                    Section {
+                        ForEach(periodsForYear(viewModel), id: \.id) { period in
+                            NavigationLink {
+                                BudgetDetailView(
+                                    profile: profile,
+                                    periodID: period.id,
+                                    authenticatedClient: session.authenticatedClient,
+                                    currencyCode: viewModel.currencyCode,
+                                    localeIdentifier: viewModel.localeIdentifier,
+                                    onUpdated: { updated in viewModel.replaceProfile(updated) },
+                                    onDeleted: { viewModel.removeProfile(id: profile.id) }
+                                )
+                            } label: {
+                                periodRow(period, localeIdentifier: viewModel.localeIdentifier)
+                            }
+                            .accessibilityIdentifier("periodRow_\(PeriodGrouping.label(for: period, localeIdentifier: viewModel.localeIdentifier))")
+                        }
+                    }
                 }
             }
         }
         .listStyle(.plain)
+    }
+
+    private func periodRow(_ period: Wellspent_V1_BudgetPeriod, localeIdentifier: String) -> some View {
+        HStack {
+            Text(PeriodGrouping.label(for: period, localeIdentifier: localeIdentifier))
+            Spacer()
+            Text(period.isArchived ? "Archived" : "Active")
+                .font(.caption)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(period.isArchived ? Color.gray.opacity(0.2) : Color.green.opacity(0.2))
+                .foregroundStyle(period.isArchived ? Color.secondary : Color.green)
+                .clipShape(Capsule())
+        }
     }
 
     private var versionFooter: some View {

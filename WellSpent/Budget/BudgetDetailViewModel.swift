@@ -14,10 +14,24 @@ final class BudgetDetailViewModel {
     private(set) var canEdit = true
     private(set) var canManageUsers = true
 
+    /// Set when navigating in from a specific (possibly archived) period in
+    /// the budget list — see `BudgetListView`. `nil` means "resolve the true
+    /// active period," the pre-existing default behavior.
+    private let overridePeriodID: String?
+
+    /// True when `currentPeriod` is archived — the record itself is frozen
+    /// (see docs/features/budget-list-view-rework.md): only a Variable
+    /// transaction's category can still change, and creating/deleting/
+    /// marking paid/excluding are all blocked. Manage panels (Categories,
+    /// Payment Methods, People, Savings/Income Sources) are unaffected,
+    /// since they're profile-level, not period-level.
+    var isArchivedPeriod: Bool { currentPeriod?.isArchived ?? false }
+
     private let client: Wellspent_V1_BudgetServiceClient
 
-    init(profile: Wellspent_V1_BudgetProfile, authenticatedClient: ProtocolClient) {
+    init(profile: Wellspent_V1_BudgetProfile, overridePeriodID: String? = nil, authenticatedClient: ProtocolClient) {
         self.profile = profile
+        self.overridePeriodID = overridePeriodID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
     }
 
@@ -31,10 +45,7 @@ final class BudgetDetailViewModel {
 
         switch response.result {
         case .success(let message):
-            // The first non-archived period is the current one; the backend
-            // always keeps exactly one active. Fall back to the most recent
-            // if every period is somehow archived.
-            currentPeriod = message.periods.first(where: { !$0.isArchived }) ?? message.periods.last
+            currentPeriod = PeriodGrouping.resolvePeriod(message.periods, overrideID: overridePeriodID)
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load this budget's period."
         }
