@@ -87,6 +87,9 @@ final class GoogleAuthCoordinator: NSObject {
         } catch let authError as ASWebAuthenticationSessionError where authError.code == .canceledLogin {
             // User dismissed the sheet — not worth surfacing as an error.
             return
+        } catch let urlError as URLError where urlError.code == .cannotConnectToHost {
+            errorMessage = "Couldn't start Google sign-in — check the app's associated domain configuration."
+            return
         } catch {
             errorMessage = error.localizedDescription
             return
@@ -150,7 +153,17 @@ final class GoogleAuthCoordinator: NSObject {
             }
             session.presentationContextProvider = self
             activeSession = session
-            session.start()
+            // `start()` returns `false` — with no error and no completion
+            // handler call — when the association is misconfigured (e.g. the
+            // `webcredentials:` associated-domain entitlement or the AASA
+            // file's `webcredentials` section is missing/stale/not yet
+            // propagated through Apple's CDN). Without this check, that
+            // failure mode hangs the continuation forever: the button just
+            // looks unresponsive with no way to tell why.
+            guard session.start() else {
+                continuation.resume(throwing: URLError(.cannotConnectToHost))
+                return
+            }
         }
     }
 }
