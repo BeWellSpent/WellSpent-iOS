@@ -436,7 +436,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				FEATURE_GOOGLE_AUTH = NO;
+				FEATURE_GOOGLE_AUTH = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "This identifier is used to show you more relevant ads.";
