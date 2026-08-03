@@ -40,14 +40,6 @@ struct RootView: View {
             }
         }
         .onOpenURL { url in
-            // ASWebAuthenticationSession's own completion handler doesn't
-            // reliably fire for Universal Link redirects — see
-            // GoogleAuthCoordinator's doc comment. This is the real delivery
-            // path for the Google sign-in callback.
-            if url.path == "/auth/callback" {
-                GoogleAuthCoordinator.pendingCallback?(url)
-                return
-            }
             guard let token = InviteDeepLink.token(from: url) else { return }
             pendingInviteToken = token
             isInvitePreviewPresented = true
