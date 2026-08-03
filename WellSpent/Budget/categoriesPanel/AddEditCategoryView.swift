@@ -41,7 +41,7 @@ struct AddEditCategoryView: View {
                     }
                 }
             }
-            .navigationTitle(isEditing ? "Edit Category" : "Add Category")
+            .navigationTitle(isEditing ? Text("Edit Category") : Text("Add Category"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -58,7 +58,7 @@ struct AddEditCategoryView: View {
                         if viewModel.isSubmitting {
                             ProgressView()
                         } else {
-                            Text(isEditing ? "Save" : "Add")
+                            (isEditing ? Text("Save") : Text("Add"))
                         }
                     }
                     .disabled(!viewModel.canSubmit)

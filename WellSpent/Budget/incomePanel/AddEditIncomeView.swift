@@ -39,7 +39,7 @@ struct AddEditIncomeView: View {
                 attributionSection
                 errorSection
             }
-            .navigationTitle(isEditing ? "Edit Income" : "Add Income")
+            .navigationTitle(isEditing ? Text("Edit Income") : Text("Add Income"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -56,7 +56,7 @@ struct AddEditIncomeView: View {
                         if viewModel.isSubmitting {
                             ProgressView()
                         } else {
-                            Text(isEditing ? "Save" : "Add")
+                            (isEditing ? Text("Save") : Text("Add"))
                         }
                     }
                     .disabled(!viewModel.canSubmit)

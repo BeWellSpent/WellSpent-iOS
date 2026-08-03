@@ -58,8 +58,10 @@ struct VerifyEmailBannerView: View {
                 .font(.subheadline)
 
             HStack(spacing: 8) {
-                Button(viewModel.isInCooldown ? "Email sent" : "Resend email") {
+                Button {
                     Task { await viewModel.resend() }
+                } label: {
+                    viewModel.isInCooldown ? Text("Email sent") : Text("Resend email")
                 }
                 .disabled(viewModel.isResending || viewModel.isInCooldown)
                 .accessibilityIdentifier("resendVerificationButton")

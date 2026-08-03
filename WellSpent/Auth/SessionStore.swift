@@ -59,6 +59,7 @@ final class SessionStore {
         authenticatedClient = nil
         isAuthenticated = false
         userID = nil
+        AppLanguageStore.clear()
     }
 
     /// Call when the app becomes active — the Swift equivalent of the web

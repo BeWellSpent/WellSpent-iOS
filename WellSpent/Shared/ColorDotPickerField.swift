@@ -16,22 +16,28 @@ struct ColorDotOption<ID: Hashable>: Identifiable {
 /// for selection — `List` is the same rendering `AddPlanCategoryView` and
 /// every list-row site already rely on, so the dot is guaranteed to show in
 /// both the collapsed and expanded states.
+///
+/// `title`/`noneOption.label` are `LocalizedStringKey`, not `String` — every
+/// call site passes a literal, so this resolves through the environment
+/// locale the same way a plain `Text("...")` would. `option.name` stays
+/// `String` since it's real user/server data (a category/person/payment-
+/// method name), never translated.
 struct ColorDotPickerField<ID: Hashable>: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var selection: ID
     let options: [ColorDotOption<ID>]
     /// A "None"/"Unattributed"/"Select a person"-style option, shown above
     /// `options` in the sheet and as the collapsed placeholder when selected.
-    let noneOption: (id: ID, label: String)?
+    let noneOption: (id: ID, label: LocalizedStringKey)?
     let accessibilityIdentifier: String
 
     @State private var isPresented = false
 
     init(
-        title: String,
+        title: LocalizedStringKey,
         selection: Binding<ID>,
         options: [ColorDotOption<ID>],
-        noneOption: (id: ID, label: String)? = nil,
+        noneOption: (id: ID, label: LocalizedStringKey)? = nil,
         accessibilityIdentifier: String
     ) {
         self.title = title
@@ -75,7 +81,7 @@ struct ColorDotPickerField<ID: Hashable>: View {
             NavigationStack {
                 List {
                     if let noneOption {
-                        optionRow(id: noneOption.id, name: noneOption.label, hex: "")
+                        noneOptionRow(id: noneOption.id, label: noneOption.label)
                     }
                     ForEach(options) { option in
                         optionRow(id: option.id, name: option.name, hex: option.hex)
@@ -90,6 +96,30 @@ struct ColorDotPickerField<ID: Hashable>: View {
             }
             .presentationDetents([.medium, .large])
         }
+    }
+
+    /// Kept separate from `optionRow` because its identifier must stay
+    /// locale-independent — `optionRow`'s identifier is derived from a real
+    /// (untranslated) name, but `noneOption.label` is itself translated, so
+    /// baking it into the identifier would break under a non-English locale.
+    @ViewBuilder
+    private func noneOptionRow(id: ID, label: LocalizedStringKey) -> some View {
+        Button {
+            selection = id
+            isPresented = false
+        } label: {
+            HStack {
+                ColorDotView(hex: "", diameter: 10)
+                Text(label)
+                Spacer()
+                if selection == id {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.tint)
+                }
+            }
+        }
+        .foregroundStyle(.primary)
+        .accessibilityIdentifier("\(accessibilityIdentifier)_option_none")
     }
 
     @ViewBuilder

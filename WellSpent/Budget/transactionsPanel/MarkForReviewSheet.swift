@@ -74,7 +74,7 @@ struct MarkForReviewSheet: View {
                 if viewModel.isLoading {
                     ProgressView()
                 } else if filteredCandidates.isEmpty {
-                    Text(filter.isEmpty ? "No fixed expenses yet." : "No matches.")
+                    (filter.isEmpty ? Text("No fixed expenses yet.") : Text("No matches."))
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(filteredCandidates, id: \.id) { candidate in

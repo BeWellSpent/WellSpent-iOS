@@ -68,6 +68,7 @@ final class SettingsViewModel {
         taxPaymentFrequency = user.taxPaymentFrequency
         language = user.language.isEmpty ? "en" : user.language
         currency = user.currency.isEmpty ? "USD" : user.currency
+        AppLanguageStore.apply(language)
     }
 
     /// Saves the profile and, on success, returns the updated `User` so the

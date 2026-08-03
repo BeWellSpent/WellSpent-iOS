@@ -202,7 +202,7 @@ struct BudgetListView: View {
         HStack {
             Text(PeriodGrouping.label(for: period, localeIdentifier: localeIdentifier))
             Spacer()
-            Text(period.isArchived ? "Archived" : "Active")
+            (period.isArchived ? Text("Archived") : Text("Active"))
                 .font(.caption)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)

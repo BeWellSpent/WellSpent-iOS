@@ -18,11 +18,12 @@ final class BudgetSetupViewModel {
         case paymentMethods
 
         var title: String {
+            let locale = AppLanguageStore.currentLocale
             switch self {
-            case .create: "Create Budget"
-            case .people: "Add People"
-            case .income: "Add Income"
-            case .paymentMethods: "Payment Methods"
+            case .create: return String(localized: "Create Budget", locale: locale)
+            case .people: return String(localized: "Add People", locale: locale)
+            case .income: return String(localized: "Add Income", locale: locale)
+            case .paymentMethods: return String(localized: "Payment Methods", locale: locale)
             }
         }
     }

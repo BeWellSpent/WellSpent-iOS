@@ -1,3 +1,5 @@
+import Foundation
+
 /// Top-level destination within a budget: shown as a bottom tab bar on
 /// iPhone and a sidebar (`NavigationSplitView`) on iPad. Collapses web's two
 /// independent nav layers (top tabs for Plan/Transactions/... + a separate
@@ -11,11 +13,12 @@ enum BudgetSection: CaseIterable, Hashable {
     case manage
 
     var title: String {
+        let locale = AppLanguageStore.currentLocale
         switch self {
-        case .plan: return "Plan"
-        case .transactions: return "Transactions"
-        case .review: return "Review"
-        case .manage: return "Manage"
+        case .plan: return String(localized: "Plan", locale: locale)
+        case .transactions: return String(localized: "Transactions", locale: locale)
+        case .review: return String(localized: "Review", locale: locale)
+        case .manage: return String(localized: "Manage", locale: locale)
         }
     }
 

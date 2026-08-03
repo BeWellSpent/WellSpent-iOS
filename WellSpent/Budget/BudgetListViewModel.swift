@@ -52,6 +52,7 @@ final class BudgetListViewModel {
 
         if case .success(let message) = await meResponse.result {
             currentUser = message.user
+            AppLanguageStore.apply(message.user.language)
         }
 
         switch await profilesResponse.result {
