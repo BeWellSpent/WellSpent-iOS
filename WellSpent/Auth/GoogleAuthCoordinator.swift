@@ -62,21 +62,29 @@ final class GoogleAuthCoordinator: NSObject {
     }
 
     func signIn(session sessionStore: SessionStore) async {
-        guard !isSigningIn else { return }
+        print("[GoogleAuth] signIn() called, isSigningIn=\(isSigningIn)")
+        guard !isSigningIn else {
+            print("[GoogleAuth] already signing in, ignoring tap")
+            return
+        }
         isSigningIn = true
         errorMessage = nil
         defer { isSigningIn = false }
 
         let state = UUID().uuidString
+        print("[GoogleAuth] requesting auth URL, state=\(state)")
         let urlResponse = await client.getGoogleAuthURL(request: .with { $0.state = state })
 
         guard case .success(let urlMessage) = urlResponse.result else {
             if case .failure(let error) = urlResponse.result {
+                print("[GoogleAuth] getGoogleAuthURL FAILED: \(error)")
                 errorMessage = error.message ?? "Couldn't start Google sign-in."
             }
             return
         }
+        print("[GoogleAuth] got auth URL: \(urlMessage.url)")
         guard let authURL = URL(string: urlMessage.url) else {
+            print("[GoogleAuth] auth URL string failed to parse as URL")
             errorMessage = "Couldn't start Google sign-in."
             return
         }
@@ -84,13 +92,17 @@ final class GoogleAuthCoordinator: NSObject {
         let callbackURL: URL
         do {
             callbackURL = try await authenticate(url: authURL)
+            print("[GoogleAuth] authenticate() returned callback URL: \(callbackURL)")
         } catch let authError as ASWebAuthenticationSessionError where authError.code == .canceledLogin {
+            print("[GoogleAuth] user cancelled")
             // User dismissed the sheet — not worth surfacing as an error.
             return
         } catch let urlError as URLError where urlError.code == .cannotConnectToHost {
+            print("[GoogleAuth] session.start() returned false — webcredentials/associated domain misconfigured")
             errorMessage = "Couldn't start Google sign-in — check the app's associated domain configuration."
             return
         } catch {
+            print("[GoogleAuth] authenticate() threw: \(error)")
             errorMessage = error.localizedDescription
             return
         }
@@ -145,6 +157,7 @@ final class GoogleAuthCoordinator: NSObject {
                 url: url,
                 callback: .https(host: "bewellspent.com", path: "/auth/callback")
             ) { callbackURL, error in
+                print("[GoogleAuth] session completion handler fired — callbackURL: \(String(describing: callbackURL)), error: \(String(describing: error))")
                 if let callbackURL {
                     continuation.resume(returning: callbackURL)
                 } else {
@@ -160,7 +173,9 @@ final class GoogleAuthCoordinator: NSObject {
             // propagated through Apple's CDN). Without this check, that
             // failure mode hangs the continuation forever: the button just
             // looks unresponsive with no way to tell why.
-            guard session.start() else {
+            let started = session.start()
+            print("[GoogleAuth] session.start() returned \(started)")
+            guard started else {
                 continuation.resume(throwing: URLError(.cannotConnectToHost))
                 return
             }
