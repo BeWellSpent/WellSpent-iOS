@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import WellSpentAPI
 
@@ -201,11 +202,12 @@ struct BudgetDetailView: View {
     /// reproduce the per-tab title at the one level that's actually
     /// displayed.
     private var currentTitle: String {
+        let locale = AppLanguageStore.currentLocale
         switch selectedSection {
-        case .plan: "Expense Plan"
-        case .transactions: "Transactions"
-        case .review: "Review"
-        case .manage: viewModel?.profile.name ?? ""
+        case .plan: return String(localized: "Expense Plan", locale: locale)
+        case .transactions: return String(localized: "Transactions", locale: locale)
+        case .review: return String(localized: "Review", locale: locale)
+        case .manage: return viewModel?.profile.name ?? ""
         }
     }
 

@@ -9,27 +9,35 @@ struct PlaidConnectionRow: View {
     let onManageAccounts: () -> Void
     let onDisconnect: () -> Void
 
-    private static let relativeFormatter: RelativeDateTimeFormatter = {
+    /// Not `static` — must be rebuilt with the current locale on every
+    /// access so a language change (which can happen without relaunching
+    /// the app) is reflected immediately, rather than caching the locale
+    /// that was active the first time this row was ever rendered.
+    private var relativeFormatter: RelativeDateTimeFormatter {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
+        formatter.locale = AppLanguageStore.currentLocale
         return formatter
-    }()
+    }
 
     private var isConnected: Bool { connection.status != "disconnected" }
 
     private var lastSyncedText: String {
-        guard connection.hasLastSyncedAt else { return "Never synced" }
-        return "Synced " + Self.relativeFormatter.localizedString(for: connection.lastSyncedAt.date, relativeTo: Date())
+        guard connection.hasLastSyncedAt else {
+            return String(localized: "Never synced", locale: AppLanguageStore.currentLocale)
+        }
+        let relative = relativeFormatter.localizedString(for: connection.lastSyncedAt.date, relativeTo: Date())
+        return String(localized: "Synced \(relative)", locale: AppLanguageStore.currentLocale)
     }
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(connection.institutionName.isEmpty ? "Unknown bank" : connection.institutionName)
+                    (connection.institutionName.isEmpty ? Text("Unknown bank") : Text(connection.institutionName))
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                    Text(connection.status)
+                    Text(PlaidStatusLabel.text(for: connection.status))
                         .font(.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 1)

@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import WellSpentAPI
 
@@ -6,15 +7,16 @@ import WellSpentAPI
 /// string — this is just a display-layer helper, not a wire-format shim.
 nonisolated enum PlanLabel {
     static func text(for plan: Wellspent_V1_AccountPlan) -> String {
+        let locale = AppLanguageStore.currentLocale
         switch plan {
         case .unspecified, .free:
-            return "Free"
+            return String(localized: "Free", locale: locale)
         case .pro:
-            return "Pro"
+            return String(localized: "Pro", locale: locale)
         case .lifetime:
-            return "Lifetime"
+            return String(localized: "Lifetime", locale: locale)
         case .UNRECOGNIZED:
-            return "Unknown"
+            return String(localized: "Unknown", locale: locale)
         }
     }
 

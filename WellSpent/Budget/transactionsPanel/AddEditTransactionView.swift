@@ -42,7 +42,7 @@ struct AddEditTransactionView: View {
                 attributionSection
                 errorSection
             }
-            .navigationTitle(isEditing ? "Edit Transaction" : "Add Transaction")
+            .navigationTitle(isEditing ? Text("Edit Transaction") : Text("Add Transaction"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -59,7 +59,7 @@ struct AddEditTransactionView: View {
                         if viewModel.isSubmitting {
                             ProgressView()
                         } else {
-                            Text(isEditing ? "Save" : "Add")
+                            (isEditing ? Text("Save") : Text("Add"))
                         }
                     }
                     .disabled(!viewModel.canSubmit)

@@ -1,3 +1,4 @@
+import Foundation
 import WellSpentAPI
 
 /// Mirrors web's `FilterOption`/filter predicates and `matchesSearch`
@@ -10,11 +11,12 @@ nonisolated enum TransactionFilterOption: String, CaseIterable {
     case excludedOnly
 
     var label: String {
+        let locale = AppLanguageStore.currentLocale
         switch self {
-        case .none: "All transactions"
-        case .spentOnly: "Spent only"
-        case .exceededOnly: "Exceeded only"
-        case .excludedOnly: "Excluded only"
+        case .none: return String(localized: "All transactions", locale: locale)
+        case .spentOnly: return String(localized: "Spent only", locale: locale)
+        case .exceededOnly: return String(localized: "Exceeded only", locale: locale)
+        case .excludedOnly: return String(localized: "Excluded only", locale: locale)
         }
     }
 }

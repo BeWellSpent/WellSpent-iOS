@@ -13,6 +13,7 @@ struct WellSpentApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var session: SessionStore
     @AppStorage("themeMode") private var themeMode: ThemePreference = .system
+    @AppStorage(AppLanguageStore.key) private var appLanguage: String = ""
 
     init() {
         // Doesn't show any UI or require ATT permission itself — safe to
@@ -47,6 +48,7 @@ struct WellSpentApp: App {
         WindowGroup {
             RootView()
                 .environment(session)
+                .environment(\.locale, appLanguage.isEmpty ? .autoupdatingCurrent : Locale(identifier: appLanguage))
                 .preferredColorScheme(themeMode.colorScheme)
         }
     }

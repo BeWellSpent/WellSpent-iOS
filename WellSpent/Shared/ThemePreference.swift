@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// Mirrors web's `ThemeMode` (`'light' | 'dark' | 'system'`, persisted to
@@ -17,10 +18,11 @@ nonisolated enum ThemePreference: String, CaseIterable {
     }
 
     var label: String {
+        let locale = AppLanguageStore.currentLocale
         switch self {
-        case .light: "Light"
-        case .dark: "Dark"
-        case .system: "System"
+        case .light: return String(localized: "Light", locale: locale)
+        case .dark: return String(localized: "Dark", locale: locale)
+        case .system: return String(localized: "System", locale: locale)
         }
     }
 

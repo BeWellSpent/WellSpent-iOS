@@ -1,21 +1,23 @@
+import Foundation
 import WellSpentAPI
 
 /// Display text for a `BudgetCycle`.
 nonisolated enum BudgetCycleLabel {
     static func text(for cycle: Wellspent_V1_BudgetCycle) -> String {
+        let locale = AppLanguageStore.currentLocale
         switch cycle {
         case .unspecified:
-            return "Unspecified"
+            return String(localized: "Unspecified", locale: locale)
         case .weekly:
-            return "Weekly"
+            return String(localized: "Weekly", locale: locale)
         case .biWeekly:
-            return "Bi-weekly"
+            return String(localized: "Bi-weekly", locale: locale)
         case .monthly:
-            return "Monthly"
+            return String(localized: "Monthly", locale: locale)
         case .yearly:
-            return "Yearly"
+            return String(localized: "Yearly", locale: locale)
         case .UNRECOGNIZED:
-            return "Unknown"
+            return String(localized: "Unknown", locale: locale)
         }
     }
 

@@ -1,3 +1,5 @@
+import Foundation
+
 /// `AlertSubscription.threshold_scope` is a plain string on the wire
 /// (`notification.proto`), only meaningful for `AlertType.spendingThreshold`.
 nonisolated enum ThresholdScope: String, CaseIterable {
@@ -5,9 +7,10 @@ nonisolated enum ThresholdScope: String, CaseIterable {
     case category
 
     var label: String {
+        let locale = AppLanguageStore.currentLocale
         switch self {
-        case .budget: return "Whole Budget"
-        case .category: return "Per Category"
+        case .budget: return String(localized: "Whole Budget", locale: locale)
+        case .category: return String(localized: "Per Category", locale: locale)
         }
     }
 }

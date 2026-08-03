@@ -68,7 +68,7 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         // The sheet presents a plain List (not a native Picker menu) — its
         // "None" row is always present regardless of the user's own
         // categories, so it's a stable target for this smoke test.
-        let noneOption = app.buttons["transactionCategoryPicker_option_None"]
+        let noneOption = app.buttons["transactionCategoryPicker_option_none"]
         XCTAssertTrue(noneOption.waitForExistence(timeout: 5))
         noneOption.tap()
 
