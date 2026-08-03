@@ -5,11 +5,12 @@ import WellSpentAPI
 @Suite("AddEditTransactionViewModel")
 @MainActor
 struct AddEditTransactionViewModelTests {
-    private func makeViewModel(mode: AddEditTransactionViewModel.Mode = .add) -> AddEditTransactionViewModel {
+    private func makeViewModel(mode: AddEditTransactionViewModel.Mode = .add, isArchivedPeriod: Bool = false) -> AddEditTransactionViewModel {
         AddEditTransactionViewModel(
             mode: mode,
             budgetPeriodID: "period-1",
             currencyCode: "USD",
+            isArchivedPeriod: isArchivedPeriod,
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
@@ -62,5 +63,52 @@ struct AddEditTransactionViewModelTests {
         #expect(viewModel.isReceived == true)
         #expect(viewModel.amountText == "20")
         #expect(viewModel.recurring == true)
+    }
+
+    @Test("add mode is never locked")
+    func addModeNeverLocked() {
+        let viewModel = makeViewModel(mode: .add, isArchivedPeriod: true)
+        #expect(!viewModel.isLocked)
+    }
+
+    @Test("editing in an archived period locks the transaction")
+    func editModeLockedWhenArchived() {
+        let transaction = Wellspent_V1_Transaction.with {
+            $0.id = "tx-1"
+            $0.paymentMethodID = "pm-1"
+        }
+        let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: true)
+        #expect(viewModel.isLocked)
+    }
+
+    @Test("editing a Plaid-imported transaction locks it regardless of archive state")
+    func editModeLockedWhenPlaidImported() {
+        let transaction = Wellspent_V1_Transaction.with {
+            $0.id = "tx-1"
+            $0.paymentMethodID = "pm-1"
+            $0.isPlaidImported = true
+        }
+        let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: false)
+        #expect(viewModel.isLocked)
+    }
+
+    @Test("editing an active, non-Plaid transaction is not locked")
+    func editModeNotLockedWhenActiveAndManual() {
+        let transaction = Wellspent_V1_Transaction.with {
+            $0.id = "tx-1"
+            $0.paymentMethodID = "pm-1"
+        }
+        let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: false)
+        #expect(!viewModel.isLocked)
+    }
+
+    @Test("a locked transaction can always submit, even with a blank payment method")
+    func canSubmitWhenLockedIgnoresOtherFieldValidation() {
+        let transaction = Wellspent_V1_Transaction.with {
+            $0.id = "tx-1"
+            $0.paymentMethodID = ""
+        }
+        let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: true)
+        #expect(viewModel.canSubmit)
     }
 }

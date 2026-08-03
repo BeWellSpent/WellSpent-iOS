@@ -14,6 +14,7 @@ struct AddEditTransactionView: View {
         currencyCode: String,
         categories: [Wellspent_V1_Category],
         paymentMethods: [Wellspent_V1_PaymentMethod],
+        isArchivedPeriod: Bool = false,
         authenticatedClient: ProtocolClient,
         onDone: @escaping (Wellspent_V1_Transaction) -> Void
     ) {
@@ -21,6 +22,7 @@ struct AddEditTransactionView: View {
             mode: mode,
             budgetPeriodID: budgetPeriodID,
             currencyCode: currencyCode,
+            isArchivedPeriod: isArchivedPeriod,
             authenticatedClient: authenticatedClient
         ))
         self.categories = categories
@@ -70,7 +72,15 @@ struct AddEditTransactionView: View {
     @ViewBuilder
     private var detailsSection: some View {
         Section {
+            if viewModel.isLocked {
+                Text("Only the category can be changed for this transaction — it's either from a past period or was imported from your bank.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("transactionLockedNotice")
+            }
+
             TextField("Name", text: $viewModel.name)
+                .disabled(viewModel.isLocked)
                 .accessibilityIdentifier("transactionNameField")
 
             Picker("Flow", selection: $viewModel.isReceived) {
@@ -78,15 +88,19 @@ struct AddEditTransactionView: View {
                 Text("Received").tag(true)
             }
             .pickerStyle(.segmented)
+            .disabled(viewModel.isLocked)
             .accessibilityIdentifier("transactionFlowPicker")
 
             AmountTextField(text: $viewModel.amountText)
+                .disabled(viewModel.isLocked)
                 .accessibilityIdentifier("transactionAmountField")
 
             DatePicker("Date", selection: $viewModel.date, displayedComponents: .date)
+                .disabled(viewModel.isLocked)
                 .accessibilityIdentifier("transactionDatePicker")
 
             Toggle("Recurring", isOn: $viewModel.recurring)
+                .disabled(viewModel.isLocked)
                 .accessibilityIdentifier("transactionRecurringToggle")
         }
     }
@@ -111,6 +125,7 @@ struct AddEditTransactionView: View {
                 noneOption: (id: "", label: "None"),
                 accessibilityIdentifier: "transactionPaymentMethodPicker"
             )
+            .disabled(viewModel.isLocked)
         }
     }
 

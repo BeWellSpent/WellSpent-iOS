@@ -54,9 +54,14 @@ final class BudgetSmokeTests: XCTestCase {
             skipButton.tap()
         }
 
-        let budgetRow = app.buttons["budgetRow_\(budgetName)"]
-        XCTAssertTrue(budgetRow.waitForExistence(timeout: 10))
-        budgetRow.tap()
+        // The list now shows periods (not a row per named profile, since
+        // only one owned budget is allowed per account) — the just-created
+        // budget has exactly one (current) period, so match on the row
+        // identifier's prefix rather than a specific month/year label.
+        XCTAssertTrue(app.staticTexts[budgetName].waitForExistence(timeout: 10))
+        let periodRow = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'periodRow_'")).firstMatch
+        XCTAssertTrue(periodRow.waitForExistence(timeout: 10))
+        periodRow.tap()
 
         // People
         let peopleLink = app.buttons["peopleNavLink"]
@@ -103,6 +108,6 @@ final class BudgetSmokeTests: XCTestCase {
         app.buttons["Delete"].tap()
 
         XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["budgetRow_\(budgetName)"].exists)
+        XCTAssertFalse(app.staticTexts[budgetName].exists)
     }
 }

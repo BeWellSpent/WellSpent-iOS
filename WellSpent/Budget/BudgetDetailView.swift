@@ -47,6 +47,7 @@ struct BudgetDetailView: View {
 
     init(
         profile: Wellspent_V1_BudgetProfile,
+        periodID: String? = nil,
         authenticatedClient: ProtocolClient?,
         currencyCode: String,
         localeIdentifier: String,
@@ -58,7 +59,9 @@ struct BudgetDetailView: View {
         self.localeIdentifier = localeIdentifier
         self.onUpdated = onUpdated
         self.onDeleted = onDeleted
-        _viewModel = State(initialValue: authenticatedClient.map { BudgetDetailViewModel(profile: profile, authenticatedClient: $0) })
+        _viewModel = State(initialValue: authenticatedClient.map {
+            BudgetDetailViewModel(profile: profile, overridePeriodID: periodID, authenticatedClient: $0)
+        })
     }
 
     var body: some View {
@@ -76,15 +79,20 @@ struct BudgetDetailView: View {
     /// the nested-NavigationStack chrome-bug fix (see the type-level doc
     /// comment), so attaching `.searchable` here carries no new risk.
     private var content: some View {
-        Group {
-            if let viewModel {
-                if horizontalSizeClass == .regular {
-                    splitView(viewModel: viewModel)
+        VStack(spacing: 0) {
+            if viewModel?.isArchivedPeriod == true {
+                archivedPeriodBanner
+            }
+            Group {
+                if let viewModel {
+                    if horizontalSizeClass == .regular {
+                        splitView(viewModel: viewModel)
+                    } else {
+                        tabView(viewModel: viewModel)
+                    }
                 } else {
-                    tabView(viewModel: viewModel)
+                    ProgressView()
                 }
-            } else {
-                ProgressView()
             }
         }
         .navigationTitle(currentTitle)
@@ -145,6 +153,21 @@ struct BudgetDetailView: View {
         dismiss()
     }
 
+    /// Shown above the tab content, regardless of which tab is selected —
+    /// mirrors web's `BudgetView.tsx` banner placement.
+    private var archivedPeriodBanner: some View {
+        Label {
+            Text("You're viewing a past period. Adding, deleting, marking paid, and excluding transactions are disabled — you can still change a transaction's category.")
+                .font(.caption)
+        } icon: {
+            Image(systemName: "info.circle")
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.blue.opacity(0.1))
+        .accessibilityIdentifier("archivedPeriodBanner")
+    }
+
     private func tabView(viewModel: BudgetDetailViewModel) -> some View {
         TabView(selection: $selectedSection) {
             NavigationStack {
@@ -193,6 +216,11 @@ struct BudgetDetailView: View {
     private var toolbarContent: some ToolbarContent {
         let canEdit = viewModel?.canEdit ?? true
         let canManageUsers = viewModel?.canManageUsers ?? true
+        // Creating a new transaction is fully blocked on an archived period
+        // (see docs/features/budget-list-view-rework.md) — Plan additions
+        // (expense allocations) are profile-level, not period-level, so
+        // they're unaffected and stay gated by role alone.
+        let canAddTransaction = canEdit && viewModel?.isArchivedPeriod != true
         switch selectedSection {
         case .plan:
             if canEdit && planSelectedKind == .plan {
@@ -206,7 +234,7 @@ struct BudgetDetailView: View {
                 }
             }
         case .transactions:
-            if canEdit && transactionsSelectedKind == .variable {
+            if canAddTransaction && transactionsSelectedKind == .variable {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddTransactionPresented = true
@@ -215,7 +243,7 @@ struct BudgetDetailView: View {
                     }
                     .accessibilityIdentifier("addTransactionButton")
                 }
-            } else if canEdit {
+            } else if canAddTransaction {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddFixedExpensePresented = true
@@ -332,6 +360,7 @@ struct BudgetDetailView: View {
                 isActive: selectedSection == .transactions,
                 reviewViewModel: reviewViewModel,
                 canEdit: viewModel.canEdit,
+                isArchivedPeriod: viewModel.isArchivedPeriod,
                 searchQuery: transactionsSearchQuery,
                 filter: transactionsFilter
             )

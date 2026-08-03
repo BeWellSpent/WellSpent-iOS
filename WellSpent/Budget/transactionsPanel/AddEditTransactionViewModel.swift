@@ -23,6 +23,12 @@ final class AddEditTransactionViewModel {
 
     let mode: Mode
 
+    /// True once a transaction's other fields are frozen — either its
+    /// period has archived, or it's Plaid-imported (`isPlaidImported`) —
+    /// and only its category can still change. See
+    /// docs/features/budget-list-view-rework.md. Never true in `.add` mode.
+    let isLocked: Bool
+
     private let budgetPeriodID: String
     private let currencyCode: String
     private let client: Wellspent_V1_BudgetServiceClient
@@ -35,13 +41,14 @@ final class AddEditTransactionViewModel {
     }
 
     var canSubmit: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty
+        guard !isSubmitting else { return false }
+        if isLocked { return true }
+        return !name.trimmingCharacters(in: .whitespaces).isEmpty
             && MoneyInput.parseAmount(amountText) != nil
             && !paymentMethodID.isEmpty
-            && !isSubmitting
     }
 
-    init(mode: Mode, budgetPeriodID: String, currencyCode: String, authenticatedClient: ProtocolClient) {
+    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, authenticatedClient: ProtocolClient) {
         self.mode = mode
         self.budgetPeriodID = budgetPeriodID
         self.currencyCode = currencyCode
@@ -56,6 +63,7 @@ final class AddEditTransactionViewModel {
             paymentMethodID = ""
             recurring = false
             date = Date()
+            isLocked = false
         case .edit(let transaction):
             name = transaction.name
             isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
@@ -64,6 +72,7 @@ final class AddEditTransactionViewModel {
             paymentMethodID = transaction.paymentMethodID
             recurring = transaction.transactionFrequencyID != 1
             date = transaction.date.dateOnly
+            isLocked = isArchivedPeriod || transaction.isPlaidImported
         }
     }
 
@@ -80,6 +89,35 @@ final class AddEditTransactionViewModel {
         }
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let timestamp = Google_Protobuf_Timestamp(dateOnly: date)
+
+        // Locked (archived period or Plaid-imported): send every field back
+        // exactly as originally recorded except category — the backend
+        // rejects an update that changes anything else in that case, and
+        // reconstructing from (unchanged, disabled) form state risks a
+        // spurious mismatch from formatting round-trips, so this reads
+        // directly off the original transaction instead.
+        if case .edit(let existing) = mode, isLocked {
+            let request = Wellspent_V1_UpdateTransactionRequest.with {
+                $0.id = existing.id
+                $0.name = existing.name
+                $0.amount = existing.amount
+                $0.plannedAmount = existing.plannedAmount
+                $0.date = existing.date
+                $0.recurring = existing.recurring
+                $0.categoryID = categoryID
+                $0.paymentMethodID = existing.paymentMethodID
+                $0.transactionFrequencyID = existing.transactionFrequencyID
+                $0.transactionTypeID = existing.transactionTypeID
+            }
+            let response = await client.updateTransaction(request: request)
+            switch response.result {
+            case .success(let message):
+                return message.transaction
+            case .failure(let error):
+                errorMessage = error.message ?? "Couldn't update that transaction."
+                return nil
+            }
+        }
 
         switch mode {
         case .add:

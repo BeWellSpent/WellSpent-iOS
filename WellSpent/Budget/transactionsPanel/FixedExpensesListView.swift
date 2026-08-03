@@ -15,8 +15,18 @@ struct FixedExpensesListView: View {
     /// confirmed match as an expandable linked sub-row.
     var reviewViewModel: TransactionReviewViewModel? = nil
     let canEdit: Bool
+    /// True when viewing an archived (past) period. Editing a Fixed row's
+    /// template (`EditFixedExpenseView`) is deliberately left gated by
+    /// `canEdit` alone this phase — it edits the recurring template, not
+    /// this occurrence, so the category-only restriction has no reachable
+    /// per-occurrence path here yet (see
+    /// docs/features/budget-list-view-rework.md). `canMutate` gates
+    /// delete/mark-paid/unmark/exclude, all fully blocked when archived.
+    var isArchivedPeriod: Bool = false
     let searchQuery: String
     let filter: TransactionFilterOption
+
+    private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
     @State private var viewModel: FixedExpensesViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
@@ -87,11 +97,12 @@ struct FixedExpensesListView: View {
                                 currencyCode: currencyCode,
                                 localeIdentifier: localeIdentifier,
                                 canEdit: canEdit,
+                                canMutate: canMutate,
                                 onEdit: { editingTransaction = transaction },
                                 onMarkPaid: { markingPaidTransaction = transaction }
                             )
                         }
-                        .onDelete(perform: canEdit ? { offsets in
+                        .onDelete(perform: canMutate ? { offsets in
                             for index in offsets {
                                 let transaction = group.transactions[index]
                                 Task { await viewModel.delete(transaction) }
@@ -162,6 +173,7 @@ private struct FixedExpenseRow: View {
     let currencyCode: String
     let localeIdentifier: String
     let canEdit: Bool
+    let canMutate: Bool
     let onEdit: () -> Void
     let onMarkPaid: () -> Void
 
@@ -205,7 +217,7 @@ private struct FixedExpenseRow: View {
                     localeIdentifier: localeIdentifier
                 ))
 
-                if canEdit {
+                if canMutate {
                     Button {
                         if transaction.isPaid {
                             Task { await viewModel.unmark(transaction) }
