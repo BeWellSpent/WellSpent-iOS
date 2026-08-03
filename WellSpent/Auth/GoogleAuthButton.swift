@@ -1,36 +1,60 @@
 import SwiftUI
+import WellSpentAPI
 
-/// Rendered but disabled while `FeatureFlags.googleAuthEnabled` is off — same
-/// posture as the web app's Google button (`NEXT_PUBLIC_FEATURE_GOOGLE_AUTH`).
-/// Wiring real Google OAuth (`GetGoogleAuthURL`/`ExchangeGoogleCode` +
-/// `ASWebAuthenticationSession`) is out of scope for this phase; see the
-/// project plan's "Risks" section.
+/// Rendered disabled with a "Coming soon" badge while
+/// `FeatureFlags.googleAuthEnabled` is off (Debug builds) — see
+/// `GoogleAuthCoordinator` for the real sign-in flow, on in Release builds.
 struct GoogleAuthButton: View {
+    @Environment(SessionStore.self) private var session
+    let publicClient: ProtocolClient
+
+    @State private var coordinator: GoogleAuthCoordinator?
+
     var body: some View {
-        Button {
-            // Intentionally a no-op until Google OAuth is wired up.
-        } label: {
-            Label("Continue with Google", systemImage: "g.circle")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.bordered)
-        .disabled(!FeatureFlags.googleAuthEnabled)
-        .opacity(FeatureFlags.googleAuthEnabled ? 1 : 0.5)
-        .accessibilityIdentifier("googleAuthButton")
-        .overlay(alignment: .topTrailing) {
-            if !FeatureFlags.googleAuthEnabled {
-                Text("Coming soon")
-                    .font(.caption2)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.thinMaterial, in: Capsule())
-                    .offset(x: 8, y: -10)
+        VStack(alignment: .leading, spacing: 4) {
+            Button {
+                Task {
+                    if coordinator == nil {
+                        coordinator = GoogleAuthCoordinator(publicClient: publicClient)
+                    }
+                    await coordinator?.signIn(session: session)
+                }
+            } label: {
+                HStack {
+                    Label("Continue with Google", systemImage: "g.circle")
+                        .frame(maxWidth: .infinity)
+                    if coordinator?.isSigningIn == true {
+                        ProgressView()
+                    }
+                }
+            }
+            .buttonStyle(.bordered)
+            .disabled(!FeatureFlags.googleAuthEnabled || coordinator?.isSigningIn == true)
+            .opacity(FeatureFlags.googleAuthEnabled ? 1 : 0.5)
+            .accessibilityIdentifier("googleAuthButton")
+            .overlay(alignment: .topTrailing) {
+                if !FeatureFlags.googleAuthEnabled {
+                    Text("Coming soon")
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.thinMaterial, in: Capsule())
+                        .offset(x: 8, y: -10)
+                }
+            }
+
+            if let errorMessage = coordinator?.errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("googleAuthErrorMessage")
             }
         }
     }
 }
 
 #Preview {
-    GoogleAuthButton()
+    GoogleAuthButton(publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
         .padding()
+        .environment(SessionStore())
 }

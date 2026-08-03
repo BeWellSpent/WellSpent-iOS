@@ -71,7 +71,7 @@ struct LoginView: View {
             .disabled(!viewModel.canSubmit)
             .accessibilityIdentifier("loginButton")
 
-            GoogleAuthButton()
+            GoogleAuthButton(publicClient: session.publicClient)
         }
     }
 
