@@ -252,6 +252,22 @@ Phase 2A covers budgets/periods, people, and income sources; 2B-1 adds categorie
 
 Wired up as of Phase 2A: `MARKETING_VERSION` in the **`WellSpent` app target's** Debug/Release build configs (`WellSpentTests`/`WellSpentUITests` configs are untouched — their version number has no user-facing meaning), read at runtime via `Bundle.main.infoDictionary["CFBundleShortVersionString"]` and shown in `BudgetListView`'s footer. Bump it for every feature going forward, same patch/minor/major convention as the other repos.
 
+## Release checklist (App Store, post-TestFlight)
+
+TestFlight distribution alone does **not** make the app public — nothing is visible on the App Store until a full listing is submitted and approved. Don't submit for review without explicit user confirmation; when ready to go beyond TestFlight-only, App Store Connect also offers an **Unlisted** distribution option (Pricing and Availability → App Store Distribution) as a middle ground — a real listing/link, but excluded from search/browse/charts.
+
+**Blockers to close before submitting a public listing:**
+- [ ] **Privacy policy** — doesn't exist yet. Draft at `docs/release/privacy-policy.md` (workspace root) — needs a lawyer's review and a real hosted URL before it can go in App Store Connect's App Privacy section (required given Plaid financial data + AdMob tracking + push notifications).
+- [ ] **App Privacy "nutrition label"** — answer App Store Connect's questionnaire: Financial Info (Plaid), Identifiers/Usage Data (AdMob), Contact Info (email/auth).
+- [ ] **AdMob ad unit ID** — still Google's public test unit (`ca-app-pub-3940256099942544/2934735716`), not a real one. Ads won't monetize until swapped.
+- [ ] **Build number** — `CURRENT_PROJECT_VERSION` has stayed at `1` across many `MARKETING_VERSION` bumps. Confirm Xcode Cloud auto-increments it, or bump manually before each App Store Connect upload (required to be unique per upload for the same marketing version).
+- [ ] **Xcode Cloud** — `ci_scripts/ci_post_clone.sh` has never been verified against a real Xcode Cloud run. Confirm before relying on it for a release archive.
+- [ ] **Listing copy must not overstate placeholders** — Pro subscription, Google Sign-In, and Reports are all still literal "Coming soon" UI in the shipped app. Don't screenshot or describe them as working (App Review Guideline 2.3.1, misleading metadata).
+
+**Already fine, no action needed:** ATT + `NSUserTrackingUsageDescription` are correctly wired for AdMob; no missing usage-description strings for anything else (no camera/location/contacts used); Release build points at the real production backend (`https://wellspent-backend-...run.app`, confirmed live — despite a stale comment in `Shared/APIEnvironment.swift` and a stale line in `docs/specs/01-requirements.md`'s "Deployment / CD" section both still implying otherwise); signing is Automatic with a real team ID; App Icon set is real (light/dark/tinted), not a placeholder.
+
+Draft App Store listing copy (subtitle, description, keywords, promotional text) is at `docs/release/app-store-listing.md` (workspace root).
+
 ## Git workflow
 
 Same convention as the other sub-repos: work happens on `develop`, never directly on `main`. Never add a `Co-Authored-By: Claude` (or any AI attribution) trailer to commit messages — standing rule across the whole workspace.
