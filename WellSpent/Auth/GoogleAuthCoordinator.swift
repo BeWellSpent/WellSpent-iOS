@@ -16,26 +16,29 @@ import WellSpentAPI
 /// would also mean a second, dedicated Google Cloud "iOS" OAuth client
 /// (different client ID, no secret, PKCE) — real external setup, and Google
 /// now explicitly discourages custom-scheme redirects as an impersonation
-/// risk. Instead this relies on the app's existing `applinks:bewellspent.com`
-/// associated domain (already used for invite links and Plaid's OAuth
-/// continuation, see `PlaidSectionViewModel.redirectURI`'s doc comment).
-/// Requires `/auth/callback` to be listed in `WellSpent-web`'s
-/// `apple-app-site-association` file (added alongside this).
+/// risk.
 ///
-/// **`ASWebAuthenticationSession`'s own completion handler does not reliably
-/// fire for Universal Link redirects** — this is a known, long-standing gap
-/// (confirmed against multiple Apple Developer Forum threads, not specific
-/// to this app): when the OS intercepts a Universal Link, it delivers it to
-/// the app's normal `onOpenURL` handler, not to the session's completion
-/// handler, which is left showing the real loaded page with no way to know
-/// the app already got what it needed. So the actual callback is routed
-/// through `RootView`'s existing `onOpenURL` (the same mechanism that
-/// already handles invite links) via `pendingCallback`, a static
-/// closure-router — mirrors `AppDelegate.onDeviceToken`'s existing pattern
-/// for the same "external event, whichever object currently cares" shape.
-/// The session's own completion handler is kept only as a fallback (and to
-/// detect user-initiated cancellation) — whichever source resolves first
-/// wins, guarded by `resumeOnce`.
+/// **History, two failed attempts before this one** (see
+/// `docs/features/google-auth.md`'s iOS section, workspace root, for the
+/// full account): first tried `callbackURLScheme: nil` relying on
+/// `ASWebAuthenticationSession`'s own completion handler to catch a
+/// Universal Link — doesn't work, confirmed live. Then tried routing the
+/// redirect through `RootView`'s `onOpenURL` instead — also doesn't work,
+/// confirmed live, root cause found afterward: **Universal Links only
+/// activate on a user-tapped link, never on an automatic server-side
+/// redirect** (verified against Apple's own documented behavior), and
+/// Google's OAuth callback is always the latter. Both attempts were
+/// fundamentally unable to work, not implementation bugs.
+///
+/// The actual fix: `ASWebAuthenticationSession.Callback.https(host:path:)`
+/// (iOS 17.4+, this app's deployment target was bumped from 17.0 to 17.4 for
+/// this) — a *session-scoped* HTTPS callback that doesn't go through the
+/// system Universal Links pipeline at all, so it isn't subject to the
+/// user-tap restriction. This is the API Apple added specifically to solve
+/// this exact "native app, third-party auth server, automatic redirect"
+/// problem. Confirmed via a standalone `swiftc -typecheck` run that this
+/// initializer requires iOS 17.4+ (fails to compile at 17.0, succeeds at
+/// 17.4) before committing to the deployment target bump.
 ///
 /// Language/currency are left empty on the exchange call — same as this
 /// app's own `RegisterViewModel` for manual sign-up, which also leaves them
@@ -46,17 +49,12 @@ import WellSpentAPI
 final class GoogleAuthCoordinator: NSObject {
     private static let redirectURI = "https://bewellspent.com/auth/callback"
 
-    /// Set while a sign-in is in flight; cleared once resolved. `RootView`'s
-    /// `onOpenURL` calls this when it sees `/auth/callback`.
-    static var pendingCallback: ((URL) -> Void)?
-
     private(set) var isSigningIn = false
     private(set) var errorMessage: String?
 
     private let client: Wellspent_V1_AuthServiceClient
-    /// Held so it isn't deallocated mid-flow, and so it can be explicitly
-    /// dismissed once `onOpenURL` delivers the callback instead of
-    /// `ASWebAuthenticationSession`'s own completion handler.
+    /// Held so it isn't deallocated mid-flow — `ASWebAuthenticationSession`
+    /// doesn't retain itself.
     private var activeSession: ASWebAuthenticationSession?
 
     init(publicClient: ProtocolClient) {
@@ -140,27 +138,14 @@ final class GoogleAuthCoordinator: NSObject {
 
     private func authenticate(url: URL) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
-            var didResume = false
-            let resumeOnce: (Result<URL, Error>) -> Void = { [weak self] result in
-                guard !didResume else { return }
-                didResume = true
-                Self.pendingCallback = nil
-                self?.activeSession?.cancel()
-                switch result {
-                case .success(let url): continuation.resume(returning: url)
-                case .failure(let error): continuation.resume(throwing: error)
-                }
-            }
-
-            Self.pendingCallback = { callbackURL in
-                resumeOnce(.success(callbackURL))
-            }
-
-            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: nil) { callbackURL, error in
+            let session = ASWebAuthenticationSession(
+                url: url,
+                callback: .https(host: "bewellspent.com", path: "/auth/callback")
+            ) { callbackURL, error in
                 if let callbackURL {
-                    resumeOnce(.success(callbackURL))
+                    continuation.resume(returning: callbackURL)
                 } else {
-                    resumeOnce(.failure(error ?? URLError(.badServerResponse)))
+                    continuation.resume(throwing: error ?? URLError(.badServerResponse))
                 }
             }
             session.presentationContextProvider = self
