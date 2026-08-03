@@ -12,15 +12,30 @@ import WellSpentAPI
 /// (`https://bewellspent.com/auth/callback`) web already uses, rather than a
 /// custom URL scheme — confirmed against `auth_handler.go`/`oauth.go` that
 /// the backend currently ignores any client-supplied `redirect_uri` on both
-/// Google RPCs and always resolves to that URL server-side, so a
-/// scheme-per-client approach isn't actually viable without a backend
-/// change. Instead this relies on the app's existing `applinks:bewellspent.com`
+/// Google RPCs and always resolves to that URL server-side. A custom scheme
+/// would also mean a second, dedicated Google Cloud "iOS" OAuth client
+/// (different client ID, no secret, PKCE) — real external setup, and Google
+/// now explicitly discourages custom-scheme redirects as an impersonation
+/// risk. Instead this relies on the app's existing `applinks:bewellspent.com`
 /// associated domain (already used for invite links and Plaid's OAuth
-/// continuation, see `PlaidSectionViewModel.redirectURI`'s doc comment) —
-/// passing `nil` for `callbackURLScheme` tells `ASWebAuthenticationSession`
-/// to complete via Universal Link instead of a custom scheme. Requires
-/// `/auth/callback` to be listed in `WellSpent-web`'s
+/// continuation, see `PlaidSectionViewModel.redirectURI`'s doc comment).
+/// Requires `/auth/callback` to be listed in `WellSpent-web`'s
 /// `apple-app-site-association` file (added alongside this).
+///
+/// **`ASWebAuthenticationSession`'s own completion handler does not reliably
+/// fire for Universal Link redirects** — this is a known, long-standing gap
+/// (confirmed against multiple Apple Developer Forum threads, not specific
+/// to this app): when the OS intercepts a Universal Link, it delivers it to
+/// the app's normal `onOpenURL` handler, not to the session's completion
+/// handler, which is left showing the real loaded page with no way to know
+/// the app already got what it needed. So the actual callback is routed
+/// through `RootView`'s existing `onOpenURL` (the same mechanism that
+/// already handles invite links) via `pendingCallback`, a static
+/// closure-router — mirrors `AppDelegate.onDeviceToken`'s existing pattern
+/// for the same "external event, whichever object currently cares" shape.
+/// The session's own completion handler is kept only as a fallback (and to
+/// detect user-initiated cancellation) — whichever source resolves first
+/// wins, guarded by `resumeOnce`.
 ///
 /// Language/currency are left empty on the exchange call — same as this
 /// app's own `RegisterViewModel` for manual sign-up, which also leaves them
@@ -31,12 +46,17 @@ import WellSpentAPI
 final class GoogleAuthCoordinator: NSObject {
     private static let redirectURI = "https://bewellspent.com/auth/callback"
 
+    /// Set while a sign-in is in flight; cleared once resolved. `RootView`'s
+    /// `onOpenURL` calls this when it sees `/auth/callback`.
+    static var pendingCallback: ((URL) -> Void)?
+
     private(set) var isSigningIn = false
     private(set) var errorMessage: String?
 
     private let client: Wellspent_V1_AuthServiceClient
-    /// Held so it isn't deallocated mid-flow — `ASWebAuthenticationSession`
-    /// doesn't retain itself.
+    /// Held so it isn't deallocated mid-flow, and so it can be explicitly
+    /// dismissed once `onOpenURL` delivers the callback instead of
+    /// `ASWebAuthenticationSession`'s own completion handler.
     private var activeSession: ASWebAuthenticationSession?
 
     init(publicClient: ProtocolClient) {
@@ -120,11 +140,27 @@ final class GoogleAuthCoordinator: NSObject {
 
     private func authenticate(url: URL) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
+            var didResume = false
+            let resumeOnce: (Result<URL, Error>) -> Void = { [weak self] result in
+                guard !didResume else { return }
+                didResume = true
+                Self.pendingCallback = nil
+                self?.activeSession?.cancel()
+                switch result {
+                case .success(let url): continuation.resume(returning: url)
+                case .failure(let error): continuation.resume(throwing: error)
+                }
+            }
+
+            Self.pendingCallback = { callbackURL in
+                resumeOnce(.success(callbackURL))
+            }
+
             let session = ASWebAuthenticationSession(url: url, callbackURLScheme: nil) { callbackURL, error in
                 if let callbackURL {
-                    continuation.resume(returning: callbackURL)
+                    resumeOnce(.success(callbackURL))
                 } else {
-                    continuation.resume(throwing: error ?? URLError(.badServerResponse))
+                    resumeOnce(.failure(error ?? URLError(.badServerResponse)))
                 }
             }
             session.presentationContextProvider = self
