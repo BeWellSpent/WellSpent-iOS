@@ -65,4 +65,41 @@ nonisolated enum ExpenseOverviewCalculations {
         let actualValue = Double(actual.units) + Double(actual.nanos) / 1_000_000_000
         return actualValue > plannedValue
     }
+
+    /// Sum of each visible category's overspend (`actual - planned` when
+    /// `planned > 0` and `actual > planned`, else 0) — mirrors web's
+    /// `totalOverBudget` loop in `ExpenseOverviewPanel.tsx`.
+    static func totalOverBudget(
+        categoryIDs: [Int32],
+        actual: (Int32) -> (units: Int64, nanos: Int32),
+        planned: (Int32) -> (units: Int64, nanos: Int32)
+    ) -> (units: Int64, nanos: Int32) {
+        let overspends: [(units: Int64, nanos: Int32)] = categoryIDs.compactMap { id in
+            let a = actual(id)
+            let p = planned(id)
+            guard p.units != 0 || p.nanos != 0 else { return nil }
+            guard isOver(actual: a, planned: p) else { return nil }
+            return TransactionAmountFormatting.sum([a, (units: -p.units, nanos: -p.nanos)])
+        }
+        return TransactionAmountFormatting.sum(overspends)
+    }
+
+    /// `uncategorizedTotal` plus every visible category's *entire* actual
+    /// spend where it has no plan (`planned <= 0`) — mirrors web's
+    /// `totalUnplanned` loop. Note this differs from `totalOverBudget`:
+    /// an unplanned category counts its full actual amount, not just the
+    /// portion "over" anything (there's nothing to be over).
+    static func totalUnplanned(
+        uncategorized: (units: Int64, nanos: Int32),
+        categoryIDs: [Int32],
+        actual: (Int32) -> (units: Int64, nanos: Int32),
+        planned: (Int32) -> (units: Int64, nanos: Int32)
+    ) -> (units: Int64, nanos: Int32) {
+        let unplannedAmounts: [(units: Int64, nanos: Int32)] = categoryIDs.compactMap { id in
+            let p = planned(id)
+            guard p.units == 0 && p.nanos == 0 else { return nil }
+            return actual(id)
+        }
+        return TransactionAmountFormatting.sum([uncategorized] + unplannedAmounts)
+    }
 }

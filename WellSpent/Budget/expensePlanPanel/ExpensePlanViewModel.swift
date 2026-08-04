@@ -52,6 +52,12 @@ final class ExpensePlanViewModel {
         ])
     }
 
+    /// Chart data for the planned-amount chart. Mirrors web's chart-data
+    /// construction in `ExpensesPanel.tsx` (category-grouping mode).
+    var chartData: [ExpenseChartCalculations.Datum] {
+        ExpenseChartCalculations.data(categories: visibleCategories, amount: { [self] in plannedTotal(for: $0) })
+    }
+
     func plannedTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
         let isSavings = ExpensePlanCalculations.isSavingsCategory(category)
         let savingsAmounts = isSavings ? savingsSources.map { (units: $0.amount.units, nanos: $0.amount.nanos) } : []

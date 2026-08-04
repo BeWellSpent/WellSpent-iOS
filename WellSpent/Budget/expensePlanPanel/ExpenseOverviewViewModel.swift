@@ -78,6 +78,51 @@ final class ExpenseOverviewViewModel {
         ])
     }
 
+    /// Sum of `plannedTotal(for:)` across every visible category — mirrors
+    /// web's `totalPlanned` in `ExpenseOverviewPanel.tsx`, shown alongside
+    /// `totalActual` for comparison.
+    var totalPlanned: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.sum(visibleCategories.map { plannedTotal(for: $0) })
+    }
+
+    /// Income minus `totalPlanned` — the planned-side counterpart to
+    /// `remainderTotal` (which is income minus *actual*).
+    var plannedRemainderTotal: (units: Int64, nanos: Int32) {
+        let income = incomeTotal
+        let planned = totalPlanned
+        return TransactionAmountFormatting.sum([
+            (units: income.units, nanos: income.nanos),
+            (units: -planned.units, nanos: -planned.nanos)
+        ])
+    }
+
+    /// Sum of every visible category's overspend — mirrors web's
+    /// `totalOverBudget`.
+    var totalOverBudgetAmount: (units: Int64, nanos: Int32) {
+        ExpenseOverviewCalculations.totalOverBudget(
+            categoryIDs: visibleCategories.map(\.id),
+            actual: { id in actualTotals.byCategory[id] ?? (0, 0) },
+            planned: { [self] id in
+                guard let category = categories.first(where: { $0.id == id }) else { return (0, 0) }
+                return plannedTotal(for: category)
+            }
+        )
+    }
+
+    /// Uncategorized spend plus full actual spend in categories with no
+    /// plan — mirrors web's `totalUnplanned`.
+    var totalUnplannedAmount: (units: Int64, nanos: Int32) {
+        ExpenseOverviewCalculations.totalUnplanned(
+            uncategorized: uncategorizedTotal,
+            categoryIDs: visibleCategories.map(\.id),
+            actual: { id in actualTotals.byCategory[id] ?? (0, 0) },
+            planned: { [self] id in
+                guard let category = categories.first(where: { $0.id == id }) else { return (0, 0) }
+                return plannedTotal(for: category)
+            }
+        )
+    }
+
     func actualTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
         actualTotals.byCategory[category.id] ?? (0, 0)
     }
@@ -118,6 +163,29 @@ final class ExpenseOverviewViewModel {
             allocations: personAllocations,
             savingsAmounts: personSavingsAmounts,
             fixedPlannedAmounts: personFixedAmounts
+        )
+    }
+
+    /// Transactions actually counted toward this category's actual total —
+    /// same filter `computeActualTotals` applies (excludes manually/Income
+    /// excluded and unpaid Fixed transactions) — for the expandable
+    /// per-category transaction list. Mirrors web's `transactionsByCatId`.
+    func transactions(for category: Wellspent_V1_Category) -> [Wellspent_V1_Transaction] {
+        transactions.filter {
+            $0.categoryID == category.id
+                && !ExpenseOverviewCalculations.isTransactionExcluded($0, incomeCategoryID: incomeCategoryID)
+                && !($0.transactionTypeID == FixedExpensesViewModel.fixedTypeID && !$0.isPaid)
+        }
+    }
+
+    /// Chart data for the actual-spend chart — colored red for overspent
+    /// categories, category color otherwise. Mirrors web's chart-data
+    /// construction in `ExpenseOverviewPanel.tsx`.
+    var chartData: [ExpenseChartCalculations.Datum] {
+        ExpenseChartCalculations.data(
+            categories: visibleCategories,
+            amount: { [self] in actualTotal(for: $0) },
+            colorOverride: { [self] in isOver(for: $0) ? "#ef4444" : nil }
         )
     }
 
