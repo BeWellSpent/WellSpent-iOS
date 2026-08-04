@@ -71,9 +71,13 @@ struct SettingsView: View {
             .accessibilityIdentifier("settingsCountryPicker")
 
             if viewModel.isUnitedStates {
-                TextField("State (e.g. CA)", text: $viewModel.stateCode)
-                    .textInputAutocapitalization(.characters)
-                    .accessibilityIdentifier("settingsStateField")
+                Picker("State", selection: $viewModel.stateCode) {
+                    Text("Select a state").tag("")
+                    ForEach(USState.all, id: \.code) { state in
+                        Text(state.name).tag(state.code)
+                    }
+                }
+                .accessibilityIdentifier("settingsStateField")
 
                 Picker("Filing status", selection: $viewModel.filingStatus) {
                     ForEach(FilingStatusLabel.selectable, id: \.self) { status in
