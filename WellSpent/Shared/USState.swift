@@ -1,0 +1,30 @@
+import Foundation
+
+/// US state/territory codes + display names for the state picker shown when
+/// `countryCode == "US"` — mirrors web's `US_STATES` constant
+/// (`WellSpent-web/src/components/user/ProfileSettings.tsx`). Was previously
+/// free-text entry on iOS (`stateCode` is a plain string field, no proto
+/// enum, so nothing enforced a valid code); this fixed list matches web and
+/// guarantees `user.stateCode` is always a real USPS code.
+nonisolated enum USState {
+    /// (code, name), in display order — same list and order as web's.
+    static let all: [(code: String, name: String)] = [
+        ("AL", "Alabama"), ("AK", "Alaska"), ("AZ", "Arizona"), ("AR", "Arkansas"),
+        ("CA", "California"), ("CO", "Colorado"), ("CT", "Connecticut"), ("DE", "Delaware"),
+        ("FL", "Florida"), ("GA", "Georgia"), ("HI", "Hawaii"), ("ID", "Idaho"),
+        ("IL", "Illinois"), ("IN", "Indiana"), ("IA", "Iowa"), ("KS", "Kansas"),
+        ("KY", "Kentucky"), ("LA", "Louisiana"), ("ME", "Maine"), ("MD", "Maryland"),
+        ("MA", "Massachusetts"), ("MI", "Michigan"), ("MN", "Minnesota"), ("MS", "Mississippi"),
+        ("MO", "Missouri"), ("MT", "Montana"), ("NE", "Nebraska"), ("NV", "Nevada"),
+        ("NH", "New Hampshire"), ("NJ", "New Jersey"), ("NM", "New Mexico"), ("NY", "New York"),
+        ("NC", "North Carolina"), ("ND", "North Dakota"), ("OH", "Ohio"), ("OK", "Oklahoma"),
+        ("OR", "Oregon"), ("PA", "Pennsylvania"), ("RI", "Rhode Island"), ("SC", "South Carolina"),
+        ("SD", "South Dakota"), ("TN", "Tennessee"), ("TX", "Texas"), ("UT", "Utah"),
+        ("VT", "Vermont"), ("VA", "Virginia"), ("WA", "Washington"), ("WV", "West Virginia"),
+        ("WI", "Wisconsin"), ("WY", "Wyoming"), ("DC", "District of Columbia"),
+    ]
+
+    static func name(for code: String) -> String? {
+        all.first { $0.code == code }?.name
+    }
+}

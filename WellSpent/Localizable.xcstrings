@@ -3841,6 +3841,22 @@
         }
       }
     },
+    "Select a state": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a state"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona un estado"
+          }
+        }
+      }
+    },
     "Select a payment method": {
       "localizations": {
         "en": {
@@ -4029,6 +4045,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Solo gastados"
+          }
+        }
+      }
+    },
+    "State": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "State"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado"
           }
         }
       }

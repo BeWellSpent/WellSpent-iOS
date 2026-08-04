@@ -79,9 +79,13 @@ struct RegisterView: View {
             .accessibilityIdentifier("countryPicker")
 
             if viewModel.isUnitedStates {
-                TextField("State (e.g. CA)", text: $viewModel.stateCode)
-                    .textInputAutocapitalization(.characters)
-                    .accessibilityIdentifier("stateField")
+                Picker("State", selection: $viewModel.stateCode) {
+                    Text("Select a state").tag("")
+                    ForEach(USState.all, id: \.code) { state in
+                        Text(state.name).tag(state.code)
+                    }
+                }
+                .accessibilityIdentifier("stateField")
             }
         }
     }
