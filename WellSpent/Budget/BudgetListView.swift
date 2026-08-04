@@ -8,6 +8,18 @@ struct BudgetListView: View {
     @State private var isCreateSheetPresented = false
     @State private var isDeleteConfirmationPresented = false
     @State private var selectedYear: Int?
+    /// Drives a one-shot auto-push straight into the active period's
+    /// `BudgetDetailView` on launch — there's no point landing on a list
+    /// with exactly one entry. Only fires once per view lifetime
+    /// (`hasAttemptedAutoNavigate` guards it): without that guard, popping
+    /// back from the auto-navigated detail view would just immediately
+    /// re-push the same destination, making "back" from it useless. Scoped
+    /// to the single-profile case only — a user can own one budget *and* be
+    /// a member of unlimited shared ones, and there's no "primary"/"last
+    /// viewed" concept in the data model to disambiguate which of several
+    /// to jump into, so multi-profile users still see the list as before.
+    @State private var isAutoNavigatingToActiveBudget = false
+    @State private var hasAttemptedAutoNavigate = false
 
     var body: some View {
         NavigationStack {
@@ -72,11 +84,36 @@ struct BudgetListView: View {
                     let model = BudgetListViewModel(authenticatedClient: authenticatedClient)
                     viewModel = model
                     await model.load()
+                    attemptAutoNavigateIfNeeded()
                 }
                 .refreshable {
                     await viewModel?.load()
                 }
+                .navigationDestination(isPresented: $isAutoNavigatingToActiveBudget) {
+                    if let viewModel, let profile = viewModel.profile {
+                        BudgetDetailView(
+                            profile: profile,
+                            authenticatedClient: session.authenticatedClient,
+                            currencyCode: viewModel.currencyCode,
+                            localeIdentifier: viewModel.localeIdentifier,
+                            onUpdated: { updated in viewModel.replaceProfile(updated) },
+                            onDeleted: { viewModel.removeProfile(id: profile.id) }
+                        )
+                    }
+                }
         }
+    }
+
+    /// Only auto-navigates when there's exactly one budget (unambiguous)
+    /// and it actually has a period to show — a brand-new profile with zero
+    /// periods would land on an empty detail view with no way back to
+    /// create one, so staying on the list (which already has its own
+    /// "No periods yet" state) is safer in that edge case.
+    private func attemptAutoNavigateIfNeeded() {
+        guard !hasAttemptedAutoNavigate else { return }
+        hasAttemptedAutoNavigate = true
+        guard let viewModel, PeriodGrouping.shouldAutoNavigateToSingleActiveBudget(profileCount: viewModel.profiles.count, hasPeriods: !viewModel.yearGroups.isEmpty) else { return }
+        isAutoNavigatingToActiveBudget = true
     }
 
     @ViewBuilder

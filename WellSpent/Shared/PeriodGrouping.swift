@@ -44,6 +44,17 @@ nonisolated enum PeriodGrouping {
         return periods.first { $0.id == overrideID } ?? resolveActivePeriod(periods)
     }
 
+    /// Whether it's safe to skip the budget list and jump straight to a
+    /// single unambiguous budget's active period on launch — see
+    /// `BudgetListView`'s `attemptAutoNavigateIfNeeded`. False whenever
+    /// there's more than one profile (a user can own one budget *and* be a
+    /// member of unlimited shared ones, and there's no "primary"/"last
+    /// viewed" concept in the data model to disambiguate which to jump
+    /// into) or the one profile has no periods yet (nothing to show).
+    static func shouldAutoNavigateToSingleActiveBudget(profileCount: Int, hasPeriods: Bool) -> Bool {
+        profileCount == 1 && hasPeriods
+    }
+
     /// A localized "July 2026"-style label for a period row — mirrors
     /// `TransactionDayGrouping.headerText`'s locale-aware formatting.
     static func label(for period: Wellspent_V1_BudgetPeriod, localeIdentifier: String) -> String {
