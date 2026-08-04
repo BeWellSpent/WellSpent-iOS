@@ -31,6 +31,7 @@ struct EditFixedExpenseView: View {
             Form {
                 detailsSection
                 scheduleSection
+                paymentPlanSection
                 attributionSection
                 errorSection
             }
@@ -75,10 +76,10 @@ struct EditFixedExpenseView: View {
     @ViewBuilder
     private var scheduleSection: some View {
         Section("Schedule") {
-            DatePicker("Start date", selection: $viewModel.startDate, displayedComponents: .date)
+            DatePicker("Start date", selection: Binding(get: { viewModel.startDate }, set: viewModel.setStartDate), displayedComponents: .date)
                 .accessibilityIdentifier("editFixedExpenseStartDatePicker")
 
-            Picker("Repeats", selection: $viewModel.frequencyUnit) {
+            Picker("Repeats", selection: Binding(get: { viewModel.frequencyUnit }, set: viewModel.setFrequencyUnit)) {
                 Text("Monthly").tag(Wellspent_V1_FrequencyUnit.month)
                 Text("Weekly").tag(Wellspent_V1_FrequencyUnit.week)
             }
@@ -86,11 +87,44 @@ struct EditFixedExpenseView: View {
             .accessibilityIdentifier("editFixedExpenseFrequencyPicker")
 
             if viewModel.frequencyUnit == .week {
-                Stepper("Every \(viewModel.intervalWeeks) week(s)", value: $viewModel.intervalWeeks, in: 1...52)
+                Stepper("Every \(viewModel.intervalWeeks) week(s)", value: Binding(get: { viewModel.intervalWeeks }, set: viewModel.setIntervalWeeks), in: 1...52)
                     .accessibilityIdentifier("editFixedExpenseIntervalWeeksStepper")
             } else {
-                Stepper("Every \(viewModel.intervalMonths) month(s)", value: $viewModel.intervalMonths, in: 1...24)
+                Stepper("Every \(viewModel.intervalMonths) month(s)", value: Binding(get: { viewModel.intervalMonths }, set: viewModel.setIntervalMonths), in: 1...24)
                     .accessibilityIdentifier("editFixedExpenseIntervalMonthsStepper")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var paymentPlanSection: some View {
+        Section {
+            TextField("Number of payments", text: Binding(get: { viewModel.paymentsText }, set: viewModel.handlePaymentsTextChange))
+                .keyboardType(.numberPad)
+                .accessibilityIdentifier("editFixedExpensePaymentsField")
+
+            Toggle("Has end date", isOn: Binding(
+                get: { viewModel.endDate != nil },
+                set: { viewModel.handleEndDateChange($0 ? (viewModel.endDate ?? viewModel.startDate) : nil) }
+            ))
+            .accessibilityIdentifier("editFixedExpenseHasEndDateToggle")
+
+            if viewModel.endDate != nil {
+                DatePicker(
+                    "End date",
+                    selection: Binding(get: { viewModel.endDate ?? viewModel.startDate }, set: { viewModel.handleEndDateChange($0) }),
+                    displayedComponents: .date
+                )
+                .accessibilityIdentifier("editFixedExpenseEndDatePicker")
+            }
+        } header: {
+            Text("Payment plan (optional)")
+        } footer: {
+            if let paymentsMadeText = viewModel.paymentsMadeText {
+                Text(paymentsMadeText)
+                    .accessibilityIdentifier("editFixedExpensePaymentsMadeText")
+            } else {
+                Text("Leave blank for an expense that repeats indefinitely.")
             }
         }
     }

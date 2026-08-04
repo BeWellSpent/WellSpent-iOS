@@ -15,6 +15,7 @@ struct AddEditTransactionView: View {
         categories: [Wellspent_V1_Category],
         paymentMethods: [Wellspent_V1_PaymentMethod],
         isArchivedPeriod: Bool = false,
+        forceLocked: Bool = false,
         authenticatedClient: ProtocolClient,
         onDone: @escaping (Wellspent_V1_Transaction) -> Void
     ) {
@@ -23,6 +24,7 @@ struct AddEditTransactionView: View {
             budgetPeriodID: budgetPeriodID,
             currencyCode: currencyCode,
             isArchivedPeriod: isArchivedPeriod,
+            forceLocked: forceLocked,
             authenticatedClient: authenticatedClient
         ))
         self.categories = categories
@@ -73,7 +75,7 @@ struct AddEditTransactionView: View {
     private var detailsSection: some View {
         Section {
             if viewModel.isLocked {
-                Text("Only the category can be changed for this transaction — it's either from a past period or was imported from your bank.")
+                Text("Only the category can be changed for this transaction.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("transactionLockedNotice")

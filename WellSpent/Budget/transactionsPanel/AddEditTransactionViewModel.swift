@@ -1,10 +1,13 @@
 import Foundation
 import Observation
+import os
 import WellSpentAPI
 
 @MainActor
 @Observable
 final class AddEditTransactionViewModel {
+    private static let logger = AppLogger.logger("Transactions")
+
     enum Mode {
         case add
         case edit(Wellspent_V1_Transaction)
@@ -24,9 +27,11 @@ final class AddEditTransactionViewModel {
     let mode: Mode
 
     /// True once a transaction's other fields are frozen — either its
-    /// period has archived, or it's Plaid-imported (`isPlaidImported`) —
-    /// and only its category can still change. See
-    /// docs/features/budget-list-view-rework.md. Never true in `.add` mode.
+    /// period has archived, it's Plaid-imported (`isPlaidImported`), or the
+    /// caller passed `forceLocked` (e.g. a Fixed transaction whose template
+    /// is missing/deactivated — see `FixedExpensesListView`) — and only its
+    /// category can still change. See docs/features/budget-list-view-rework.md.
+    /// Never true in `.add` mode.
     let isLocked: Bool
 
     private let budgetPeriodID: String
@@ -48,7 +53,7 @@ final class AddEditTransactionViewModel {
             && !paymentMethodID.isEmpty
     }
 
-    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, authenticatedClient: ProtocolClient) {
+    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, forceLocked: Bool = false, authenticatedClient: ProtocolClient) {
         self.mode = mode
         self.budgetPeriodID = budgetPeriodID
         self.currencyCode = currencyCode
@@ -64,6 +69,7 @@ final class AddEditTransactionViewModel {
             recurring = false
             date = Date()
             isLocked = false
+            Self.logger.info("opened in add mode budgetPeriodID=\(budgetPeriodID, privacy: .public)")
         case .edit(let transaction):
             name = transaction.name
             isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
@@ -72,7 +78,8 @@ final class AddEditTransactionViewModel {
             paymentMethodID = transaction.paymentMethodID
             recurring = transaction.transactionFrequencyID != 1
             date = transaction.date.dateOnly
-            isLocked = isArchivedPeriod || transaction.isPlaidImported
+            isLocked = isArchivedPeriod || transaction.isPlaidImported || forceLocked
+            Self.logger.info("opened in edit mode transactionID=\(transaction.id, privacy: .public) isArchivedPeriod=\(isArchivedPeriod, privacy: .public) isPlaidImported=\(transaction.isPlaidImported, privacy: .public) forceLocked=\(forceLocked, privacy: .public) isLocked=\(self.isLocked, privacy: .public)")
         }
     }
 
@@ -112,9 +119,11 @@ final class AddEditTransactionViewModel {
             let response = await client.updateTransaction(request: request)
             switch response.result {
             case .success(let message):
+                Self.logger.info("locked-edit submit succeeded transactionID=\(existing.id, privacy: .public)")
                 return message.transaction
             case .failure(let error):
                 errorMessage = error.message ?? "Couldn't update that transaction."
+                Self.logger.error("locked-edit submit failed transactionID=\(existing.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
                 return nil
             }
         }
@@ -136,9 +145,11 @@ final class AddEditTransactionViewModel {
             let response = await client.createTransaction(request: request)
             switch response.result {
             case .success(let message):
+                Self.logger.info("create submit succeeded transactionID=\(message.transaction.id, privacy: .public)")
                 return message.transaction
             case .failure(let error):
                 errorMessage = error.message ?? "Couldn't add that transaction."
+                Self.logger.error("create submit failed error=\(String(describing: error), privacy: .public)")
                 return nil
             }
         case .edit(let existing):
@@ -157,9 +168,11 @@ final class AddEditTransactionViewModel {
             let response = await client.updateTransaction(request: request)
             switch response.result {
             case .success(let message):
+                Self.logger.info("edit submit succeeded transactionID=\(existing.id, privacy: .public)")
                 return message.transaction
             case .failure(let error):
                 errorMessage = error.message ?? "Couldn't update that transaction."
+                Self.logger.error("edit submit failed transactionID=\(existing.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
                 return nil
             }
         }

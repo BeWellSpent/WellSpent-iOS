@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 import WellSpentAPI
 
 @MainActor
@@ -9,6 +10,8 @@ final class FixedExpensesViewModel {
     /// WellSpent-backend/internal/db/migrations/000001_init_schema.sql):
     /// Fixed = 1, Variable = 2. Raw int32 on the wire, no proto enum.
     static let fixedTypeID: Int32 = 1
+
+    private static let logger = AppLogger.logger("FixedExpenses")
 
     private(set) var isLoading = false
     private(set) var transactions: [Wellspent_V1_Transaction] = []
@@ -68,8 +71,10 @@ final class FixedExpensesViewModel {
         switch await transactionsResponse.result {
         case .success(let message):
             transactions = message.transactions.sorted { $0.date.date > $1.date.date }
+            Self.logger.info("loaded fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) count=\(self.transactions.count, privacy: .public)")
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load fixed expenses."
+            Self.logger.error("failed to load fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) error=\(String(describing: error), privacy: .public)")
         }
 
         if case .success(let message) = await fixedExpensesResponse.result {
@@ -90,6 +95,32 @@ final class FixedExpensesViewModel {
     /// expandable linked sub-rows (see `TransactionReviewMatching`).
     func linkedReviews(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_TransactionReview] {
         TransactionReviewMatching.linkedReviews(forFixedTransactionID: transaction.id, reviews: reviews)
+    }
+
+    /// "N / M payments" progress text for a row's linked template — mirrors
+    /// web's row display. Deliberately silent (no `AppLogger` calls, unlike
+    /// `template(for:)`): this runs on every row render, and logging there
+    /// would spam the log stream on every scroll/re-render rather than only
+    /// at the meaningful moments (load, edit-tap) `template(for:)` covers.
+    func paymentsProgressText(for transaction: Wellspent_V1_Transaction) -> String? {
+        guard !transaction.fixedExpenseID.isEmpty,
+              let template = fixedExpenses.first(where: { $0.id == transaction.fixedExpenseID }),
+              template.totalPayments > 0 else { return nil }
+        let anchor = template.hasAnchorDate
+            ? template.anchorDate.dateOnly
+            : FixedExpenseScheduling.displayDate(
+                dayOfMonth: template.dayOfMonth,
+                dayOfWeek: template.dayOfWeek,
+                isWeekly: template.frequencyUnit == .week
+            )
+        let made = FixedExpenseScheduling.paymentsMade(
+            totalPayments: Int(template.totalPayments),
+            anchor: anchor,
+            frequencyUnit: template.frequencyUnit,
+            intervalMonths: Int(template.intervalMonths),
+            intervalWeeks: Int(template.intervalWeeks)
+        )
+        return "\(made) / \(template.totalPayments) payments"
     }
 
     func categoryName(for categoryID: Int32) -> String? {
@@ -120,9 +151,23 @@ final class FixedExpensesViewModel {
     }
 
     /// The template a spawned transaction row came from, for the Edit flow.
+    /// Returns `nil` both when the transaction has no linked template at all
+    /// and when it does but the template is no longer active (`
+    /// ListFixedExpenses` only returns `is_active = true` rows — e.g. a
+    /// completed payment plan auto-deactivated it) — callers must handle
+    /// `nil` as a real, expected case rather than assuming the lookup always
+    /// succeeds for a Fixed transaction.
     func template(for transaction: Wellspent_V1_Transaction) -> Wellspent_V1_FixedExpense? {
-        guard !transaction.fixedExpenseID.isEmpty else { return nil }
-        return fixedExpenses.first(where: { $0.id == transaction.fixedExpenseID })
+        Self.logger.info("looking up template transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+        guard !transaction.fixedExpenseID.isEmpty else {
+            Self.logger.error("template lookup failed: transaction has no linked fixedExpenseID transactionID=\(transaction.id, privacy: .public)")
+            return nil
+        }
+        guard let template = fixedExpenses.first(where: { $0.id == transaction.fixedExpenseID }) else {
+            Self.logger.error("template lookup failed: not found in active templates (deactivated or deleted?) transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public) activeTemplateCount=\(self.fixedExpenses.count, privacy: .public)")
+            return nil
+        }
+        return template
     }
 
     /// `CreateFixedExpenseResponse` returns both the new template and the

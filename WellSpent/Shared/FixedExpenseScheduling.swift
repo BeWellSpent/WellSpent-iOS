@@ -1,4 +1,5 @@
 import Foundation
+import WellSpentAPI
 
 /// Derives the wire-format day-of-month/day-of-week fields from the
 /// user-picked anchor date. `FixedExpense.anchor_date` is the source of
@@ -38,6 +39,52 @@ nonisolated enum FixedExpenseScheduling {
             let daysInMonth = calendar.range(of: .day, in: .month, for: referenceDate)?.count ?? 28
             components.day = min(max(1, Int(dayOfMonth)), daysInMonth)
             return calendar.date(from: components) ?? referenceDate
+        }
+    }
+
+    /// Payment-plan bidirectional math (mirrors web's `AddTransactionModal`/
+    /// `EditFixedExpenseModal` `recalcEndDate`/`handleEndDateChange`): a
+    /// number-of-payments field and an end-date field, each computed from
+    /// the other given the expense's anchor date and interval. `intervalMonths`/
+    /// `intervalWeeks` are clamped to a minimum of 1 — the stepper UIs never
+    /// let them go to 0, but a defensive minimum avoids a division/multiply
+    /// by zero if this is ever called with unvalidated input.
+    static func endDate(fromTotalPayments totalPayments: Int, anchor: Date, frequencyUnit: Wellspent_V1_FrequencyUnit, intervalMonths: Int, intervalWeeks: Int) -> Date? {
+        guard totalPayments > 0 else { return nil }
+        let calendar = Calendar.current
+        if frequencyUnit == .week {
+            let days = (totalPayments - 1) * max(intervalWeeks, 1) * 7
+            return calendar.date(byAdding: .day, value: days, to: anchor)
+        } else {
+            let months = (totalPayments - 1) * max(intervalMonths, 1)
+            return calendar.date(byAdding: .month, value: months, to: anchor)
+        }
+    }
+
+    static func totalPayments(fromEndDate endDate: Date, anchor: Date, frequencyUnit: Wellspent_V1_FrequencyUnit, intervalMonths: Int, intervalWeeks: Int) -> Int {
+        max(1, intervalsElapsed(from: anchor, to: endDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks) + 1)
+    }
+
+    /// How many payments have come due as of `referenceDate`, clamped to
+    /// `[0, totalPayments]` — used to show "N of M payments made" progress
+    /// in the Edit view. Purely a client-side estimate from the schedule
+    /// (anchor + interval), not derived from actual `is_paid` transaction
+    /// history — same approach web's `computePaymentsMade` uses.
+    static func paymentsMade(totalPayments: Int, anchor: Date, frequencyUnit: Wellspent_V1_FrequencyUnit, intervalMonths: Int, intervalWeeks: Int, referenceDate: Date = Date()) -> Int {
+        guard totalPayments > 0 else { return 0 }
+        let made = intervalsElapsed(from: anchor, to: referenceDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks) + 1
+        return min(max(0, made), totalPayments)
+    }
+
+    private static func intervalsElapsed(from anchor: Date, to date: Date, frequencyUnit: Wellspent_V1_FrequencyUnit, intervalMonths: Int, intervalWeeks: Int) -> Int {
+        let calendar = Calendar.current
+        if frequencyUnit == .week {
+            let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: anchor), to: calendar.startOfDay(for: date)).day ?? 0
+            let weeks = Int((Double(days) / 7.0).rounded())
+            return weeks / max(intervalWeeks, 1)
+        } else {
+            let months = calendar.dateComponents([.month], from: anchor, to: date).month ?? 0
+            return months / max(intervalMonths, 1)
         }
     }
 }
