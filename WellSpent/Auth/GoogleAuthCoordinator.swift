@@ -1,6 +1,5 @@
 import AuthenticationServices
 import Observation
-import os
 import UIKit
 import WellSpentAPI
 
@@ -49,14 +48,6 @@ import WellSpentAPI
 @Observable
 final class GoogleAuthCoordinator: NSObject {
     private static let redirectURI = "https://bewellspent.com/auth/callback"
-    /// `print()` only reaches stdout, which is only captured when a debugger
-    /// is attached — invisible from Console.app for a standalone-launched
-    /// (TestFlight/Home-screen) process. `os.Logger` persists to the unified
-    /// logging system instead, so it's visible in Console.app regardless of
-    /// how the app was launched. Filter Console.app by subsystem
-    /// `com.bewellspent.WellSpent` / category `GoogleAuth`, or just search
-    /// "GoogleAuth". TODO: remove once the sign-in flow is confirmed working.
-    private static let logger = Logger(subsystem: "com.bewellspent.WellSpent", category: "GoogleAuth")
 
     private(set) var isSigningIn = false
     private(set) var errorMessage: String?
@@ -71,29 +62,21 @@ final class GoogleAuthCoordinator: NSObject {
     }
 
     func signIn(session sessionStore: SessionStore) async {
-        Self.logger.debug("signIn() called, isSigningIn=\(self.isSigningIn, privacy: .public)")
-        guard !isSigningIn else {
-            Self.logger.debug("already signing in, ignoring tap")
-            return
-        }
+        guard !isSigningIn else { return }
         isSigningIn = true
         errorMessage = nil
         defer { isSigningIn = false }
 
         let state = UUID().uuidString
-        Self.logger.debug("requesting auth URL, state=\(state, privacy: .public)")
         let urlResponse = await client.getGoogleAuthURL(request: .with { $0.state = state })
 
         guard case .success(let urlMessage) = urlResponse.result else {
             if case .failure(let error) = urlResponse.result {
-                Self.logger.error("getGoogleAuthURL FAILED: \(String(describing: error), privacy: .public)")
                 errorMessage = error.message ?? "Couldn't start Google sign-in."
             }
             return
         }
-        Self.logger.debug("got auth URL: \(urlMessage.url, privacy: .public)")
         guard let authURL = URL(string: urlMessage.url) else {
-            Self.logger.error("auth URL string failed to parse as URL")
             errorMessage = "Couldn't start Google sign-in."
             return
         }
@@ -101,17 +84,13 @@ final class GoogleAuthCoordinator: NSObject {
         let callbackURL: URL
         do {
             callbackURL = try await authenticate(url: authURL)
-            Self.logger.debug("authenticate() returned callback URL: \(callbackURL.absoluteString, privacy: .public)")
         } catch let authError as ASWebAuthenticationSessionError where authError.code == .canceledLogin {
-            Self.logger.debug("user cancelled")
             // User dismissed the sheet — not worth surfacing as an error.
             return
         } catch let urlError as URLError where urlError.code == .cannotConnectToHost {
-            Self.logger.error("session.start() returned false — webcredentials/associated domain misconfigured")
             errorMessage = "Couldn't start Google sign-in — check the app's associated domain configuration."
             return
         } catch {
-            Self.logger.error("authenticate() threw: \(String(describing: error), privacy: .public)")
             errorMessage = error.localizedDescription
             return
         }
@@ -166,7 +145,6 @@ final class GoogleAuthCoordinator: NSObject {
                 url: url,
                 callback: .https(host: "bewellspent.com", path: "/auth/callback")
             ) { callbackURL, error in
-                Self.logger.debug("session completion handler fired — callbackURL: \(String(describing: callbackURL), privacy: .public), error: \(String(describing: error), privacy: .public)")
                 if let callbackURL {
                     continuation.resume(returning: callbackURL)
                 } else {
@@ -183,7 +161,6 @@ final class GoogleAuthCoordinator: NSObject {
             // failure mode hangs the continuation forever: the button just
             // looks unresponsive with no way to tell why.
             let started = session.start()
-            Self.logger.debug("session.start() returned \(started, privacy: .public)")
             guard started else {
                 continuation.resume(throwing: URLError(.cannotConnectToHost))
                 return
