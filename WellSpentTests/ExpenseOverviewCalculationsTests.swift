@@ -111,4 +111,31 @@ struct ExpenseOverviewCalculationsTests {
         #expect(!ExpenseOverviewCalculations.isOver(actual: (100, 0), planned: (100, 0)))
         #expect(ExpenseOverviewCalculations.isOver(actual: (101, 0), planned: (100, 0)))
     }
+
+    @Test("totalOverBudget sums only the overspent portion of planned categories")
+    func totalOverBudgetSumsOverspendOnly() {
+        // cat 1: over by 20. cat 2: under, contributes 0. cat 3: unplanned, contributes 0 (that's totalUnplanned's job).
+        let actual: [Int32: (units: Int64, nanos: Int32)] = [1: (120, 0), 2: (50, 0), 3: (30, 0)]
+        let planned: [Int32: (units: Int64, nanos: Int32)] = [1: (100, 0), 2: (100, 0), 3: (0, 0)]
+        let result = ExpenseOverviewCalculations.totalOverBudget(
+            categoryIDs: [1, 2, 3],
+            actual: { actual[$0] ?? (0, 0) },
+            planned: { planned[$0] ?? (0, 0) }
+        )
+        #expect(result.units == 20)
+    }
+
+    @Test("totalUnplanned sums uncategorized plus full actual spend in categories with no plan")
+    func totalUnplannedSumsUncategorizedAndNoPlanCategories() {
+        // cat 1: planned, excluded regardless of over/under. cat 2: unplanned, full actual counts.
+        let actual: [Int32: (units: Int64, nanos: Int32)] = [1: (120, 0), 2: (75, 0)]
+        let planned: [Int32: (units: Int64, nanos: Int32)] = [1: (100, 0), 2: (0, 0)]
+        let result = ExpenseOverviewCalculations.totalUnplanned(
+            uncategorized: (25, 0),
+            categoryIDs: [1, 2],
+            actual: { actual[$0] ?? (0, 0) },
+            planned: { planned[$0] ?? (0, 0) }
+        )
+        #expect(result.units == 100) // 25 uncategorized + 75 from the unplanned category
+    }
 }

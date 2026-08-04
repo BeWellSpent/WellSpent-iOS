@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import WellSpentAPI
 @testable import WellSpent
 
 @Suite("FixedExpenseScheduling")
@@ -58,5 +59,69 @@ struct FixedExpenseSchedulingTests {
             let result = FixedExpenseScheduling.displayDate(dayOfMonth: 0, dayOfWeek: iso, isWeekly: true, referenceDate: reference)
             #expect(FixedExpenseScheduling.dayOfWeek(for: result) == iso)
         }
+    }
+
+    @Test("endDate computes N-1 monthly intervals from the anchor")
+    func endDateFromPaymentsMonthly() {
+        let anchor = localDate(year: 2026, month: 1, day: 15)
+        // 6 monthly payments starting Jan 15 -> last payment June 15.
+        let result = FixedExpenseScheduling.endDate(fromTotalPayments: 6, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1)
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: result!)
+        #expect(components.year == 2026 && components.month == 6 && components.day == 15)
+    }
+
+    @Test("endDate computes N-1 weekly intervals from the anchor")
+    func endDateFromPaymentsWeekly() {
+        let anchor = localDate(year: 2026, month: 1, day: 5) // a Monday
+        // 4 payments every 2 weeks starting Jan 5 -> last payment Feb 16 (3 * 2 weeks later).
+        let result = FixedExpenseScheduling.endDate(fromTotalPayments: 4, anchor: anchor, frequencyUnit: .week, intervalMonths: 1, intervalWeeks: 2)
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: result!)
+        #expect(components.year == 2026 && components.month == 2 && components.day == 16)
+    }
+
+    @Test("endDate returns nil for zero or negative payments")
+    func endDateNilForNonPositivePayments() {
+        let anchor = localDate(year: 2026, month: 1, day: 15)
+        #expect(FixedExpenseScheduling.endDate(fromTotalPayments: 0, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1) == nil)
+    }
+
+    @Test("totalPayments is the inverse of endDate for monthly intervals")
+    func totalPaymentsFromEndDateMonthly() {
+        let anchor = localDate(year: 2026, month: 1, day: 15)
+        let end = localDate(year: 2026, month: 6, day: 15)
+        #expect(FixedExpenseScheduling.totalPayments(fromEndDate: end, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1) == 6)
+    }
+
+    @Test("totalPayments is the inverse of endDate for weekly intervals")
+    func totalPaymentsFromEndDateWeekly() {
+        let anchor = localDate(year: 2026, month: 1, day: 5)
+        let end = localDate(year: 2026, month: 2, day: 16)
+        #expect(FixedExpenseScheduling.totalPayments(fromEndDate: end, anchor: anchor, frequencyUnit: .week, intervalMonths: 1, intervalWeeks: 2) == 4)
+    }
+
+    @Test("totalPayments never returns less than 1")
+    func totalPaymentsMinimumOne() {
+        let anchor = localDate(year: 2026, month: 6, day: 15)
+        let end = localDate(year: 2026, month: 1, day: 15) // before the anchor
+        #expect(FixedExpenseScheduling.totalPayments(fromEndDate: end, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1) == 1)
+    }
+
+    @Test("paymentsMade counts elapsed intervals, clamped to the total")
+    func paymentsMadeClampsToTotal() {
+        let anchor = localDate(year: 2026, month: 1, day: 15)
+        // 3 months elapsed by April 15 -> payment 4 of 6.
+        let reference = localDate(year: 2026, month: 4, day: 15)
+        #expect(FixedExpenseScheduling.paymentsMade(totalPayments: 6, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1, referenceDate: reference) == 4)
+        // Long past the plan's end -> clamps to the total, doesn't overrun.
+        let farFuture = localDate(year: 2030, month: 1, day: 15)
+        #expect(FixedExpenseScheduling.paymentsMade(totalPayments: 6, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1, referenceDate: farFuture) == 6)
+    }
+
+    @Test("paymentsMade is 0 before the plan starts and when totalPayments is unset")
+    func paymentsMadeBeforeStartOrUnset() {
+        let anchor = localDate(year: 2026, month: 6, day: 15)
+        let before = localDate(year: 2026, month: 1, day: 15)
+        #expect(FixedExpenseScheduling.paymentsMade(totalPayments: 6, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1, referenceDate: before) == 0)
+        #expect(FixedExpenseScheduling.paymentsMade(totalPayments: 0, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1) == 0)
     }
 }

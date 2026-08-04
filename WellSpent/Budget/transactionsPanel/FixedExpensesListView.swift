@@ -1,7 +1,10 @@
 import SwiftUI
 import WellSpentAPI
+import os
 
 struct FixedExpensesListView: View {
+    private static let logger = AppLogger.logger("FixedExpenses")
+
     let budgetPeriodID: String
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
@@ -17,11 +20,12 @@ struct FixedExpensesListView: View {
     let canEdit: Bool
     /// True when viewing an archived (past) period. Editing a Fixed row's
     /// template (`EditFixedExpenseView`) is deliberately left gated by
-    /// `canEdit` alone this phase — it edits the recurring template, not
-    /// this occurrence, so the category-only restriction has no reachable
-    /// per-occurrence path here yet (see
-    /// docs/features/budget-list-view-rework.md). `canMutate` gates
-    /// delete/mark-paid/unmark/exclude, all fully blocked when archived.
+    /// `canEdit` alone this phase (see docs/features/budget-list-view-rework.md).
+    /// `canMutate` gates delete/mark-paid/unmark/exclude, all fully blocked
+    /// when archived. The per-occurrence category-only edit path (when the
+    /// row's template is missing/deactivated, or the period is archived) is
+    /// `AddEditTransactionView` in its `forceLocked`/`isArchivedPeriod`
+    /// mode — see the edit sheet below.
     var isArchivedPeriod: Bool = false
     let searchQuery: String
     let filter: TransactionFilterOption
@@ -98,7 +102,10 @@ struct FixedExpensesListView: View {
                                 localeIdentifier: localeIdentifier,
                                 canEdit: canEdit,
                                 canMutate: canMutate,
-                                onEdit: { editingTransaction = transaction },
+                                onEdit: {
+                                    Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+                                    editingTransaction = transaction
+                                },
                                 onMarkPaid: { markingPaidTransaction = transaction }
                             )
                         }
@@ -136,15 +143,36 @@ struct FixedExpensesListView: View {
             get: { editingTransaction != nil },
             set: { if !$0 { editingTransaction = nil } }
         )) {
-            if let editingTransaction, let template = viewModel.template(for: editingTransaction) {
-                EditFixedExpenseView(
-                    expense: template,
-                    currencyCode: currencyCode,
-                    categories: viewModel.categories,
-                    paymentMethods: viewModel.paymentMethods,
-                    authenticatedClient: authenticatedClient
-                ) { _ in
-                    Task { await viewModel.handleTemplateUpdated() }
+            // `template(for:)` returns nil when the linked FixedExpense is
+            // missing or has been deactivated (e.g. a completed payment
+            // plan) — previously this silently rendered an empty sheet with
+            // no explanation. Falls back to the same category-only locked
+            // edit archived/Plaid-imported transactions already use, rather
+            // than showing nothing.
+            if let editingTransaction {
+                if let template = viewModel.template(for: editingTransaction) {
+                    EditFixedExpenseView(
+                        expense: template,
+                        currencyCode: currencyCode,
+                        categories: viewModel.categories,
+                        paymentMethods: viewModel.paymentMethods,
+                        authenticatedClient: authenticatedClient
+                    ) { _ in
+                        Task { await viewModel.handleTemplateUpdated() }
+                    }
+                } else {
+                    AddEditTransactionView(
+                        mode: .edit(editingTransaction),
+                        budgetPeriodID: budgetPeriodID,
+                        currencyCode: currencyCode,
+                        categories: viewModel.categories,
+                        paymentMethods: viewModel.paymentMethods,
+                        isArchivedPeriod: isArchivedPeriod,
+                        forceLocked: true,
+                        authenticatedClient: authenticatedClient
+                    ) { _ in
+                        Task { await viewModel.load() }
+                    }
                 }
             }
         }
@@ -279,6 +307,11 @@ private struct FixedExpenseRow: View {
                     Text("·")
                     ColorDotView(hex: viewModel.paymentMethodColor(for: transaction.paymentMethodID), diameter: 8)
                     Text(methodName)
+                }
+                if let progressText = viewModel.paymentsProgressText(for: transaction) {
+                    Text("·")
+                    Text(progressText)
+                        .accessibilityIdentifier("fixedExpensePaymentsProgress_\(transaction.name)")
                 }
             }
             .font(.caption)

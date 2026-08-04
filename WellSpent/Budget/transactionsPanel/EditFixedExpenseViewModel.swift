@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 import WellSpentAPI
 
 /// Kept separate from `AddFixedExpenseViewModel` — same field shape, but
@@ -9,14 +10,22 @@ import WellSpentAPI
 @MainActor
 @Observable
 final class EditFixedExpenseViewModel {
+    private static let logger = AppLogger.logger("FixedExpenses")
+
     var name: String
     var amountText: String
-    var startDate: Date
-    var frequencyUnit: Wellspent_V1_FrequencyUnit
-    var intervalMonths: Int
-    var intervalWeeks: Int
+    private(set) var startDate: Date
+    private(set) var frequencyUnit: Wellspent_V1_FrequencyUnit
+    private(set) var intervalMonths: Int
+    private(set) var intervalWeeks: Int
     var categoryID: Int32
     var paymentMethodID: String
+
+    /// See `AddFixedExpenseViewModel`'s payment-plan doc comment — same
+    /// explicit-handler-methods design (no `didSet`) to avoid the
+    /// paymentsText/endDate re-entrant "snap" issue.
+    private(set) var paymentsText: String
+    private(set) var endDate: Date?
 
     private(set) var isSubmitting = false
     private(set) var errorMessage: String?
@@ -77,6 +86,60 @@ final class EditFixedExpenseViewModel {
         intervalWeeks = expense.intervalWeeks > 0 ? Int(expense.intervalWeeks) : 1
         categoryID = expense.categoryID
         paymentMethodID = expense.paymentMethodID
+        paymentsText = expense.totalPayments > 0 ? String(expense.totalPayments) : ""
+        endDate = expense.hasEndDate ? expense.endDate.dateOnly : nil
+    }
+
+    func setStartDate(_ value: Date) {
+        startDate = value
+        recalcEndDateIfNeeded()
+    }
+
+    func setFrequencyUnit(_ value: Wellspent_V1_FrequencyUnit) {
+        frequencyUnit = value
+        recalcEndDateIfNeeded()
+    }
+
+    func setIntervalMonths(_ value: Int) {
+        intervalMonths = value
+        recalcEndDateIfNeeded()
+    }
+
+    func setIntervalWeeks(_ value: Int) {
+        intervalWeeks = value
+        recalcEndDateIfNeeded()
+    }
+
+    func handlePaymentsTextChange(_ newText: String) {
+        paymentsText = newText
+        guard let payments = Int(newText), payments > 0 else {
+            if newText.isEmpty { endDate = nil }
+            return
+        }
+        endDate = FixedExpenseScheduling.endDate(fromTotalPayments: payments, anchor: startDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks)
+    }
+
+    func handleEndDateChange(_ newDate: Date?) {
+        endDate = newDate
+        guard let newDate else {
+            paymentsText = ""
+            return
+        }
+        paymentsText = String(FixedExpenseScheduling.totalPayments(fromEndDate: newDate, anchor: startDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks))
+    }
+
+    private func recalcEndDateIfNeeded() {
+        guard let payments = Int(paymentsText), payments > 0 else { return }
+        endDate = FixedExpenseScheduling.endDate(fromTotalPayments: payments, anchor: startDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks)
+    }
+
+    /// "N of M payments made" progress text for the payment-plan section —
+    /// `nil` when there's no plan set. Purely a client-side estimate from
+    /// the schedule, same as web's `computePaymentsMade`.
+    var paymentsMadeText: String? {
+        guard let totalPayments = Int(paymentsText), totalPayments > 0 else { return nil }
+        let made = FixedExpenseScheduling.paymentsMade(totalPayments: totalPayments, anchor: startDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks)
+        return "\(made) of \(totalPayments) payments made"
     }
 
     func submit() async -> Wellspent_V1_FixedExpense? {
@@ -102,17 +165,29 @@ final class EditFixedExpenseViewModel {
             $0.frequencyUnit = frequencyUnit
             $0.intervalMonths = Int32(intervalMonths)
             $0.intervalWeeks = Int32(intervalWeeks)
+            // Leaving endDate unset (rather than setting it to a zero
+            // value) is what tells the backend to clear it — see
+            // `UpdateFixedExpenseRequest.end_date`'s proto comment ("null =
+            // clear it") and `internal/handler/budget_handler.go`'s
+            // `if req.Msg.EndDate != nil` check.
+            if let endDate {
+                $0.endDate = Google_Protobuf_Timestamp(dateOnly: endDate)
+            }
+            $0.totalPayments = Int32(paymentsText) ?? 0
         }
         if shouldSendAnchorDate {
             request.anchorDate = Google_Protobuf_Timestamp(dateOnly: startDate)
         }
+        Self.logger.info("updating fixed expense fixedExpenseID=\(self.expenseID, privacy: .public) hasPaymentPlan=\(self.endDate != nil, privacy: .public) totalPayments=\(request.totalPayments, privacy: .public)")
         let response = await client.updateFixedExpense(request: request)
 
         switch response.result {
         case .success(let message):
+            Self.logger.info("update fixed expense succeeded fixedExpenseID=\(self.expenseID, privacy: .public)")
             return message.expense
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't update that fixed expense."
+            Self.logger.error("update fixed expense failed fixedExpenseID=\(self.expenseID, privacy: .public) error=\(String(describing: error), privacy: .public)")
             return nil
         }
     }

@@ -33,6 +33,9 @@ struct ExpensePlanView: View {
 
     @State private var viewModel: ExpensePlanViewModel?
     @State private var allocatingCategory: Wellspent_V1_Category?
+    /// Defaults to pie, matching web's `ExpensesPanel.tsx` (Overview's chart
+    /// defaults to bar instead — see `ExpenseOverviewListView`).
+    @State private var chartType: ExpenseChartView.ChartType = .pie
 
     var body: some View {
         VStack(spacing: 0) {
@@ -89,6 +92,17 @@ struct ExpensePlanView: View {
     @ViewBuilder
     private func content(viewModel: ExpensePlanViewModel) -> some View {
         List {
+            if !viewModel.visibleCategories.isEmpty {
+                Section {
+                    ExpenseChartView(
+                        data: viewModel.chartData,
+                        chartType: $chartType,
+                        currencyCode: currencyCode,
+                        localeIdentifier: localeIdentifier
+                    )
+                }
+            }
+
             Section {
                 if viewModel.categories.isEmpty && viewModel.isLoading {
                     ProgressView()

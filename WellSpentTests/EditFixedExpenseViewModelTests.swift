@@ -99,7 +99,7 @@ struct EditFixedExpenseViewModelTests {
         let viewModel = makeViewModel(expense: expense)
         #expect(!viewModel.shouldSendAnchorDate)
 
-        viewModel.startDate = Calendar.current.date(byAdding: .day, value: 1, to: viewModel.startDate) ?? viewModel.startDate
+        viewModel.setStartDate(Calendar.current.date(byAdding: .day, value: 1, to: viewModel.startDate) ?? viewModel.startDate)
         #expect(viewModel.shouldSendAnchorDate)
     }
 
@@ -115,5 +115,42 @@ struct EditFixedExpenseViewModelTests {
         }
         let viewModel = makeViewModel(expense: expense)
         #expect(Calendar.current.component(.day, from: viewModel.startDate) == 15)
+    }
+
+    @Test("no payment plan prefill when the template has none")
+    func noPaymentPlanPrefillByDefault() {
+        let viewModel = makeViewModel(expense: makeExpense())
+        #expect(viewModel.paymentsText.isEmpty)
+        #expect(viewModel.endDate == nil)
+        #expect(viewModel.paymentsMadeText == nil)
+    }
+
+    @Test("prefills payment plan fields from an existing template")
+    func prefillsExistingPaymentPlan() {
+        let anchor = Google_Protobuf_Timestamp(dateOnly: Date(timeIntervalSince1970: 1_767_225_600)) // 2026-01-01
+        let expense = Wellspent_V1_FixedExpense.with {
+            $0.id = "fe-6"
+            $0.name = "Car loan"
+            $0.plannedAmount = .with { $0.units = 300; $0.currency = "USD" }
+            $0.paymentMethodID = "pm-1"
+            $0.anchorDate = anchor
+            $0.dayOfMonth = 1
+            $0.frequencyUnit = .month
+            $0.intervalMonths = 1
+            $0.totalPayments = 6
+            $0.endDate = Google_Protobuf_Timestamp(dateOnly: Calendar.current.date(byAdding: .month, value: 5, to: anchor.dateOnly)!)
+        }
+        let viewModel = makeViewModel(expense: expense)
+        #expect(viewModel.paymentsText == "6")
+        #expect(viewModel.endDate != nil)
+        #expect(viewModel.paymentsMadeText != nil)
+    }
+
+    @Test("editing the payment count updates the end date")
+    func editingPaymentsTextUpdatesEndDate() {
+        let viewModel = makeViewModel(expense: makeExpense())
+        viewModel.handlePaymentsTextChange("12")
+        #expect(viewModel.endDate != nil)
+        #expect(viewModel.paymentsMadeText != nil)
     }
 }

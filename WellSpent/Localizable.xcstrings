@@ -273,6 +273,102 @@
         }
       }
     },
+    "End date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End date"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fecha de finalización"
+          }
+        }
+      }
+    },
+    "Has end date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Has end date"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiene fecha de finalización"
+          }
+        }
+      }
+    },
+    "Leave blank for an expense that repeats indefinitely.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave blank for an expense that repeats indefinitely."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déjalo en blanco para un gasto que se repite indefinidamente."
+          }
+        }
+      }
+    },
+    "Number of payments": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number of payments"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Número de pagos"
+          }
+        }
+      }
+    },
+    "Only the category can be changed for this transaction.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the category can be changed for this transaction."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo se puede cambiar la categoría de esta transacción."
+          }
+        }
+      }
+    },
+    "Payment plan (optional)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payment plan (optional)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan de pagos (opcional)"
+          }
+        }
+      }
+    },
     "Add Fixed Expense": {
       "localizations": {
         "en": {

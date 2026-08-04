@@ -1,4 +1,3 @@
-import Charts
 import SwiftUI
 import WellSpentAPI
 
@@ -10,6 +9,9 @@ struct ExpenseOverviewListView: View {
     let localeIdentifier: String
 
     @State private var viewModel: ExpenseOverviewViewModel?
+    /// Defaults to bar, matching web's `ExpenseOverviewPanel.tsx` (Plan's
+    /// chart defaults to pie instead — see `ExpensePlanView`).
+    @State private var chartType: ExpenseChartView.ChartType = .bar
 
     var body: some View {
         Group {
@@ -41,15 +43,12 @@ struct ExpenseOverviewListView: View {
         List {
             if !viewModel.visibleCategories.isEmpty {
                 Section {
-                    Chart(viewModel.visibleCategories, id: \.id) { category in
-                        BarMark(
-                            x: .value("Actual", amountValue(viewModel.actualTotal(for: category))),
-                            y: .value("Category", category.name)
-                        )
-                        .foregroundStyle(viewModel.isOver(for: category) ? Color.red : Color.accentColor)
-                    }
-                    .frame(height: CGFloat(viewModel.visibleCategories.count) * 32 + 20)
-                    .accessibilityIdentifier("overviewChart")
+                    ExpenseChartView(
+                        data: viewModel.chartData,
+                        chartType: $chartType,
+                        currencyCode: currencyCode,
+                        localeIdentifier: localeIdentifier
+                    )
                 }
             }
 
@@ -76,15 +75,37 @@ struct ExpenseOverviewListView: View {
             Section {
                 let income = viewModel.incomeTotal
                 let actual = viewModel.totalActual
-                let remainder = viewModel.remainderTotal
+                let planned = viewModel.totalPlanned
+                let actualRemainder = viewModel.remainderTotal
+                let plannedRemainder = viewModel.plannedRemainderTotal
+                let overBudget = viewModel.totalOverBudgetAmount
+                let unplanned = viewModel.totalUnplannedAmount
 
                 LabeledContent("Income", value: displayText(income))
                     .accessibilityIdentifier("overviewIncomeTotal")
                 LabeledContent("Actual", value: displayText(actual))
                     .accessibilityIdentifier("overviewActualTotal")
-                LabeledContent("Remaining", value: displayText(remainder))
-                    .foregroundStyle(remainder.units < 0 ? .red : .primary)
-                    .accessibilityIdentifier("overviewRemainderTotal")
+                LabeledContent("Planned", value: displayText(planned))
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("overviewPlannedTotal")
+                if income.units != 0 || income.nanos != 0 {
+                    LabeledContent("Remaining (actual)", value: displayText(actualRemainder))
+                        .foregroundStyle(actualRemainder.units < 0 ? .red : .green)
+                        .accessibilityIdentifier("overviewActualRemainderTotal")
+                    LabeledContent("Remaining (planned)", value: displayText(plannedRemainder))
+                        .foregroundStyle(plannedRemainder.units < 0 ? .red : .green)
+                        .accessibilityIdentifier("overviewPlannedRemainderTotal")
+                }
+                if overBudget.units != 0 || overBudget.nanos != 0 {
+                    LabeledContent("Over budget", value: displayText(overBudget))
+                        .foregroundStyle(.red)
+                        .accessibilityIdentifier("overviewOverBudgetTotal")
+                }
+                if unplanned.units != 0 || unplanned.nanos != 0 {
+                    LabeledContent("Unplanned", value: displayText(unplanned))
+                        .foregroundStyle(.orange)
+                        .accessibilityIdentifier("overviewUnplannedTotal")
+                }
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -100,6 +121,7 @@ struct ExpenseOverviewListView: View {
             ForEach(viewModel.people, id: \.id) { person in
                 personRow(category, person, viewModel: viewModel)
             }
+            transactionList(for: category, viewModel: viewModel)
         } label: {
             categoryRow(category, viewModel: viewModel)
         }
@@ -116,8 +138,7 @@ struct ExpenseOverviewListView: View {
             Text(category.name)
             Spacer()
             overspendChip(actual: actual, planned: planned, isOver: isOver)
-            Text(displayText(actual))
-                .foregroundStyle(isOver ? .red : .secondary)
+            amountColumn(actual: actual, planned: planned, isOver: isOver)
         }
     }
 
@@ -132,10 +153,53 @@ struct ExpenseOverviewListView: View {
                 .foregroundStyle(.secondary)
             Spacer()
             overspendChip(actual: actual, planned: planned, isOver: isOver)
-            Text(displayText(actual))
-                .foregroundStyle(isOver ? .red : .secondary)
+            amountColumn(actual: actual, planned: planned, isOver: isOver)
         }
         .accessibilityIdentifier("overviewPersonRow_\(category.name)_\(person.userName)")
+    }
+
+    /// Actual on top, planned underneath as a caption — shows the
+    /// comparison web's separate Planned table column shows, in the space
+    /// a single mobile row has available.
+    private func amountColumn(actual: (units: Int64, nanos: Int32), planned: (units: Int64, nanos: Int32), isOver: Bool) -> some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text(displayText(actual))
+                .foregroundStyle(isOver ? .red : .secondary)
+            if planned.units != 0 || planned.nanos != 0 {
+                Text("of \(displayText(planned)) planned")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func transactionList(for category: Wellspent_V1_Category, viewModel: ExpenseOverviewViewModel) -> some View {
+        let dayGroups = TransactionDayGrouping.group(viewModel.transactions(for: category))
+        if !dayGroups.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(dayGroups) { group in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        ForEach(group.transactions, id: \.id) { transaction in
+                            HStack {
+                                Text(transaction.name)
+                                    .font(.caption)
+                                Spacer()
+                                Text(displayText((units: transaction.amount.units, nanos: transaction.amount.nanos)))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.leading, 12)
+            .padding(.vertical, 2)
+            .accessibilityIdentifier("overviewTransactionList_\(category.name)")
+        }
     }
 
     @ViewBuilder
@@ -150,10 +214,6 @@ struct ExpenseOverviewListView: View {
                 .foregroundStyle(.red)
                 .clipShape(Capsule())
         }
-    }
-
-    private func amountValue(_ amount: (units: Int64, nanos: Int32)) -> Double {
-        Double(amount.units) + Double(amount.nanos) / 1_000_000_000
     }
 
     private func displayText(_ amount: (units: Int64, nanos: Int32)) -> String {

@@ -67,7 +67,16 @@ struct BudgetDetailView: View {
 
     var body: some View {
         if selectedSection == .transactions {
-            content.searchable(text: $transactionsSearchQuery, prompt: "Search by name, category, or owner")
+            // Explicit `.navigationBarDrawer(displayMode: .always)` rather
+            // than the default `.automatic` placement — `.automatic` can
+            // collapse the field so it only reveals on a pull-down gesture,
+            // which is exactly why this was reported as "I don't see the
+            // free text filter anywhere": it was there, just not visibly so.
+            // Forcing it always-visible matches web's `TransactionsPanel.tsx`
+            // search field, which never collapses either.
+            content
+                .searchable(text: $transactionsSearchQuery, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search by name, category, or owner")
+                .accessibilityIdentifier("transactionsSearchField")
         } else {
             content
         }
