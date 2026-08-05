@@ -40,7 +40,7 @@ struct AlertsListView: View {
 
             Section {
                 ForEach(viewModel.visibleAlertTypes, id: \.self) { type in
-                    alertRow(type, viewModel: viewModel)
+                    AlertRow(type: type, viewModel: viewModel)
                 }
             }
 
@@ -51,9 +51,24 @@ struct AlertsListView: View {
             }
         }
     }
+}
 
-    @ViewBuilder
-    private func alertRow(_ type: AlertType, viewModel: AlertsViewModel) -> some View {
+/// A single alert type's row. This must be its own `View` (not a
+/// `@ViewBuilder` function on the parent) so `draftThresholdPct` can hold
+/// local `@State` — SwiftUI's function-based view builders can't own state.
+private struct AlertRow: View {
+    let type: AlertType
+    let viewModel: AlertsViewModel
+
+    // Slider's Binding `set` fires continuously during drag (many times per
+    // second), not just on release — wiring the network call straight to it
+    // flooded the backend's rate limiter and disabled the slider mid-drag on
+    // every one of those in-flight requests (mirrors the same bug just fixed
+    // on WellSpent-web). This local draft tracks the thumb during drag; the
+    // network call only fires once, in onEditingChanged when dragging ends.
+    @State private var draftThresholdPct: Float = 80
+
+    var body: some View {
         let subscription = viewModel.subscription(for: type)
         let isEnabled = subscription != nil
         let isLocked = viewModel.isAtLimit && !isEnabled
@@ -87,18 +102,24 @@ struct AlertsListView: View {
 
                 if type == .spendingThreshold {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Threshold: \(Int(subscription.thresholdPct))%")
+                        Text("Threshold: \(Int(draftThresholdPct))%")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Slider(
-                            value: Binding(
-                                get: { subscription.thresholdPct },
-                                set: { newValue in Task { await viewModel.updateThreshold(type, pct: newValue) } }
-                            ),
+                            value: $draftThresholdPct,
                             in: 10...100,
-                            step: 5
+                            step: 5,
+                            onEditingChanged: { editing in
+                                if !editing {
+                                    Task { await viewModel.updateThreshold(type, pct: draftThresholdPct) }
+                                }
+                            }
                         )
                         .accessibilityIdentifier("alertThresholdSlider")
+                    }
+                    .onAppear { draftThresholdPct = subscription.thresholdPct }
+                    .onChange(of: subscription.thresholdPct) { _, newValue in
+                        draftThresholdPct = newValue
                     }
 
                     Picker("Scope", selection: Binding(
@@ -110,6 +131,18 @@ struct AlertsListView: View {
                         }
                     }
                     .accessibilityIdentifier("alertScopePicker")
+
+                    if ThresholdScope(rawValue: subscription.thresholdScope) == .category {
+                        ColorDotPickerField(
+                            title: "Category",
+                            selection: Binding(
+                                get: { subscription.categoryID },
+                                set: { newValue in Task { await viewModel.updateCategory(type, categoryID: newValue) } }
+                            ),
+                            options: viewModel.categories.map { ColorDotOption(id: $0.id, name: $0.name, hex: $0.color) },
+                            accessibilityIdentifier: "alertCategoryPicker"
+                        )
+                    }
                 }
             }
         }

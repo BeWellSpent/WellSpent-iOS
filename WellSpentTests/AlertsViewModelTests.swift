@@ -60,4 +60,44 @@ struct AlertsViewModelTests {
         #expect(viewModel.subscription(for: .spendingThreshold) != nil)
         #expect(viewModel.subscription(for: .newTransaction) == nil)
     }
+
+    private func category(id: Int32, name: String) -> Wellspent_V1_Category {
+        .with { $0.id = id; $0.name = name }
+    }
+
+    @Test("resolvedCategoryID switching to budget scope always clears category")
+    func resolvedCategoryIDClearsForBudgetScope() {
+        let result = AlertsViewModel.resolvedCategoryID(
+            forScope: .budget,
+            existingCategoryID: 42,
+            availableCategories: [category(id: 1, name: "Groceries")]
+        )
+        #expect(result == 0)
+    }
+
+    @Test("resolvedCategoryID switching to category scope keeps an already-set category")
+    func resolvedCategoryIDKeepsExistingCategory() {
+        let result = AlertsViewModel.resolvedCategoryID(
+            forScope: .category,
+            existingCategoryID: 7,
+            availableCategories: [category(id: 1, name: "Groceries"), category(id: 7, name: "Shopping")]
+        )
+        #expect(result == 7)
+    }
+
+    @Test("resolvedCategoryID switching to category scope with nothing set defaults to the first available category")
+    func resolvedCategoryIDDefaultsToFirstCategory() {
+        let result = AlertsViewModel.resolvedCategoryID(
+            forScope: .category,
+            existingCategoryID: 0,
+            availableCategories: [category(id: 3, name: "Groceries"), category(id: 9, name: "Shopping")]
+        )
+        #expect(result == 3)
+    }
+
+    @Test("resolvedCategoryID switching to category scope with no categories available stays 0")
+    func resolvedCategoryIDStaysZeroWithNoCategories() {
+        let result = AlertsViewModel.resolvedCategoryID(forScope: .category, existingCategoryID: 0, availableCategories: [])
+        #expect(result == 0)
+    }
 }

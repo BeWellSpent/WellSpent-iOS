@@ -6,6 +6,7 @@ import WellSpentAPI
 final class AlertsViewModel {
     private(set) var isLoading = false
     private(set) var subscriptions: [Wellspent_V1_AlertSubscription] = []
+    private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var isFree = false
     private(set) var errorMessage: String?
 
@@ -13,6 +14,7 @@ final class AlertsViewModel {
 
     private let notificationClient: Wellspent_V1_NotificationServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
+    private let budgetClient: Wellspent_V1_BudgetServiceClient
 
     /// Free tier doesn't offer `new_transaction` at all (`docs/features/tiered-subscriptions.md`).
     var visibleAlertTypes: [AlertType] {
@@ -29,6 +31,7 @@ final class AlertsViewModel {
         self.budgetProfileID = budgetProfileID
         self.notificationClient = Wellspent_V1_NotificationServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+        self.budgetClient = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
     }
 
     /// Not private, so `visibleAlertTypes`/`isAtLimit` are testable without a
@@ -49,6 +52,7 @@ final class AlertsViewModel {
 
         async let subsResponse = notificationClient.listAlertSubscriptions(request: .with { $0.budgetProfileID = budgetProfileID })
         async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
+        async let categoriesResponse = budgetClient.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
 
         switch await subsResponse.result {
         case .success(let message):
@@ -60,11 +64,15 @@ final class AlertsViewModel {
         if case .success(let message) = await meResponse.result {
             isFree = message.user.plan == .free
         }
+
+        if case .success(let message) = await categoriesResponse.result {
+            categories = message.categories
+        }
     }
 
     func toggle(_ type: AlertType, on: Bool) async {
         if on {
-            await upsert(type, channel: .inApp, thresholdPct: type == .spendingThreshold ? 80 : 0, scope: .budget)
+            await upsert(type, channel: .inApp, thresholdPct: type == .spendingThreshold ? 80 : 0, scope: .budget, categoryID: 0)
         } else if let existing = subscription(for: type) {
             await delete(id: existing.id)
         }
@@ -76,7 +84,8 @@ final class AlertsViewModel {
             type,
             channel: channel,
             thresholdPct: existing.thresholdPct,
-            scope: ThresholdScope(rawValue: existing.thresholdScope) ?? .budget
+            scope: ThresholdScope(rawValue: existing.thresholdScope) ?? .budget,
+            categoryID: existing.categoryID
         )
     }
 
@@ -86,21 +95,46 @@ final class AlertsViewModel {
             type,
             channel: AlertChannel(rawValue: existing.channel) ?? .inApp,
             thresholdPct: pct,
-            scope: ThresholdScope(rawValue: existing.thresholdScope) ?? .budget
+            scope: ThresholdScope(rawValue: existing.thresholdScope) ?? .budget,
+            categoryID: existing.categoryID
         )
     }
 
+    /// Switching to `.category` with nothing picked yet defaults to the first
+    /// available category rather than leaving it unset — an unset
+    /// category_id is silently skipped server-side (checkSpendingThreshold
+    /// treats category_id=0 as "no category" and never fires), so the scope
+    /// switch itself must not leave the subscription in that state. A free
+    /// static function so it's unit-testable without a live network call.
+    static func resolvedCategoryID(forScope scope: ThresholdScope, existingCategoryID: Int32, availableCategories: [Wellspent_V1_Category]) -> Int32 {
+        guard scope == .category else { return 0 }
+        return existingCategoryID != 0 ? existingCategoryID : (availableCategories.first?.id ?? 0)
+    }
+
     func updateScope(_ type: AlertType, scope: ThresholdScope) async {
+        guard let existing = subscription(for: type) else { return }
+        let categoryID = Self.resolvedCategoryID(forScope: scope, existingCategoryID: existing.categoryID, availableCategories: categories)
+        await upsert(
+            type,
+            channel: AlertChannel(rawValue: existing.channel) ?? .inApp,
+            thresholdPct: existing.thresholdPct,
+            scope: scope,
+            categoryID: categoryID
+        )
+    }
+
+    func updateCategory(_ type: AlertType, categoryID: Int32) async {
         guard let existing = subscription(for: type) else { return }
         await upsert(
             type,
             channel: AlertChannel(rawValue: existing.channel) ?? .inApp,
             thresholdPct: existing.thresholdPct,
-            scope: scope
+            scope: ThresholdScope(rawValue: existing.thresholdScope) ?? .budget,
+            categoryID: categoryID
         )
     }
 
-    private func upsert(_ type: AlertType, channel: AlertChannel, thresholdPct: Float, scope: ThresholdScope) async {
+    private func upsert(_ type: AlertType, channel: AlertChannel, thresholdPct: Float, scope: ThresholdScope, categoryID: Int32) async {
         errorMessage = nil
         let response = await notificationClient.upsertAlertSubscription(request: .with {
             $0.budgetProfileID = budgetProfileID
@@ -108,6 +142,7 @@ final class AlertsViewModel {
             $0.channel = channel.rawValue
             $0.thresholdPct = thresholdPct
             $0.thresholdScope = scope.rawValue
+            $0.categoryID = categoryID
         })
 
         switch response.result {
