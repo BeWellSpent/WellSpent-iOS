@@ -6,6 +6,7 @@ struct PlaidConnectionRow: View {
     let budgetName: String
     let isManagingAccounts: Bool
     let isDisconnecting: Bool
+    var manageAccountsDisabled: Bool = false
     let onManageAccounts: () -> Void
     let onDisconnect: () -> Void
 
@@ -64,7 +65,7 @@ struct PlaidConnectionRow: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .disabled(isManagingAccounts || isDisconnecting)
+                    .disabled(isManagingAccounts || isDisconnecting || manageAccountsDisabled)
                     .accessibilityIdentifier("manageAccounts_\(connection.id)")
 
                     Button {

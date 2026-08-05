@@ -148,7 +148,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var plaidSection: some View {
         Section("Connected Bank Accounts") {
-            PlaidSectionView(authenticatedClient: authenticatedClient)
+            PlaidSectionView(authenticatedClient: authenticatedClient, plan: viewModel.plan)
         }
     }
 

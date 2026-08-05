@@ -65,7 +65,14 @@ final class PlaidSectionViewModel {
         case .success(let message):
             connections = message.connections
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load connected bank accounts."
+            // A cancelled request isn't a real failure — SwiftUI can cancel
+            // this view's `.task` mid-flight (e.g. during a navigation
+            // transition) and restart it; surfacing that as a "cancelled"
+            // error message to the user is just noise from a request that
+            // never got to finish, not something the user did wrong.
+            if error.code != .canceled {
+                errorMessage = error.message ?? "Couldn't load connected bank accounts."
+            }
         }
 
         if case .success(let message) = await budgetsResponse.result {

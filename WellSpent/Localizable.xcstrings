@@ -2657,6 +2657,22 @@
         }
       }
     },
+    "Only available on Pro accounts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only available on Pro accounts"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo disponible en cuentas Pro"
+          }
+        }
+      }
+    },
     "No budgets yet": {
       "localizations": {
         "en": {
