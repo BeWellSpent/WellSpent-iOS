@@ -100,12 +100,7 @@ final class AlertsViewModel {
         )
     }
 
-    /// Switching to `.category` with nothing picked yet defaults to the first
-    /// available category rather than leaving it unset — an unset
-    /// category_id is silently skipped server-side (checkSpendingThreshold
-    /// treats category_id=0 as "no category" and never fires), so the scope
-    /// switch itself must not leave the subscription in that state. A free
-    /// static function so it's unit-testable without a live network call.
+    /// A category scope with no category picked never fires server-side, so default to the first one.
     static func resolvedCategoryID(forScope scope: ThresholdScope, existingCategoryID: Int32, availableCategories: [Wellspent_V1_Category]) -> Int32 {
         guard scope == .category else { return 0 }
         return existingCategoryID != 0 ? existingCategoryID : (availableCategories.first?.id ?? 0)

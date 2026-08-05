@@ -53,19 +53,12 @@ struct AlertsListView: View {
     }
 }
 
-/// A single alert type's row. This must be its own `View` (not a
-/// `@ViewBuilder` function on the parent) so `draftThresholdPct` can hold
-/// local `@State` — SwiftUI's function-based view builders can't own state.
+/// Own `View` so `draftThresholdPct` can hold local `@State`.
 private struct AlertRow: View {
     let type: AlertType
     let viewModel: AlertsViewModel
 
-    // Slider's Binding `set` fires continuously during drag (many times per
-    // second), not just on release — wiring the network call straight to it
-    // flooded the backend's rate limiter and disabled the slider mid-drag on
-    // every one of those in-flight requests (mirrors the same bug just fixed
-    // on WellSpent-web). This local draft tracks the thumb during drag; the
-    // network call only fires once, in onEditingChanged when dragging ends.
+    // Slider's set fires continuously during drag; only commit on release.
     @State private var draftThresholdPct: Float = 80
 
     var body: some View {
