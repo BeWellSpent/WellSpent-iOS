@@ -135,13 +135,14 @@ struct TransactionsListView: View {
                     Section {
                         ForEach(group.transactions, id: \.id) { transaction in
                             transactionRow(transaction, viewModel: viewModel, reviews: reviews)
+                                .swipeActions(edge: .trailing) {
+                                    if canMutate && !transaction.isPlaidImported {
+                                        Button("Delete", role: .destructive) {
+                                            Task { await viewModel.delete(id: transaction.id) }
+                                        }
+                                    }
+                                }
                         }
-                        .onDelete(perform: canMutate ? { offsets in
-                            for index in offsets {
-                                let transaction = group.transactions[index]
-                                Task { await viewModel.delete(id: transaction.id) }
-                            }
-                        } : nil)
                     } header: {
                         Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
                     }
