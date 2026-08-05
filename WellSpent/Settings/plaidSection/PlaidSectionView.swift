@@ -14,13 +14,37 @@ import WellSpentAPI
 /// `ASWebAuthenticationSession` as long as `redirect_uri` was set correctly
 /// when the token was created (see `PlaidSectionViewModel.redirectURI`).
 struct PlaidSectionView: View {
+    /// Everything `PlaidSectionView` can present, consolidated into a single
+    /// `.sheet(item:)`. Previously this view stacked two independent
+    /// `.sheet(isPresented:)` modifiers (budget picker + Plaid Link) on the
+    /// same view — a known SwiftUI footgun: with more than one `.sheet`
+    /// modifier on one view, SwiftUI can only reliably track one active
+    /// presentation, so state changes across the others get cross-wired
+    /// (symptoms reported live: the first tap on "Connect a Bank" silently
+    /// did nothing and needed a second tap; tapping a row's "manage
+    /// accounts" could surface the wrong sheet). A single enum-driven
+    /// `.sheet(item:)` removes the ambiguity entirely.
+    enum ActiveSheet: Identifiable {
+        case pickBudget
+        case plaidLink(PlaidLinkSession)
+
+        var id: String {
+            switch self {
+            case .pickBudget: return "pickBudget"
+            case .plaidLink: return "plaidLink"
+            }
+        }
+    }
+
     let authenticatedClient: ProtocolClient
+    let plan: Wellspent_V1_AccountPlan
 
     @State private var viewModel: PlaidSectionViewModel?
-    @State private var isPickingBudget = false
+    @State private var activeSheet: ActiveSheet?
     @State private var confirmDisconnect: Wellspent_V1_PlaidConnection?
-    @State private var linkSession: PlaidLinkSession?
     @State private var linkSessionErrorMessage: String?
+
+    private var isFree: Bool { plan == .unspecified || plan == .free }
 
     var body: some View {
         Group {
@@ -37,24 +61,20 @@ struct PlaidSectionView: View {
             await viewModel?.load()
         }
         .onChange(of: viewModel?.activeLinkToken) { _, newToken in
-            guard let newToken else {
-                linkSession = nil
-                return
-            }
+            guard let newToken else { return }
             createLinkSession(token: newToken)
         }
-        .sheet(isPresented: Binding(
-            get: { linkSession != nil },
-            set: { if !$0 { viewModel?.handleLinkExit() } }
-        )) {
-            if let linkSession {
-                linkSession.sheet()
-            }
-        }
-        .sheet(isPresented: $isPickingBudget) {
-            BudgetPickerSheet(budgets: viewModel?.budgets ?? []) { budgetID in
-                isPickingBudget = false
-                Task { await viewModel?.startConnect(budgetProfileID: budgetID) }
+        .sheet(item: $activeSheet, onDismiss: {
+            viewModel?.handleLinkExit()
+        }) { sheet in
+            switch sheet {
+            case .pickBudget:
+                BudgetPickerSheet(budgets: viewModel?.budgets ?? []) { budgetID in
+                    activeSheet = nil
+                    Task { await viewModel?.startConnect(budgetProfileID: budgetID) }
+                }
+            case .plaidLink(let session):
+                session.sheet()
             }
         }
         .confirmationDialog(
@@ -83,6 +103,16 @@ struct PlaidSectionView: View {
                     .foregroundStyle(.red)
             }
 
+            if isFree {
+                Text("Only available on Pro accounts")
+                    .font(.caption2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.orange.opacity(0.15))
+                    .foregroundStyle(.orange)
+                    .clipShape(Capsule())
+            }
+
             if viewModel.isLoading && viewModel.connections.isEmpty {
                 ProgressView()
             } else if viewModel.connections.isEmpty {
@@ -96,6 +126,7 @@ struct PlaidSectionView: View {
                         budgetName: viewModel.budgetName(for: connection.budgetProfileID),
                         isManagingAccounts: viewModel.managingAccountsConnectionID == connection.id,
                         isDisconnecting: viewModel.disconnectingConnectionID == connection.id,
+                        manageAccountsDisabled: isFree,
                         onManageAccounts: {
                             Task { await viewModel.startManageAccounts(connection) }
                         },
@@ -110,10 +141,11 @@ struct PlaidSectionView: View {
             }
 
             Button {
-                isPickingBudget = true
+                activeSheet = .pickBudget
             } label: {
                 Label("Connect a Bank", systemImage: "building.columns")
             }
+            .disabled(isFree)
             .accessibilityIdentifier("connectBankButton")
         }
     }
@@ -135,7 +167,7 @@ struct PlaidSectionView: View {
         )
 
         do {
-            linkSession = try Plaid.createPlaidLinkSession(configuration: configuration)
+            activeSheet = .plaidLink(try Plaid.createPlaidLinkSession(configuration: configuration))
         } catch {
             linkSessionErrorMessage = error.localizedDescription
             viewModel?.handleLinkExit()
@@ -146,7 +178,7 @@ struct PlaidSectionView: View {
 #Preview {
     Form {
         Section("Connected Bank Accounts") {
-            PlaidSectionView(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+            PlaidSectionView(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"), plan: .free)
         }
     }
 }
