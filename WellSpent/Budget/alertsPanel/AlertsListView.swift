@@ -110,6 +110,18 @@ struct AlertsListView: View {
                         }
                     }
                     .accessibilityIdentifier("alertScopePicker")
+
+                    if ThresholdScope(rawValue: subscription.thresholdScope) == .category {
+                        ColorDotPickerField(
+                            title: "Category",
+                            selection: Binding(
+                                get: { subscription.categoryID },
+                                set: { newValue in Task { await viewModel.updateCategory(type, categoryID: newValue) } }
+                            ),
+                            options: viewModel.categories.map { ColorDotOption(id: $0.id, name: $0.name, hex: $0.color) },
+                            accessibilityIdentifier: "alertCategoryPicker"
+                        )
+                    }
                 }
             }
         }
