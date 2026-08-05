@@ -99,22 +99,29 @@ final class AddEditTransactionViewModel {
 
         // Locked (archived period or Plaid-imported): send every field back
         // exactly as originally recorded except category — the backend
-        // rejects an update that changes anything else in that case, and
-        // reconstructing from (unchanged, disabled) form state risks a
-        // spurious mismatch from formatting round-trips, so this reads
-        // directly off the original transaction instead.
+        // rejects an update that changes anything else in that case.
+        // Reconstructing from (unchanged, disabled) form state risks a
+        // spurious mismatch from formatting round-trips, so this reads off
+        // the transaction record directly instead — but `existing` (captured
+        // when this sheet was presented, from an already-loaded list with no
+        // polling) can itself be stale if a background Plaid sync updated a
+        // frozen field (e.g. amount) since that list was fetched. Refetching
+        // immediately before submit closes that race the same way the
+        // equivalent web fix does.
         if case .edit(let existing) = mode, isLocked {
+            let listResponse = await client.listTransactions(request: .with { $0.budgetPeriodID = budgetPeriodID })
+            let current = listResponse.message?.transactions.first(where: { $0.id == existing.id }) ?? existing
             let request = Wellspent_V1_UpdateTransactionRequest.with {
-                $0.id = existing.id
-                $0.name = existing.name
-                $0.amount = existing.amount
-                $0.plannedAmount = existing.plannedAmount
-                $0.date = existing.date
-                $0.recurring = existing.recurring
+                $0.id = current.id
+                $0.name = current.name
+                $0.amount = current.amount
+                $0.plannedAmount = current.plannedAmount
+                $0.date = current.date
+                $0.recurring = current.recurring
                 $0.categoryID = categoryID
-                $0.paymentMethodID = existing.paymentMethodID
-                $0.transactionFrequencyID = existing.transactionFrequencyID
-                $0.transactionTypeID = existing.transactionTypeID
+                $0.paymentMethodID = current.paymentMethodID
+                $0.transactionFrequencyID = current.transactionFrequencyID
+                $0.transactionTypeID = current.transactionTypeID
             }
             let response = await client.updateTransaction(request: request)
             switch response.result {
