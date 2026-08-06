@@ -66,28 +66,9 @@ struct BudgetDetailView: View {
     }
 
     var body: some View {
-        if selectedSection == .transactions {
-            // Explicit `.navigationBarDrawer(displayMode: .always)` rather
-            // than the default `.automatic` placement — `.automatic` can
-            // collapse the field so it only reveals on a pull-down gesture,
-            // which is exactly why this was reported as "I don't see the
-            // free text filter anywhere": it was there, just not visibly so.
-            // Forcing it always-visible matches web's `TransactionsPanel.tsx`
-            // search field, which never collapses either.
-            content
-                .searchable(text: $transactionsSearchQuery, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search by name, category, or owner")
-                .accessibilityIdentifier("transactionsSearchField")
-        } else {
-            content
-        }
+        content
     }
 
-    /// Split out of `body` so `.searchable` can be attached conditionally
-    /// (only while the Transactions tab is active) without duplicating the
-    /// rest of this screen's chrome — this is the same outer level the
-    /// `.toolbar`/`.navigationTitle` below already reliably render from, per
-    /// the nested-NavigationStack chrome-bug fix (see the type-level doc
-    /// comment), so attaching `.searchable` here carries no new risk.
     private var content: some View {
         VStack(spacing: 0) {
             if viewModel?.isArchivedPeriod == true {
@@ -358,25 +339,63 @@ struct BudgetDetailView: View {
 
     @ViewBuilder
     private func transactionsContent(viewModel: BudgetDetailViewModel) -> some View {
-        if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
-            TransactionsListView(
-                budgetPeriodID: period.id,
-                budgetProfileID: viewModel.profile.id,
-                authenticatedClient: authenticatedClient,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier,
-                selectedKind: $transactionsSelectedKind,
-                isAddTransactionPresented: $isAddTransactionPresented,
-                isAddFixedExpensePresented: $isAddFixedExpensePresented,
-                isActive: selectedSection == .transactions,
-                reviewViewModel: reviewViewModel,
-                canEdit: viewModel.canEdit,
-                isArchivedPeriod: viewModel.isArchivedPeriod,
-                searchQuery: transactionsSearchQuery,
-                filter: transactionsFilter
-            )
-        } else {
-            ProgressView()
+        VStack(spacing: 0) {
+            // A plain in-content field, not SwiftUI's native `.searchable`
+            // (tried first, both at this outer level and on the tab's own
+            // inner NavigationStack — confirmed dead both times via a live
+            // UI test with a full accessibility-hierarchy dump: no search
+            // bar element ever installs at all, in either position, on this
+            // screen's doubly-nested NavigationStack architecture — an
+            // already-pushed destination that itself hosts a TabView whose
+            // tabs each wrap their own NavigationStack, per the type-level
+            // doc comment's "only one nav bar actually renders" finding).
+            // A regular `TextField` sidesteps the whole question of which
+            // NavigationStack should host the search chrome, and matches
+            // what web's `TransactionsPanel.tsx` actually does — a plain
+            // always-visible field, not native OS search UI.
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Search by name, category, or owner", text: $transactionsSearchQuery)
+                    .textFieldStyle(.plain)
+                    .accessibilityIdentifier("transactionsSearchField")
+                if !transactionsSearchQuery.isEmpty {
+                    Button {
+                        transactionsSearchQuery = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("clearTransactionsSearchButton")
+                }
+            }
+            .padding(8)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal)
+            .padding(.top, 8)
+
+            if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+                TransactionsListView(
+                    budgetPeriodID: period.id,
+                    budgetProfileID: viewModel.profile.id,
+                    authenticatedClient: authenticatedClient,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    selectedKind: $transactionsSelectedKind,
+                    isAddTransactionPresented: $isAddTransactionPresented,
+                    isAddFixedExpensePresented: $isAddFixedExpensePresented,
+                    isActive: selectedSection == .transactions,
+                    reviewViewModel: reviewViewModel,
+                    canEdit: viewModel.canEdit,
+                    isArchivedPeriod: viewModel.isArchivedPeriod,
+                    searchQuery: transactionsSearchQuery,
+                    filter: transactionsFilter
+                )
+            } else {
+                ProgressView()
+            }
         }
     }
 
