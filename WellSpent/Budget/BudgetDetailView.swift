@@ -246,16 +246,24 @@ struct BudgetDetailView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button(TransactionFilterOption.none.label) { transactionsFilter = .none }
+                // `Picker` (not `Menu` + plain `Button`s) — a `Menu` built
+                // from `Button`s has no concept of a "selected" item, so
+                // nothing distinguished the active filter from the others
+                // even after tapping through them. `Picker` with
+                // `.pickerStyle(.menu)` renders identically as a menu button
+                // but automatically shows a checkmark next to whichever tag
+                // matches `transactionsFilter`.
+                Picker(selection: $transactionsFilter) {
+                    Text(TransactionFilterOption.none.label).tag(TransactionFilterOption.none)
                     if transactionsSelectedKind == .variable {
-                        Button(TransactionFilterOption.spentOnly.label) { transactionsFilter = .spentOnly }
-                        Button(TransactionFilterOption.exceededOnly.label) { transactionsFilter = .exceededOnly }
+                        Text(TransactionFilterOption.spentOnly.label).tag(TransactionFilterOption.spentOnly)
+                        Text(TransactionFilterOption.exceededOnly.label).tag(TransactionFilterOption.exceededOnly)
                     }
-                    Button(TransactionFilterOption.excludedOnly.label) { transactionsFilter = .excludedOnly }
+                    Text(TransactionFilterOption.excludedOnly.label).tag(TransactionFilterOption.excludedOnly)
                 } label: {
                     Image(systemName: transactionsFilter == .none ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
                 }
+                .pickerStyle(.menu)
                 .accessibilityIdentifier("transactionsFilterMenu")
             }
         case .review:
