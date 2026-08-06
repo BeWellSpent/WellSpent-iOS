@@ -14,11 +14,23 @@ struct MarkForReviewSheet: View {
     @State private var viewModel: MarkForReviewViewModel?
     @State private var selectedID: String?
     @State private var filter = ""
+    /// Unpaid candidates are far more likely to be the intended match, so
+    /// they stay uncollapsed; paid ones are tucked behind this toggle — same
+    /// split as the Fixed tab itself (docs/features/transactions.md).
+    @State private var isPaidExpanded = false
 
     private var filteredCandidates: [Wellspent_V1_Transaction] {
         guard let viewModel else { return [] }
         guard !filter.isEmpty else { return viewModel.fixedTransactions }
         return viewModel.fixedTransactions.filter { $0.name.localizedCaseInsensitiveContains(filter) }
+    }
+
+    private var unpaidCandidates: [Wellspent_V1_Transaction] {
+        filteredCandidates.filter { !$0.isPaid }
+    }
+
+    private var paidCandidates: [Wellspent_V1_Transaction] {
+        filteredCandidates.filter(\.isPaid)
     }
 
     var body: some View {
@@ -77,41 +89,41 @@ struct MarkForReviewSheet: View {
                     (filter.isEmpty ? Text("No fixed expenses yet.") : Text("No matches."))
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(filteredCandidates, id: \.id) { candidate in
+                    if !unpaidCandidates.isEmpty {
+                        if !paidCandidates.isEmpty {
+                            Text("Unpaid (\(unpaidCandidates.count))")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+                        }
+                        ForEach(unpaidCandidates, id: \.id) { candidate in
+                            candidateRow(candidate)
+                        }
+                    }
+
+                    if !paidCandidates.isEmpty {
                         Button {
-                            selectedID = candidate.id
+                            isPaidExpanded.toggle()
                         } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(candidate.name)
-                                        .foregroundStyle(.primary)
-                                    Text(MoneyFormatting.format(
-                                        units: candidate.plannedAmount.units,
-                                        nanos: candidate.plannedAmount.nanos,
-                                        currencyCode: currencyCode,
-                                        localeIdentifier: localeIdentifier
-                                    ))
+                                Text("Paid (\(paidCandidates.count))")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Image(systemName: isPaidExpanded ? "chevron.up" : "chevron.down")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if candidate.isPaid {
-                                    Text("Paid")
-                                        .font(.caption2)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 1)
-                                        .background(.green.opacity(0.2))
-                                        .foregroundStyle(.green)
-                                        .clipShape(Capsule())
-                                }
-                                if selectedID == candidate.id {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.blue)
-                                }
                             }
                         }
                         .buttonStyle(.plain)
-                        .accessibilityIdentifier("markForReviewCandidate_\(candidate.name)")
+                        .accessibilityIdentifier("togglePaidMarkForReviewCandidates")
+
+                        if isPaidExpanded {
+                            ForEach(paidCandidates, id: \.id) { candidate in
+                                candidateRow(candidate)
+                            }
+                        }
                     }
                 }
 
@@ -144,6 +156,35 @@ struct MarkForReviewSheet: View {
             .padding()
             .accessibilityIdentifier("confirmMarkForReview")
         }
+    }
+
+    @ViewBuilder
+    private func candidateRow(_ candidate: Wellspent_V1_Transaction) -> some View {
+        Button {
+            selectedID = candidate.id
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(candidate.name)
+                        .foregroundStyle(.primary)
+                    Text(MoneyFormatting.format(
+                        units: candidate.plannedAmount.units,
+                        nanos: candidate.plannedAmount.nanos,
+                        currencyCode: currencyCode,
+                        localeIdentifier: localeIdentifier
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if selectedID == candidate.id {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.blue)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("markForReviewCandidate_\(candidate.name)")
     }
 }
 
