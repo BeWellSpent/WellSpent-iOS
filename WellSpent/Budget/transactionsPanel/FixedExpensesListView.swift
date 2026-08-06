@@ -35,6 +35,11 @@ struct FixedExpensesListView: View {
     @State private var viewModel: FixedExpensesViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
     @State private var markingPaidTransaction: Wellspent_V1_Transaction?
+    /// Paid rows are collapsed by default (docs/features/transactions.md) —
+    /// no native collapsible `List` `Section` exists in SwiftUI, so this
+    /// gates whether the paid day-groups render at all, same manual-toggle
+    /// shape `FixedExpenseRow`'s own `isExpanded` already uses one level down.
+    @State private var isPaidExpanded = false
 
     var body: some View {
         Group {
@@ -84,7 +89,13 @@ struct FixedExpensesListView: View {
             categoryName: viewModel.categoryName,
             ownerName: viewModel.ownerName
         )
-        let dayGroups = TransactionDayGrouping.group(visibleTransactions)
+        // Unpaid (uncollapsed) / Paid (collapsed by default) split — see
+        // docs/features/transactions.md. The split happens after filtering
+        // so search/filters keep applying uniformly to both sections.
+        let unpaidTransactions = visibleTransactions.filter { !$0.isPaid }
+        let paidTransactions = visibleTransactions.filter(\.isPaid)
+        let unpaidGroups = TransactionDayGrouping.group(unpaidTransactions)
+        let paidGroups = TransactionDayGrouping.group(paidTransactions)
 
         List {
             Section {
@@ -98,32 +109,41 @@ struct FixedExpensesListView: View {
                 Text("No fixed expenses yet.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(dayGroups) { group in
+                if !unpaidTransactions.isEmpty {
                     Section {
-                        ForEach(group.transactions, id: \.id) { transaction in
-                            FixedExpenseRow(
-                                transaction: transaction,
-                                viewModel: viewModel,
-                                linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviewViewModel?.reviews ?? []),
-                                currencyCode: currencyCode,
-                                localeIdentifier: localeIdentifier,
-                                canEdit: canEdit,
-                                canMutate: canMutate,
-                                onEdit: {
-                                    Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
-                                    editingTransaction = transaction
-                                },
-                                onMarkPaid: { markingPaidTransaction = transaction }
-                            )
-                        }
-                        .onDelete(perform: canMutate ? { offsets in
-                            for index in offsets {
-                                let transaction = group.transactions[index]
-                                Task { await viewModel.delete(transaction) }
+                        Text("Unpaid (\(unpaidTransactions.count))")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(unpaidGroups) { group in
+                        dayGroupSection(group, viewModel: viewModel)
+                    }
+                }
+
+                if !paidTransactions.isEmpty {
+                    Section {
+                        Button {
+                            isPaidExpanded.toggle()
+                        } label: {
+                            HStack {
+                                Text("Paid (\(paidTransactions.count))")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Image(systemName: isPaidExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
-                        } : nil)
-                    } header: {
-                        Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("togglePaidFixedExpenses")
+                    }
+                    if isPaidExpanded {
+                        ForEach(paidGroups) { group in
+                            dayGroupSection(group, viewModel: viewModel)
+                        }
                     }
                 }
             }
@@ -192,6 +212,38 @@ struct FixedExpensesListView: View {
                     Task { await viewModel.markPaid(markingPaidTransaction, paidAmount: amount, paidAt: date) }
                 }
             }
+        }
+    }
+
+    /// Renders one day-group's header + rows — shared by both the Unpaid and
+    /// Paid sections so the row/delete logic isn't duplicated between them.
+    @ViewBuilder
+    private func dayGroupSection(_ group: TransactionDayGrouping.DayGroup, viewModel: FixedExpensesViewModel) -> some View {
+        Section {
+            ForEach(group.transactions, id: \.id) { transaction in
+                FixedExpenseRow(
+                    transaction: transaction,
+                    viewModel: viewModel,
+                    linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviewViewModel?.reviews ?? []),
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    canEdit: canEdit,
+                    canMutate: canMutate,
+                    onEdit: {
+                        Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+                        editingTransaction = transaction
+                    },
+                    onMarkPaid: { markingPaidTransaction = transaction }
+                )
+            }
+            .onDelete(perform: canMutate ? { offsets in
+                for index in offsets {
+                    let transaction = group.transactions[index]
+                    Task { await viewModel.delete(transaction) }
+                }
+            } : nil)
+        } header: {
+            Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
         }
     }
 }
@@ -320,6 +372,11 @@ private struct FixedExpenseRow: View {
                     Text(progressText)
                         .accessibilityIdentifier("fixedExpensePaymentsProgress_\(transaction.name)")
                 }
+                Text("·")
+                // `.dateOnly`, not `.date` — see Shared/DateOnly.swift.
+                Text(transaction.date.dateOnly.formatted(
+                    Date.FormatStyle(locale: Locale(identifier: localeIdentifier)).month(.abbreviated).day()
+                ))
             }
             .font(.caption)
             .foregroundStyle(.secondary)
