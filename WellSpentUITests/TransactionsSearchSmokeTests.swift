@@ -1,11 +1,13 @@
 import XCTest
 
-/// Verifies the Transactions tab's free-text search field actually renders
-/// — it lives at `BudgetDetailView`'s outer level (same place `.toolbar`/
-/// `.navigationTitle` render from, per that view's nested-NavigationStack
-/// chrome-bug fix), but unlike those, it had never been empirically
-/// confirmed live or covered by a test. No seeded account needed — same
-/// fresh-email pattern as `RegisterSmokeTests`.
+/// Verifies the Transactions tab's free-text search field actually renders.
+/// This field is a plain `TextField` in `BudgetDetailView.transactionsContent`,
+/// not SwiftUI's native `.searchable` — that was tried first (both at the
+/// outer content level and on the tab's own inner `NavigationStack`) and
+/// confirmed dead in both positions via this exact test plus an
+/// accessibility-hierarchy dump: no search bar element ever installed at
+/// all on this screen's doubly-nested NavigationStack architecture. No
+/// seeded account needed — same fresh-email pattern as `RegisterSmokeTests`.
 final class TransactionsSearchSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -66,7 +68,7 @@ final class TransactionsSearchSmokeTests: XCTestCase {
         XCTAssertTrue(transactionsTab.waitForExistence(timeout: 10))
         transactionsTab.tap()
 
-        let searchField = app.searchFields["transactionsSearchField"]
+        let searchField = app.textFields["transactionsSearchField"]
         XCTAssertTrue(searchField.waitForExistence(timeout: 10), "Search field should be visible on the Transactions tab without needing a reveal gesture")
 
         // Cleanup: delete the budget so this test leaves no orphan data behind.

@@ -23,6 +23,7 @@ struct NotificationInboxView: View {
                 Text("No notifications yet.")
                     .foregroundStyle(.secondary)
                     .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List(viewModel?.notifications ?? [], id: \.id) { notification in
                     row(notification)
@@ -30,7 +31,12 @@ struct NotificationInboxView: View {
                 .listStyle(.plain)
             }
         }
-        .frame(width: 340, height: 420)
+        // `alignment: .top` — without it, `.frame` centers this VStack's
+        // compact intrinsic content (header + divider + a short empty-state
+        // line, far shorter than 420pt) in the *middle* of the reserved box
+        // instead of pinning the header to the top, which read as
+        // everything being squished into the center of the popover.
+        .frame(width: 340, height: 420, alignment: .top)
         .task {
             await viewModel?.loadNotifications()
         }
