@@ -64,6 +64,13 @@ struct FixedExpensesListView: View {
                 Task { await viewModel?.load() }
             }
         }
+        // See the matching comment in TransactionsListView — this view can
+        // be mounted off-screen inside the TabView, so a confirmed review
+        // needs an explicit reload to actually show up in this row's
+        // expandable linked-transactions list right away.
+        .onChange(of: reviewViewModel?.reviews) { _, _ in
+            Task { await viewModel?.load() }
+        }
     }
 
     @ViewBuilder

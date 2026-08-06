@@ -99,6 +99,14 @@ struct TransactionsListView: View {
                 Task { await viewModel?.load() }
             }
         }
+        // Confirming/dismissing a review in the Review tab mutates
+        // `reviewViewModel.reviews` in place, but this view can be mounted
+        // off-screen (TabView keeps every tab alive) where SwiftUI doesn't
+        // reliably redraw on an Observable change alone — reload explicitly
+        // so a confirmed match actually drops out of this list right away.
+        .onChange(of: reviewViewModel?.reviews) { _, _ in
+            Task { await viewModel?.load() }
+        }
         .refreshable {
             await viewModel?.load()
         }
