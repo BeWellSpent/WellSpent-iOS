@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RootView: View {
     @Environment(SessionStore.self) private var session
@@ -37,6 +38,11 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 session.refreshAuthenticationState()
+                // Opening the app (including via a tapped notification, which
+                // also lands here) should clear the Home Screen badge — the
+                // backend always sends a flat `badge: 1` per push, so nothing
+                // else ever resets it.
+                UIApplication.shared.applicationIconBadgeNumber = 0
             }
         }
         .onOpenURL { url in
