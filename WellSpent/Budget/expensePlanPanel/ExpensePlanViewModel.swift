@@ -9,9 +9,14 @@ final class ExpensePlanViewModel {
     private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
     private(set) var allocations: [Wellspent_V1_ExpenseAllocation] = []
-    private(set) var savingsSources: [Wellspent_V1_SavingsSource] = []
-    private(set) var incomeSources: [Wellspent_V1_IncomeSource] = []
-    private(set) var fixedTransactions: [Wellspent_V1_Transaction] = []
+    /// Server-computed planned/committed/remainder totals and category
+    /// visibility/sort order — the single source of truth both this client
+    /// and WellSpent-web consume (see docs/features/expense-summary.md,
+    /// issue #35), replacing what used to be a hand-ported copy of web's
+    /// planned-total fallback chain (allocation -> due Fixed -> not-due
+    /// Fixed template) computed from raw savings/income/fixed-transaction
+    /// data fetched here.
+    private(set) var summary: Wellspent_V1_GetExpenseSummaryResponse?
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -30,26 +35,21 @@ final class ExpensePlanViewModel {
     }
 
     var visibleCategories: [Wellspent_V1_Category] {
-        ExpensePlanCalculations.sortedVisibleCategories(categories: categories) { [self] category in
-            plannedTotal(for: category)
+        (summary?.planCategories ?? []).compactMap { summary in
+            categories.first { $0.id == summary.categoryID }
         }
     }
 
     var incomeTotal: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.sum(incomeSources.map { (units: $0.defaultAmount.units, nanos: $0.defaultAmount.nanos) })
+        TransactionAmountFormatting.tuple(from: summary?.incomeFromSources)
     }
 
     var committedTotal: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.sum(visibleCategories.map { plannedTotal(for: $0) })
+        TransactionAmountFormatting.tuple(from: summary?.totalCommitted)
     }
 
     var remainderTotal: (units: Int64, nanos: Int32) {
-        let income = incomeTotal
-        let committed = committedTotal
-        return TransactionAmountFormatting.sum([
-            (units: income.units, nanos: income.nanos),
-            (units: -committed.units, nanos: -committed.nanos)
-        ])
+        TransactionAmountFormatting.tuple(from: summary?.remainderPlan)
     }
 
     /// Chart data for the planned-amount chart. Mirrors web's chart-data
@@ -59,19 +59,10 @@ final class ExpensePlanViewModel {
     }
 
     func plannedTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
-        let isSavings = ExpensePlanCalculations.isSavingsCategory(category)
-        let savingsAmounts = isSavings ? savingsSources.map { (units: $0.amount.units, nanos: $0.amount.nanos) } : []
-        let fixedAmounts = fixedTransactions
-            .filter { $0.categoryID == category.id }
-            .map { (units: $0.plannedAmount.units, nanos: $0.plannedAmount.nanos) }
-
-        return ExpensePlanCalculations.plannedTotal(
-            for: category.id,
-            isSavings: isSavings,
-            allocations: allocations,
-            savingsAmounts: savingsAmounts,
-            fixedPlannedAmounts: fixedAmounts
-        )
+        guard let summary = summary?.planCategories.first(where: { $0.categoryID == category.id }) else {
+            return (0, 0)
+        }
+        return TransactionAmountFormatting.tuple(from: summary.plannedTotal)
     }
 
     func allocations(for categoryID: Int32) -> [Wellspent_V1_ExpenseAllocation] {
@@ -86,12 +77,7 @@ final class ExpensePlanViewModel {
         async let allocationsResponse = client.listExpenseAllocations(request: .with { $0.budgetProfileID = budgetProfileID })
         async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let savingsResponse = client.listSavingsSources(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let incomeResponse = client.listIncomeSources(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let transactionsResponse = client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.transactionTypeID = FixedExpensesViewModel.fixedTypeID
-        })
+        async let summaryResponse = client.getExpenseSummary(request: .with { $0.budgetPeriodID = budgetPeriodID })
 
         switch await allocationsResponse.result {
         case .success(let message):
@@ -106,14 +92,13 @@ final class ExpensePlanViewModel {
         if case .success(let message) = await peopleResponse.result {
             people = message.people
         }
-        if case .success(let message) = await savingsResponse.result {
-            savingsSources = message.sources
-        }
-        if case .success(let message) = await incomeResponse.result {
-            incomeSources = message.sources
-        }
-        if case .success(let message) = await transactionsResponse.result {
-            fixedTransactions = message.transactions
+        switch await summaryResponse.result {
+        case .success(let message):
+            summary = message
+        case .failure(let error):
+            if errorMessage == nil {
+                errorMessage = error.message ?? "Couldn't load the expense summary."
+            }
         }
     }
 

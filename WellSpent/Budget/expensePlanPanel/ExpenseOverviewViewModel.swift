@@ -8,11 +8,15 @@ final class ExpenseOverviewViewModel {
     private(set) var isLoading = false
     private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
-    private(set) var allocations: [Wellspent_V1_ExpenseAllocation] = []
-    private(set) var savingsSources: [Wellspent_V1_SavingsSource] = []
-    private(set) var incomeEntries: [Wellspent_V1_IncomeEntry] = []
-    private(set) var paymentMethods: [Wellspent_V1_PaymentMethod] = []
     private(set) var transactions: [Wellspent_V1_Transaction] = []
+    /// Server-computed planned/actual/remainder/over-budget/unplanned totals
+    /// and category visibility/sort order — the single source of truth both
+    /// this client and WellSpent-web consume (see
+    /// docs/features/expense-summary.md, issue #35). This view model used to
+    /// hand-port web's category-visibility filter and drifted: it only
+    /// considered actual spend, silently dropping planned-but-unspent
+    /// categories from `visibleCategories`/every total derived from it.
+    private(set) var summary: Wellspent_V1_GetExpenseSummaryResponse?
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -34,142 +38,82 @@ final class ExpenseOverviewViewModel {
         categories.first { $0.isSystem && $0.name == "Income" }?.id
     }
 
-    private var paymentMethodPersonMap: [String: Int64] {
-        Dictionary(uniqueKeysWithValues: paymentMethods.map { ($0.id, $0.budgetPersonID) })
-    }
-
-    private var fixedTransactions: [Wellspent_V1_Transaction] {
-        transactions.filter { $0.transactionTypeID == FixedExpensesViewModel.fixedTypeID }
-    }
-
-    private var actualTotals: ExpenseOverviewCalculations.ActualTotals {
-        ExpenseOverviewCalculations.computeActualTotals(
-            transactions: transactions,
-            paymentMethodPersonMap: paymentMethodPersonMap,
-            incomeCategoryID: incomeCategoryID
-        )
-    }
-
+    // Already visible-filtered (actual spend OR has a plan) and sorted by
+    // actual descending, server-side.
     var visibleCategories: [Wellspent_V1_Category] {
-        ExpensePlanCalculations.sortedVisibleCategories(categories: categories) { [self] category in
-            actualTotal(for: category)
+        (summary?.overviewCategories ?? []).compactMap { summary in
+            categories.first { $0.id == summary.categoryID }
         }
     }
 
+    private func categorySummary(for categoryID: Int32) -> Wellspent_V1_CategoryExpenseSummary? {
+        summary?.overviewCategories.first { $0.categoryID == categoryID }
+    }
+
     var uncategorizedTotal: (units: Int64, nanos: Int32) {
-        actualTotals.uncategorized
+        TransactionAmountFormatting.tuple(from: summary?.uncategorizedActual)
     }
 
     var incomeTotal: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.sum(incomeEntries.map { (units: $0.amount.units, nanos: $0.amount.nanos) })
+        TransactionAmountFormatting.tuple(from: summary?.incomeFromEntries)
     }
 
     var totalActual: (units: Int64, nanos: Int32) {
-        let categoryTotals = actualTotals.byCategory.values.map { $0 }
-        return TransactionAmountFormatting.sum(categoryTotals + [uncategorizedTotal])
+        TransactionAmountFormatting.tuple(from: summary?.totalActual)
     }
 
     var remainderTotal: (units: Int64, nanos: Int32) {
-        let income = incomeTotal
-        let actual = totalActual
-        return TransactionAmountFormatting.sum([
-            (units: income.units, nanos: income.nanos),
-            (units: -actual.units, nanos: -actual.nanos)
-        ])
+        TransactionAmountFormatting.tuple(from: summary?.remainderActual)
     }
 
-    /// Sum of `plannedTotal(for:)` across every visible category — mirrors
-    /// web's `totalPlanned` in `ExpenseOverviewPanel.tsx`, shown alongside
-    /// `totalActual` for comparison.
+    /// Mirrors web's `totalPlanned` in `ExpenseOverviewPanel.tsx`, shown
+    /// alongside `totalActual` for comparison.
     var totalPlanned: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.sum(visibleCategories.map { plannedTotal(for: $0) })
+        TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
     }
 
     /// Income minus `totalPlanned` — the planned-side counterpart to
     /// `remainderTotal` (which is income minus *actual*).
     var plannedRemainderTotal: (units: Int64, nanos: Int32) {
-        let income = incomeTotal
-        let planned = totalPlanned
-        return TransactionAmountFormatting.sum([
-            (units: income.units, nanos: income.nanos),
-            (units: -planned.units, nanos: -planned.nanos)
-        ])
+        TransactionAmountFormatting.tuple(from: summary?.remainderPlanned)
     }
 
-    /// Sum of every visible category's overspend — mirrors web's
-    /// `totalOverBudget`.
+    /// Mirrors web's `totalOverBudget`.
     var totalOverBudgetAmount: (units: Int64, nanos: Int32) {
-        ExpenseOverviewCalculations.totalOverBudget(
-            categoryIDs: visibleCategories.map(\.id),
-            actual: { id in actualTotals.byCategory[id] ?? (0, 0) },
-            planned: { [self] id in
-                guard let category = categories.first(where: { $0.id == id }) else { return (0, 0) }
-                return plannedTotal(for: category)
-            }
-        )
+        TransactionAmountFormatting.tuple(from: summary?.totalOverBudget)
     }
 
-    /// Uncategorized spend plus full actual spend in categories with no
-    /// plan — mirrors web's `totalUnplanned`.
+    /// Mirrors web's `totalUnplanned`.
     var totalUnplannedAmount: (units: Int64, nanos: Int32) {
-        ExpenseOverviewCalculations.totalUnplanned(
-            uncategorized: uncategorizedTotal,
-            categoryIDs: visibleCategories.map(\.id),
-            actual: { id in actualTotals.byCategory[id] ?? (0, 0) },
-            planned: { [self] id in
-                guard let category = categories.first(where: { $0.id == id }) else { return (0, 0) }
-                return plannedTotal(for: category)
-            }
-        )
+        TransactionAmountFormatting.tuple(from: summary?.totalUnplanned)
     }
 
     func actualTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
-        actualTotals.byCategory[category.id] ?? (0, 0)
+        TransactionAmountFormatting.tuple(from: categorySummary(for: category.id)?.actualTotal)
     }
 
     func actualTotal(for category: Wellspent_V1_Category, person: Wellspent_V1_BudgetPerson) -> (units: Int64, nanos: Int32) {
-        actualTotals.byCategoryPerson[category.id]?[person.id] ?? (0, 0)
+        let breakdown = categorySummary(for: category.id)?.personBreakdowns.first { $0.budgetPersonID == person.id }
+        return TransactionAmountFormatting.tuple(from: breakdown?.actualTotal)
     }
 
     func plannedTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
-        let isSavings = ExpensePlanCalculations.isSavingsCategory(category)
-        let savingsAmounts = isSavings ? savingsSources.map { (units: $0.amount.units, nanos: $0.amount.nanos) } : []
-        let fixedAmounts = fixedTransactions
-            .filter { $0.categoryID == category.id }
-            .map { (units: $0.plannedAmount.units, nanos: $0.plannedAmount.nanos) }
-
-        return ExpensePlanCalculations.plannedTotal(
-            for: category.id,
-            isSavings: isSavings,
-            allocations: allocations,
-            savingsAmounts: savingsAmounts,
-            fixedPlannedAmounts: fixedAmounts
-        )
+        TransactionAmountFormatting.tuple(from: categorySummary(for: category.id)?.plannedTotal)
     }
 
     func plannedTotal(for category: Wellspent_V1_Category, person: Wellspent_V1_BudgetPerson) -> (units: Int64, nanos: Int32) {
-        let isSavings = ExpensePlanCalculations.isSavingsCategory(category)
-        let personAllocations = allocations.filter { $0.categoryID == category.id && $0.budgetPersonID == person.id }
-        let personSavingsAmounts = isSavings
-            ? savingsSources.filter { $0.budgetPersonID == person.id }.map { (units: $0.amount.units, nanos: $0.amount.nanos) }
-            : []
-        let personFixedAmounts = fixedTransactions
-            .filter { $0.categoryID == category.id && (paymentMethodPersonMap[$0.paymentMethodID] ?? 0) == person.id }
-            .map { (units: $0.plannedAmount.units, nanos: $0.plannedAmount.nanos) }
-
-        return ExpensePlanCalculations.plannedTotal(
-            for: category.id,
-            isSavings: isSavings,
-            allocations: personAllocations,
-            savingsAmounts: personSavingsAmounts,
-            fixedPlannedAmounts: personFixedAmounts
-        )
+        let breakdown = categorySummary(for: category.id)?.personBreakdowns.first { $0.budgetPersonID == person.id }
+        return TransactionAmountFormatting.tuple(from: breakdown?.plannedTotal)
     }
 
     /// Transactions actually counted toward this category's actual total —
-    /// same filter `computeActualTotals` applies (excludes manually/Income
-    /// excluded and unpaid Fixed transactions) — for the expandable
-    /// per-category transaction list. Mirrors web's `transactionsByCatId`.
+    /// same filter the backend's actual-total computation applies (excludes
+    /// manually/Income excluded and unpaid Fixed transactions) — for the
+    /// expandable per-category transaction list. Mirrors web's
+    /// `transactionsByCatId`. This is raw display data (which real
+    /// transactions make up the total), not a calculation the total itself
+    /// depends on, so it stays derived from the period's transaction list
+    /// rather than the summary RPC.
     func transactions(for category: Wellspent_V1_Category) -> [Wellspent_V1_Transaction] {
         transactions.filter {
             $0.categoryID == category.id
@@ -190,11 +134,14 @@ final class ExpenseOverviewViewModel {
     }
 
     func isOver(for category: Wellspent_V1_Category) -> Bool {
-        ExpenseOverviewCalculations.isOver(actual: actualTotal(for: category), planned: plannedTotal(for: category))
+        categorySummary(for: category.id)?.isOver ?? false
     }
 
     func isOver(for category: Wellspent_V1_Category, person: Wellspent_V1_BudgetPerson) -> Bool {
-        ExpenseOverviewCalculations.isOver(actual: actualTotal(for: category, person: person), planned: plannedTotal(for: category, person: person))
+        ExpenseOverviewCalculations.isOver(
+            actual: actualTotal(for: category, person: person),
+            planned: plannedTotal(for: category, person: person)
+        )
     }
 
     func load() async {
@@ -204,11 +151,8 @@ final class ExpenseOverviewViewModel {
 
         async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let allocationsResponse = client.listExpenseAllocations(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let savingsResponse = client.listSavingsSources(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let incomeEntriesResponse = client.listIncomeEntries(request: .with { $0.budgetPeriodID = budgetPeriodID })
         async let transactionsResponse = client.listTransactions(request: .with { $0.budgetPeriodID = budgetPeriodID })
+        async let summaryResponse = client.getExpenseSummary(request: .with { $0.budgetPeriodID = budgetPeriodID })
 
         switch await transactionsResponse.result {
         case .success(let message):
@@ -223,17 +167,13 @@ final class ExpenseOverviewViewModel {
         if case .success(let message) = await peopleResponse.result {
             people = message.people
         }
-        if case .success(let message) = await allocationsResponse.result {
-            allocations = message.allocations
-        }
-        if case .success(let message) = await savingsResponse.result {
-            savingsSources = message.sources
-        }
-        if case .success(let message) = await paymentMethodsResponse.result {
-            paymentMethods = message.methods
-        }
-        if case .success(let message) = await incomeEntriesResponse.result {
-            incomeEntries = message.entries
+        switch await summaryResponse.result {
+        case .success(let message):
+            summary = message
+        case .failure(let error):
+            if errorMessage == nil {
+                errorMessage = error.message ?? "Couldn't load the expense summary."
+            }
         }
     }
 }
