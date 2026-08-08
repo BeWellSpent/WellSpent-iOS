@@ -1,3 +1,5 @@
+import WellSpentAPI
+
 /// Sign/display rules for a variable transaction's amount, matching
 /// docs/features/negative-positive-transactions.md: `amount >= 0` is Spent
 /// (shown with a "-" prefix), `amount < 0` is Received (shown with a "+"
@@ -5,6 +7,15 @@
 nonisolated enum TransactionAmountFormatting {
     static func isReceived(units: Int64, nanos: Int32) -> Bool {
         units < 0 || (units == 0 && nanos < 0)
+    }
+
+    /// Extracts the (units, nanos) tuple every local sum/comparison helper
+    /// here operates on from a proto `Money`, defaulting to zero when the
+    /// field is unset (a server-computed summary response can omit a Money
+    /// field entirely when the amount is exactly zero).
+    static func tuple(from money: Wellspent_V1_Money?) -> (units: Int64, nanos: Int32) {
+        guard let money else { return (0, 0) }
+        return (money.units, money.nanos)
     }
 
     static func displayText(units: Int64, nanos: Int32, currencyCode: String, localeIdentifier: String) -> String {
