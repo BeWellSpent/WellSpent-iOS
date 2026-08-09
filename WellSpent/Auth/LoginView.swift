@@ -71,12 +71,7 @@ struct LoginView: View {
             .disabled(!viewModel.canSubmit)
             .accessibilityIdentifier("loginButton")
 
-            // Apple sits above Google: App Store Review 4.8 requires Sign in
-            // with Apple to be offered in an equivalent-or-better position
-            // than any other third-party login.
-            AppleAuthButton(publicClient: session.publicClient)
-
-            GoogleAuthButton(publicClient: session.publicClient)
+            SocialSignInButtons(publicClient: session.publicClient)
         }
     }
 

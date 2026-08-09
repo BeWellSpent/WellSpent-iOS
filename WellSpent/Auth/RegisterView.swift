@@ -118,10 +118,7 @@ struct RegisterView: View {
             .disabled(!viewModel.canSubmit)
             .accessibilityIdentifier("registerButton")
 
-            // Above Google, per App Store Review 4.8 — see LoginView.
-            AppleAuthButton(publicClient: session.publicClient)
-
-            GoogleAuthButton(publicClient: session.publicClient)
+            SocialSignInButtons(publicClient: session.publicClient)
         }
     }
 }

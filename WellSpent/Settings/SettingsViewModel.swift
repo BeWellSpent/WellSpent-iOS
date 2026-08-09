@@ -18,6 +18,15 @@ final class SettingsViewModel {
     var newPassword = ""
 
     private(set) var email = ""
+    /// True when `email` is an Apple "Hide My Email" relay alias. Decided by
+    /// the backend, not by suffix-matching the relay domain here, so every
+    /// client answers it the same way.
+    ///
+    /// Wraps the generated `hasApplePrivateEmail_p` — swift-protobuf appends
+    /// `_p` to any field whose name starts with `has_`, since it reserves
+    /// `hasX` for presence accessors. Kept to this one place rather than
+    /// letting that artifact spread through the UI.
+    private(set) var hasApplePrivateEmail = false
     private(set) var plan: Wellspent_V1_AccountPlan = .unspecified
     private(set) var countries: [Wellspent_V1_Country] = []
     private(set) var isLoading = false
@@ -59,6 +68,7 @@ final class SettingsViewModel {
     /// step, without needing a live `GetMe` network call.
     func apply(_ user: Wellspent_V1_User) {
         email = user.email
+        hasApplePrivateEmail = user.hasApplePrivateEmail_p
         plan = user.plan
         firstName = user.firstName
         lastName = user.lastName

@@ -2,6 +2,7 @@ import AuthenticationServices
 import Foundation
 import Observation
 import os
+import UIKit
 import WellSpentAPI
 
 /// Drives native Sign in with Apple.
@@ -14,48 +15,77 @@ import WellSpentAPI
 /// type only turns the resulting credential into a session.
 @MainActor
 @Observable
-final class AppleAuthCoordinator {
+final class AppleAuthCoordinator: NSObject {
     private static let logger = AppLogger.logger("AppleAuth")
 
     private(set) var isSigningIn = false
     private(set) var errorMessage: String?
 
     private let client: Wellspent_V1_AuthServiceClient
+    /// Held so neither is deallocated mid-flow — `ASAuthorizationController`
+    /// doesn't retain itself, same caveat as `ASWebAuthenticationSession` in
+    /// `GoogleAuthCoordinator`.
+    private var activeController: ASAuthorizationController?
+    private var continuation: CheckedContinuation<ASAuthorizationAppleIDCredential, Error>?
 
     init(publicClient: ProtocolClient) {
         self.client = Wellspent_V1_AuthServiceClient(client: publicClient)
     }
 
-    /// Handles the result handed over by `SignInWithAppleButton`'s
-    /// `onCompletion`.
-    func handle(result: Result<ASAuthorization, Error>, session: SessionStore) async {
-        switch result {
-        case .success(let authorization):
-            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-                Self.logger.error("authorization returned an unexpected credential type")
-                errorMessage = Self.genericErrorMessage()
-                return
-            }
-            await signIn(credential: credential, session: session)
-
-        case .failure(let error):
-            // A cancelled sheet is a normal outcome, not something to nag
-            // about — same treatment GoogleAuthCoordinator gives its own
-            // cancellation case.
-            if let authError = error as? ASAuthorizationError, authError.code == .canceled {
-                return
-            }
-            Self.logger.error("authorization failed: \(error.localizedDescription, privacy: .public)")
-            errorMessage = Self.genericErrorMessage()
-        }
-    }
-
-    func signIn(credential: ASAuthorizationAppleIDCredential, session: SessionStore) async {
+    /// Presents the system Sign in with Apple sheet and, on success, exchanges
+    /// the resulting credential for a session.
+    ///
+    /// Drives `ASAuthorizationController` directly rather than going through
+    /// SwiftUI's `SignInWithAppleButton`, because the UI uses a compact
+    /// logo-only button (permitted by the HIG when space is constrained) and
+    /// that wrapper only renders the full-width labelled variant.
+    func signIn(session: SessionStore) async {
         guard !isSigningIn else { return }
         isSigningIn = true
         errorMessage = nil
         defer { isSigningIn = false }
 
+        let credential: ASAuthorizationAppleIDCredential
+        do {
+            credential = try await requestCredential()
+        } catch let authError as ASAuthorizationError where authError.code == .canceled {
+            // Dismissing the sheet is a normal outcome, not worth surfacing —
+            // same treatment GoogleAuthCoordinator gives its own cancellation.
+            return
+        } catch {
+            Self.logger.error("authorization failed: \(error.localizedDescription, privacy: .public)")
+            errorMessage = Self.genericErrorMessage()
+            return
+        }
+
+        await submit(credential: credential, session: session)
+    }
+
+    private func requestCredential() async throws -> ASAuthorizationAppleIDCredential {
+        try await withCheckedThrowingContinuation { continuation in
+            let request = ASAuthorizationAppleIDProvider().createRequest()
+            request.requestedScopes = [.fullName, .email]
+
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+
+            self.continuation = continuation
+            self.activeController = controller
+            controller.performRequests()
+        }
+    }
+
+    private func resume(with result: Result<ASAuthorizationAppleIDCredential, Error>) {
+        // Guard against a delegate firing twice — resuming a continuation more
+        // than once traps.
+        guard let continuation else { return }
+        self.continuation = nil
+        activeController = nil
+        continuation.resume(with: result)
+    }
+
+    func submit(credential: ASAuthorizationAppleIDCredential, session: SessionStore) async {
         guard let identityToken = Self.string(from: credential.identityToken) else {
             Self.logger.error("credential carried no identity token")
             errorMessage = Self.genericErrorMessage()
@@ -129,5 +159,34 @@ final class AppleAuthCoordinator {
 
     nonisolated static func genericErrorMessage() -> String {
         String(localized: "Apple sign-in failed. Please try again.", locale: AppLanguageStore.currentLocale)
+    }
+}
+
+extension AppleAuthCoordinator: ASAuthorizationControllerDelegate {
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+            Self.logger.error("authorization returned an unexpected credential type")
+            resume(with: .failure(ASAuthorizationError(.invalidResponse)))
+            return
+        }
+        resume(with: .success(credential))
+    }
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error
+    ) {
+        resume(with: .failure(error))
+    }
+}
+
+extension AppleAuthCoordinator: ASAuthorizationControllerPresentationContextProviding {
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.keyWindow }
+            .first ?? ASPresentationAnchor()
     }
 }
