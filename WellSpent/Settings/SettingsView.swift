@@ -58,9 +58,18 @@ struct SettingsView: View {
             TextField("Last name", text: $viewModel.lastName)
                 .accessibilityIdentifier("settingsLastNameField")
 
-            LabeledContent("Email", value: viewModel.email)
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("settingsEmailField")
+            // A "Hide My Email" account's address is a machine-generated relay
+            // alias (a1b2c3@privaterelay.appleid.com) — showing it tells the
+            // user nothing, so name the sign-in method instead.
+            if viewModel.hasApplePrivateEmail {
+                LabeledContent("Email", value: String(localized: "Signed with Apple"))
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settingsEmailField")
+            } else {
+                LabeledContent("Email", value: viewModel.email)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settingsEmailField")
+            }
 
             Picker("Country", selection: $viewModel.countryCode) {
                 Text("Select a country").tag("")

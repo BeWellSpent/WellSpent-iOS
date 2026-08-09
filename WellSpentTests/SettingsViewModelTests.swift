@@ -39,6 +39,31 @@ struct SettingsViewModelTests {
         #expect(viewModel.language == "en")
         #expect(viewModel.currency == "USD")
         #expect(viewModel.plan == .pro)
+        #expect(!viewModel.hasApplePrivateEmail)
+    }
+
+    // The Settings screen hides the address entirely for these accounts — it's
+    // a machine-generated relay alias, so it tells the user nothing.
+    @Test("apply carries the backend's Hide My Email flag through")
+    func prefillsApplePrivateEmailFlag() {
+        let viewModel = makeViewModel()
+        var user = makeUser()
+        user.email = "a1b2c3d4e5@privaterelay.appleid.com"
+        user.hasApplePrivateEmail_p = true
+
+        viewModel.apply(user)
+
+        #expect(viewModel.hasApplePrivateEmail)
+    }
+
+    // The flag is the backend's call, not a suffix check repeated here — an
+    // ordinary address must never trip it.
+    @Test("apply leaves the flag off for an ordinary address")
+    func prefillsWithoutApplePrivateEmailFlag() {
+        let viewModel = makeViewModel()
+        viewModel.apply(makeUser())
+
+        #expect(!viewModel.hasApplePrivateEmail)
     }
 
     @Test("apply defaults blank language/currency to en/USD, matching the backend's default")
