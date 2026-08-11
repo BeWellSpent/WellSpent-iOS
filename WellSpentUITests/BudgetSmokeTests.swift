@@ -4,6 +4,11 @@ import XCTest
 /// income source, confirm both appear, then delete the budget as cleanup so
 /// repeated runs don't leave orphan data on the real backend. Requires a
 /// seeded account (`UITEST_EMAIL`/`UITEST_PASSWORD`), same as `LoginSmokeTests`.
+/// The seeded account must be able to get past the email-verification gate —
+/// either genuinely verified, or marked exempt with
+/// `UPDATE users SET account_type = 'test' WHERE email = '<UITEST_EMAIL>';`
+/// (see WellSpent-backend migration 000045). Without that, login succeeds but
+/// lands on the gate instead of the budget list.
 final class BudgetSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false

@@ -39,9 +39,16 @@ final class RegisterSmokeTests: XCTestCase {
         dismissSavePasswordPromptIfPresent(app)
 
         // A brand-new email/password account is never pre-verified (only
-        // Google sign-ups are), so the verify-email banner should appear
-        // alongside the authenticated placeholder screen.
-        XCTAssertTrue(app.buttons["logoutButton"].waitForExistence(timeout: 10))
+        // Google and Apple sign-ups are), so registration lands on the
+        // verification gate, not the budget list.
+        //
+        // This address is invented at run time, so it can't be seeded as an
+        // account_type = 'test' exemption the way the other smoke tests'
+        // UITEST_EMAIL account is — reaching the gate *is* the correct
+        // outcome here, and asserting it is what proves the block works for
+        // a genuinely fresh signup.
         XCTAssertTrue(app.buttons["resendVerificationButton"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["verifyGateLogoutButton"].exists)
+        XCTAssertFalse(app.buttons["logoutButton"].exists, "an unverified account must not reach the budget list")
     }
 }
