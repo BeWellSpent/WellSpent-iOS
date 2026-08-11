@@ -4,6 +4,11 @@ import XCTest
 /// the environment before running (skips itself otherwise rather than
 /// failing, so a plain `xcodebuild test` run without credentials doesn't
 /// report a false failure).
+/// The seeded account must be able to get past the email-verification gate —
+/// either genuinely verified, or marked exempt with
+/// `UPDATE users SET account_type = 'test' WHERE email = '<UITEST_EMAIL>';`
+/// (see WellSpent-backend migration 000045). Without that, login succeeds but
+/// lands on the gate instead of the budget list.
 final class LoginSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false

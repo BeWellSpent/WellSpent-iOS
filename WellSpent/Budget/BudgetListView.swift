@@ -120,11 +120,6 @@ struct BudgetListView: View {
     private var content: some View {
         if let viewModel {
             VStack(spacing: 0) {
-                if let user = viewModel.currentUser, !user.isVerified {
-                    VerifyEmailBannerView(publicClient: session.publicClient, email: user.email)
-                        .padding([.horizontal, .top])
-                }
-
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .font(.caption)

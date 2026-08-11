@@ -24,7 +24,7 @@ struct SocialSignInButtons: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 8) {
             HStack(spacing: 12) {
                 AuthProviderIconButton(
                     systemImage: "apple.logo",
@@ -54,17 +54,20 @@ struct SocialSignInButtons: View {
                     }
                 }
                 .accessibilityIdentifier("googleAuthButton")
-
-                Spacer()
             }
 
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
                     .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
                     .accessibilityIdentifier("socialAuthErrorMessage")
             }
         }
+        // Centers the row regardless of how wide the parent form makes this —
+        // the VStack's default center alignment only matters once it actually
+        // spans the available width.
+        .frame(maxWidth: .infinity)
     }
 }
 

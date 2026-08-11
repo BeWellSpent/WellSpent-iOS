@@ -21,23 +21,63 @@ struct RootView: View {
     /// hide the cover (revealing the already-mounted `LoginView`) *without*
     /// forgetting the pending invite, so it can auto-reappear post-login.
     @State private var isInvitePreviewPresented: Bool = UserDefaults.standard.string(forKey: RootView.pendingInviteTokenKey) != nil
+    /// Created once per session, on first authenticated render. Lives here
+    /// rather than inside the gate view so its state survives the gate being
+    /// swapped out and back in (e.g. a failed refresh) without re-fetching.
+    @State private var verifyGateViewModel: VerifyEmailGateViewModel?
 
     private static let pendingInviteTokenKey = "pendingInviteToken"
+
+    /// True only once GetMe has actually said the account is unverified.
+    /// Unknown (pre-first-load, or a failed check) deliberately renders the
+    /// app rather than a verification wall.
+    private var isEmailUnverified: Bool {
+        if case .unverified = verifyGateViewModel?.state { return true }
+        return false
+    }
 
     var body: some View {
         Group {
             if session.isAuthenticated {
-                BudgetListView()
-                    .id(budgetListRefreshTrigger)
+                if let verifyGateViewModel, isEmailUnverified {
+                    // Replaces the app outright instead of covering it: a
+                    // sheet or fullScreenCover can be swiped away, and this
+                    // view already presents the invite cover — a second
+                    // presentation modifier on one view is the footgun that
+                    // caused the Plaid double-tap bug.
+                    VerifyEmailGateView(viewModel: verifyGateViewModel)
+                } else {
+                    BudgetListView()
+                        .id(budgetListRefreshTrigger)
+                }
             } else {
                 NavigationStack {
                     LoginView(publicClient: session.publicClient)
                 }
             }
         }
+        .task(id: session.isAuthenticated) {
+            // The verification link opens in a browser, so the answer changes
+            // outside the app entirely — check on every login, and again on
+            // every foreground below.
+            guard session.isAuthenticated, let authenticatedClient = session.authenticatedClient else {
+                verifyGateViewModel = nil
+                return
+            }
+            if verifyGateViewModel == nil {
+                verifyGateViewModel = VerifyEmailGateViewModel(
+                    authenticatedClient: authenticatedClient,
+                    publicClient: session.publicClient
+                )
+            }
+            await verifyGateViewModel?.refresh()
+        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 session.refreshAuthenticationState()
+                // Coming back from the browser after tapping the link is
+                // exactly the moment verification status may have changed.
+                Task { await verifyGateViewModel?.refresh() }
                 // Opening the app (including via a tapped notification, which
                 // also lands here) should clear the Home Screen badge — the
                 // backend always sends a flat `badge: 1` per push, so nothing
@@ -77,7 +117,13 @@ struct RootView: View {
             guard session.isAuthenticated else { return }
             await TrackingPermission.requestIfNeeded()
         }
-        .fullScreenCover(isPresented: $isInvitePreviewPresented) {
+        // Suppressed while the gate is up, so an invite can't be accepted
+        // around it. The token is kept, not discarded, so the cover returns
+        // on its own once the account verifies.
+        .fullScreenCover(isPresented: Binding(
+            get: { isInvitePreviewPresented && !isEmailUnverified },
+            set: { isInvitePreviewPresented = $0 }
+        )) {
             if let pendingInviteToken {
                 AcceptInviteView(
                     token: pendingInviteToken,

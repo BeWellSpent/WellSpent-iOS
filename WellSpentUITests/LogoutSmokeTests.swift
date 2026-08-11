@@ -1,6 +1,11 @@
 import XCTest
 
 /// Requires a seeded test account — set `UITEST_EMAIL`/`UITEST_PASSWORD`.
+/// The seeded account must be able to get past the email-verification gate —
+/// either genuinely verified, or marked exempt with
+/// `UPDATE users SET account_type = 'test' WHERE email = '<UITEST_EMAIL>';`
+/// (see WellSpent-backend migration 000045). Without that, login succeeds but
+/// lands on the gate instead of the budget list.
 final class LogoutSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false

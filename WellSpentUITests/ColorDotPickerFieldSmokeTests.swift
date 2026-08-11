@@ -8,6 +8,11 @@ import XCTest
 /// sheet dismisses and the selection updates — using the Add Transaction
 /// category picker as the one concrete site exercised. Requires a seeded
 /// account (`UITEST_EMAIL`/`UITEST_PASSWORD`), same as `BudgetSmokeTests`.
+/// The seeded account must be able to get past the email-verification gate —
+/// either genuinely verified, or marked exempt with
+/// `UPDATE users SET account_type = 'test' WHERE email = '<UITEST_EMAIL>';`
+/// (see WellSpent-backend migration 000045). Without that, login succeeds but
+/// lands on the gate instead of the budget list.
 final class ColorDotPickerFieldSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false

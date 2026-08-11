@@ -1,98 +1,162 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Signed with Apple" : {
+    "Verify your email" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Signed with Apple"
+            "value" : "Verify your email"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sesión iniciada con Apple"
+            "value" : "Verifica tu correo"
           }
         }
       }
     },
-    "Sign in with Apple" : {
+    "We sent a verification link to %@. Confirm your address to start using WellSpent. The link expires in 10 minutes." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in with Apple"
+            "value" : "We sent a verification link to %@. Confirm your address to start using WellSpent. The link expires in 10 minutes."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Iniciar sesión con Apple"
+            "value" : "Enviamos un enlace de verificación a %@. Confirma tu dirección para empezar a usar WellSpent. El enlace vence en 10 minutos."
           }
         }
       }
     },
-    "Apple sign-in couldn't be verified. Please try again." : {
+    "Resend verification email" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apple sign-in couldn't be verified. Please try again."
+            "value" : "Resend verification email"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se pudo verificar el inicio de sesión con Apple. Inténtalo de nuevo."
+            "value" : "Reenviar correo de verificación"
           }
         }
       }
     },
-    "Apple sign-in failed. Please try again." : {
+    "Couldn't resend the email. Try again in a moment." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apple sign-in failed. Please try again."
+            "value" : "Couldn't resend the email. Try again in a moment."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El inicio de sesión con Apple falló. Inténtalo de nuevo."
+            "value" : "No pudimos reenviar el correo. Inténtalo en un momento."
           }
         }
       }
     },
-    "This account can't sign in right now." : {
+    "Wrong email address? Change it" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This account can't sign in right now."
+            "value" : "Wrong email address? Change it"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esta cuenta no puede iniciar sesión en este momento."
+            "value" : "¿Dirección incorrecta? Cámbiala"
           }
         }
       }
     },
-    "Can't reach the server. Check your connection and try again." : {
+    "Change email address" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Can't reach the server. Check your connection and try again."
+            "value" : "Change email address"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se puede conectar con el servidor. Revisa tu conexión e inténtalo de nuevo."
+            "value" : "Cambiar dirección de correo"
+          }
+        }
+      }
+    },
+    "New email address" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New email address"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva dirección de correo"
+          }
+        }
+      }
+    },
+    "We'll send a new verification link to this address." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll send a new verification link to this address."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviaremos un nuevo enlace de verificación a esta dirección."
+          }
+        }
+      }
+    },
+    "Save and resend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save and resend"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar y reenviar"
+          }
+        }
+      }
+    },
+    "Couldn't change your email address. Try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't change your email address. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos cambiar tu dirección de correo. Inténtalo de nuevo."
           }
         }
       }
@@ -693,6 +757,38 @@
         }
       }
     },
+    "Apple sign-in couldn't be verified. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple sign-in couldn't be verified. Please try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo verificar el inicio de sesión con Apple. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "Apple sign-in failed. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple sign-in failed. Please try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El inicio de sesión con Apple falló. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
     "Archived" : {
       "localizations" : {
         "en" : {
@@ -837,6 +933,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Presupuestos"
+          }
+        }
+      }
+    },
+    "Can't reach the server. Check your connection and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't reach the server. Check your connection and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se puede conectar con el servidor. Revisa tu conexión e inténtalo de nuevo."
           }
         }
       }
@@ -1037,6 +1149,7 @@
       }
     },
     "Coming soon" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4188,6 +4301,38 @@
         }
       }
     },
+    "Sign in with Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with Apple"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciar sesión con Apple"
+          }
+        }
+      }
+    },
+    "Signed with Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signed with Apple"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión iniciada con Apple"
+          }
+        }
+      }
+    },
     "Single" : {
       "localizations" : {
         "en" : {
@@ -4425,6 +4570,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tema"
+          }
+        }
+      }
+    },
+    "This account can't sign in right now." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This account can't sign in right now."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta cuenta no puede iniciar sesión en este momento."
           }
         }
       }
