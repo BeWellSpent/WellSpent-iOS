@@ -1,6 +1,150 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Not syncing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not syncing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin sincronizar"
+          }
+        }
+      }
+    },
+    "Unknown member" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown member"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integrante desconocido"
+          }
+        }
+      }
+    },
+    "Re-sync" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-sync"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a sincronizar"
+          }
+        }
+      }
+    },
+    "Re-sync this bank?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-sync this bank?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Volver a sincronizar este banco?"
+          }
+        }
+      }
+    },
+    "WellSpent will ask for this bank's full transaction history again, starting now. Transactions you deleted will come back. Ones already imported won't be duplicated. Available once a day per bank." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WellSpent will ask for this bank's full transaction history again, starting now. Transactions you deleted will come back. Ones already imported won't be duplicated. Available once a day per bank."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WellSpent le pedirá a este banco todo su historial de transacciones otra vez, empezando ahora. Las transacciones que eliminaste volverán a aparecer. Las ya importadas no se duplicarán. Disponible una vez al día por banco."
+          }
+        }
+      }
+    },
+    "No bank accounts are connected to this budget yet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No bank accounts are connected to this budget yet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no hay cuentas bancarias conectadas a este presupuesto."
+          }
+        }
+      }
+    },
+    "Bank connections feeding this budget, from everyone on it. You can only change your own." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bank connections feeding this budget, from everyone on it. You can only change your own."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conexiones bancarias que alimentan este presupuesto, de todos sus integrantes. Solo puedes modificar las tuyas."
+          }
+        }
+      }
+    },
+    "Bank Connections" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bank Connections"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conexiones bancarias"
+          }
+        }
+      }
+    },
+    "Couldn't re-sync that bank." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't re-sync that bank."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo volver a sincronizar ese banco."
+          }
+        }
+      }
+    },
     "Some accounts aren't syncing" : {
       "localizations" : {
         "en" : {

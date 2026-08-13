@@ -108,6 +108,19 @@ struct BudgetManageView: View {
                         )
                     }
                     .accessibilityIdentifier("alertSettingsNavLink")
+
+                    // Plaid is US-only — the backend refuses everyone else
+                    // outright. The budget's country is propagated from its
+                    // owner at creation, so no extra fetch is needed here.
+                    if viewModel.profile.countryCode == "US" {
+                        NavigationLink("Bank Connections") {
+                            PlaidConnectionsPanelView(
+                                authenticatedClient: authenticatedClient,
+                                budgetProfileID: viewModel.profile.id
+                            )
+                        }
+                        .accessibilityIdentifier("bankConnectionsNavLink")
+                    }
                 }
             }
 
