@@ -2045,6 +2045,22 @@
         }
       }
     },
+    "Due %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence %@"
+          }
+        }
+      }
+    },
     "EUR" : {
       "localizations" : {
         "en" : {
@@ -2409,6 +2425,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Frecuencia"
+          }
+        }
+      }
+    },
+    "Future (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Future (%lld)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximos (%lld)"
           }
         }
       }

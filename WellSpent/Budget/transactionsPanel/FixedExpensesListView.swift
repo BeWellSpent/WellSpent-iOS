@@ -40,6 +40,9 @@ struct FixedExpensesListView: View {
     /// gates whether the paid day-groups render at all, same manual-toggle
     /// shape `FixedExpenseRow`'s own `isExpanded` already uses one level down.
     @State private var isPaidExpanded = false
+    /// Unlike Paid, Future starts expanded: an upcoming bill is something you'd
+    /// want to see without a tap, whereas a paid one is already handled.
+    @State private var isFutureExpanded = true
 
     var body: some View {
         Group {
@@ -96,6 +99,16 @@ struct FixedExpensesListView: View {
         let paidTransactions = visibleTransactions.filter(\.isPaid)
         let unpaidGroups = TransactionDayGrouping.group(unpaidTransactions)
         let paidGroups = TransactionDayGrouping.group(paidTransactions)
+        // Upcoming bills — templates with nothing spawned this period. Not
+        // day-grouped like the two sections above: these aren't transactions
+        // and have no date in this period, so each carries its own next-due
+        // date instead. Search/filters don't apply either, since those operate
+        // on transaction fields these rows don't have.
+        let upcomingExpenses = UpcomingFixedExpenses.notDue(
+            expenses: viewModel.fixedExpenses,
+            transactions: viewModel.transactions,
+            isArchivedPeriod: isArchivedPeriod
+        )
 
         List {
             Section {
@@ -105,7 +118,9 @@ struct FixedExpensesListView: View {
 
             if viewModel.transactions.isEmpty && viewModel.isLoading {
                 ProgressView()
-            } else if visibleTransactions.isEmpty {
+            } else if visibleTransactions.isEmpty && upcomingExpenses.isEmpty {
+                // Upcoming templates count as content: a period whose bills are
+                // all still ahead of it isn't empty, it's early.
                 Text("No fixed expenses yet.")
                     .foregroundStyle(.secondary)
             } else {
@@ -143,6 +158,39 @@ struct FixedExpensesListView: View {
                     if isPaidExpanded {
                         ForEach(paidGroups) { group in
                             dayGroupSection(group, viewModel: viewModel)
+                        }
+                    }
+                }
+
+                if !upcomingExpenses.isEmpty {
+                    Section {
+                        Button {
+                            isFutureExpanded.toggle()
+                        } label: {
+                            HStack {
+                                Text("Future (\(upcomingExpenses.count))")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Image(systemName: isFutureExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("toggleFutureFixedExpenses")
+                    }
+                    if isFutureExpanded {
+                        Section {
+                            ForEach(upcomingExpenses, id: \.id) { expense in
+                                UpcomingFixedExpenseRow(
+                                    expense: expense,
+                                    viewModel: viewModel,
+                                    currencyCode: currencyCode,
+                                    localeIdentifier: localeIdentifier
+                                )
+                            }
                         }
                     }
                 }
@@ -381,6 +429,56 @@ private struct FixedExpenseRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+    }
+}
+
+/// A fixed-expense template that isn't due in this period yet.
+///
+/// Deliberately inert — no edit, no mark-paid, no swipe-to-delete. There is no
+/// transaction to act on: the row exists so an upcoming bill isn't invisible
+/// until the period it lands in. Muted for the same reason, so it can't be
+/// mistaken for something already owed.
+private struct UpcomingFixedExpenseRow: View {
+    let expense: Wellspent_V1_FixedExpense
+    let viewModel: FixedExpensesViewModel
+    let currencyCode: String
+    let localeIdentifier: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(expense.name)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(MoneyFormatting.format(
+                    units: expense.plannedAmount.units,
+                    nanos: expense.plannedAmount.nanos,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                ))
+                .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 4) {
+                let nextDue = UpcomingFixedExpenses.nextDueText(for: expense, localeIdentifier: localeIdentifier)
+                if !nextDue.isEmpty {
+                    Text("Due \(nextDue)")
+                        .accessibilityIdentifier("upcomingFixedExpenseDue_\(expense.name)")
+                }
+                if let categoryName = viewModel.categoryName(for: expense.categoryID) {
+                    if !nextDue.isEmpty { Text("·") }
+                    ColorDotView(hex: viewModel.categoryColor(for: expense.categoryID), diameter: 8)
+                    Text(categoryName)
+                }
+                if let methodName = viewModel.paymentMethodName(for: expense.paymentMethodID) {
+                    Text("·")
+                    Text(methodName)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .accessibilityIdentifier("upcomingFixedExpenseRow_\(expense.name)")
     }
 }
 
