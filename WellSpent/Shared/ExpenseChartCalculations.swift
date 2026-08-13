@@ -21,6 +21,30 @@ nonisolated enum ExpenseChartCalculations {
         Double(units) + Double(nanos) / 1_000_000_000
     }
 
+    /// Resolves the datum a pie selection landed on.
+    ///
+    /// `chartAngleSelection` reports a position along the *accumulated value*
+    /// scale rather than an index — a tap on the third of three equal $100
+    /// slices comes back as something in `(200, 300]`, not `2` — so this walks
+    /// the running total in the same order `Chart(data)` lays the sectors out.
+    /// Returns nil past the end of the data, which is what a tap outside the
+    /// ring produces.
+    static func datum(atAngleValue value: Double, in data: [Datum]) -> Datum? {
+        var cumulative = 0.0
+        for datum in data {
+            cumulative += datum.value
+            if value <= cumulative { return datum }
+        }
+        return nil
+    }
+
+    /// A datum's share of the chart, as a 0–100 percentage. Zero when there's
+    /// nothing to divide by, so an empty or all-zero chart can't produce NaN.
+    static func percentage(of value: Double, total: Double) -> Double {
+        guard total > 0 else { return 0 }
+        return value / total * 100
+    }
+
     /// Builds chart data from categories + an amount lookup + an optional
     /// per-category color override (Overview uses this to flag overspent
     /// categories red, matching web's `isOver ? '#ef4444' : ...`). Filters

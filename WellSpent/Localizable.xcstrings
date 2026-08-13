@@ -1,198 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Not syncing" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not syncing"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sin sincronizar"
-          }
-        }
-      }
-    },
-    "Unknown member" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unknown member"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Integrante desconocido"
-          }
-        }
-      }
-    },
-    "Re-sync" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Re-sync"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volver a sincronizar"
-          }
-        }
-      }
-    },
-    "Re-sync this bank?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Re-sync this bank?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Volver a sincronizar este banco?"
-          }
-        }
-      }
-    },
-    "WellSpent will ask for this bank's full transaction history again, starting now. Transactions you deleted will come back. Ones already imported won't be duplicated. Available once a day per bank." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WellSpent will ask for this bank's full transaction history again, starting now. Transactions you deleted will come back. Ones already imported won't be duplicated. Available once a day per bank."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WellSpent le pedirá a este banco todo su historial de transacciones otra vez, empezando ahora. Las transacciones que eliminaste volverán a aparecer. Las ya importadas no se duplicarán. Disponible una vez al día por banco."
-          }
-        }
-      }
-    },
-    "No bank accounts are connected to this budget yet." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No bank accounts are connected to this budget yet."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todavía no hay cuentas bancarias conectadas a este presupuesto."
-          }
-        }
-      }
-    },
-    "Bank connections feeding this budget, from everyone on it. You can only change your own." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bank connections feeding this budget, from everyone on it. You can only change your own."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conexiones bancarias que alimentan este presupuesto, de todos sus integrantes. Solo puedes modificar las tuyas."
-          }
-        }
-      }
-    },
-    "Bank Connections" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bank Connections"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conexiones bancarias"
-          }
-        }
-      }
-    },
-    "Couldn't re-sync that bank." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't re-sync that bank."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se pudo volver a sincronizar ese banco."
-          }
-        }
-      }
-    },
-    "Some accounts aren't syncing" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Some accounts aren't syncing"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Algunas cuentas no se están sincronizando"
-          }
-        }
-      }
-    },
-    "You connected %lld bank(s) to %@, but your account isn't on a paid plan, so those transactions won't be imported. Upgrade to Pro to turn bank sync on." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You connected %lld bank(s) to %@, but your account isn't on a paid plan, so those transactions won't be imported. Upgrade to Pro to turn bank sync on."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conectaste %lld banco(s) a %@, pero tu cuenta no tiene un plan pago, así que esas transacciones no se importarán. Mejora a Pro para activar la sincronización bancaria."
-          }
-        }
-      }
-    },
-    "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ conectó %lld banco(s) a %@, pero su cuenta no tiene un plan pago, así que esas transacciones no se importarán. La sincronización bancaria es por persona, así que necesita mejorar su plan."
-          }
-        }
-      }
-    },
     "— %@" : {
       "localizations" : {
         "en" : {
@@ -269,6 +77,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ conectó %lld banco(s) a %@, pero su cuenta no tiene un plan pago, así que esas transacciones no se importarán. La sincronización bancaria es por persona, así que necesita mejorar su plan."
           }
         }
       }
@@ -853,6 +677,38 @@
         }
       }
     },
+    "Bank Connections" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bank Connections"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conexiones bancarias"
+          }
+        }
+      }
+    },
+    "Bank connections feeding this budget, from everyone on it. You can only change your own." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bank connections feeding this budget, from everyone on it. You can only change your own."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conexiones bancarias que alimentan este presupuesto, de todos sus integrantes. Solo puedes modificar las tuyas."
+          }
+        }
+      }
+    },
     "Bank Transfer" : {
       "localizations" : {
         "en" : {
@@ -871,7 +727,21 @@
     },
     "Bar" : {
       "comment" : "A label for a pie/bar chart toggle.",
-      "isCommentAutoGenerated" : true
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barras"
+          }
+        }
+      }
     },
     "Before tax" : {
       "localizations" : {
@@ -1357,6 +1227,22 @@
         }
       }
     },
+    "Couldn't re-sync that bank." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't re-sync that bank."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo volver a sincronizar ese banco."
+          }
+        }
+      }
+    },
     "Couldn't resend the email. Try again in a moment." : {
       "localizations" : {
         "en" : {
@@ -1774,6 +1660,7 @@
       }
     },
     "Dismiss" : {
+      "comment" : "Status banner close button",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1817,6 +1704,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Listo"
+          }
+        }
+      }
+    },
+    "Due %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence %@"
           }
         }
       }
@@ -2041,22 +1944,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impuesto est."
-          }
-        }
-      }
-    },
-    "Due %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Due %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vence %@"
           }
         }
       }
@@ -2621,22 +2508,6 @@
         }
       }
     },
-    "Learn more" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Learn more"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver más"
-          }
-        }
-      }
-    },
     "Last name" : {
       "localizations" : {
         "en" : {
@@ -2649,6 +2520,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apellido"
+          }
+        }
+      }
+    },
+    "Learn more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn more"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver más"
           }
         }
       }
@@ -3009,6 +2896,22 @@
         }
       }
     },
+    "No bank accounts are connected to this budget yet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No bank accounts are connected to this budget yet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no hay cuentas bancarias conectadas a este presupuesto."
+          }
+        }
+      }
+    },
     "No banks connected yet." : {
       "localizations" : {
         "en" : {
@@ -3329,6 +3232,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sin definir"
+          }
+        }
+      }
+    },
+    "Not syncing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not syncing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin sincronizar"
           }
         }
       }
@@ -3763,7 +3682,21 @@
     },
     "Pie" : {
       "comment" : "A label for a pie chart.",
-      "isCommentAutoGenerated" : true
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circular"
+          }
+        }
+      }
     },
     "Plan" : {
       "localizations" : {
@@ -3862,6 +3795,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trimestral"
+          }
+        }
+      }
+    },
+    "Re-sync" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-sync"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a sincronizar"
+          }
+        }
+      }
+    },
+    "Re-sync this bank?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-sync this bank?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Volver a sincronizar este banco?"
           }
         }
       }
@@ -4547,6 +4512,22 @@
         }
       }
     },
+    "Some accounts aren't syncing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some accounts aren't syncing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algunas cuentas no se están sincronizando"
+          }
+        }
+      }
+    },
     "Spending crosses a percentage of the plan you set." : {
       "localizations" : {
         "en" : {
@@ -4736,6 +4717,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Toca + para crear tu primer presupuesto."
+          }
+        }
+      }
+    },
+    "Tap a bar for details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a bar for details"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca una barra para ver detalles"
+          }
+        }
+      }
+    },
+    "Tap a slice for details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a slice for details"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca una porción para ver detalles"
           }
         }
       }
@@ -4944,6 +4957,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Banco desconocido"
+          }
+        }
+      }
+    },
+    "Unknown member" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown member"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integrante desconocido"
           }
         }
       }
@@ -5182,6 +5211,22 @@
         }
       }
     },
+    "WellSpent will ask for this bank's full transaction history again, starting now. Transactions you deleted will come back. Ones already imported won't be duplicated. Available once a day per bank." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WellSpent will ask for this bank's full transaction history again, starting now. Transactions you deleted will come back. Ones already imported won't be duplicated. Available once a day per bank."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WellSpent le pedirá a este banco todo su historial de transacciones otra vez, empezando ahora. Las transacciones que eliminaste volverán a aparecer. Las ya importadas no se duplicarán. Disponible una vez al día por banco."
+          }
+        }
+      }
+    },
     "Whole Budget" : {
       "localizations" : {
         "en" : {
@@ -5242,6 +5287,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Anual"
+          }
+        }
+      }
+    },
+    "You connected %lld bank(s) to %@, but your account isn't on a paid plan, so those transactions won't be imported. Upgrade to Pro to turn bank sync on." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You connected %lld bank(s) to %@, but your account isn't on a paid plan, so those transactions won't be imported. Upgrade to Pro to turn bank sync on."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectaste %lld banco(s) a %@, pero tu cuenta no tiene un plan pago, así que esas transacciones no se importarán. Mejora a Pro para activar la sincronización bancaria."
           }
         }
       }
