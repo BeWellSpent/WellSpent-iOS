@@ -25,6 +25,9 @@ struct RootView: View {
     /// rather than inside the gate view so its state survives the gate being
     /// swapped out and back in (e.g. a failed refresh) without re-fetching.
     @State private var verifyGateViewModel: VerifyEmailGateViewModel?
+    /// Built from the *public* client, so the banner works signed out — an
+    /// outage notice has to reach someone stuck on the login screen.
+    @State private var statusBannerViewModel: StatusBannerViewModel?
 
     private static let pendingInviteTokenKey = "pendingInviteToken"
 
@@ -37,6 +40,24 @@ struct RootView: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            if let statusBannerViewModel {
+                StatusBannerView(viewModel: statusBannerViewModel)
+            }
+            content
+        }
+        .task {
+            // Created here rather than in an initialiser so it survives the
+            // authenticated/unauthenticated swap below — the banner is the one
+            // thing on screen that shouldn't reset when you log in or out.
+            if statusBannerViewModel == nil {
+                statusBannerViewModel = StatusBannerViewModel(publicClient: session.publicClient)
+            }
+            await statusBannerViewModel?.load()
+        }
+    }
+
+    private var content: some View {
         Group {
             if session.isAuthenticated {
                 if let verifyGateViewModel, isEmailUnverified {
@@ -78,6 +99,10 @@ struct RootView: View {
                 // Coming back from the browser after tapping the link is
                 // exactly the moment verification status may have changed.
                 Task { await verifyGateViewModel?.refresh() }
+                // Foregrounding is the only cheap re-check the banner gets —
+                // there's no polling here, unlike web, since a backgrounded
+                // app isn't showing anything to refresh.
+                Task { await statusBannerViewModel?.load() }
                 // Opening the app (including via a tapped notification, which
                 // also lands here) should clear the Home Screen badge — the
                 // backend always sends a flat `badge: 1` per push, so nothing

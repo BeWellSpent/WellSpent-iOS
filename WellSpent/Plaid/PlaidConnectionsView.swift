@@ -2,9 +2,17 @@ import LinkKit
 import SwiftUI
 import WellSpentAPI
 
-/// Mirrors web's `PlaidSection.tsx` orchestrator. Embedded as a
-/// self-contained subview inside `SettingsView`'s "Connected Bank Accounts"
-/// section (US-only, matching `ProfileSettings.tsx`'s `{isUS && <PlaidSection />}`).
+/// The Plaid connection list, used by both screens that show one.
+///
+/// With no `budgetProfileID` it is the caller's own connections across every
+/// budget, embedded in `SettingsView`'s "Connected Bank Accounts" section
+/// (US-only, matching web's `{isUS && <PlaidSection />}`). With one, it is
+/// every member's connections on that budget, reached from `BudgetManageView`
+/// — a broken connection stops transactions for everyone on the budget, but
+/// only its owner could previously see it.
+///
+/// One view with a mode rather than two: only the query scope, the row
+/// captions, and whether connecting needs a budget picker actually differ.
 ///
 /// LinkKit (confirmed against the resolved package's own `.swiftinterface`,
 /// not assumed) ships `PlaidLinkSession.sheet() -> some View` directly — no
@@ -12,8 +20,8 @@ import WellSpentAPI
 /// `onOpenURL` routing for OAuth institutions either: current LinkKit
 /// versions handle that continuation internally via
 /// `ASWebAuthenticationSession` as long as `redirect_uri` was set correctly
-/// when the token was created (see `PlaidSectionViewModel.redirectURI`).
-struct PlaidSectionView: View {
+/// when the token was created (see `PlaidConnectionsViewModel.redirectURI`).
+struct PlaidConnectionsView: View {
     /// Everything `PlaidSectionView` can present, consolidated into a single
     /// `.sheet(item:)`. Previously this view stacked two independent
     /// `.sheet(isPresented:)` modifiers (budget picker + Plaid Link) on the
@@ -37,14 +45,20 @@ struct PlaidSectionView: View {
     }
 
     let authenticatedClient: ProtocolClient
-    let plan: Wellspent_V1_AccountPlan
+    /// Supplied by Settings, which has already fetched it. Left nil elsewhere,
+    /// in which case the view model resolves it.
+    var plan: Wellspent_V1_AccountPlan?
+    /// Non-nil scopes the list to one budget and skips the budget picker when
+    /// connecting, since the target is already known.
+    var budgetProfileID: String?
 
-    @State private var viewModel: PlaidSectionViewModel?
+    @State private var viewModel: PlaidConnectionsViewModel?
     @State private var activeSheet: ActiveSheet?
     @State private var confirmDisconnect: Wellspent_V1_PlaidConnection?
+    @State private var confirmResync: Wellspent_V1_PlaidConnection?
     @State private var linkSessionErrorMessage: String?
 
-    private var isFree: Bool { plan == .unspecified || plan == .free }
+
 
     var body: some View {
         Group {
@@ -56,7 +70,11 @@ struct PlaidSectionView: View {
         }
         .task {
             if viewModel == nil {
-                viewModel = PlaidSectionViewModel(authenticatedClient: authenticatedClient)
+                viewModel = PlaidConnectionsViewModel(
+                    authenticatedClient: authenticatedClient,
+                    budgetProfileID: budgetProfileID,
+                    plan: plan
+                )
             }
             await viewModel?.load()
         }
@@ -92,10 +110,31 @@ struct PlaidSectionView: View {
                 self.confirmDisconnect = nil
             }
         }
+        .confirmationDialog(
+            "Re-sync this bank?",
+            isPresented: Binding(
+                get: { confirmResync != nil },
+                set: { if !$0 { confirmResync = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Re-sync") {
+                if let confirmResync {
+                    Task { await viewModel?.resync(confirmResync) }
+                }
+                self.confirmResync = nil
+            }
+        } message: {
+            // Deliberately not "this may create duplicates" — it can't.
+            // plaid_transaction_id is unique and already-imported rows are
+            // skipped. What a replay really does is bring back transactions
+            // the user deleted, which is the risk they can act on.
+            Text("WellSpent will ask for this bank's full transaction history again, starting now. Transactions you deleted will come back. Ones already imported won't be duplicated. Available once a day per bank.")
+        }
     }
 
     @ViewBuilder
-    private func content(viewModel: PlaidSectionViewModel) -> some View {
+    private func content(viewModel: PlaidConnectionsViewModel) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             if let errorMessage = viewModel.errorMessage ?? linkSessionErrorMessage {
                 Text(errorMessage)
@@ -103,7 +142,7 @@ struct PlaidSectionView: View {
                     .foregroundStyle(.red)
             }
 
-            if isFree {
+            if viewModel.isFree {
                 Text("Only available on Pro accounts")
                     .font(.caption2)
                     .padding(.horizontal, 8)
@@ -116,27 +155,33 @@ struct PlaidSectionView: View {
             // Above the list deliberately: these concern connections that
             // aren't in the list at all, since this screen only ever shows
             // the caller's own.
-            PlaidSyncWarningView(warnings: viewModel.syncWarnings)
+            PlaidSyncWarningView(warnings: viewModel.visibleWarnings)
 
             if viewModel.isLoading && viewModel.connections.isEmpty {
                 ProgressView()
             } else if viewModel.connections.isEmpty {
-                Text("No banks connected yet.")
+                (budgetProfileID == nil
+                    ? Text("No banks connected yet.")
+                    : Text("No bank accounts are connected to this budget yet."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(viewModel.connections, id: \.id) { connection in
                     PlaidConnectionRow(
                         connection: connection,
-                        budgetName: viewModel.budgetName(for: connection.budgetProfileID),
+                        subtitle: viewModel.subtitle(for: connection),
                         isManagingAccounts: viewModel.managingAccountsConnectionID == connection.id,
                         isDisconnecting: viewModel.disconnectingConnectionID == connection.id,
-                        manageAccountsDisabled: isFree,
+                        isResyncing: viewModel.resyncingConnectionID == connection.id,
+                        manageAccountsDisabled: viewModel.isFree,
                         onManageAccounts: {
                             Task { await viewModel.startManageAccounts(connection) }
                         },
                         onDisconnect: {
                             confirmDisconnect = connection
+                        },
+                        onResync: {
+                            confirmResync = connection
                         }
                     )
                     if connection.id != viewModel.connections.last?.id {
@@ -146,11 +191,17 @@ struct PlaidSectionView: View {
             }
 
             Button {
-                activeSheet = .pickBudget
+                // A budget-scoped screen already knows the target, so there
+                // is nothing to pick.
+                if let budgetProfileID {
+                    Task { await viewModel.startConnect(budgetProfileID: budgetProfileID) }
+                } else {
+                    activeSheet = .pickBudget
+                }
             } label: {
                 Label("Connect a Bank", systemImage: "building.columns")
             }
-            .disabled(isFree)
+            .disabled(viewModel.isFree)
             .accessibilityIdentifier("connectBankButton")
         }
     }
@@ -180,10 +231,23 @@ struct PlaidSectionView: View {
     }
 }
 
-#Preview {
+#Preview("Settings — all budgets") {
     Form {
         Section("Connected Bank Accounts") {
-            PlaidSectionView(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"), plan: .free)
+            PlaidConnectionsView(
+                authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+                plan: .free
+            )
         }
+    }
+}
+
+#Preview("One budget") {
+    Form {
+        PlaidConnectionsView(
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            plan: .lifetime,
+            budgetProfileID: "budget-1"
+        )
     }
 }

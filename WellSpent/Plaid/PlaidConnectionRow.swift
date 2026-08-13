@@ -3,12 +3,16 @@ import WellSpentAPI
 
 struct PlaidConnectionRow: View {
     let connection: Wellspent_V1_PlaidConnection
-    let budgetName: String
+    /// Which budget this feeds (Settings) or who linked it (a budget's manage
+    /// view) — the only thing that differs between the two screens.
+    let subtitle: String
     let isManagingAccounts: Bool
     let isDisconnecting: Bool
+    let isResyncing: Bool
     var manageAccountsDisabled: Bool = false
     let onManageAccounts: () -> Void
     let onDisconnect: () -> Void
+    let onResync: () -> Void
 
     /// Not `static` — must be rebuilt with the current locale on every
     /// access so a language change (which can happen without relaunching
@@ -22,6 +26,10 @@ struct PlaidConnectionRow: View {
     }
 
     private var isConnected: Bool { connection.status != "disconnected" }
+    private var isBusy: Bool { isManagingAccounts || isDisconnecting || isResyncing }
+    private var resyncBlocked: ResyncCooldown.BlockedReason? {
+        ResyncCooldown.blockedReason(for: connection)
+    }
 
     private var lastSyncedText: String {
         guard connection.hasLastSyncedAt else {
@@ -45,8 +53,21 @@ struct PlaidConnectionRow: View {
                         .background(PlaidStatusColor.color(for: connection.status).opacity(0.2))
                         .foregroundStyle(PlaidStatusColor.color(for: connection.status))
                         .clipShape(Capsule())
+
+                    // A connection whose owner isn't on a paid plan is a
+                    // healthy link that imports nothing, so the status chip
+                    // on its own reads as fine.
+                    if isConnected && !connection.syncEnabled {
+                        Text("Not syncing")
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(Color.orange.opacity(0.2))
+                            .foregroundStyle(.orange)
+                            .clipShape(Capsule())
+                    }
                 }
-                Text("\(budgetName) · \(lastSyncedText)")
+                Text("\(subtitle) · \(lastSyncedText)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -55,6 +76,19 @@ struct PlaidConnectionRow: View {
 
             if isConnected {
                 HStack(spacing: 12) {
+                    Button {
+                        onResync()
+                    } label: {
+                        if isResyncing {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isBusy || resyncBlocked != nil)
+                    .accessibilityIdentifier("resyncConnection_\(connection.id)")
+
                     Button {
                         onManageAccounts()
                     } label: {
@@ -65,7 +99,7 @@ struct PlaidConnectionRow: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .disabled(isManagingAccounts || isDisconnecting || manageAccountsDisabled)
+                    .disabled(isBusy || manageAccountsDisabled || !connection.isOwner)
                     .accessibilityIdentifier("manageAccounts_\(connection.id)")
 
                     Button {
@@ -79,7 +113,7 @@ struct PlaidConnectionRow: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .disabled(isManagingAccounts || isDisconnecting)
+                    .disabled(isBusy || !connection.isOwner)
                     .accessibilityIdentifier("disconnectConnection_\(connection.id)")
                 }
             }
@@ -97,12 +131,16 @@ struct PlaidConnectionRow: View {
                 $0.institutionName = "Chase"
                 $0.status = "active"
                 $0.budgetProfileID = "budget-1"
+                $0.isOwner = true
+                $0.syncEnabled = true
             },
-            budgetName: "Household Budget",
+            subtitle: "Household Budget",
             isManagingAccounts: false,
             isDisconnecting: false,
+            isResyncing: false,
             onManageAccounts: {},
-            onDisconnect: {}
+            onDisconnect: {},
+            onResync: {}
         )
     }
 }
