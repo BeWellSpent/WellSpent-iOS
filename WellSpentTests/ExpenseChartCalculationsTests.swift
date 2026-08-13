@@ -54,4 +54,53 @@ struct ExpenseChartCalculationsTests {
     func amountValueCombinesUnitsAndNanos() {
         #expect(ExpenseChartCalculations.amountValue(units: 10, nanos: 500_000_000) == 10.5)
     }
+
+    // MARK: - Selection (issue #39)
+
+    private var slices: [ExpenseChartCalculations.Datum] {
+        [
+            .init(id: 1, name: "Rent", value: 1_000, colorHex: "#111111"),
+            .init(id: 2, name: "Groceries", value: 400, colorHex: "#222222"),
+            .init(id: 3, name: "Dining", value: 100, colorHex: "#333333"),
+        ]
+    }
+
+    @Test("an angle selection resolves to the slice occupying that arc")
+    func datumAtAngleValue() {
+        // chartAngleSelection reports a position along the accumulated value
+        // scale, so the second slice occupies (1000, 1400].
+        #expect(ExpenseChartCalculations.datum(atAngleValue: 1_200, in: slices)?.name == "Groceries")
+    }
+
+    @Test("a selection exactly on a boundary belongs to the slice that ends there")
+    func datumAtBoundaryValue() {
+        // 1000 is the last instant of Rent's arc, not the first of Groceries' —
+        // otherwise every boundary tap would jump forward one slice.
+        #expect(ExpenseChartCalculations.datum(atAngleValue: 1_000, in: slices)?.name == "Rent")
+    }
+
+    @Test("the first and last slices are both reachable")
+    func datumAtEdges() {
+        #expect(ExpenseChartCalculations.datum(atAngleValue: 1, in: slices)?.name == "Rent")
+        #expect(ExpenseChartCalculations.datum(atAngleValue: 1_500, in: slices)?.name == "Dining")
+    }
+
+    @Test("a selection past the end of the data resolves to nothing")
+    func datumBeyondTotal() {
+        // A tap outside the ring lands here; it must not clamp to the last
+        // slice and light up a category the user never touched.
+        #expect(ExpenseChartCalculations.datum(atAngleValue: 1_501, in: slices) == nil)
+        #expect(ExpenseChartCalculations.datum(atAngleValue: 10, in: []) == nil)
+    }
+
+    @Test("percentage is a share of the total")
+    func percentageOfTotal() {
+        #expect(ExpenseChartCalculations.percentage(of: 250, total: 1_000) == 25)
+    }
+
+    @Test("percentage is zero when there is nothing to divide by")
+    func percentageWithoutTotal() {
+        // Guards the empty/all-zero chart against rendering "nan%".
+        #expect(ExpenseChartCalculations.percentage(of: 0, total: 0) == 0)
+    }
 }
