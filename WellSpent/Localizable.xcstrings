@@ -2589,6 +2589,22 @@
         }
       }
     },
+    "Learn more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn more"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver más"
+          }
+        }
+      }
+    },
     "Last name" : {
       "localizations" : {
         "en" : {
@@ -4399,6 +4415,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Configuración"
+          }
+        }
+      }
+    },
+    "Show less" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show less"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver menos"
           }
         }
       }
