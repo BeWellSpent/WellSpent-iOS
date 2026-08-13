@@ -27,6 +27,10 @@ final class PlaidSectionViewModel {
 
     private(set) var isLoading = false
     private(set) var connections: [Wellspent_V1_PlaidConnection] = []
+    /// Connections on shared budgets that the sync job skips. Not a subset of
+    /// `connections` — those are the caller's own; these belong to co-members
+    /// and are never otherwise visible here.
+    private(set) var syncWarnings: [Wellspent_V1_BudgetSyncWarning] = []
     private(set) var budgets: [Wellspent_V1_BudgetProfile] = []
     private(set) var errorMessage: String?
 
@@ -64,6 +68,7 @@ final class PlaidSectionViewModel {
         switch await connectionsResponse.result {
         case .success(let message):
             connections = message.connections
+            syncWarnings = message.warnings
         case .failure(let error):
             // A cancelled request isn't a real failure — SwiftUI can cancel
             // this view's `.task` mid-flight (e.g. during a navigation

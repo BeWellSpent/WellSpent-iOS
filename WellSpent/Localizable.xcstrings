@@ -1,162 +1,50 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Verify your email" : {
+    "Some accounts aren't syncing" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verify your email"
+            "value" : "Some accounts aren't syncing"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verifica tu correo"
+            "value" : "Algunas cuentas no se están sincronizando"
           }
         }
       }
     },
-    "We sent a verification link to %@. Confirm your address to start using WellSpent. The link expires in 10 minutes." : {
+    "You connected %lld bank(s) to %@, but your account isn't on a paid plan, so those transactions won't be imported. Upgrade to Pro to turn bank sync on." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We sent a verification link to %@. Confirm your address to start using WellSpent. The link expires in 10 minutes."
+            "value" : "You connected %lld bank(s) to %@, but your account isn't on a paid plan, so those transactions won't be imported. Upgrade to Pro to turn bank sync on."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enviamos un enlace de verificación a %@. Confirma tu dirección para empezar a usar WellSpent. El enlace vence en 10 minutos."
+            "value" : "Conectaste %lld banco(s) a %@, pero tu cuenta no tiene un plan pago, así que esas transacciones no se importarán. Mejora a Pro para activar la sincronización bancaria."
           }
         }
       }
     },
-    "Resend verification email" : {
+    "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Resend verification email"
+            "value" : "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reenviar correo de verificación"
-          }
-        }
-      }
-    },
-    "Couldn't resend the email. Try again in a moment." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't resend the email. Try again in a moment."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pudimos reenviar el correo. Inténtalo en un momento."
-          }
-        }
-      }
-    },
-    "Wrong email address? Change it" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wrong email address? Change it"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Dirección incorrecta? Cámbiala"
-          }
-        }
-      }
-    },
-    "Change email address" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change email address"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambiar dirección de correo"
-          }
-        }
-      }
-    },
-    "New email address" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New email address"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nueva dirección de correo"
-          }
-        }
-      }
-    },
-    "We'll send a new verification link to this address." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We'll send a new verification link to this address."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enviaremos un nuevo enlace de verificación a esta dirección."
-          }
-        }
-      }
-    },
-    "Save and resend" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save and resend"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guardar y reenviar"
-          }
-        }
-      }
-    },
-    "Couldn't change your email address. Try again." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't change your email address. Try again."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pudimos cambiar tu dirección de correo. Inténtalo de nuevo."
+            "value" : "%@ conectó %lld banco(s) a %@, pero su cuenta no tiene un plan pago, así que esas transacciones no se importarán. La sincronización bancaria es por persona, así que necesita mejorar su plan."
           }
         }
       }
@@ -1033,6 +921,22 @@
         }
       }
     },
+    "Change email address" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change email address"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar dirección de correo"
+          }
+        }
+      }
+    },
     "Change Password" : {
       "localizations" : {
         "en" : {
@@ -1289,6 +1193,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Contratista"
+          }
+        }
+      }
+    },
+    "Couldn't change your email address. Try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't change your email address. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos cambiar tu dirección de correo. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "Couldn't resend the email. Try again in a moment." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't resend the email. Try again in a moment."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos reenviar el correo. Inténtalo en un momento."
           }
         }
       }
@@ -2637,6 +2573,10 @@
         }
       }
     },
+    "Log out" : {
+      "comment" : "A button that logs out the user.",
+      "isCommentAutoGenerated" : true
+    },
     "Log Out" : {
       "localizations" : {
         "en" : {
@@ -2809,6 +2749,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nuevo período de presupuesto"
+          }
+        }
+      }
+    },
+    "New email address" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New email address"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva dirección de correo"
           }
         }
       }
@@ -3638,6 +3594,7 @@
       "isCommentAutoGenerated" : true
     },
     "Please verify your email address." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3934,6 +3891,7 @@
       }
     },
     "Resend email" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3945,6 +3903,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reenviar correo"
+          }
+        }
+      }
+    },
+    "Resend verification email" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend verification email"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reenviar correo de verificación"
           }
         }
       }
@@ -4025,6 +3999,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guardar"
+          }
+        }
+      }
+    },
+    "Save and resend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save and resend"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar y reenviar"
           }
         }
       }
@@ -4888,6 +4878,22 @@
         }
       }
     },
+    "Verify your email" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verify your email"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica tu correo"
+          }
+        }
+      }
+    },
     "View" : {
       "localizations" : {
         "en" : {
@@ -4920,6 +4926,38 @@
         }
       }
     },
+    "We sent a verification link to %@. Confirm your address to start using WellSpent. The link expires in 10 minutes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We sent a verification link to %@. Confirm your address to start using WellSpent. The link expires in 10 minutes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviamos un enlace de verificación a %@. Confirma tu dirección para empezar a usar WellSpent. El enlace vence en 10 minutos."
+          }
+        }
+      }
+    },
+    "We'll send a new verification link to this address." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll send a new verification link to this address."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviaremos un nuevo enlace de verificación a esta dirección."
+          }
+        }
+      }
+    },
     "Weekly" : {
       "localizations" : {
         "en" : {
@@ -4948,6 +4986,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Presupuesto completo"
+          }
+        }
+      }
+    },
+    "Wrong email address? Change it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wrong email address? Change it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Dirección incorrecta? Cámbiala"
           }
         }
       }

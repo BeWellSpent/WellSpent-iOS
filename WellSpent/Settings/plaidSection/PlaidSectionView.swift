@@ -113,6 +113,11 @@ struct PlaidSectionView: View {
                     .clipShape(Capsule())
             }
 
+            // Above the list deliberately: these concern connections that
+            // aren't in the list at all, since this screen only ever shows
+            // the caller's own.
+            PlaidSyncWarningView(warnings: viewModel.syncWarnings)
+
             if viewModel.isLoading && viewModel.connections.isEmpty {
                 ProgressView()
             } else if viewModel.connections.isEmpty {
