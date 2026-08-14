@@ -35,7 +35,12 @@ struct ExpensePlanView: View {
     @State private var allocatingCategory: Wellspent_V1_Category?
     /// Defaults to pie, matching web's `ExpensesPanel.tsx` (Overview's chart
     /// defaults to bar instead — see `ExpenseOverviewListView`).
-    @State private var chartType: ExpenseChartView.ChartType = .pie
+    /// nil until the person's saved preference has loaded, so the chart isn't
+    /// drawn as a pie and then snapped to a bar a moment later. Set from the
+    /// toggle too, which overrides the saved default for this visit only —
+    /// Preferences is the only place that writes one.
+    @State private var chartTypeOverride: ExpenseChartView.ChartType?
+    @Environment(SessionStore.self) private var session
 
     var body: some View {
         VStack(spacing: 0) {
@@ -96,7 +101,7 @@ struct ExpensePlanView: View {
                 Section {
                     ExpenseChartView(
                         data: viewModel.chartData,
-                        chartType: $chartType,
+                        chartType: chartTypeBinding(viewModel.people),
                         currencyCode: currencyCode,
                         localeIdentifier: localeIdentifier
                     )
@@ -186,6 +191,22 @@ struct ExpensePlanView: View {
     private func displayText(_ amount: (units: Int64, nanos: Int32)) -> String {
         MoneyFormatting.format(units: amount.units, nanos: amount.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
+
+
+    /// Saved preference for this tab, falling back to the shared default when
+    /// the person hasn't chosen or isn't a linked member. Read from `people`,
+    /// which the view model already loads — no extra request.
+    private func savedChartType(_ people: [Wellspent_V1_BudgetPerson]) -> ExpenseChartView.ChartType {
+        let me = ChartPreference.myPerson(currentUserID: session.userID, people: people)
+        return ChartPreference.chartType(for: me?.planChartType ?? .unspecified)
+    }
+
+    private func chartTypeBinding(_ people: [Wellspent_V1_BudgetPerson]) -> Binding<ExpenseChartView.ChartType> {
+        Binding(
+            get: { chartTypeOverride ?? savedChartType(people) },
+            set: { chartTypeOverride = $0 }
+        )
+    }
 }
 
 #Preview {
@@ -202,4 +223,5 @@ struct ExpensePlanView: View {
             canEdit: true
         )
     }
+
 }

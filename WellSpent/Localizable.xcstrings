@@ -1,86 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "— %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "— %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "— %@"
-          }
-        }
-      }
-    },
-    "·": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "·"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "·"
-          }
-        }
-      }
-    },
-    "· %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "· %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "· %@"
-          }
-        }
-      }
-    },
-    "(linked to %@)": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "(linked to %@)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "(vinculado a %@)"
-          }
-        }
-      }
-    },
-    "%@ · %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · %2$@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · %2$@"
-          }
-        }
-      }
-    },
     "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade.": {
       "localizations": {
         "en": {
@@ -129,6 +49,22 @@
         }
       }
     },
+    "%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@"
+          }
+        }
+      }
+    },
     "%lld": {
       "localizations": {
         "en": {
@@ -157,6 +93,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "coincidencia del %lld%%"
+          }
+        }
+      }
+    },
+    "(linked to %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(linked to %@)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(vinculado a %@)"
           }
         }
       }
@@ -205,6 +157,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Comienza un nuevo período de presupuesto."
+          }
+        }
+      }
+    },
+    "ARS": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARS"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARS"
           }
         }
       }
@@ -385,22 +353,6 @@
         }
       }
     },
-    "Add person": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add person"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Agregar persona"
-          }
-        }
-      }
-    },
     "Add Savings": {
       "localizations": {
         "en": {
@@ -429,6 +381,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Agregar transacción"
+          }
+        }
+      }
+    },
+    "Add person": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add person"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agregar persona"
           }
         }
       }
@@ -669,22 +637,6 @@
         }
       }
     },
-    "ARS": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ARS"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ARS"
-          }
-        }
-      }
-    },
     "Bank Connections": {
       "localizations": {
         "en": {
@@ -701,22 +653,6 @@
         }
       }
     },
-    "Bank connections feeding this budget, from everyone on it. You can only change your own.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bank connections feeding this budget, from everyone on it. You can only change your own."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conexiones bancarias que alimentan este presupuesto, de todos sus integrantes. Solo puedes modificar las tuyas."
-          }
-        }
-      }
-    },
     "Bank Transfer": {
       "localizations": {
         "en": {
@@ -729,6 +665,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Transferencia bancaria"
+          }
+        }
+      }
+    },
+    "Bank connections feeding this budget, from everyone on it. You can only change your own.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank connections feeding this budget, from everyone on it. You can only change your own."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conexiones bancarias que alimentan este presupuesto, de todos sus integrantes. Solo puedes modificar las tuyas."
           }
         }
       }
@@ -943,22 +895,6 @@
         }
       }
     },
-    "Change email address": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change email address"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cambiar dirección de correo"
-          }
-        }
-      }
-    },
     "Change Password": {
       "localizations": {
         "en": {
@@ -971,6 +907,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cambiar contraseña"
+          }
+        }
+      }
+    },
+    "Change email address": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change email address"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar dirección de correo"
           }
         }
       }
@@ -1001,18 +953,18 @@
         }
       }
     },
-    "Choose a Budget": {
+    "Charts": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose a Budget"
+            "value": "Charts"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elegir un presupuesto"
+            "value": "Gráficos"
           }
         }
       }
@@ -1029,6 +981,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Elegir color"
+          }
+        }
+      }
+    },
+    "Choose a Budget": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a Budget"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir un presupuesto"
           }
         }
       }
@@ -1270,6 +1238,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "No pudimos reenviar el correo. Inténtalo en un momento."
+          }
+        }
+      }
+    },
+    "Couldn't save your preferences.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't save your preferences."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron guardar tus preferencias."
           }
         }
       }
@@ -1739,6 +1723,22 @@
         }
       }
     },
+    "EUR": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EUR"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EUR"
+          }
+        }
+      }
+    },
     "Edit Budget": {
       "localizations": {
         "en": {
@@ -1963,22 +1963,6 @@
         }
       }
     },
-    "EUR": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "EUR"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "EUR"
-          }
-        }
-      }
-    },
     "Every %lld month(s)": {
       "localizations": {
         "en": {
@@ -2075,6 +2059,22 @@
         }
       }
     },
+    "Expense Overview chart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expense Overview chart"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gráfico del resumen de gastos"
+          }
+        }
+      }
+    },
     "Expense Plan": {
       "localizations": {
         "en": {
@@ -2087,6 +2087,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plan de gastos"
+          }
+        }
+      }
+    },
+    "Expense Plan chart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expense Plan chart"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gráfico del plan de gastos"
           }
         }
       }
@@ -2332,6 +2348,7 @@
       }
     },
     "Future (%lld)": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2667,18 +2684,6 @@
         }
       }
     },
-    "Log out": {
-      "comment": "A button that logs out the user.",
-      "isCommentAutoGenerated": true,
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cerrar sesión"
-          }
-        }
-      }
-    },
     "Log Out": {
       "localizations": {
         "en": {
@@ -2687,6 +2692,18 @@
             "value": "Log Out"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar sesión"
+          }
+        }
+      }
+    },
+    "Log out": {
+      "comment": "A button that logs out the user.",
+      "isCommentAutoGenerated": true,
+      "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -2855,6 +2872,22 @@
         }
       }
     },
+    "New Transaction": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Transaction"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva transacción"
+          }
+        }
+      }
+    },
     "New email address": {
       "localizations": {
         "en": {
@@ -2883,22 +2916,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nueva contraseña"
-          }
-        }
-      }
-    },
-    "New Transaction": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Transaction"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nueva transacción"
           }
         }
       }
@@ -3331,18 +3348,6 @@
         }
       }
     },
-    "of %@ planned": {
-      "comment": "A label that shows the planned amount of a budget category.",
-      "isCommentAutoGenerated": true,
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "de %@ planificado"
-          }
-        }
-      }
-    },
     "One-off": {
       "localizations": {
         "en": {
@@ -3567,22 +3572,6 @@
         }
       }
     },
-    "Payment days": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Payment days"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Días de pago"
-          }
-        }
-      }
-    },
     "Payment Method": {
       "localizations": {
         "en": {
@@ -3611,6 +3600,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Métodos de pago"
+          }
+        }
+      }
+    },
+    "Payment days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payment days"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Días de pago"
           }
         }
       }
@@ -3786,6 +3791,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Por favor verifica tu dirección de correo electrónico."
+          }
+        }
+      }
+    },
+    "Preferences": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferences"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferencias"
+          }
+        }
+      }
+    },
+    "Preferences are available once you're linked to this budget.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferences are available once you're linked to this budget."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las preferencias están disponibles cuando estés vinculado a este presupuesto."
           }
         }
       }
@@ -4599,22 +4636,6 @@
         }
       }
     },
-    "Spending crosses a percentage of the plan you set.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spending crosses a percentage of the plan you set."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El gasto supera un porcentaje del plan que definiste."
-          }
-        }
-      }
-    },
     "Spending Threshold": {
       "localizations": {
         "en": {
@@ -4627,6 +4648,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Umbral de gasto"
+          }
+        }
+      }
+    },
+    "Spending crosses a percentage of the plan you set.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spending crosses a percentage of the plan you set."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El gasto supera un porcentaje del plan que definiste."
           }
         }
       }
@@ -4856,6 +4893,22 @@
         }
       }
     },
+    "These settings are yours alone — other people on this budget keep their own.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These settings are yours alone — other people on this budget keep their own."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estos ajustes son solo tuyos — el resto de las personas en este presupuesto conservan los suyos."
+          }
+        }
+      }
+    },
     "This account can't sign in right now.": {
       "localizations": {
         "en": {
@@ -4964,6 +5017,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tipo"
+          }
+        }
+      }
+    },
+    "USD": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "USD"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "USD"
           }
         }
       }
@@ -5110,22 +5179,6 @@
         }
       }
     },
-    "Upgrade to Pro — Coming Soon": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Upgrade to Pro — Coming Soon"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mejora a Pro — Próximamente"
-          }
-        }
-      }
-    },
     "Upgrade to Pro for unlimited people, income sources, and alerts, plus Plaid bank sync.": {
       "localizations": {
         "en": {
@@ -5142,34 +5195,18 @@
         }
       }
     },
-    "USD": {
+    "Upgrade to Pro — Coming Soon": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "USD"
+            "value": "Upgrade to Pro — Coming Soon"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "USD"
-          }
-        }
-      }
-    },
-    "v%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "v%@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "v%@"
+            "value": "Mejora a Pro — Próximamente"
           }
         }
       }
@@ -5422,6 +5459,82 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tus categorías"
+          }
+        }
+      }
+    },
+    "of %@ planned": {
+      "comment": "A label that shows the planned amount of a budget category.",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de %@ planificado"
+          }
+        }
+      }
+    },
+    "v%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "v%@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "v%@"
+          }
+        }
+      }
+    },
+    "·": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
+          }
+        }
+      }
+    },
+    "· %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· %@"
+          }
+        }
+      }
+    },
+    "— %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "— %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "— %@"
           }
         }
       }

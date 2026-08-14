@@ -125,6 +125,20 @@ struct BudgetManageView: View {
             }
 
             if let authenticatedClient {
+                // Not role-gated — these are the caller's own view settings,
+                // so a Viewer gets them too.
+                Section("Preferences") {
+                    NavigationLink("Preferences") {
+                        PreferencesView(
+                            budgetProfileID: viewModel.profile.id,
+                            authenticatedClient: authenticatedClient
+                        )
+                    }
+                    .accessibilityIdentifier("preferencesNavLink")
+                }
+            }
+
+            if let authenticatedClient {
                 Section("Reports") {
                     NavigationLink("Reports") {
                         ReportsPlaceholderView(authenticatedClient: authenticatedClient)
