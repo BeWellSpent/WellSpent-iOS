@@ -246,20 +246,11 @@ struct BudgetDetailView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                // `Menu` wrapping an *inline* `Picker`, not `.pickerStyle(.menu)`
-                // directly: a menu-style `Picker` ignores this custom `Image`
-                // label and renders the selected option's title as text
-                // instead. That title ("All transactions", or the far wider
-                // "Todas las transacciones" in Spanish) consumed enough of the
-                // bar that iOS collapsed the `+` and the notification bell into
-                // an overflow menu — leaving no way at all to add a transaction
-                // in portrait, since this toolbar button is the only entry
-                // point. `Menu` honours the label, so the bar gets one icon.
-                //
-                // The `Picker` is kept (rather than plain `Button`s) for the
-                // original reason: a `Menu` built from `Button`s has no concept
-                // of a selected item, so nothing distinguished the active
-                // filter. `.pickerStyle(.inline)` still draws the checkmark.
+                // `Menu` + inline `Picker`, not `.pickerStyle(.menu)`: a
+                // menu-style `Picker` ignores this `Image` label and renders
+                // the selected title instead ("Todas las transacciones"),
+                // which pushed the + and bell into an empty overflow menu.
+                // Inline `Picker` still draws the selection checkmark.
                 Menu {
                     Picker(selection: $transactionsFilter) {
                         Text(TransactionFilterOption.none.label).tag(TransactionFilterOption.none)

@@ -62,7 +62,7 @@ struct SettingsView: View {
             // alias (a1b2c3@privaterelay.appleid.com) — showing it tells the
             // user nothing, so name the sign-in method instead.
             if viewModel.hasApplePrivateEmail {
-                LabeledContent("Email", value: String(localized: "Signed with Apple"))
+                LabeledContent("Email", value: String(localized: "Signed with Apple", locale: AppLanguageStore.currentLocale))
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("settingsEmailField")
             } else {

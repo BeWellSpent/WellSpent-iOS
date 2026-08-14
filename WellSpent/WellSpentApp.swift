@@ -49,6 +49,10 @@ struct WellSpentApp: App {
             RootView()
                 .environment(session)
                 .environment(\.locale, appLanguage.isEmpty ? .autoupdatingCurrent : Locale(identifier: appLanguage))
+                // Rebuild on language change: `String(localized:locale:)` reads
+                // `UserDefaults`, not the environment, so those views never
+                // invalidate on their own.
+                .id(appLanguage)
                 .preferredColorScheme(themeMode.colorScheme)
         }
     }
