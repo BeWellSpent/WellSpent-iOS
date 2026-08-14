@@ -1242,6 +1242,22 @@
         }
       }
     },
+    "Couldn't delete that fixed expense.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't delete that fixed expense."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo eliminar ese gasto fijo."
+          }
+        }
+      }
+    },
     "Couldn't re-sync that bank.": {
       "localizations": {
         "en": {
@@ -1606,6 +1622,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "¿Eliminar este presupuesto?"
+          }
+        }
+      }
+    },
+    "Delete this upcoming expense?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this upcoming expense?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar este gasto próximo?"
           }
         }
       }
@@ -2552,6 +2584,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Invitaciones"
+          }
+        }
+      }
+    },
+    "It will stop appearing in future periods. Expenses already recorded in past periods are kept.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It will stop appearing in future periods. Expenses already recorded in past periods are kept."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dejará de aparecer en períodos futuros. Los gastos ya registrados en períodos anteriores se conservan."
           }
         }
       }
