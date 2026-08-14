@@ -246,22 +246,53 @@ final class FixedExpensesViewModel {
     /// transaction, per the backend's delete semantics) — same
     /// delete-means-deactivate framing as payment methods in 2B-1.
     func delete(_ transaction: Wellspent_V1_Transaction) async {
-        errorMessage = nil
         guard !transaction.fixedExpenseID.isEmpty else { return }
+        if await deleteFixedExpense(id: transaction.fixedExpenseID) {
+            transactions.removeAll { $0.id == transaction.id }
+        }
+    }
+
+    /// Deletes an upcoming template straight from the Future section, where
+    /// there is no spawned transaction to act on — the case web has always
+    /// supported and iOS didn't (issue #51).
+    func deleteTemplate(_ expense: Wellspent_V1_FixedExpense) async {
+        _ = await deleteFixedExpense(id: expense.id)
+    }
+
+    /// Shared by both delete paths. Returns whether it succeeded, so the
+    /// transaction-row caller can also drop its own row.
+    private func deleteFixedExpense(id: String) async -> Bool {
+        errorMessage = nil
 
         let request = Wellspent_V1_DeleteFixedExpenseRequest.with {
-            $0.id = transaction.fixedExpenseID
+            $0.id = id
             $0.budgetProfileID = budgetProfileID
         }
         let response = await client.deleteFixedExpense(request: request)
 
         switch response.result {
         case .success:
-            fixedExpenses.removeAll { $0.id == transaction.fixedExpenseID }
-            transactions.removeAll { $0.id == transaction.id }
+            fixedExpenses.removeAll { $0.id == id }
+            return true
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't delete that fixed expense."
+            Self.logger.error("delete fixed expense failed id=\(id, privacy: .public) message=\(error.message ?? "none", privacy: .public)")
+            errorMessage = error.message ?? String(
+                localized: "Couldn't delete that fixed expense.",
+                bundle: AppLanguageStore.currentBundle,
+                locale: AppLanguageStore.currentLocale
+            )
+            return false
         }
+    }
+
+    /// Seeds state without a network call, so the local-removal behaviour
+    /// above is testable. Mirrors `AlertsViewModel.setStateForTesting`.
+    func setStateForTesting(
+        fixedExpenses: [Wellspent_V1_FixedExpense],
+        transactions: [Wellspent_V1_Transaction] = []
+    ) {
+        self.fixedExpenses = fixedExpenses
+        self.transactions = transactions
     }
 
     private func replaceTransaction(_ transaction: Wellspent_V1_Transaction) {

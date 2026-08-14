@@ -45,6 +45,8 @@ struct BudgetDetailView: View {
     @State private var isAddFixedExpensePresented = false
     @State private var isEditBudgetPresented = false
     @State private var isDeleteBudgetConfirmationPresented = false
+    @State private var isPaymentMethodRequiredPresented = false
+    @State private var isPaymentMethodsPresented = false
 
     init(
         profile: Wellspent_V1_BudgetProfile,
@@ -105,6 +107,36 @@ struct BudgetDetailView: View {
             await viewModel?.loadRole(currentUserID: session.userID)
         }
         .task {
+            // Needed by the toolbar's "+" gate, which is visible before
+            // either transaction list mounts and loads its own copy.
+            await viewModel?.loadPaymentMethods()
+        }
+        .alert("Add a payment method first", isPresented: $isPaymentMethodRequiredPresented) {
+            Button("Add a payment method") { isPaymentMethodsPresented = true }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("Transactions need a payment method — cash, a card, or a bank account — so you can see where the money went. Add one and you'll be able to record transactions right away.")
+        }
+        .sheet(isPresented: $isPaymentMethodsPresented) {
+            // Presented here rather than switching to the Manage tab and
+            // pushing: dismissing lands the user back on Transactions, ready
+            // to add the thing they came for.
+            if let authenticatedClient, let viewModel {
+                NavigationStack {
+                    PaymentMethodsListView(
+                        budgetProfileID: viewModel.profile.id,
+                        authenticatedClient: authenticatedClient,
+                        canEdit: viewModel.canEdit
+                    )
+                }
+            }
+        }
+        .onChange(of: isPaymentMethodsPresented) { _, isPresented in
+            if !isPresented {
+                Task { await viewModel?.loadPaymentMethods() }
+            }
+        }
+        .task {
             // Created once and polled for the lifetime of this screen (not
             // per-toolbar-appearance) — every tab's bell shares this same
             // instance, so switching tabs never restarts the 30s poll loop.
@@ -132,6 +164,17 @@ struct BudgetDetailView: View {
             }
             await reviewViewModel?.pollPendingCount()
         }
+    }
+
+    /// Both Fixed and Variable require a payment method to submit, so with
+    /// none the form would open, fill in, and refuse to save with nothing
+    /// explaining why. Explain up front instead.
+    private func startAddingTransaction(_ present: () -> Void) {
+        if viewModel?.needsPaymentMethodSetup == true {
+            isPaymentMethodRequiredPresented = true
+            return
+        }
+        present()
     }
 
     /// Combines notifying the parent list (so it drops the deleted profile
@@ -229,7 +272,7 @@ struct BudgetDetailView: View {
             if canAddTransaction && transactionsSelectedKind == .variable {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        isAddTransactionPresented = true
+                        startAddingTransaction { isAddTransactionPresented = true }
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -238,7 +281,7 @@ struct BudgetDetailView: View {
             } else if canAddTransaction {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        isAddFixedExpensePresented = true
+                        startAddingTransaction { isAddFixedExpensePresented = true }
                     } label: {
                         Image(systemName: "plus")
                     }

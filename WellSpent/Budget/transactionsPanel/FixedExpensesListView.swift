@@ -5,6 +5,23 @@ import os
 struct FixedExpensesListView: View {
     private static let logger = AppLogger.logger("FixedExpenses")
 
+    /// Every locally-triggered sheet on this screen, so only one presentation
+    /// modifier drives them. See `activeSheet` for why the add sheet is not
+    /// in here.
+    private enum ActiveSheet: Identifiable {
+        case editTransaction(Wellspent_V1_Transaction)
+        case editTemplate(Wellspent_V1_FixedExpense)
+        case markPaid(Wellspent_V1_Transaction)
+
+        var id: String {
+            switch self {
+            case .editTransaction(let transaction): return "editTransaction-\(transaction.id)"
+            case .editTemplate(let expense): return "editTemplate-\(expense.id)"
+            case .markPaid(let transaction): return "markPaid-\(transaction.id)"
+            }
+        }
+    }
+
     let budgetPeriodID: String
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
@@ -33,8 +50,15 @@ struct FixedExpensesListView: View {
     private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
     @State private var viewModel: FixedExpensesViewModel?
-    @State private var editingTransaction: Wellspent_V1_Transaction?
-    @State private var markingPaidTransaction: Wellspent_V1_Transaction?
+    /// One `.sheet(item:)` instead of a `.sheet(isPresented:)` per case:
+    /// stacking those on a single view is what caused the Plaid double-tap
+    /// bug (v1.25.0). The add sheet stays its own modifier — its binding is
+    /// owned by `BudgetDetailView`'s toolbar, and mirroring it in here would
+    /// reintroduce the cross-wiring this avoids.
+    @State private var activeSheet: ActiveSheet?
+    /// Deleting an upcoming template stops a recurring bill for every future
+    /// period, so it confirms first — unlike deleting a single transaction.
+    @State private var deletingTemplate: Wellspent_V1_FixedExpense?
     /// Paid rows are collapsed by default (docs/features/transactions.md) —
     /// no native collapsible `List` `Section` exists in SwiftUI, so this
     /// gates whether the paid day-groups render at all, same manual-toggle
@@ -175,9 +199,21 @@ struct FixedExpensesListView: View {
                                     expense: expense,
                                     viewModel: viewModel,
                                     currencyCode: currencyCode,
-                                    localeIdentifier: localeIdentifier
-                                )
+                                    localeIdentifier: localeIdentifier,
+                                    canEdit: canEdit
+                                ) {
+                                    Self.logger.info("edit upcoming template tapped fixedExpenseID=\(expense.id, privacy: .public)")
+                                    activeSheet = .editTemplate(expense)
+                                }
                             }
+                            // `canEdit`, not `canMutate`: a template is
+                            // profile-level, like categories and payment
+                            // methods, so the archived-period rule doesn't
+                            // apply — and Future is hidden there anyway.
+                            .onDelete(perform: canEdit ? { offsets in
+                                guard let index = offsets.first else { return }
+                                deletingTemplate = upcomingExpenses[index]
+                            } : nil)
                         }
                     }
                 }
@@ -201,18 +237,16 @@ struct FixedExpensesListView: View {
                 viewModel.addFromCreate(expense: expense, transaction: transaction)
             }
         }
-        .sheet(isPresented: Binding(
-            get: { editingTransaction != nil },
-            set: { if !$0 { editingTransaction = nil } }
-        )) {
-            // `template(for:)` returns nil when the linked FixedExpense is
-            // missing or has been deactivated (e.g. a completed payment
-            // plan) — previously this silently rendered an empty sheet with
-            // no explanation. Falls back to the same category-only locked
-            // edit archived/Plaid-imported transactions already use, rather
-            // than showing nothing.
-            if let editingTransaction {
-                if let template = viewModel.template(for: editingTransaction) {
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .editTransaction(let transaction):
+                // `template(for:)` returns nil when the linked FixedExpense is
+                // missing or has been deactivated (e.g. a completed payment
+                // plan) — previously this silently rendered an empty sheet with
+                // no explanation. Falls back to the same category-only locked
+                // edit archived/Plaid-imported transactions already use, rather
+                // than showing nothing.
+                if let template = viewModel.template(for: transaction) {
                     EditFixedExpenseView(
                         expense: template,
                         currencyCode: currencyCode,
@@ -224,7 +258,7 @@ struct FixedExpensesListView: View {
                     }
                 } else {
                     AddEditTransactionView(
-                        mode: .edit(editingTransaction),
+                        mode: .edit(transaction),
                         budgetPeriodID: budgetPeriodID,
                         currencyCode: currencyCode,
                         categories: viewModel.categories,
@@ -236,17 +270,42 @@ struct FixedExpensesListView: View {
                         Task { await viewModel.load() }
                     }
                 }
-            }
-        }
-        .sheet(isPresented: Binding(
-            get: { markingPaidTransaction != nil },
-            set: { if !$0 { markingPaidTransaction = nil } }
-        )) {
-            if let markingPaidTransaction {
-                MarkAsPaidView(transaction: markingPaidTransaction, currencyCode: currencyCode) { amount, date in
-                    Task { await viewModel.markPaid(markingPaidTransaction, paidAmount: amount, paidAt: date) }
+
+            case .editTemplate(let expense):
+                // Straight to the template: an upcoming row has no spawned
+                // transaction to resolve one from.
+                EditFixedExpenseView(
+                    expense: expense,
+                    currencyCode: currencyCode,
+                    categories: viewModel.categories,
+                    paymentMethods: viewModel.paymentMethods,
+                    authenticatedClient: authenticatedClient
+                ) { _ in
+                    Task { await viewModel.handleTemplateUpdated() }
+                }
+
+            case .markPaid(let transaction):
+                MarkAsPaidView(transaction: transaction, currencyCode: currencyCode) { amount, date in
+                    Task { await viewModel.markPaid(transaction, paidAmount: amount, paidAt: date) }
                 }
             }
+        }
+        .confirmationDialog(
+            "Delete this upcoming expense?",
+            isPresented: Binding(
+                get: { deletingTemplate != nil },
+                set: { if !$0 { deletingTemplate = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let deletingTemplate {
+                    Task { await viewModel.deleteTemplate(deletingTemplate) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("It will stop appearing in future periods. Expenses already recorded in past periods are kept.")
         }
     }
 
@@ -292,9 +351,9 @@ struct FixedExpensesListView: View {
                     canMutate: canMutate,
                     onEdit: {
                         Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
-                        editingTransaction = transaction
+                        activeSheet = .editTransaction(transaction)
                     },
-                    onMarkPaid: { markingPaidTransaction = transaction }
+                    onMarkPaid: { activeSheet = .markPaid(transaction) }
                 )
             }
             .onDelete(perform: canMutate ? { offsets in
@@ -447,21 +506,33 @@ private struct FixedExpenseRow: View {
 
 /// A fixed-expense template that isn't due in this period yet.
 ///
-/// Deliberately inert — no edit, no mark-paid, no swipe-to-delete. There is no
-/// transaction to act on: the row exists so an upcoming bill isn't invisible
-/// until the period it lands in. Muted for the same reason, so it can't be
-/// mistaken for something already owed.
+/// Tapping it edits the template and swiping deletes it, matching web — there
+/// is no spawned transaction, so both act on the template directly. Mark-paid
+/// is still absent: there is nothing to pay yet. Muted so an upcoming bill
+/// can't be mistaken for something already owed.
 private struct UpcomingFixedExpenseRow: View {
     let expense: Wellspent_V1_FixedExpense
     let viewModel: FixedExpensesViewModel
     let currencyCode: String
     let localeIdentifier: String
+    let canEdit: Bool
+    let onEdit: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(expense.name)
-                    .foregroundStyle(.secondary)
+                Group {
+                    if canEdit {
+                        Button(action: onEdit) {
+                            Text(expense.name)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Text(expense.name)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Spacer()
                 Text(MoneyFormatting.format(
                     units: expense.plannedAmount.units,

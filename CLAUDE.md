@@ -292,12 +292,21 @@ git add WellSpent/... Packages/WellSpentAPI/Package.swift Packages/WellSpentAPI/
 git commit -m "feat: meaningful description of what changed"
 ```
 
-**Do not push automatically.** Wait for the user to manually validate the change and give explicit go-ahead before running `git push`. Once pushed, open a PR from `develop` to `main`:
+**Always push, and always leave an open PR.** Push `develop` immediately after committing — don't ask first, and don't leave commits sitting on `develop` with nothing tracking them:
 
 ```bash
 git push origin develop
 gh pr create --base main --head develop --title "Short title" --body "Description"
 ```
+
+**If a PR from `develop` is already open, GitHub won't let you create a second one — update that PR instead.** Its title and body describe whatever is on `develop`, so once your commit joins it they're stale and must be rewritten to cover everything on the branch, not just the newest change:
+
+```bash
+gh pr list --state open --json number,headRefName          # check before creating
+gh pr edit <n> --title "..." --body-file <file>            # then update, don't skip
+```
+
+Never finish an iOS change with commits pushed and no PR — or with a PR whose description no longer matches its contents.
 
 No auto-merge — this repo has no CI yet, so the PR is left for the user to merge manually (unlike the other three sub-repos, which enable `gh pr merge --auto`). Revisit once CI exists here.
 
