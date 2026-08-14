@@ -10,13 +10,13 @@ nonisolated enum PlanLabel {
         let locale = AppLanguageStore.currentLocale
         switch plan {
         case .unspecified, .free:
-            return String(localized: "Free", locale: locale)
+            return String(localized: "Free", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .pro:
-            return String(localized: "Pro", locale: locale)
+            return String(localized: "Pro", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .lifetime:
-            return String(localized: "Lifetime", locale: locale)
+            return String(localized: "Lifetime", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .UNRECOGNIZED:
-            return String(localized: "Unknown", locale: locale)
+            return String(localized: "Unknown", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 

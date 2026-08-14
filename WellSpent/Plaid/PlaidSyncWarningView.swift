@@ -38,7 +38,7 @@ struct PlaidSyncWarningView: View {
     }
 
     /// Built here rather than in the view body so the plural and self-vs-other
-    /// wording stay one readable decision. `String(localized:locale:)` with an
+    /// wording stay one readable decision. `String(localized:bundle:locale:)` with an
     /// explicit locale, not the parameterless form, so it follows the
     /// account's chosen language rather than the device's.
     private func message(for warning: Wellspent_V1_BudgetSyncWarning) -> String {

@@ -194,9 +194,9 @@ struct BudgetDetailView: View {
     private var currentTitle: String {
         let locale = AppLanguageStore.currentLocale
         switch selectedSection {
-        case .plan: return String(localized: "Expense Plan", locale: locale)
-        case .transactions: return String(localized: "Transactions", locale: locale)
-        case .review: return String(localized: "Review", locale: locale)
+        case .plan: return String(localized: "Expense Plan", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .manage: return viewModel?.profile.name ?? ""
         }
     }

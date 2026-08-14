@@ -16,20 +16,20 @@ nonisolated enum AlertType: String, CaseIterable {
     var label: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
-        case .newTransaction: return String(localized: "New Transaction", locale: locale)
-        case .spendingThreshold: return String(localized: "Spending Threshold", locale: locale)
-        case .periodCreated: return String(localized: "New Budget Period", locale: locale)
-        case .reviewPending: return String(localized: "Review Pending", locale: locale)
+        case .newTransaction: return String(localized: "New Transaction", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .spendingThreshold: return String(localized: "Spending Threshold", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .periodCreated: return String(localized: "New Budget Period", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .reviewPending: return String(localized: "Review Pending", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 
     var explanation: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
-        case .newTransaction: return String(localized: "Another member adds a transaction to this budget.", locale: locale)
-        case .spendingThreshold: return String(localized: "Spending crosses a percentage of the plan you set.", locale: locale)
-        case .periodCreated: return String(localized: "A new budget period starts.", locale: locale)
-        case .reviewPending: return String(localized: "A bank-imported transaction is queued for review.", locale: locale)
+        case .newTransaction: return String(localized: "Another member adds a transaction to this budget.", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .spendingThreshold: return String(localized: "Spending crosses a percentage of the plan you set.", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .periodCreated: return String(localized: "A new budget period starts.", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .reviewPending: return String(localized: "A bank-imported transaction is queued for review.", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 }

@@ -9,9 +9,9 @@ nonisolated enum AlertChannel: String, CaseIterable {
     var label: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
-        case .inApp: return String(localized: "In-App", locale: locale)
-        case .email: return String(localized: "Email", locale: locale)
-        case .both: return String(localized: "Both", locale: locale)
+        case .inApp: return String(localized: "In-App", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .email: return String(localized: "Email", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .both: return String(localized: "Both", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 }

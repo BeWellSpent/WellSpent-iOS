@@ -7,17 +7,17 @@ nonisolated enum BudgetCycleLabel {
         let locale = AppLanguageStore.currentLocale
         switch cycle {
         case .unspecified:
-            return String(localized: "Unspecified", locale: locale)
+            return String(localized: "Unspecified", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .weekly:
-            return String(localized: "Weekly", locale: locale)
+            return String(localized: "Weekly", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .biWeekly:
-            return String(localized: "Bi-weekly", locale: locale)
+            return String(localized: "Bi-weekly", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .monthly:
-            return String(localized: "Monthly", locale: locale)
+            return String(localized: "Monthly", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .yearly:
-            return String(localized: "Yearly", locale: locale)
+            return String(localized: "Yearly", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .UNRECOGNIZED:
-            return String(localized: "Unknown", locale: locale)
+            return String(localized: "Unknown", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 
