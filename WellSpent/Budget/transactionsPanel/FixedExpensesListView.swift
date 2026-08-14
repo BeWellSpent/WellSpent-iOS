@@ -39,6 +39,10 @@ struct FixedExpensesListView: View {
     /// no native collapsible `List` `Section` exists in SwiftUI, so this
     /// gates whether the paid day-groups render at all, same manual-toggle
     /// shape `FixedExpenseRow`'s own `isExpanded` already uses one level down.
+    /// Unpaid starts expanded — it's the section you came for — but collapses
+    /// so a long list of bills doesn't force a scroll past it to reach Paid or
+    /// Future.
+    @State private var isUnpaidExpanded = true
     @State private var isPaidExpanded = false
     /// Unlike Paid, Future starts expanded: an upcoming bill is something you'd
     /// want to see without a tap, whereas a paid one is already handled.
@@ -97,8 +101,10 @@ struct FixedExpensesListView: View {
         // so search/filters keep applying uniformly to both sections.
         let unpaidTransactions = visibleTransactions.filter { !$0.isPaid }
         let paidTransactions = visibleTransactions.filter(\.isPaid)
-        let unpaidGroups = TransactionDayGrouping.group(unpaidTransactions)
-        let paidGroups = TransactionDayGrouping.group(paidTransactions)
+        // Oldest first: this list is a schedule, so the month runs top to
+        // bottom. The Variable list keeps the newest-first default.
+        let unpaidGroups = TransactionDayGrouping.group(unpaidTransactions, ascending: true)
+        let paidGroups = TransactionDayGrouping.group(paidTransactions, ascending: true)
         // Upcoming bills — templates with nothing spawned this period. Not
         // day-grouped like the two sections above: these aren't transactions
         // and have no date in this period, so each carries its own next-due
@@ -126,34 +132,26 @@ struct FixedExpensesListView: View {
             } else {
                 if !unpaidTransactions.isEmpty {
                     Section {
-                        Text("Unpaid (\(unpaidTransactions.count))")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
+                        collapsibleHeader(
+                            title: "Unpaid (\(unpaidTransactions.count))",
+                            isExpanded: isUnpaidExpanded,
+                            identifier: "toggleUnpaidFixedExpenses"
+                        ) { isUnpaidExpanded.toggle() }
                     }
-                    ForEach(unpaidGroups) { group in
-                        dayGroupSection(group, viewModel: viewModel)
+                    if isUnpaidExpanded {
+                        ForEach(unpaidGroups) { group in
+                            dayGroupSection(group, viewModel: viewModel)
+                        }
                     }
                 }
 
                 if !paidTransactions.isEmpty {
                     Section {
-                        Button {
-                            isPaidExpanded.toggle()
-                        } label: {
-                            HStack {
-                                Text("Paid (\(paidTransactions.count))")
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Image(systemName: isPaidExpanded ? "chevron.up" : "chevron.down")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("togglePaidFixedExpenses")
+                        collapsibleHeader(
+                            title: "Paid (\(paidTransactions.count))",
+                            isExpanded: isPaidExpanded,
+                            identifier: "togglePaidFixedExpenses"
+                        ) { isPaidExpanded.toggle() }
                     }
                     if isPaidExpanded {
                         ForEach(paidGroups) { group in
@@ -164,22 +162,11 @@ struct FixedExpensesListView: View {
 
                 if !upcomingExpenses.isEmpty {
                     Section {
-                        Button {
-                            isFutureExpanded.toggle()
-                        } label: {
-                            HStack {
-                                Text("Future (\(upcomingExpenses.count))")
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Image(systemName: isFutureExpanded ? "chevron.up" : "chevron.down")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("toggleFutureFixedExpenses")
+                        collapsibleHeader(
+                            title: "Future (\(upcomingExpenses.count))",
+                            isExpanded: isFutureExpanded,
+                            identifier: "toggleFutureFixedExpenses"
+                        ) { isFutureExpanded.toggle() }
                     }
                     if isFutureExpanded {
                         Section {
@@ -261,6 +248,32 @@ struct FixedExpensesListView: View {
                 }
             }
         }
+    }
+
+    /// One tappable section header with a chevron, shared by Unpaid, Paid and
+    /// Future so the three can't drift on styling or on which way the chevron
+    /// points. SwiftUI has no collapsible `List` `Section`, so each caller
+    /// gates its own content on the matching `@State`.
+    private func collapsibleHeader(
+        title: String,
+        isExpanded: Bool,
+        identifier: String,
+        toggle: @escaping () -> Void
+    ) -> some View {
+        Button(action: toggle) {
+            HStack {
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
     }
 
     /// Renders one day-group's header + rows — shared by both the Unpaid and

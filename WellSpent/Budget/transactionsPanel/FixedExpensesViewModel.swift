@@ -70,7 +70,9 @@ final class FixedExpensesViewModel {
 
         switch await transactionsResponse.result {
         case .success(let message):
-            transactions = message.transactions.sorted { $0.date.date > $1.date.date }
+            // Oldest first: the Fixed list is a schedule, so the month should
+            // run top to bottom. Variable stays newest-first — it's a feed.
+            transactions = message.transactions.sorted { $0.date.date < $1.date.date }
             Self.logger.info("loaded fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) count=\(self.transactions.count, privacy: .public)")
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load fixed expenses."

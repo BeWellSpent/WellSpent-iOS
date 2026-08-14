@@ -46,6 +46,23 @@ struct TransactionDayGroupingTests {
         #expect(groups.first?.transactions.first?.id == "new")
     }
 
+    @Test("ascending puts the oldest day first, for the Fixed schedule view")
+    func ascendingOrdersOldestFirst() {
+        let today = Date()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: today)!
+
+        let groups = TransactionDayGrouping.group([
+            transaction(id: "new", date: today),
+            transaction(id: "old", date: twoDaysAgo),
+            transaction(id: "mid", date: yesterday)
+        ], ascending: true)
+
+        #expect(groups.map(\.id) == groups.map(\.id).sorted(by: <))
+        #expect(groups.first?.transactions.first?.id == "old")
+        #expect(groups.last?.transactions.first?.id == "new")
+    }
+
     @Test("empty input produces no groups")
     func emptyInputProducesNoGroups() {
         #expect(TransactionDayGrouping.group([]).isEmpty)

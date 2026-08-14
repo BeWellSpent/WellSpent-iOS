@@ -13,12 +13,13 @@ nonisolated enum TransactionDayGrouping {
         let transactions: [Wellspent_V1_Transaction]
     }
 
-    /// Preserves the incoming relative order within each day (callers pass
-    /// an already-sorted array) and orders the day buckets newest-first,
-    /// matching the existing sort `TransactionsViewModel`/`FixedExpensesViewModel`
-    /// already apply — unlike web, there's no independent sort-key to keep
-    /// day-order in sync with here.
-    static func group(_ transactions: [Wellspent_V1_Transaction]) -> [DayGroup] {
+    /// Preserves the incoming relative order within each day (callers pass an
+    /// already-sorted array). Day buckets default to newest-first, matching
+    /// the Variable list, which reads as a feed. The Fixed list passes
+    /// `ascending: true` — it reads as a schedule, so the month should run
+    /// top to bottom. Callers must sort their input the same way, since the
+    /// order inside a day is taken as given.
+    static func group(_ transactions: [Wellspent_V1_Transaction], ascending: Bool = false) -> [DayGroup] {
         var buckets: [Date: [Wellspent_V1_Transaction]] = [:]
         let calendar = Calendar.current
 
@@ -31,7 +32,7 @@ nonisolated enum TransactionDayGrouping {
         }
 
         return buckets.keys
-            .sorted(by: >)
+            .sorted(by: ascending ? (<) : (>))
             .map { DayGroup(id: $0, transactions: buckets[$0] ?? []) }
     }
 
