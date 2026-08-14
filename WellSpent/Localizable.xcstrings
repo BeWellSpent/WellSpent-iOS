@@ -385,6 +385,38 @@
         }
       }
     },
+    "Add a payment method": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a payment method"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agregar un método de pago"
+          }
+        }
+      }
+    },
+    "Add a payment method first": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a payment method first"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primero agrega un método de pago"
+          }
+        }
+      }
+    },
     "Add person": {
       "localizations": {
         "en": {
@@ -3268,6 +3300,22 @@
         }
       }
     },
+    "Not now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        }
+      }
+    },
     "Not set": {
       "localizations": {
         "en": {
@@ -5033,6 +5081,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Transacciones"
+          }
+        }
+      }
+    },
+    "Transactions need a payment method — cash, a card, or a bank account — so you can see where the money went. Add one and you'll be able to record transactions right away.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transactions need a payment method — cash, a card, or a bank account — so you can see where the money went. Add one and you'll be able to record transactions right away."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las transacciones necesitan un método de pago — efectivo, una tarjeta o una cuenta bancaria — para poder ver a dónde fue el dinero. Agrega uno y podrás registrar transacciones de inmediato."
           }
         }
       }

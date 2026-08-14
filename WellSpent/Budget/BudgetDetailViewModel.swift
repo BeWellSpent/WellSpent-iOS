@@ -14,6 +14,22 @@ final class BudgetDetailViewModel {
     private(set) var canEdit = true
     private(set) var canManageUsers = true
 
+    /// Loaded here rather than read off the transaction list view models:
+    /// the "+" that has to be gated lives in this screen's toolbar, which is
+    /// the only one that actually renders (see `BudgetDetailView`'s type
+    /// doc), and it's shown before either list is mounted.
+    private(set) var paymentMethods: [Wellspent_V1_PaymentMethod] = []
+    private(set) var isLoadingPaymentMethods = true
+
+    /// True when tapping "+" must explain what's missing instead of opening
+    /// the add form — see `TransactionPrerequisites`.
+    var needsPaymentMethodSetup: Bool {
+        TransactionPrerequisites.needsPaymentMethod(
+            paymentMethods: paymentMethods,
+            isLoading: isLoadingPaymentMethods
+        )
+    }
+
     /// Set when navigating in from a specific (possibly archived) period in
     /// the budget list — see `BudgetListView`. `nil` means "resolve the true
     /// active period," the pre-existing default behavior.
@@ -49,6 +65,16 @@ final class BudgetDetailViewModel {
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load this budget's period."
         }
+    }
+
+    /// Reloaded after the user adds one from the gate's sheet, so the "+"
+    /// starts working again without leaving the screen.
+    func loadPaymentMethods() async {
+        let response = await client.listPaymentMethods(request: .with { $0.budgetProfileID = profile.id })
+        if case .success(let message) = response.result {
+            paymentMethods = message.methods
+        }
+        isLoadingPaymentMethods = false
     }
 
     func applyUpdatedProfile(_ updated: Wellspent_V1_BudgetProfile) {
