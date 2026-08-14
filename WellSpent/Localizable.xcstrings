@@ -4540,6 +4540,38 @@
         }
       }
     },
+    "Shown on the Expense Overview tab, above what you actually spent.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown on the Expense Overview tab, above what you actually spent."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se muestra en la pestaña Resumen de gastos, encima de lo que gastaste realmente."
+          }
+        }
+      }
+    },
+    "Shown on the Expense Plan tab, above your planned amounts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown on the Expense Plan tab, above your planned amounts."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se muestra en la pestaña Plan de gastos, encima de tus montos planificados."
+          }
+        }
+      }
+    },
     "Sign In": {
       "localizations": {
         "en": {

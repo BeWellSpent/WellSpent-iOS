@@ -23,6 +23,7 @@ struct PreferencesView: View {
                     Section {
                         chartPicker(
                             title: "Expense Plan chart",
+                            caption: "Shown on the Expense Plan tab, above your planned amounts.",
                             selection: viewModel.planChart,
                             identifier: "planChartPreference"
                         ) { newValue in
@@ -31,6 +32,7 @@ struct PreferencesView: View {
 
                         chartPicker(
                             title: "Expense Overview chart",
+                            caption: "Shown on the Expense Overview tab, above what you actually spent.",
                             selection: viewModel.overviewChart,
                             identifier: "overviewChartPreference"
                         ) { newValue in
@@ -67,20 +69,34 @@ struct PreferencesView: View {
         }
     }
 
+    /// The label is drawn above the control rather than passed to `Picker`:
+    /// `.segmented` discards a picker's own label, which left two unlabelled
+    /// controls stacked with nothing saying which tab each belonged to.
     private func chartPicker(
         title: LocalizedStringKey,
+        caption: LocalizedStringKey,
         selection: ExpenseChartView.ChartType,
         identifier: String,
         onChange: @escaping (ExpenseChartView.ChartType) -> Void
     ) -> some View {
-        Picker(title, selection: Binding(
-            get: { selection },
-            set: { onChange($0) }
-        )) {
-            Text("Pie").tag(ExpenseChartView.ChartType.pie)
-            Text("Bar").tag(ExpenseChartView.ChartType.bar)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+            Text(caption)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Picker(title, selection: Binding(
+                get: { selection },
+                set: { onChange($0) }
+            )) {
+                Label("Pie", systemImage: "chart.pie").tag(ExpenseChartView.ChartType.pie)
+                Label("Bar", systemImage: "chart.bar").tag(ExpenseChartView.ChartType.bar)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityIdentifier(identifier)
         }
-        .pickerStyle(.segmented)
-        .accessibilityIdentifier(identifier)
+        .padding(.vertical, 4)
     }
 }
