@@ -15,10 +15,10 @@ enum BudgetSection: CaseIterable, Hashable {
     var title: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
-        case .plan: return String(localized: "Plan", locale: locale)
-        case .transactions: return String(localized: "Transactions", locale: locale)
-        case .review: return String(localized: "Review", locale: locale)
-        case .manage: return String(localized: "Manage", locale: locale)
+        case .plan: return String(localized: "Plan", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .manage: return String(localized: "Manage", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 

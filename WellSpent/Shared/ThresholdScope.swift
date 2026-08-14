@@ -9,8 +9,8 @@ nonisolated enum ThresholdScope: String, CaseIterable {
     var label: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
-        case .budget: return String(localized: "Whole Budget", locale: locale)
-        case .category: return String(localized: "Per Category", locale: locale)
+        case .budget: return String(localized: "Whole Budget", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .category: return String(localized: "Per Category", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 }

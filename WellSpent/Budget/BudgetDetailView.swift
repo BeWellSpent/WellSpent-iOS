@@ -194,9 +194,9 @@ struct BudgetDetailView: View {
     private var currentTitle: String {
         let locale = AppLanguageStore.currentLocale
         switch selectedSection {
-        case .plan: return String(localized: "Expense Plan", locale: locale)
-        case .transactions: return String(localized: "Transactions", locale: locale)
-        case .review: return String(localized: "Review", locale: locale)
+        case .plan: return String(localized: "Expense Plan", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .manage: return viewModel?.profile.name ?? ""
         }
     }
@@ -246,24 +246,26 @@ struct BudgetDetailView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                // `Picker` (not `Menu` + plain `Button`s) — a `Menu` built
-                // from `Button`s has no concept of a "selected" item, so
-                // nothing distinguished the active filter from the others
-                // even after tapping through them. `Picker` with
-                // `.pickerStyle(.menu)` renders identically as a menu button
-                // but automatically shows a checkmark next to whichever tag
-                // matches `transactionsFilter`.
-                Picker(selection: $transactionsFilter) {
-                    Text(TransactionFilterOption.none.label).tag(TransactionFilterOption.none)
-                    if transactionsSelectedKind == .variable {
-                        Text(TransactionFilterOption.spentOnly.label).tag(TransactionFilterOption.spentOnly)
-                        Text(TransactionFilterOption.exceededOnly.label).tag(TransactionFilterOption.exceededOnly)
+                // `Menu` + inline `Picker`, not `.pickerStyle(.menu)`: a
+                // menu-style `Picker` ignores this `Image` label and renders
+                // the selected title instead ("Todas las transacciones"),
+                // which pushed the + and bell into an empty overflow menu.
+                // Inline `Picker` still draws the selection checkmark.
+                Menu {
+                    Picker(selection: $transactionsFilter) {
+                        Text(TransactionFilterOption.none.label).tag(TransactionFilterOption.none)
+                        if transactionsSelectedKind == .variable {
+                            Text(TransactionFilterOption.spentOnly.label).tag(TransactionFilterOption.spentOnly)
+                            Text(TransactionFilterOption.exceededOnly.label).tag(TransactionFilterOption.exceededOnly)
+                        }
+                        Text(TransactionFilterOption.excludedOnly.label).tag(TransactionFilterOption.excludedOnly)
+                    } label: {
+                        EmptyView()
                     }
-                    Text(TransactionFilterOption.excludedOnly.label).tag(TransactionFilterOption.excludedOnly)
+                    .pickerStyle(.inline)
                 } label: {
                     Image(systemName: transactionsFilter == .none ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
                 }
-                .pickerStyle(.menu)
                 .accessibilityIdentifier("transactionsFilterMenu")
             }
         case .review:

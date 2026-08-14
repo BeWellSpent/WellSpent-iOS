@@ -133,7 +133,7 @@ final class AppleAuthCoordinator: NSObject {
     ///
     /// Unlike `GoogleAuthCoordinator` — whose messages are plain literals and
     /// therefore ship English-only regardless of the user's chosen language —
-    /// these go through `String(localized:locale:)` with an explicit locale,
+    /// these go through `String(localized:bundle:locale:)`,
     /// which is required outside a SwiftUI view body.
     nonisolated static func errorMessage(for error: ConnectError) -> String {
         switch error.code {
@@ -158,7 +158,7 @@ final class AppleAuthCoordinator: NSObject {
     }
 
     nonisolated static func genericErrorMessage() -> String {
-        String(localized: "Apple sign-in failed. Please try again.", locale: AppLanguageStore.currentLocale)
+        String(localized: "Apple sign-in failed. Please try again.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 }
 

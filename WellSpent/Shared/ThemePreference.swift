@@ -20,9 +20,9 @@ nonisolated enum ThemePreference: String, CaseIterable {
     var label: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
-        case .light: return String(localized: "Light", locale: locale)
-        case .dark: return String(localized: "Dark", locale: locale)
-        case .system: return String(localized: "System", locale: locale)
+        case .light: return String(localized: "Light", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .dark: return String(localized: "Dark", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .system: return String(localized: "System", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 

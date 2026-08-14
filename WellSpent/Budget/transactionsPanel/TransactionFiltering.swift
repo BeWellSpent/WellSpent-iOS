@@ -13,10 +13,10 @@ nonisolated enum TransactionFilterOption: String, CaseIterable {
     var label: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
-        case .none: return String(localized: "All transactions", locale: locale)
-        case .spentOnly: return String(localized: "Spent only", locale: locale)
-        case .exceededOnly: return String(localized: "Exceeded only", locale: locale)
-        case .excludedOnly: return String(localized: "Excluded only", locale: locale)
+        case .none: return String(localized: "All transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .spentOnly: return String(localized: "Spent only", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .exceededOnly: return String(localized: "Exceeded only", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .excludedOnly: return String(localized: "Excluded only", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 }

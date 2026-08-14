@@ -51,8 +51,8 @@ struct StatusBannerView: View {
                         withAnimation { viewModel.toggleExpanded() }
                     } label: {
                         Text(viewModel.isExpanded
-                             ? String(localized: "Show less", locale: AppLanguageStore.currentLocale)
-                             : String(localized: "Learn more", locale: AppLanguageStore.currentLocale))
+                             ? String(localized: "Show less", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+                             : String(localized: "Learn more", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale))
                             .font(.footnote.weight(.semibold))
                             .underline()
                     }

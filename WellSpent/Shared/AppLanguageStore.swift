@@ -5,18 +5,47 @@ import Foundation
 /// the environment automatically (`WellSpentApp` sets that environment value
 /// from this same cached key). Non-view code — `@Observable` view models and
 /// the `*Label` enum helpers that return a plain `String` from a `switch` —
-/// has no environment to read, so every `String(localized:)` call made
-/// outside a view body must pass `AppLanguageStore.currentLocale` explicitly,
-/// or it silently falls back to the device's system locale, which can differ
-/// from the language the user actually chose in Settings.
+/// has no environment to read, so every `String(localized:)` call outside a
+/// view body must pass **both** `currentBundle` and `currentLocale`. The
+/// bundle is what selects the language; `locale:` alone only formats
+/// interpolated values and silently returns English.
 nonisolated enum AppLanguageStore {
     static let key = "appLanguage"
 
     static var currentLocale: Locale {
-        guard let code = UserDefaults.standard.string(forKey: key), !code.isEmpty else {
+        locale(in: .standard)
+    }
+
+    /// Store passed in rather than read from a mutable global: tests need
+    /// their own suite, and any view model calling `apply` writes this key,
+    /// so a shared mutable pointer just moves the race rather than fixing it.
+    static func locale(in defaults: UserDefaults) -> Locale {
+        guard let code = defaults.string(forKey: key), !code.isEmpty else {
             return .autoupdatingCurrent
         }
         return Locale(identifier: code)
+    }
+
+    /// The bundle is what selects the language. `String(localized:)`'s
+    /// `locale:` argument only formats interpolated values — lookup always
+    /// uses the main bundle's system language, so `locale:` alone returns
+    /// English no matter what the user picked.
+    static var currentBundle: Bundle {
+        bundle(in: .standard)
+    }
+
+    static func bundle(in defaults: UserDefaults) -> Bundle {
+        guard let code = defaults.string(forKey: key), !code.isEmpty else {
+            return .main
+        }
+        let candidates = [code, Locale(identifier: code).language.languageCode?.identifier].compactMap { $0 }
+        for candidate in candidates {
+            if let path = Bundle.main.path(forResource: candidate, ofType: "lproj"),
+               let bundle = Bundle(path: path) {
+                return bundle
+            }
+        }
+        return .main
     }
 
     /// Called after every successful `GetMe`/`UpdateMe` so the cached value
@@ -26,15 +55,15 @@ nonisolated enum AppLanguageStore {
     /// pattern, except language is server-persisted (`User.language`) rather
     /// than a device-only preference, so it's populated from the fetched
     /// `User` rather than a user-facing "system" option.
-    static func apply(_ language: String) {
+    static func apply(_ language: String, in defaults: UserDefaults = .standard) {
         guard !language.isEmpty else { return }
-        UserDefaults.standard.set(language, forKey: key)
+        defaults.set(language, forKey: key)
     }
 
     /// Called on logout so a different account logging in next doesn't
     /// briefly inherit the previous account's language before its own
     /// `GetMe` resolves.
-    static func clear() {
-        UserDefaults.standard.removeObject(forKey: key)
+    static func clear(in defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: key)
     }
 }

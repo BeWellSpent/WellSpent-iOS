@@ -33,10 +33,10 @@ struct PlaidConnectionRow: View {
 
     private var lastSyncedText: String {
         guard connection.hasLastSyncedAt else {
-            return String(localized: "Never synced", locale: AppLanguageStore.currentLocale)
+            return String(localized: "Never synced", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
         }
         let relative = relativeFormatter.localizedString(for: connection.lastSyncedAt.date, relativeTo: Date())
-        return String(localized: "Synced \(relative)", locale: AppLanguageStore.currentLocale)
+        return String(localized: "Synced \(relative)", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
     var body: some View {

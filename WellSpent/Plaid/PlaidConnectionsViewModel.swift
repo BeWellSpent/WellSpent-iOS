@@ -98,7 +98,7 @@ final class PlaidConnectionsViewModel {
             return budgetName(for: connection.budgetProfileID)
         }
         return connection.ownerName.isEmpty
-            ? String(localized: "Unknown member", locale: AppLanguageStore.currentLocale)
+            ? String(localized: "Unknown member", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
             : connection.ownerName
     }
 
@@ -241,7 +241,7 @@ final class PlaidConnectionsViewModel {
             await load()
         case .failure(let error):
             Self.logger.error("plaid resync failed id=\(connection.id, privacy: .public) code=\(String(describing: error.code), privacy: .public)")
-            errorMessage = error.message ?? String(localized: "Couldn't re-sync that bank.", locale: AppLanguageStore.currentLocale)
+            errorMessage = error.message ?? String(localized: "Couldn't re-sync that bank.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
         }
     }
 

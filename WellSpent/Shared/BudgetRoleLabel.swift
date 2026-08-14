@@ -8,15 +8,15 @@ nonisolated enum BudgetRoleLabel {
         let locale = AppLanguageStore.currentLocale
         switch role {
         case .unspecified:
-            return String(localized: "No account", locale: locale)
+            return String(localized: "No account", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .admin:
-            return String(localized: "Admin", locale: locale)
+            return String(localized: "Admin", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .collaborator:
-            return String(localized: "Collaborator", locale: locale)
+            return String(localized: "Collaborator", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .viewer:
-            return String(localized: "Viewer", locale: locale)
+            return String(localized: "Viewer", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .UNRECOGNIZED:
-            return String(localized: "Unknown", locale: locale)
+            return String(localized: "Unknown", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 }

@@ -7,9 +7,9 @@ nonisolated enum PlaidStatusLabel {
     static func text(for status: String) -> String {
         let locale = AppLanguageStore.currentLocale
         switch status {
-        case "active": return String(localized: "Active", locale: locale)
-        case "disconnected": return String(localized: "Disconnected", locale: locale)
-        case "error": return String(localized: "Error", locale: locale)
+        case "active": return String(localized: "Active", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case "disconnected": return String(localized: "Disconnected", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case "error": return String(localized: "Error", bundle: AppLanguageStore.currentBundle, locale: locale)
         default: return status
         }
     }

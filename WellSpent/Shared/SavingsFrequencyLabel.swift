@@ -8,9 +8,9 @@ nonisolated enum SavingsFrequencyLabel {
     static func text(forDayCount count: Int) -> String {
         let locale = AppLanguageStore.currentLocale
         switch count {
-        case 1: return String(localized: "Monthly", locale: locale)
-        case 2: return String(localized: "Bi-weekly", locale: locale)
-        case 4: return String(localized: "Weekly", locale: locale)
+        case 1: return String(localized: "Monthly", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case 2: return String(localized: "Bi-weekly", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case 4: return String(localized: "Weekly", bundle: AppLanguageStore.currentBundle, locale: locale)
         default: return ""
         }
     }
