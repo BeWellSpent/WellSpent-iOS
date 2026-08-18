@@ -71,9 +71,17 @@ struct ExpenseOverviewListView: View {
 
                 let uncategorized = viewModel.uncategorizedTotal
                 if uncategorized.units != 0 || uncategorized.nanos != 0 {
-                    LabeledContent("Uncategorized", value: overviewText(uncategorized))
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("overviewUncategorizedTotal")
+                    // Orange and semibold, like web: unattributed spend is a
+                    // thing to go and fix, not a neutral line item.
+                    LabeledContent {
+                        Text(overviewText(uncategorized))
+                            .foregroundStyle(.orange)
+                            .fontWeight(.semibold)
+                    } label: {
+                        Text("Uncategorized")
+                            .foregroundStyle(.secondary)
+                    }
+                    .accessibilityIdentifier("overviewUncategorizedTotal")
                 }
             }
 
@@ -94,11 +102,13 @@ struct ExpenseOverviewListView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("overviewPlannedTotal")
                 if income.units != 0 || income.nanos != 0 {
+                    // isNegative, not `units < 0`: a -$0.50 remainder has
+                    // units == 0 and would otherwise read green.
                     LabeledContent("Remaining (actual)", value: displayText(actualRemainder))
-                        .foregroundStyle(actualRemainder.units < 0 ? .red : .green)
+                        .foregroundStyle(MoneyFormatting.isNegative(units: actualRemainder.units, nanos: actualRemainder.nanos) ? .red : .green)
                         .accessibilityIdentifier("overviewActualRemainderTotal")
                     LabeledContent("Remaining (planned)", value: displayText(plannedRemainder))
-                        .foregroundStyle(plannedRemainder.units < 0 ? .red : .green)
+                        .foregroundStyle(MoneyFormatting.isNegative(units: plannedRemainder.units, nanos: plannedRemainder.nanos) ? .red : .green)
                         .accessibilityIdentifier("overviewPlannedRemainderTotal")
                 }
                 if overBudget.units != 0 || overBudget.nanos != 0 {
@@ -167,12 +177,10 @@ struct ExpenseOverviewListView: View {
     /// comparison web's separate Planned table column shows, in the space
     /// a single mobile row has available.
     private func amountColumn(actual: (units: Int64, nanos: Int32), planned: (units: Int64, nanos: Int32), isOver: Bool) -> some View {
-        // Received wins over `isOver`: money in is never overspending, and the
-        // "+" prefix is what tells it apart from an ordinary spend (issue #52).
-        let isReceived = TransactionAmountFormatting.isReceived(units: actual.units, nanos: actual.nanos)
+        let tone = OverviewAmountFormatting.tone(actual: actual, planned: planned, isOver: isOver)
         return VStack(alignment: .trailing, spacing: 0) {
             Text(overviewText(actual))
-                .foregroundStyle(isReceived ? .green : (isOver ? .red : .secondary))
+                .foregroundStyle(Self.style(for: tone))
             if planned.units != 0 || planned.nanos != 0 {
                 Text("of \(displayText(planned)) planned")
                     .font(.caption2)
@@ -240,6 +248,17 @@ struct ExpenseOverviewListView: View {
 
     private func displayText(_ amount: (units: Int64, nanos: Int32)) -> String {
         MoneyFormatting.format(units: amount.units, nanos: amount.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+    }
+
+    /// How each tone paints. Kept beside the view rather than in the pure
+    /// helper so `OverviewAmountFormatting` needn't import SwiftUI.
+    private static func style(for tone: OverviewAmountFormatting.Tone) -> AnyShapeStyle {
+        switch tone {
+        case .received, .withinPlan: AnyShapeStyle(Color.green)
+        case .over: AnyShapeStyle(Color.red)
+        case .unplanned: AnyShapeStyle(HierarchicalShapeStyle.secondary)
+        case .zero: AnyShapeStyle(HierarchicalShapeStyle.tertiary)
+        }
     }
 
     /// Actual-spend amounts, which are the only ones here that can net

@@ -131,7 +131,9 @@ struct ExpensePlanView: View {
                 LabeledContent("Committed", value: displayText(committed))
                     .accessibilityIdentifier("planCommittedTotal")
                 LabeledContent("Remaining", value: displayText(remainder))
-                    .foregroundStyle(remainder.units < 0 ? .red : .primary)
+                    // isNegative, not `units < 0`: a -$0.50 remainder has
+                    // units == 0 and would otherwise read as in the black.
+                    .foregroundStyle(MoneyFormatting.isNegative(units: remainder.units, nanos: remainder.nanos) ? .red : .primary)
                     .accessibilityIdentifier("planRemainderTotal")
             }
 

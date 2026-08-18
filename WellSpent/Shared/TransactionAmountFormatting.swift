@@ -5,8 +5,11 @@ import WellSpentAPI
 /// (shown with a "-" prefix), `amount < 0` is Received (shown with a "+"
 /// prefix). `units` and `nanos` always carry the same sign on the wire.
 nonisolated enum TransactionAmountFormatting {
+    /// A received amount is simply a negative one; the name records what a
+    /// negative *transaction* amount means, while `MoneyFormatting.isNegative`
+    /// is the same test for money that isn't a transaction (a remainder, say).
     static func isReceived(units: Int64, nanos: Int32) -> Bool {
-        units < 0 || (units == 0 && nanos < 0)
+        MoneyFormatting.isNegative(units: units, nanos: nanos)
     }
 
     /// Extracts the (units, nanos) tuple every local sum/comparison helper

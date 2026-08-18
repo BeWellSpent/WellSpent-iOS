@@ -40,4 +40,15 @@ struct MoneyFormattingTests {
         let result = MoneyFormatting.format(units: 100, nanos: 0, currencyCode: "EUR", localeIdentifier: "es_AR")
         #expect(result.contains("100"))
     }
+
+    // A -$0.50 amount is units == 0, nanos == -500_000_000. A units-only check
+    // calls that non-negative, which mis-coloured a small negative remainder
+    // green on both the Overview and the Plan tab.
+    @Test("isNegative catches a sub-unit negative that a units-only check misses")
+    func isNegativeSubUnit() {
+        #expect(MoneyFormatting.isNegative(units: 0, nanos: -500_000_000))
+        #expect(MoneyFormatting.isNegative(units: -1, nanos: 0))
+        #expect(!MoneyFormatting.isNegative(units: 0, nanos: 0))
+        #expect(!MoneyFormatting.isNegative(units: 0, nanos: 500_000_000))
+    }
 }

@@ -40,4 +40,47 @@ struct OverviewAmountFormattingTests {
     func zeroIsUnsigned() {
         #expect(text(0) == "$0.00")
     }
+
+    private func tone(
+        actual: Int64,
+        planned: Int64,
+        isOver: Bool = false
+    ) -> OverviewAmountFormatting.Tone {
+        OverviewAmountFormatting.tone(
+            actual: (units: actual, nanos: 0),
+            planned: (units: planned, nanos: 0),
+            isOver: isOver
+        )
+    }
+
+    @Test("a spend inside its plan is withinPlan")
+    func withinPlan() {
+        #expect(tone(actual: 300, planned: 400) == .withinPlan)
+    }
+
+    @Test("a spend over its plan is over")
+    func over() {
+        #expect(tone(actual: 500, planned: 400, isOver: true) == .over)
+    }
+
+    // The reason tone takes `planned` at all. isOver is
+    // `planned > 0 && actual > planned` server-side, so unplanned spending can
+    // never be "over" and used to fall through to the same styling as a spend
+    // that was inside its plan — reading as within budget while the same money
+    // was counted into the orange Unplanned total on the same screen.
+    @Test("spending with no plan is unplanned, not withinPlan")
+    func unplanned() {
+        #expect(tone(actual: 500, planned: 0) == .unplanned)
+    }
+
+    @Test("money received is received, never over")
+    func receivedTone() {
+        #expect(tone(actual: -85, planned: 0) == .received)
+        #expect(tone(actual: -85, planned: 40, isOver: true) == .received)
+    }
+
+    @Test("an exactly-zero actual is zero, even against a real plan")
+    func zeroTone() {
+        #expect(tone(actual: 0, planned: 400) == .zero)
+    }
 }
