@@ -45,6 +45,7 @@ struct TransactionsListView: View {
     @State private var editingTransaction: Wellspent_V1_Transaction?
     @State private var markReviewTarget: Wellspent_V1_Transaction?
     @State private var installmentTarget: Wellspent_V1_Transaction?
+    @State private var unsplitTarget: Wellspent_V1_Transaction?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -212,6 +213,22 @@ struct TransactionsListView: View {
                 }
             }
         }
+        .confirmationDialog(
+            "Undo installment split",
+            isPresented: Binding(
+                get: { unsplitTarget != nil },
+                set: { if !$0 { unsplitTarget = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Undo split", role: .destructive) {
+                if let unsplitTarget {
+                    Task { await viewModel.deleteInstallmentPlan(unsplitTarget) }
+                }
+            }
+        } message: {
+            Text("The plan and its remaining payments will be deleted, and this purchase will count toward its period again.")
+        }
         .sheet(isPresented: Binding(
             get: { installmentTarget != nil },
             set: { if !$0 { installmentTarget = nil } }
@@ -300,6 +317,16 @@ struct TransactionsListView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("flagForReview_\(transaction.name)")
+            }
+
+            if canEdit && !transaction.installmentFixedExpenseID.isEmpty {
+                Button {
+                    unsplitTarget = transaction
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("unsplitInstallments_\(transaction.name)")
             }
 
             if canEdit && InstallmentPlan.canSplit(transaction) {

@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 import WellSpentAPI
 
@@ -166,6 +167,32 @@ final class TransactionsViewModel {
     func replaceTransaction(_ transaction: Wellspent_V1_Transaction) {
         guard let index = transactions.firstIndex(where: { $0.id == transaction.id }) else { return }
         transactions[index] = transaction
+    }
+
+    /// Reverses an installment split. The backend refuses once any payment has
+    /// been marked paid — real recorded spend shouldn't vanish into an undo —
+    /// so that failure is an expected outcome here and its message is shown
+    /// as-is rather than replaced with a generic one.
+    ///
+    /// Reloads rather than patching local state: the plan's spawned payments
+    /// are deleted server-side too, and they may sit in periods this list
+    /// isn't showing.
+    func deleteInstallmentPlan(_ transaction: Wellspent_V1_Transaction) async {
+        errorMessage = nil
+        let response = await client.deleteInstallmentPlan(request: .with {
+            $0.transactionID = transaction.id
+            $0.budgetPeriodID = budgetPeriodID
+        })
+
+        switch response.result {
+        case .success:
+            await load()
+        case .failure(let error):
+            errorMessage = error.message ?? String(
+                localized: "Couldn't undo the split.",
+                locale: AppLanguageStore.currentLocale
+            )
+        }
     }
 
     func toggleExcluded(_ transaction: Wellspent_V1_Transaction) async {
