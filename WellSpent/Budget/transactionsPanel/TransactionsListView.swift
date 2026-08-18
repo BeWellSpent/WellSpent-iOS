@@ -268,6 +268,16 @@ struct TransactionsListView: View {
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("installmentBadge_\(transaction.name)")
                 }
+                // Marks a row the app created from last period's ending
+                // balance, so it doesn't read as a charge the user forgot
+                // making. It stays fully editable — deleting it is how you
+                // say you've already settled it.
+                if !transaction.carriedFromBudgetPeriodID.isEmpty {
+                    Text("(carried over)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("carryoverBadge_\(transaction.name)")
+                }
             }
             HStack(spacing: 4) {
                 if let categoryName = viewModel.categoryName(for: transaction.categoryID) {

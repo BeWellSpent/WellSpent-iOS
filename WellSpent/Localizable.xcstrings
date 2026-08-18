@@ -97,6 +97,22 @@
         }
       }
     },
+    "(carried over)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(carried over)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(trasladado)"
+          }
+        }
+      }
+    },
     "(installments)": {
       "localizations": {
         "en": {
@@ -685,6 +701,22 @@
         }
       }
     },
+    "Balance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balance"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saldo"
+          }
+        }
+      }
+    },
     "Bank Connections": {
       "localizations": {
         "en": {
@@ -891,6 +923,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancelada"
+          }
+        }
+      }
+    },
+    "Carry balance forward": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carry balance forward"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trasladar el saldo"
           }
         }
       }
@@ -1318,6 +1366,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "No pudimos reenviar el correo. Inténtalo en un momento."
+          }
+        }
+      }
+    },
+    "Couldn't save this setting.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't save this setting."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar esta configuración."
           }
         }
       }
@@ -3638,6 +3702,22 @@
         }
       }
     },
+    "Only a budget admin can change this.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only a budget admin can change this."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo un administrador del presupuesto puede cambiar esto."
+          }
+        }
+      }
+    },
     "Only available on Pro accounts": {
       "localizations": {
         "en": {
@@ -5733,6 +5813,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "WellSpent le pedirá a este banco todo su historial de transacciones otra vez, empezando ahora. Las transacciones que eliminaste volverán a aparecer. Las ya importadas no se duplicarán. Disponible una vez al día por banco."
+          }
+        }
+      }
+    },
+    "When a period ends, roll its balance into the next one. Money left over is added to Savings; if you overspent, the shortfall is split across the payment methods you spent it on, so the debt shows where it came from.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a period ends, roll its balance into the next one. Money left over is added to Savings; if you overspent, the shortfall is split across the payment methods you spent it on, so the debt shows where it came from."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando termina un período, traslada su saldo al siguiente. El dinero que sobra se suma a Ahorros; si te pasaste, la diferencia se reparte entre los métodos de pago con los que gastaste, para que la deuda muestre de dónde viene."
           }
         }
       }
