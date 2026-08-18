@@ -97,6 +97,22 @@
         }
       }
     },
+    "(installments)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(installments)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(cuotas)"
+          }
+        }
+      }
+    },
     "(linked to %@)": {
       "localizations": {
         "en": {
@@ -1242,6 +1258,22 @@
         }
       }
     },
+    "Couldn't create the installment plan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't create the installment plan."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo crear el plan de cuotas."
+          }
+        }
+      }
+    },
     "Couldn't delete that fixed expense.": {
       "localizations": {
         "en": {
@@ -1366,6 +1398,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Crear presupuesto"
+          }
+        }
+      }
+    },
+    "Create plan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create plan"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear plan"
           }
         }
       }
@@ -1526,6 +1574,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Débito"
+          }
+        }
+      }
+    },
+    "Defaults to next month — a card bills the statement after the one you bought in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defaults to next month — a card bills the statement after the one you bought in."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por defecto el mes próximo — la tarjeta cobra en el resumen siguiente al de la compra."
           }
         }
       }
@@ -1799,6 +1863,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "EUR"
+          }
+        }
+      }
+    },
+    "Each payment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each payment"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada cuota"
           }
         }
       }
@@ -2267,6 +2347,22 @@
         }
       }
     },
+    "First payment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First payment"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primera cuota"
+          }
+        }
+      }
+    },
     "Fixed": {
       "localizations": {
         "en": {
@@ -2632,6 +2728,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apellido"
+          }
+        }
+      }
+    },
+    "Last payment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last payment"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última cuota"
           }
         }
       }
@@ -3456,6 +3568,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Número de pagos"
+          }
+        }
+      }
+    },
+    "Number of payments: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number of payments: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cantidad de cuotas: %lld"
           }
         }
       }
@@ -4844,6 +4972,22 @@
         }
       }
     },
+    "Split into installments": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Split into installments"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dividir en cuotas"
+          }
+        }
+      }
+    },
     "Start date": {
       "localizations": {
         "en": {
@@ -5017,6 +5161,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Frecuencia de pago de impuestos"
+          }
+        }
+      }
+    },
+    "The original purchase stays visible but stops counting toward totals.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The original purchase stays visible but stops counting toward totals."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La compra original sigue visible pero deja de contar en los totales."
           }
         }
       }

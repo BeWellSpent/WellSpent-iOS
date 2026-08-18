@@ -44,6 +44,7 @@ struct TransactionsListView: View {
     @State private var viewModel: TransactionsViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
     @State private var markReviewTarget: Wellspent_V1_Transaction?
+    @State private var installmentTarget: Wellspent_V1_Transaction?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -211,6 +212,22 @@ struct TransactionsListView: View {
                 }
             }
         }
+        .sheet(isPresented: Binding(
+            get: { installmentTarget != nil },
+            set: { if !$0 { installmentTarget = nil } }
+        )) {
+            if let installmentTarget {
+                InstallmentPlanSheet(
+                    transaction: installmentTarget,
+                    budgetPeriodID: budgetPeriodID,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    authenticatedClient: authenticatedClient
+                ) {
+                    Task { await viewModel.load() }
+                }
+            }
+        }
     }
 
     private func transactionRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
@@ -225,6 +242,14 @@ struct TransactionsListView: View {
                     Text("(linked to \(pendingMatchName))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                // Says why the row is excluded — otherwise a converted
+                // purchase reads as arbitrarily left out of the totals.
+                if !transaction.installmentFixedExpenseID.isEmpty {
+                    Text("(installments)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("installmentBadge_\(transaction.name)")
                 }
             }
             HStack(spacing: 4) {
@@ -277,6 +302,16 @@ struct TransactionsListView: View {
                 .accessibilityIdentifier("flagForReview_\(transaction.name)")
             }
 
+            if canEdit && InstallmentPlan.canSplit(transaction) {
+                Button {
+                    installmentTarget = transaction
+                } label: {
+                    Image(systemName: "arrow.triangle.branch")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("splitIntoInstallments_\(transaction.name)")
+            }
+
             if canMutate {
                 Button {
                     Task { await viewModel.toggleExcluded(transaction) }
@@ -284,6 +319,9 @@ struct TransactionsListView: View {
                     Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
                 }
                 .buttonStyle(.plain)
+                // Re-including a converted purchase would count it alongside
+                // the plan built from it.
+                .disabled(!transaction.installmentFixedExpenseID.isEmpty)
                 .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
             }
         }
