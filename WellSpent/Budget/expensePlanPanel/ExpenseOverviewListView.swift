@@ -71,7 +71,7 @@ struct ExpenseOverviewListView: View {
 
                 let uncategorized = viewModel.uncategorizedTotal
                 if uncategorized.units != 0 || uncategorized.nanos != 0 {
-                    LabeledContent("Uncategorized", value: displayText(uncategorized))
+                    LabeledContent("Uncategorized", value: overviewText(uncategorized))
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("overviewUncategorizedTotal")
                 }
@@ -88,7 +88,7 @@ struct ExpenseOverviewListView: View {
 
                 LabeledContent("Income", value: displayText(income))
                     .accessibilityIdentifier("overviewIncomeTotal")
-                LabeledContent("Actual", value: displayText(actual))
+                LabeledContent("Actual", value: overviewText(actual))
                     .accessibilityIdentifier("overviewActualTotal")
                 LabeledContent("Planned", value: displayText(planned))
                     .foregroundStyle(.secondary)
@@ -167,9 +167,12 @@ struct ExpenseOverviewListView: View {
     /// comparison web's separate Planned table column shows, in the space
     /// a single mobile row has available.
     private func amountColumn(actual: (units: Int64, nanos: Int32), planned: (units: Int64, nanos: Int32), isOver: Bool) -> some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            Text(displayText(actual))
-                .foregroundStyle(isOver ? .red : .secondary)
+        // Received wins over `isOver`: money in is never overspending, and the
+        // "+" prefix is what tells it apart from an ordinary spend (issue #52).
+        let isReceived = TransactionAmountFormatting.isReceived(units: actual.units, nanos: actual.nanos)
+        return VStack(alignment: .trailing, spacing: 0) {
+            Text(overviewText(actual))
+                .foregroundStyle(isReceived ? .green : (isOver ? .red : .secondary))
             if planned.units != 0 || planned.nanos != 0 {
                 Text("of \(displayText(planned)) planned")
                     .font(.caption2)
@@ -193,9 +196,23 @@ struct ExpenseOverviewListView: View {
                                 Text(transaction.name)
                                     .font(.caption)
                                 Spacer()
-                                Text(displayText((units: transaction.amount.units, nanos: transaction.amount.nanos)))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                // A transaction row, so it reads exactly as it
+                                // does on the Transactions tab: -$X out, +$X in.
+                                // It showed an unsigned magnitude here, so the
+                                // same row disagreed with itself across tabs.
+                                Text(TransactionAmountFormatting.displayText(
+                                    units: transaction.amount.units,
+                                    nanos: transaction.amount.nanos,
+                                    currencyCode: currencyCode,
+                                    localeIdentifier: localeIdentifier
+                                ))
+                                .font(.caption)
+                                .foregroundStyle(
+                                    TransactionAmountFormatting.isReceived(
+                                        units: transaction.amount.units,
+                                        nanos: transaction.amount.nanos
+                                    ) ? .green : .secondary
+                                )
                             }
                         }
                     }
@@ -223,6 +240,14 @@ struct ExpenseOverviewListView: View {
 
     private func displayText(_ amount: (units: Int64, nanos: Int32)) -> String {
         MoneyFormatting.format(units: amount.units, nanos: amount.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+    }
+
+    /// Actual-spend amounts, which are the only ones here that can net
+    /// negative. `displayText` still serves the amounts that can't — planned,
+    /// income, over-budget, unplanned — and the remainders, where a negative
+    /// means "past your income" rather than "received".
+    private func overviewText(_ amount: (units: Int64, nanos: Int32)) -> String {
+        OverviewAmountFormatting.text(amount, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 
 
