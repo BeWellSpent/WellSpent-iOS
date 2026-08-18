@@ -39,6 +39,27 @@ nonisolated enum ExpensePlanCalculations {
         return TransactionAmountFormatting.sum(fixedPlannedAmounts)
     }
 
+    /// What a Plan row's amount column shows: the planned amount, or — when
+    /// nothing is planned but a bill is coming — the upcoming amount, flagged
+    /// so the view can mute it and caption it with a due date.
+    ///
+    /// Mirrors web's `categoryTotalDisplay` (expensesPanel/helpers.ts). The
+    /// two numbers must not be confused for one another: the planned amount
+    /// counts toward the Committed total under the list, the upcoming one
+    /// counts toward nothing at all (issue #48).
+    static func categoryTotal(
+        planned: (units: Int64, nanos: Int32),
+        notDue: (units: Int64, nanos: Int32)
+    ) -> (amount: (units: Int64, nanos: Int32), isNotDue: Bool) {
+        if planned.units != 0 || planned.nanos != 0 {
+            return (planned, false)
+        }
+        if notDue.units != 0 || notDue.nanos != 0 {
+            return (notDue, true)
+        }
+        return ((0, 0), false)
+    }
+
     /// Filters to categories that should appear in the Plan list (has
     /// allocations, is Savings with sources present, or has a nonzero fixed
     /// fallback), then sorts by planned total descending

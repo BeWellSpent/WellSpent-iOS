@@ -165,13 +165,28 @@ struct ExpensePlanView: View {
     }
 
     private func categoryRow(_ category: Wellspent_V1_Category, viewModel: ExpensePlanViewModel, canEdit: Bool) -> some View {
+        let total = ExpensePlanCalculations.categoryTotal(
+            planned: viewModel.plannedTotal(for: category),
+            notDue: viewModel.notDuePlannedTotal(for: category)
+        )
+        let dueText = viewModel.nextDueText(for: category)
         let row = HStack {
             ColorDotView(hex: category.color)
-            Text(category.name)
-                .foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(category.name)
+                    .foregroundStyle(.primary)
+                // Only on a not-due row, so an amount that counts toward
+                // nothing always says so rather than looking like a plan.
+                if total.isNotDue && !dueText.isEmpty {
+                    Text("Not due this period — next due \(dueText)")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .accessibilityIdentifier("planCategoryNotDue_\(category.name)")
+                }
+            }
             Spacer()
-            Text(displayText(viewModel.plannedTotal(for: category)))
-                .foregroundStyle(.secondary)
+            Text(displayText(total.amount))
+                .foregroundStyle(total.isNotDue ? .tertiary : .secondary)
         }
         return Group {
             if canEdit {

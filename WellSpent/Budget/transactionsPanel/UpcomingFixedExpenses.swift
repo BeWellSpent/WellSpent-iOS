@@ -28,23 +28,28 @@ nonisolated enum UpcomingFixedExpenses {
     ) -> [Wellspent_V1_FixedExpense] {
         guard !isArchivedPeriod else { return [] }
         let spawnedIDs = Set(transactions.map(\.fixedExpenseID))
-        return expenses.filter { $0.isActive && !spawnedIDs.contains($0.id) }
+        return expenses
+            .filter { $0.isActive && !spawnedIDs.contains($0.id) }
+            // Soonest first. These arrive in ListFixedExpenses' `ORDER BY
+            // name`, which says nothing about what is about to be charged
+            // (issue #48). A template with no next due date sorts last rather
+            // than jumping to the front as a zero timestamp would.
+            .sorted { nextDueSortKey($0) < nextDueSortKey($1) }
+    }
+
+    private static func nextDueSortKey(_ expense: Wellspent_V1_FixedExpense) -> Int64 {
+        expense.hasNextDueDate ? expense.nextDueDate.seconds : .max
     }
 
     /// The next due date, formatted for the row caption. Empty when the
     /// backend didn't supply one.
-    ///
-    /// Read through `dateOnly`, never the raw timestamp: `next_due_date` is a
-    /// DATE-only value the backend encodes as midnight UTC, so interpreting it
-    /// in a timezone behind UTC lands a day early (see `Shared/DateOnly.swift`).
     static func nextDueText(
         for expense: Wellspent_V1_FixedExpense,
         localeIdentifier: String
     ) -> String {
-        guard expense.hasNextDueDate else { return "" }
-        return expense.nextDueDate.dateOnly.formatted(
-            Date.FormatStyle(date: .abbreviated, time: .omitted)
-                .locale(Locale(identifier: localeIdentifier))
+        NextDueDateFormatting.text(
+            expense.hasNextDueDate ? expense.nextDueDate : nil,
+            localeIdentifier: localeIdentifier
         )
     }
 }
