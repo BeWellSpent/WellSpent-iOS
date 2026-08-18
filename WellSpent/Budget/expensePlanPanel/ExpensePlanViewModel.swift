@@ -59,10 +59,27 @@ final class ExpensePlanViewModel {
     }
 
     func plannedTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
-        guard let summary = summary?.planCategories.first(where: { $0.categoryID == category.id }) else {
-            return (0, 0)
-        }
-        return TransactionAmountFormatting.tuple(from: summary.plannedTotal)
+        guard let row = planRow(for: category) else { return (0, 0) }
+        return TransactionAmountFormatting.tuple(from: row.plannedTotal)
+    }
+
+    /// Fixed expenses templated for this category but not due in this period.
+    /// Shown as a muted caption and counted toward nothing — see
+    /// `ExpensePlanCalculations.categoryTotal` (issue #48).
+    func notDuePlannedTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
+        guard let row = planRow(for: category), row.hasNotDuePlannedTotal else { return (0, 0) }
+        return TransactionAmountFormatting.tuple(from: row.notDuePlannedTotal)
+    }
+
+    /// When this category next costs anything, for the not-due caption.
+    /// Empty when nothing is upcoming.
+    func nextDueText(for category: Wellspent_V1_Category) -> String {
+        guard let row = planRow(for: category), row.hasNextDueDate else { return "" }
+        return NextDueDateFormatting.text(row.nextDueDate, localeIdentifier: localeIdentifier)
+    }
+
+    private func planRow(for category: Wellspent_V1_Category) -> Wellspent_V1_CategoryExpenseSummary? {
+        summary?.planCategories.first { $0.categoryID == category.id }
     }
 
     func allocations(for categoryID: Int32) -> [Wellspent_V1_ExpenseAllocation] {

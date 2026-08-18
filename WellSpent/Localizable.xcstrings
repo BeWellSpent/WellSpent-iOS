@@ -3348,6 +3348,22 @@
         }
       }
     },
+    "Not due this period — next due %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not due this period — next due %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No vence este período — próximo vencimiento %@"
+          }
+        }
+      }
+    },
     "Not now": {
       "localizations": {
         "en": {

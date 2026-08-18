@@ -113,4 +113,35 @@ struct UpcomingFixedExpensesTests {
         #expect(text.contains("1"))
         #expect(text.contains("Sep"))
     }
+
+    @Test("Upcoming bills are ordered soonest first, not by name")
+    func sortsByNextDueDateAscending() {
+        // ListFixedExpenses returns ORDER BY name, which tells the user
+        // nothing about what is about to be charged (issue #48).
+        let gym = dated(id: "fe-gym", seconds: 300)
+        let auto = dated(id: "fe-auto", seconds: 900)
+        let rent = dated(id: "fe-rent", seconds: 100)
+
+        let result = UpcomingFixedExpenses.notDue(expenses: [auto, gym, rent], transactions: [])
+
+        #expect(result.map(\.id) == ["fe-rent", "fe-gym", "fe-auto"])
+    }
+
+    @Test("A template with no next due date sorts last rather than first")
+    func sortsUndatedTemplatesLast() {
+        // Guards the obvious regression: an unset timestamp reads as zero
+        // seconds, which would put the bill we know least about at the top.
+        let undated = expense(id: "fe-undated")
+        let soon = dated(id: "fe-soon", seconds: 500)
+
+        let result = UpcomingFixedExpenses.notDue(expenses: [undated, soon], transactions: [])
+
+        #expect(result.map(\.id) == ["fe-soon", "fe-undated"])
+    }
+
+    private func dated(id: String, seconds: Int64) -> Wellspent_V1_FixedExpense {
+        var expense = expense(id: id)
+        expense.nextDueDate = .with { $0.seconds = seconds }
+        return expense
+    }
 }
