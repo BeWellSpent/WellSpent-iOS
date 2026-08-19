@@ -97,6 +97,38 @@
         }
       }
     },
+    "(carried over)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(carried over)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(trasladado)"
+          }
+        }
+      }
+    },
+    "(installments)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(installments)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(cuotas)"
+          }
+        }
+      }
+    },
     "(linked to %@)": {
       "localizations": {
         "en": {
@@ -669,6 +701,22 @@
         }
       }
     },
+    "Balance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balance"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saldo"
+          }
+        }
+      }
+    },
     "Bank Connections": {
       "localizations": {
         "en": {
@@ -875,6 +923,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancelada"
+          }
+        }
+      }
+    },
+    "Carry balance forward": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carry balance forward"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trasladar el saldo"
           }
         }
       }
@@ -1242,6 +1306,22 @@
         }
       }
     },
+    "Couldn't create the installment plan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't create the installment plan."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo crear el plan de cuotas."
+          }
+        }
+      }
+    },
     "Couldn't delete that fixed expense.": {
       "localizations": {
         "en": {
@@ -1290,6 +1370,22 @@
         }
       }
     },
+    "Couldn't save this setting.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't save this setting."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar esta configuración."
+          }
+        }
+      }
+    },
     "Couldn't save your preferences.": {
       "localizations": {
         "en": {
@@ -1302,6 +1398,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "No se pudieron guardar tus preferencias."
+          }
+        }
+      }
+    },
+    "Couldn't undo the split.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't undo the split."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo deshacer la división."
           }
         }
       }
@@ -1366,6 +1478,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Crear presupuesto"
+          }
+        }
+      }
+    },
+    "Create plan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create plan"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear plan"
           }
         }
       }
@@ -1526,6 +1654,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Débito"
+          }
+        }
+      }
+    },
+    "Defaults to next month — a card bills the statement after the one you bought in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defaults to next month — a card bills the statement after the one you bought in."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por defecto el mes próximo — la tarjeta cobra en el resumen siguiente al de la compra."
           }
         }
       }
@@ -1799,6 +1943,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "EUR"
+          }
+        }
+      }
+    },
+    "Each payment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each payment"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada cuota"
           }
         }
       }
@@ -2267,6 +2427,22 @@
         }
       }
     },
+    "First payment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First payment"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primera cuota"
+          }
+        }
+      }
+    },
     "Fixed": {
       "localizations": {
         "en": {
@@ -2632,6 +2808,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apellido"
+          }
+        }
+      }
+    },
+    "Last payment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last payment"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última cuota"
           }
         }
       }
@@ -3460,6 +3652,24 @@
         }
       }
     },
+    "Number of payments: %d": {
+      "comment": "A stepper that lets the user select the number of payments for a new installment plan.",
+      "isCommentAutoGenerated": true,
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number of payments: %d"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cantidad de cuotas: %d"
+          }
+        }
+      }
+    },
     "One-off": {
       "localizations": {
         "en": {
@@ -3488,6 +3698,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Único"
+          }
+        }
+      }
+    },
+    "Only a budget admin can change this.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only a budget admin can change this."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo un administrador del presupuesto puede cambiar esto."
           }
         }
       }
@@ -4844,6 +5070,22 @@
         }
       }
     },
+    "Split into installments": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Split into installments"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dividir en cuotas"
+          }
+        }
+      }
+    },
     "Start date": {
       "localizations": {
         "en": {
@@ -5017,6 +5259,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Frecuencia de pago de impuestos"
+          }
+        }
+      }
+    },
+    "The original purchase stays visible but stops counting toward totals.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The original purchase stays visible but stops counting toward totals."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La compra original sigue visible pero deja de contar en los totales."
+          }
+        }
+      }
+    },
+    "The plan and its remaining payments will be deleted, and this purchase will count toward its period again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The plan and its remaining payments will be deleted, and this purchase will count toward its period again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminarán el plan y sus cuotas restantes, y esta compra volverá a contar en su período."
           }
         }
       }
@@ -5225,6 +5499,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sin categoría"
+          }
+        }
+      }
+    },
+    "Undo installment split": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo installment split"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deshacer la división en cuotas"
+          }
+        }
+      }
+    },
+    "Undo split": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo split"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deshacer división"
           }
         }
       }
@@ -5507,6 +5813,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "WellSpent le pedirá a este banco todo su historial de transacciones otra vez, empezando ahora. Las transacciones que eliminaste volverán a aparecer. Las ya importadas no se duplicarán. Disponible una vez al día por banco."
+          }
+        }
+      }
+    },
+    "When a period ends, roll its balance into the next one. Money left over is added to Savings; if you overspent, the shortfall is split across the payment methods you spent it on, so the debt shows where it came from.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a period ends, roll its balance into the next one. Money left over is added to Savings; if you overspent, the shortfall is split across the payment methods you spent it on, so the debt shows where it came from."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando termina un período, traslada su saldo al siguiente. El dinero que sobra se suma a Ahorros; si te pasaste, la diferencia se reparte entre los métodos de pago con los que gastaste, para que la deuda muestre de dónde viene."
           }
         }
       }

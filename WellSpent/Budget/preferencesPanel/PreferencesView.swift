@@ -51,6 +51,13 @@ struct PreferencesView: View {
                         Text(errorMessage).foregroundStyle(.red)
                     }
                 }
+
+                // Budget-wide, Admin only — deliberately its own section and
+                // its own view model, unlike the per-person settings above.
+                CarryoverSettingsSection(
+                    budgetProfileID: budgetProfileID,
+                    authenticatedClient: authenticatedClient
+                )
             } else {
                 ProgressView()
             }

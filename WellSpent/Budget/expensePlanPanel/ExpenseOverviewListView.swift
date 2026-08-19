@@ -71,9 +71,17 @@ struct ExpenseOverviewListView: View {
 
                 let uncategorized = viewModel.uncategorizedTotal
                 if uncategorized.units != 0 || uncategorized.nanos != 0 {
-                    LabeledContent("Uncategorized", value: displayText(uncategorized))
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("overviewUncategorizedTotal")
+                    // Orange and semibold, like web: unattributed spend is a
+                    // thing to go and fix, not a neutral line item.
+                    LabeledContent {
+                        Text(overviewText(uncategorized))
+                            .foregroundStyle(.orange)
+                            .fontWeight(.semibold)
+                    } label: {
+                        Text("Uncategorized")
+                            .foregroundStyle(.secondary)
+                    }
+                    .accessibilityIdentifier("overviewUncategorizedTotal")
                 }
             }
 
@@ -88,17 +96,19 @@ struct ExpenseOverviewListView: View {
 
                 LabeledContent("Income", value: displayText(income))
                     .accessibilityIdentifier("overviewIncomeTotal")
-                LabeledContent("Actual", value: displayText(actual))
+                LabeledContent("Actual", value: overviewText(actual))
                     .accessibilityIdentifier("overviewActualTotal")
                 LabeledContent("Planned", value: displayText(planned))
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("overviewPlannedTotal")
                 if income.units != 0 || income.nanos != 0 {
+                    // isNegative, not `units < 0`: a -$0.50 remainder has
+                    // units == 0 and would otherwise read green.
                     LabeledContent("Remaining (actual)", value: displayText(actualRemainder))
-                        .foregroundStyle(actualRemainder.units < 0 ? .red : .green)
+                        .foregroundStyle(MoneyFormatting.isNegative(units: actualRemainder.units, nanos: actualRemainder.nanos) ? .red : .green)
                         .accessibilityIdentifier("overviewActualRemainderTotal")
                     LabeledContent("Remaining (planned)", value: displayText(plannedRemainder))
-                        .foregroundStyle(plannedRemainder.units < 0 ? .red : .green)
+                        .foregroundStyle(MoneyFormatting.isNegative(units: plannedRemainder.units, nanos: plannedRemainder.nanos) ? .red : .green)
                         .accessibilityIdentifier("overviewPlannedRemainderTotal")
                 }
                 if overBudget.units != 0 || overBudget.nanos != 0 {
@@ -167,9 +177,10 @@ struct ExpenseOverviewListView: View {
     /// comparison web's separate Planned table column shows, in the space
     /// a single mobile row has available.
     private func amountColumn(actual: (units: Int64, nanos: Int32), planned: (units: Int64, nanos: Int32), isOver: Bool) -> some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            Text(displayText(actual))
-                .foregroundStyle(isOver ? .red : .secondary)
+        let tone = OverviewAmountFormatting.tone(actual: actual, planned: planned, isOver: isOver)
+        return VStack(alignment: .trailing, spacing: 0) {
+            Text(overviewText(actual))
+                .foregroundStyle(Self.style(for: tone))
             if planned.units != 0 || planned.nanos != 0 {
                 Text("of \(displayText(planned)) planned")
                     .font(.caption2)
@@ -193,9 +204,23 @@ struct ExpenseOverviewListView: View {
                                 Text(transaction.name)
                                     .font(.caption)
                                 Spacer()
-                                Text(displayText((units: transaction.amount.units, nanos: transaction.amount.nanos)))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                // A transaction row, so it reads exactly as it
+                                // does on the Transactions tab: -$X out, +$X in.
+                                // It showed an unsigned magnitude here, so the
+                                // same row disagreed with itself across tabs.
+                                Text(TransactionAmountFormatting.displayText(
+                                    units: transaction.amount.units,
+                                    nanos: transaction.amount.nanos,
+                                    currencyCode: currencyCode,
+                                    localeIdentifier: localeIdentifier
+                                ))
+                                .font(.caption)
+                                .foregroundStyle(
+                                    TransactionAmountFormatting.isReceived(
+                                        units: transaction.amount.units,
+                                        nanos: transaction.amount.nanos
+                                    ) ? .green : .secondary
+                                )
                             }
                         }
                     }
@@ -223,6 +248,25 @@ struct ExpenseOverviewListView: View {
 
     private func displayText(_ amount: (units: Int64, nanos: Int32)) -> String {
         MoneyFormatting.format(units: amount.units, nanos: amount.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+    }
+
+    /// How each tone paints. Kept beside the view rather than in the pure
+    /// helper so `OverviewAmountFormatting` needn't import SwiftUI.
+    private static func style(for tone: OverviewAmountFormatting.Tone) -> AnyShapeStyle {
+        switch tone {
+        case .received, .withinPlan: AnyShapeStyle(Color.green)
+        case .over: AnyShapeStyle(Color.red)
+        case .unplanned: AnyShapeStyle(HierarchicalShapeStyle.secondary)
+        case .zero: AnyShapeStyle(HierarchicalShapeStyle.tertiary)
+        }
+    }
+
+    /// Actual-spend amounts, which are the only ones here that can net
+    /// negative. `displayText` still serves the amounts that can't — planned,
+    /// income, over-budget, unplanned — and the remainders, where a negative
+    /// means "past your income" rather than "received".
+    private func overviewText(_ amount: (units: Int64, nanos: Int32)) -> String {
+        OverviewAmountFormatting.text(amount, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 
 
