@@ -1,4 +1,5 @@
 import Foundation
+import WellSpentAPI
 
 /// Formats a proto `Money` value (units + nanos, base-10^9 fixed point) as a
 /// localized currency string. Mirrors web's `formatMoney`/`formatMoneyFromNumber`
@@ -28,5 +29,17 @@ nonisolated enum MoneyFormatting {
         // Invalid/unrecognized currency code: fall back to a plain numeric
         // string with the code appended rather than showing nothing.
         return String(format: "%.2f %@", amount, currencyCode)
+    }
+}
+
+extension MoneyFormatting {
+    /// Whether two Money values represent different amounts.
+    ///
+    /// Compares units and nanos directly rather than going through a Double —
+    /// the same exact-arithmetic rule the backend follows, for the same reason
+    /// (see `internal/handler/convert.go`'s `moneyFromNumeric`, where a
+    /// float64 intermediate produced values off by one nano).
+    static func differs(_ lhs: Wellspent_V1_Money, _ rhs: Wellspent_V1_Money) -> Bool {
+        lhs.units != rhs.units || lhs.nanos != rhs.nanos
     }
 }

@@ -52,9 +52,8 @@ struct PreferencesView: View {
                     }
                 }
 
-                // Budget-wide, Admin only — deliberately its own section and
-                // its own view model, unlike the per-person settings above.
-                CarryoverSettingsSection(
+                // Budget-wide, Admin only — unlike the per-person settings above.
+                BudgetSettingsSections(
                     budgetProfileID: budgetProfileID,
                     authenticatedClient: authenticatedClient
                 )

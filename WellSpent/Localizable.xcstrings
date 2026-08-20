@@ -3862,6 +3862,22 @@
         }
       }
     },
+    "Paid at a different amount than planned. From the next period on, this bill will be planned at what you actually paid.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paid at a different amount than planned. From the next period on, this bill will be planned at what you actually paid."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagada por un importe distinto al planificado. A partir del próximo período, esta factura se planificará con lo que realmente pagaste."
+          }
+        }
+      }
+    },
     "Paid date": {
       "localizations": {
         "en": {
@@ -4112,6 +4128,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Planificado"
+          }
+        }
+      }
+    },
+    "Planned amounts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planned amounts"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importes planificados"
           }
         }
       }
@@ -5645,6 +5677,22 @@
         }
       }
     },
+    "Update the plan when a bill costs more": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update the plan when a bill costs more"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar el plan cuando una factura cuesta más"
+          }
+        }
+      }
+    },
     "Upgrade to Pro for unlimited people, income sources, and alerts, plus Plaid bank sync.": {
       "localizations": {
         "en": {
@@ -5829,6 +5877,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cuando termina un período, traslada su saldo al siguiente. El dinero que sobra se suma a Ahorros; si te pasaste, la diferencia se reparte entre los métodos de pago con los que gastaste, para que la deuda muestre de dónde viene."
+          }
+        }
+      }
+    },
+    "When you mark a bill paid at a different amount, plan future periods at that new amount. The period you're paying keeps its original plan — only later ones change. Turn this off to keep your planned amounts exactly as you set them.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you mark a bill paid at a different amount, plan future periods at that new amount. The period you're paying keeps its original plan — only later ones change. Turn this off to keep your planned amounts exactly as you set them."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando marcas una factura como pagada por un importe distinto, planifica los períodos futuros con ese nuevo importe. El período que estás pagando conserva su plan original; solo cambian los siguientes. Desactívalo para mantener tus importes planificados tal como los definiste."
           }
         }
       }

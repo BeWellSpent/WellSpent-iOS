@@ -13,6 +13,11 @@ final class FixedExpensesViewModel {
 
     private static let logger = AppLogger.logger("FixedExpenses")
 
+    /// The budget's auto_update_planned_amount setting. Defaults to true,
+    /// matching the column default, so the marker doesn't blink off while the
+    /// profile loads. Fetched here rather than threaded down — same
+    /// per-view-model precedent as AlertsViewModel's own GetMe call.
+    private(set) var autoUpdatePlannedAmount = true
     private(set) var isLoading = false
     private(set) var transactions: [Wellspent_V1_Transaction] = []
     private(set) var fixedExpenses: [Wellspent_V1_FixedExpense] = []
@@ -67,6 +72,7 @@ final class FixedExpensesViewModel {
         async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
         async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let profileResponse = client.getBudgetProfile(request: .with { $0.id = budgetProfileID })
 
         switch await transactionsResponse.result {
         case .success(let message):
@@ -90,6 +96,9 @@ final class FixedExpensesViewModel {
         }
         if case .success(let message) = await peopleResponse.result {
             people = message.people
+        }
+        if case .success(let message) = await profileResponse.result {
+            autoUpdatePlannedAmount = message.profile.autoUpdatePlannedAmount
         }
     }
 
