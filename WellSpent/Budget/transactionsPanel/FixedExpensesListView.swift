@@ -349,6 +349,7 @@ struct FixedExpensesListView: View {
                     localeIdentifier: localeIdentifier,
                     canEdit: canEdit,
                     canMutate: canMutate,
+                    autoUpdatePlannedAmount: viewModel.autoUpdatePlannedAmount,
                     onEdit: {
                         Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
                         activeSheet = .editTransaction(transaction)
@@ -381,8 +382,11 @@ private struct FixedExpenseRow: View {
     let localeIdentifier: String
     let canEdit: Bool
     let canMutate: Bool
+    /// The budget's auto_update_planned_amount setting — drives the re-plan marker.
+    let autoUpdatePlannedAmount: Bool
     let onEdit: () -> Void
     let onMarkPaid: () -> Void
+    @State private var isRePlanNoticePresented = false
 
     @State private var isExpanded = false
 
@@ -426,6 +430,26 @@ private struct FixedExpenseRow: View {
 
                 if canMutate {
                     Button {
+                        if transaction.isPaid && autoUpdatePlannedAmount && !transaction.fixedExpenseID.isEmpty
+                            && MoneyFormatting.differs(transaction.amount, transaction.plannedAmount) {
+                            // No hover on iOS, so this is a tappable popover
+                            // rather than web's tooltip.
+                            Button {
+                                isRePlanNoticePresented = true
+                            } label: {
+                                Image(systemName: "exclamationmark.circle")
+                                    .foregroundStyle(.orange)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("rePlanMarker_\(transaction.name)")
+                            .popover(isPresented: $isRePlanNoticePresented) {
+                                Text("Paid at a different amount than planned. From the next period on, this bill will be planned at what you actually paid.")
+                                    .font(.footnote)
+                                    .padding()
+                                    .frame(maxWidth: 280)
+                                    .presentationCompactAdaptation(.popover)
+                            }
+                        }
                         if transaction.isPaid {
                             Task { await viewModel.unmark(transaction) }
                         } else {

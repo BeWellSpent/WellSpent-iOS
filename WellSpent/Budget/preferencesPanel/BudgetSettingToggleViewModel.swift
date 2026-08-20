@@ -2,15 +2,12 @@ import Foundation
 import Observation
 import WellSpentAPI
 
-/// Budget-wide carryover setting.
-///
-/// Kept separate from `PreferencesViewModel` even though both back the same
-/// screen: that one holds the caller's own view preferences and is deliberately
-/// not role-gated, while this changes what every member's next period will
-/// contain and is Admin only.
+/// Backs `BudgetSettingToggleSection`. The specific field is supplied by the
+/// caller as a read/write pair, so one view model serves every budget-wide
+/// boolean instead of one per setting.
 @MainActor
 @Observable
-final class CarryoverSettingsViewModel {
+final class BudgetSettingToggleViewModel {
     private(set) var isEnabled = false
     private(set) var isLoading = false
     private(set) var isSaving = false
@@ -20,11 +17,21 @@ final class CarryoverSettingsViewModel {
     private let budgetProfileID: String
     private let currentUserID: String?
     private let client: Wellspent_V1_BudgetServiceClient
+    private let read: (Wellspent_V1_BudgetProfile) -> Bool
+    private let write: (Wellspent_V1_BudgetServiceClient, String, Bool) async -> String?
 
-    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
+    init(
+        budgetProfileID: String,
+        currentUserID: String?,
+        authenticatedClient: ProtocolClient,
+        read: @escaping (Wellspent_V1_BudgetProfile) -> Bool,
+        write: @escaping (Wellspent_V1_BudgetServiceClient, String, Bool) async -> String?
+    ) {
         self.budgetProfileID = budgetProfileID
         self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.read = read
+        self.write = write
     }
 
     func load() async {
@@ -33,16 +40,17 @@ final class CarryoverSettingsViewModel {
 
         let profileResponse = await client.getBudgetProfile(request: .with { $0.id = budgetProfileID })
         guard case .success(let profileMessage) = profileResponse.result else { return }
-        isEnabled = profileMessage.profile.carryoverEnabled
+        isEnabled = read(profileMessage.profile)
 
         let peopleResponse = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
         guard case .success(let peopleMessage) = peopleResponse.result else { return }
-        let role = BudgetRoleResolver.role(
-            currentUserID: currentUserID,
-            budgetOwnerUserID: profileMessage.profile.userID,
-            people: peopleMessage.people
+        isAdmin = BudgetRoleResolver.canManageUsers(
+            BudgetRoleResolver.role(
+                currentUserID: currentUserID,
+                budgetOwnerUserID: profileMessage.profile.userID,
+                people: peopleMessage.people
+            )
         )
-        isAdmin = BudgetRoleResolver.canManageUsers(role)
     }
 
     func update(enabled: Bool) async {
@@ -55,18 +63,9 @@ final class CarryoverSettingsViewModel {
         defer { isSaving = false }
         errorMessage = nil
 
-        let response = await client.setBudgetCarryoverEnabled(request: .with {
-            $0.budgetProfileID = budgetProfileID
-            $0.enabled = enabled
-        })
-
-        if case .failure(let error) = response.result {
+        if let failure = await write(client, budgetProfileID, enabled) {
             isEnabled = previous
-            errorMessage = error.message ?? String(
-                localized: "Couldn't save this setting.",
-                bundle: AppLanguageStore.currentBundle,
-                locale: AppLanguageStore.currentLocale
-            )
+            errorMessage = failure
         }
     }
 }
