@@ -21,36 +21,44 @@ struct BudgetSettingToggleSection: View {
     @Environment(SessionStore.self) private var session
     @State private var viewModel: BudgetSettingToggleViewModel?
 
+    /// The Section is rendered unconditionally, with the toggle simply disabled
+    /// until the view model loads.
+    ///
+    /// It must never resolve to empty content: a `List` only materialises rows
+    /// that actually produce something, so a view gated on `if let viewModel`
+    /// never becomes a row, never "appears", and therefore never runs the
+    /// `.task` that would have created that view model — the section stays
+    /// invisible forever. That deadlock is exactly what hid both budget
+    /// settings until it was found live.
     var body: some View {
-        Group {
-            if let viewModel {
-                Section {
-                    Toggle(isOn: Binding(
-                        get: { viewModel.isEnabled },
-                        set: { newValue in Task { await viewModel.update(enabled: newValue) } }
-                    )) {
-                        Text(title)
-                    }
-                    .disabled(!viewModel.isAdmin || viewModel.isSaving || viewModel.isLoading)
-                    .accessibilityIdentifier(accessibilityID)
-
-                    if !viewModel.isAdmin {
-                        Text("Only a budget admin can change this.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text(header)
-                } footer: {
-                    Text(footer)
+        Section {
+            Toggle(isOn: Binding(
+                get: { viewModel?.isEnabled ?? false },
+                set: { newValue in
+                    guard let viewModel else { return }
+                    Task { await viewModel.update(enabled: newValue) }
                 }
-
-                if let errorMessage = viewModel.errorMessage {
-                    Section {
-                        Text(errorMessage).foregroundStyle(.red)
-                    }
-                }
+            )) {
+                Text(title)
             }
+            .disabled(!canToggle)
+            .accessibilityIdentifier(accessibilityID)
+
+            if let viewModel, !viewModel.isLoading, !viewModel.isAdmin {
+                Text("Only a budget admin can change this.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let errorMessage = viewModel?.errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        } header: {
+            Text(header)
+        } footer: {
+            Text(footer)
         }
         .task {
             guard let authenticatedClient else { return }
@@ -65,5 +73,10 @@ struct BudgetSettingToggleSection: View {
             }
             await viewModel?.load()
         }
+    }
+
+    private var canToggle: Bool {
+        guard let viewModel else { return false }
+        return viewModel.isAdmin && !viewModel.isSaving && !viewModel.isLoading
     }
 }
