@@ -41,11 +41,8 @@ struct AddEditCategoryView: View {
                     }
                 }
             }
-            .navigationTitle(isEditing ? Text("Edit Category") : Text("Add Category"))
+            .sheetChrome(isEditing ? Text("Edit Category") : Text("Add Category")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

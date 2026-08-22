@@ -44,11 +44,8 @@ struct AddEditTransactionView: View {
                 attributionSection
                 errorSection
             }
-            .navigationTitle(isEditing ? Text("Edit Transaction") : Text("Add Transaction"))
+            .sheetChrome(isEditing ? Text("Edit Transaction") : Text("Add Transaction")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

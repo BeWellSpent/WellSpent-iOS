@@ -87,12 +87,7 @@ struct ColorDotPickerField<ID: Hashable>: View {
                         optionRow(id: option.id, name: option.name, hex: option.hex)
                     }
                 }
-                .navigationTitle(title)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { isPresented = false }
-                    }
-                }
+                .sheetChrome(Text(title)) { isPresented = false }
             }
             .presentationDetents([.medium, .large])
         }

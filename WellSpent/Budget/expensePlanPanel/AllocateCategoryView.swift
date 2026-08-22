@@ -44,11 +44,8 @@ struct AllocateCategoryView: View {
                     Text("Leave an amount blank to remove that person's allocation for this category.")
                 }
             }
-            .navigationTitle(viewModel.category.displayName)
+            .sheetChrome(Text(verbatim: viewModel.category.displayName)) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         let changes = viewModel.computeChanges(currencyCode: currencyCode)

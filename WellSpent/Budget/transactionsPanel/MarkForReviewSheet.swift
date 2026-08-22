@@ -42,13 +42,7 @@ struct MarkForReviewSheet: View {
                     ProgressView()
                 }
             }
-            .navigationTitle("Flag for Review")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .sheetChrome(Text("Flag for Review")) { dismiss() }
             .task {
                 if viewModel == nil {
                     viewModel = MarkForReviewViewModel(

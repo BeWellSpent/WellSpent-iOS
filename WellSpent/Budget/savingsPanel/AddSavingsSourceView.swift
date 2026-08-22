@@ -58,11 +58,8 @@ struct AddSavingsSourceView: View {
                     }
                 }
             }
-            .navigationTitle("Add Savings")
+            .sheetChrome(Text("Add Savings")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

@@ -58,11 +58,8 @@ struct EditSavingsSourceView: View {
                     }
                 }
             }
-            .navigationTitle("Edit Savings")
+            .sheetChrome(Text("Edit Savings")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

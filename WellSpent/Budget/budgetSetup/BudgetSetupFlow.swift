@@ -58,12 +58,11 @@ struct BudgetSetupFlow: View {
                     )
                 }
             }
-            .navigationTitle("Step \(viewModel.step.rawValue + 1) of \(BudgetSetupViewModel.Step.allCases.count) — \(viewModel.step.title)")
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetChrome(Text("Step \(viewModel.step.rawValue + 1) of \(BudgetSetupViewModel.Step.allCases.count) — \(viewModel.step.title)"))
             .toolbar {
                 if viewModel.step == .create {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
+                        SheetCancelButton { dismiss() }
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button {

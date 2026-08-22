@@ -33,11 +33,8 @@ struct RemovePersonView: View {
                     }
                 }
             }
-            .navigationTitle("Remove Person")
+            .sheetChrome(Text("Remove Person")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Remove", role: .destructive) {
                         onConfirm(replacementID)

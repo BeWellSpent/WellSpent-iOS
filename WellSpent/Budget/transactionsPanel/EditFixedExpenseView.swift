@@ -35,11 +35,8 @@ struct EditFixedExpenseView: View {
                 attributionSection
                 errorSection
             }
-            .navigationTitle("Edit Fixed Expense")
+            .sheetChrome(Text("Edit Fixed Expense")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

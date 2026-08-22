@@ -39,11 +39,8 @@ struct AddEditIncomeView: View {
                 attributionSection
                 errorSection
             }
-            .navigationTitle(isEditing ? Text("Edit Income") : Text("Add Income"))
+            .sheetChrome(isEditing ? Text("Edit Income") : Text("Add Income")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

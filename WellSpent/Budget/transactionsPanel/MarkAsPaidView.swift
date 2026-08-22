@@ -38,11 +38,8 @@ struct MarkAsPaidView: View {
                 DatePicker("Paid date", selection: $paidDate, displayedComponents: .date)
                     .accessibilityIdentifier("markAsPaidDatePicker")
             }
-            .navigationTitle("Mark as Paid")
+            .sheetChrome(Text("Mark as Paid")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Confirm") {
                         if let amount = MoneyInput.parseAmount(amountText) {

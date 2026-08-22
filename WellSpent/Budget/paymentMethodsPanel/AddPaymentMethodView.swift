@@ -53,11 +53,8 @@ struct AddPaymentMethodView: View {
                     }
                 }
             }
-            .navigationTitle("Add Payment Method")
+            .sheetChrome(Text("Add Payment Method")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

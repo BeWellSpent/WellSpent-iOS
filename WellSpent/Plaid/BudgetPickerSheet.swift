@@ -24,13 +24,7 @@ struct BudgetPickerSheet: View {
                     }
                 }
             }
-            .navigationTitle("Choose a Budget")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .sheetChrome(Text("Choose a Budget")) { dismiss() }
         }
     }
 }

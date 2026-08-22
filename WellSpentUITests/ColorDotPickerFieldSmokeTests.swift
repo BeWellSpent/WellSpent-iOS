@@ -58,9 +58,18 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
             skipButton.tap()
         }
 
-        let budgetRow = app.buttons["budgetRow_\(budgetName)"]
-        XCTAssertTrue(budgetRow.waitForExistence(timeout: 10))
-        budgetRow.tap()
+        // The list shows budget *periods* grouped by year, not budget profiles —
+        // `budgetRow_<name>` stopped existing with the budget-list rework and this
+        // test had not caught up, so it could no longer get past this point. A
+        // freshly created profile has exactly one period, so the first match is it.
+        // This test still cannot pass end to end — see issue #58 for the two
+        // remaining breakages (the skipped Payment Methods step, and a budget
+        // that can no longer be deleted once it has a payment method).
+        let periodRow = app.buttons
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "periodRow_"))
+            .firstMatch
+        XCTAssertTrue(periodRow.waitForExistence(timeout: 10))
+        periodRow.tap()
 
         app.tabBars.buttons["Transactions"].tap()
 
@@ -82,7 +91,10 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         XCTAssertTrue(categoryPicker.waitForExistence(timeout: 5))
         XCTAssertFalse(noneOption.exists)
 
-        app.navigationBars.buttons["Cancel"].tap()
+        // Targeted by identifier, not by its "Cancel" label: the button is now
+        // an icon whose label is localized, and this suite has to keep working
+        // in whatever locale the simulator is running.
+        app.navigationBars.buttons["sheetCancelButton"].tap()
 
         // Cleanup: delete the budget so the test leaves no orphan data behind.
         let detailMenu = app.buttons["budgetDetailMenu"]
@@ -92,6 +104,6 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         app.buttons["Delete"].tap()
 
         XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["budgetRow_\(budgetName)"].exists)
+        XCTAssertFalse(periodRow.exists)
     }
 }
