@@ -59,7 +59,7 @@ nonisolated enum ExpenseChartCalculations {
             let value = amountValue(units: a.units, nanos: a.nanos)
             guard value > 0 else { return nil }
             let color = colorOverride(category) ?? (category.color.isEmpty ? fallbackPalette[index % fallbackPalette.count] : category.color)
-            return Datum(id: category.id, name: category.name, value: value, colorHex: color)
+            return Datum(id: category.id, name: category.displayName, value: value, colorHex: color)
         }
     }
 }

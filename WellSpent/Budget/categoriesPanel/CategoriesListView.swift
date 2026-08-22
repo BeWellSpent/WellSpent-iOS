@@ -140,7 +140,7 @@ struct CategoriesListView: View {
     private func systemCategoryRow(_ category: Wellspent_V1_Category, viewModel: CategoriesViewModel) -> some View {
         HStack {
             ColorDotView(hex: category.color)
-            Text(category.name)
+            Text(category.displayName)
             Spacer()
             if canEdit {
                 Button {
@@ -157,7 +157,7 @@ struct CategoriesListView: View {
     private func categoryRow(_ category: Wellspent_V1_Category, viewModel: CategoriesViewModel) -> some View {
         HStack {
             ColorDotView(hex: category.color)
-            Text(category.name)
+            Text(category.displayName)
             Spacer()
             if canEdit {
                 Button {

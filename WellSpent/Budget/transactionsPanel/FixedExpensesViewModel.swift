@@ -34,7 +34,7 @@ final class FixedExpensesViewModel {
     private let client: Wellspent_V1_BudgetServiceClient
 
     private var incomeCategoryID: Int32? {
-        categories.first { $0.isSystem && $0.name == "Income" }?.id
+        categories.first { $0.isSystem(.income) }?.id
     }
 
     /// Only paid Fixed transactions count toward the total — `amount` equals
@@ -134,9 +134,11 @@ final class FixedExpensesViewModel {
         return "\(made) / \(template.totalPayments) payments"
     }
 
+    /// The translated name, so a row's caption and the search that has to
+    /// match it both use what is actually on screen.
     func categoryName(for categoryID: Int32) -> String? {
         guard categoryID != 0 else { return nil }
-        return categories.first(where: { $0.id == categoryID })?.name
+        return categories.first(where: { $0.id == categoryID })?.displayName
     }
 
     func categoryColor(for categoryID: Int32) -> String {

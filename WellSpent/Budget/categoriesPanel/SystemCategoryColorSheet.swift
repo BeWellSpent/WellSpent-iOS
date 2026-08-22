@@ -24,7 +24,7 @@ struct SystemCategoryColorSheet: View {
                     .padding()
                 Spacer()
             }
-            .navigationTitle(category.name)
+            .navigationTitle(category.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -175,7 +175,7 @@ struct ExpensePlanView: View {
         let row = HStack {
             ColorDotView(hex: category.color)
             VStack(alignment: .leading, spacing: 2) {
-                Text(category.name)
+                Text(category.displayName)
                     .foregroundStyle(.primary)
                 // Only on a not-due row, so an amount that counts toward
                 // nothing always says so rather than looking like a plan.

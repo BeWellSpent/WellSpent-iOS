@@ -28,7 +28,7 @@ final class TransactionsViewModel {
     private let client: Wellspent_V1_BudgetServiceClient
 
     private var incomeCategoryID: Int32? {
-        categories.first { $0.isSystem && $0.name == "Income" }?.id
+        categories.first { $0.isSystem(.income) }?.id
     }
 
     /// Mirrors web's `computeOverBudgetTxIds` — for each category, the
@@ -133,9 +133,11 @@ final class TransactionsViewModel {
         TransactionReviewMatching.pendingMatchName(forTransactionID: transaction.id, reviews: reviews)
     }
 
+    /// The translated name, so a row's caption and the search that has to
+    /// match it both use what is actually on screen.
     func categoryName(for categoryID: Int32) -> String? {
         guard categoryID != 0 else { return nil }
-        return categories.first(where: { $0.id == categoryID })?.name
+        return categories.first(where: { $0.id == categoryID })?.displayName
     }
 
     func categoryColor(for categoryID: Int32) -> String {

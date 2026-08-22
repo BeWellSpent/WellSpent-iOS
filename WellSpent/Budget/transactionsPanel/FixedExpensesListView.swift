@@ -115,7 +115,7 @@ struct FixedExpensesListView: View {
             viewModel.transactions,
             filter: filter,
             searchQuery: searchQuery,
-            incomeCategoryID: viewModel.categories.first { $0.isSystem && $0.name == "Income" }?.id,
+            incomeCategoryID: viewModel.categories.first { $0.isSystem(.income) }?.id,
             overBudgetTransactionIDs: [],
             categoryName: viewModel.categoryName,
             ownerName: viewModel.ownerName

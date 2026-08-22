@@ -35,7 +35,7 @@ final class ExpenseOverviewViewModel {
     }
 
     private var incomeCategoryID: Int32? {
-        categories.first { $0.isSystem && $0.name == "Income" }?.id
+        categories.first { $0.isSystem(.income) }?.id
     }
 
     // Already visible-filtered (actual spend OR has a plan) and sorted by
