@@ -34,11 +34,8 @@ struct EditBudgetSheet: View {
                     }
                 }
             }
-            .navigationTitle("Edit Budget")
+            .sheetChrome(Text("Edit Budget")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

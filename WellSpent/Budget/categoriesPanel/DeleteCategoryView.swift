@@ -32,11 +32,8 @@ struct DeleteCategoryView: View {
                     )
                 }
             }
-            .navigationTitle("Delete Category")
+            .sheetChrome(Text("Delete Category")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Delete", role: .destructive) {
                         onConfirm(replacementID)

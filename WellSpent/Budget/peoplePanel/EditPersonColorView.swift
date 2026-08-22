@@ -21,12 +21,8 @@ struct EditPersonColorView: View {
                     .padding()
                 Spacer()
             }
-            .navigationTitle("Choose Color")
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetChrome(Text("Choose Color")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         onConfirm(color)

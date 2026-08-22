@@ -160,7 +160,7 @@ struct RootView: View {
                         budgetListRefreshTrigger += 1
                     },
                     onDismiss: {
-                        // True cancel (toolbar "Close") — forgets the invite
+                        // True cancel (the toolbar ✕) — forgets the invite
                         // entirely, unlike `onRequestAuth` below.
                         self.pendingInviteToken = nil
                         isInvitePreviewPresented = false

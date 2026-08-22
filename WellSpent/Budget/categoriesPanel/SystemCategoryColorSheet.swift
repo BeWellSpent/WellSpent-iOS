@@ -24,12 +24,8 @@ struct SystemCategoryColorSheet: View {
                     .padding()
                 Spacer()
             }
-            .navigationTitle(category.displayName)
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetChrome(Text(verbatim: category.displayName)) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         onConfirm(color)

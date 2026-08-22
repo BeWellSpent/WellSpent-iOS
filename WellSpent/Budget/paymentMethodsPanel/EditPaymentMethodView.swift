@@ -39,11 +39,8 @@ struct EditPaymentMethodView: View {
                     }
                 }
             }
-            .navigationTitle("Edit Payment Method")
+            .sheetChrome(Text("Edit Payment Method")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {

@@ -31,12 +31,7 @@ struct AddPlanCategoryView: View {
                     }
                 }
             }
-            .navigationTitle("Add Category")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .sheetChrome(Text("Add Category")) { dismiss() }
         }
     }
 }

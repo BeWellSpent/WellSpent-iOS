@@ -7,7 +7,7 @@ struct AcceptInviteView: View {
     /// view shows Sign In/Register buttons instead of an Accept button.
     private let isAuthenticated: Bool
     private let onAccepted: () -> Void
-    /// Toolbar "Close" — a true cancel, forgets the pending invite entirely.
+    /// The toolbar ✕ — a true cancel, forgets the pending invite entirely.
     private let onDismiss: () -> Void
     /// Sign In / Register CTAs — hides this screen so the caller's own
     /// login/register UI underneath becomes reachable, *without* forgetting
@@ -47,13 +47,7 @@ struct AcceptInviteView: View {
                         .padding()
                 }
             }
-            .navigationTitle("Budget Invite")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { onDismiss() }
-                        .accessibilityIdentifier("closeAcceptInviteButton")
-                }
-            }
+            .sheetChrome(Text("Budget Invite")) { onDismiss() }
             .task {
                 await viewModel.load()
             }

@@ -37,11 +37,8 @@ struct DeletePaymentMethodView: View {
                     )
                 }
             }
-            .navigationTitle("Delete Payment Method")
+            .sheetChrome(Text("Delete Payment Method")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Delete", role: .destructive) {
                         onConfirm(replacementID)

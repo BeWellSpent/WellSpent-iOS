@@ -25,12 +25,8 @@ struct InstallmentPlanSheet: View {
                     ProgressView()
                 }
             }
-            .navigationTitle("Split into installments")
-            .navigationBarTitleDisplayMode(.inline)
+            .sheetChrome(Text("Split into installments")) { dismiss() }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create plan") {
                         Task {
