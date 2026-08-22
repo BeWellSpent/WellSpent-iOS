@@ -17,7 +17,7 @@ struct DeleteCategoryView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text("All transactions in \"\(category.name)\" will be moved to the replacement category.")
+                    Text("All transactions in \"\(category.displayName)\" will be moved to the replacement category.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -25,7 +25,7 @@ struct DeleteCategoryView: View {
                         title: "Replacement",
                         selection: $replacementID,
                         options: otherCategories.map {
-                            ColorDotOption(id: $0.id, name: $0.isSystem ? "\($0.name) (System)" : $0.name, hex: $0.color)
+                            ColorDotOption(id: $0.id, name: $0.isSystem ? "\($0.displayName) (System)" : $0.displayName, hex: $0.color)
                         },
                         noneOption: (id: Int32(0), label: "Select a category"),
                         accessibilityIdentifier: "replacementCategoryPicker"

@@ -12,12 +12,15 @@ final class CategoriesViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
 
+    /// Sorted by the *displayed* name: the server orders by the English
+    /// name, which stops being the reader's order once system categories are
+    /// translated.
     var systemCategories: [Wellspent_V1_Category] {
-        categories.filter(\.isSystem).sorted { $0.name < $1.name }
+        SystemCategoryNames.sorted(categories.filter(\.isSystem))
     }
 
     var userCategories: [Wellspent_V1_Category] {
-        categories.filter { !$0.isSystem }.sorted { $0.name < $1.name }
+        SystemCategoryNames.sorted(categories.filter { !$0.isSystem })
     }
 
     init(budgetProfileID: String, authenticatedClient: ProtocolClient) {

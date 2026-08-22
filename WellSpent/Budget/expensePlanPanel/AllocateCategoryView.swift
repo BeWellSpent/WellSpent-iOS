@@ -44,7 +44,7 @@ struct AllocateCategoryView: View {
                     Text("Leave an amount blank to remove that person's allocation for this category.")
                 }
             }
-            .navigationTitle(viewModel.category.name)
+            .navigationTitle(viewModel.category.displayName)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

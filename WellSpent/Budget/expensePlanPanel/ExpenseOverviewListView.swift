@@ -150,7 +150,7 @@ struct ExpenseOverviewListView: View {
 
         return HStack {
             ColorDotView(hex: category.color)
-            Text(category.name)
+            Text(category.displayName)
             Spacer()
             overspendChip(actual: actual, planned: planned, isOver: isOver)
             amountColumn(actual: actual, planned: planned, isOver: isOver)

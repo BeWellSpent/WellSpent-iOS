@@ -24,7 +24,7 @@ struct AddPlanCategoryView: View {
                         } label: {
                             HStack {
                                 ColorDotView(hex: category.color)
-                                Text(category.name)
+                                Text(category.displayName)
                             }
                         }
                         .accessibilityIdentifier("addPlanCategory_\(category.name)")

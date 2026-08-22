@@ -5,10 +5,14 @@ import WellSpentAPI
 /// expensesPanel/helpers.ts). Kept free of network/view-model state so it's
 /// directly testable.
 nonisolated enum ExpensePlanCalculations {
-    /// Matches the "Savings" system category special-case already used for
-    /// the Income category (see docs/features/transactions.md).
+    /// Matches the Savings system category special-case already used for the
+    /// Income category (see docs/features/transactions.md).
+    ///
+    /// Identified by `systemCategory`, not by name: the name is translated, and
+    /// a name comparison that stops matching fails silently — the special case
+    /// just quietly stops applying.
     static func isSavingsCategory(_ category: Wellspent_V1_Category) -> Bool {
-        category.isSystem && category.name == "Savings"
+        category.isSystem(.savings)
     }
 
     /// Planned total for a single category:

@@ -85,11 +85,22 @@ struct ExpensePlanCalculationsTests {
 
     @Test("isSavingsCategory matches only the system Savings category")
     func isSavingsCategoryMatchesSystemSavings() {
-        let savings = Wellspent_V1_Category.with { $0.name = "Savings"; $0.isSystem = true }
+        let savings = Wellspent_V1_Category.with {
+            $0.name = "Savings"; $0.isSystem = true; $0.systemCategory = .savings
+        }
+        // A user category the owner happened to call "Savings". Identity comes
+        // from systemCategory now, so this must not match.
         let userSavings = Wellspent_V1_Category.with { $0.name = "Savings"; $0.isSystem = false }
-        let other = Wellspent_V1_Category.with { $0.name = "Groceries"; $0.isSystem = true }
+        let other = Wellspent_V1_Category.with {
+            $0.name = "Groceries"; $0.isSystem = true; $0.systemCategory = .groceries
+        }
+        // The system Savings category as a Spanish client sees it.
+        let translated = Wellspent_V1_Category.with {
+            $0.name = "Ahorros"; $0.isSystem = true; $0.systemCategory = .savings
+        }
 
         #expect(ExpensePlanCalculations.isSavingsCategory(savings))
+        #expect(ExpensePlanCalculations.isSavingsCategory(translated))
         #expect(!ExpensePlanCalculations.isSavingsCategory(userSavings))
         #expect(!ExpensePlanCalculations.isSavingsCategory(other))
     }
