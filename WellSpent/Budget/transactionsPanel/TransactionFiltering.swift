@@ -59,42 +59,4 @@ nonisolated enum TransactionFiltering {
             )
         }
     }
-
-    /// Mirrors web's `computeOverBudgetTxIds`: for each category, walks its
-    /// Variable transactions in chronological (date-ascending) order,
-    /// summing spent amounts, and flags every transaction from the point the
-    /// running sum first exceeds that category's planned total onward.
-    static func overBudgetTransactionIDs(
-        variableTransactions: [Wellspent_V1_Transaction],
-        plannedTotal: (Int32) -> (units: Int64, nanos: Int32)
-    ) -> Set<String> {
-        var flagged: Set<String> = []
-        let byCategory = Dictionary(grouping: variableTransactions, by: \.categoryID)
-
-        for (categoryID, transactions) in byCategory {
-            let planned = plannedTotal(categoryID)
-            guard planned.units != 0 || planned.nanos != 0 else { continue }
-
-            let chronological = transactions.sorted { $0.date.date < $1.date.date }
-            var runningTotal: (units: Int64, nanos: Int32) = (0, 0)
-            var hasExceeded = false
-
-            for transaction in chronological {
-                guard !TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos) else { continue }
-                runningTotal = TransactionAmountFormatting.sum([
-                    (units: runningTotal.units, nanos: runningTotal.nanos),
-                    (units: transaction.amount.units, nanos: transaction.amount.nanos)
-                ])
-                if !hasExceeded {
-                    hasExceeded = runningTotal.units > planned.units
-                        || (runningTotal.units == planned.units && runningTotal.nanos > planned.nanos)
-                }
-                if hasExceeded {
-                    flagged.insert(transaction.id)
-                }
-            }
-        }
-
-        return flagged
-    }
 }

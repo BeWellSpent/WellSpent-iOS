@@ -106,22 +106,4 @@ struct FixedExpenseSchedulingTests {
         #expect(FixedExpenseScheduling.totalPayments(fromEndDate: end, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1) == 1)
     }
 
-    @Test("paymentsMade counts elapsed intervals, clamped to the total")
-    func paymentsMadeClampsToTotal() {
-        let anchor = localDate(year: 2026, month: 1, day: 15)
-        // 3 months elapsed by April 15 -> payment 4 of 6.
-        let reference = localDate(year: 2026, month: 4, day: 15)
-        #expect(FixedExpenseScheduling.paymentsMade(totalPayments: 6, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1, referenceDate: reference) == 4)
-        // Long past the plan's end -> clamps to the total, doesn't overrun.
-        let farFuture = localDate(year: 2030, month: 1, day: 15)
-        #expect(FixedExpenseScheduling.paymentsMade(totalPayments: 6, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1, referenceDate: farFuture) == 6)
-    }
-
-    @Test("paymentsMade is 0 before the plan starts and when totalPayments is unset")
-    func paymentsMadeBeforeStartOrUnset() {
-        let anchor = localDate(year: 2026, month: 6, day: 15)
-        let before = localDate(year: 2026, month: 1, day: 15)
-        #expect(FixedExpenseScheduling.paymentsMade(totalPayments: 6, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1, referenceDate: before) == 0)
-        #expect(FixedExpenseScheduling.paymentsMade(totalPayments: 0, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1) == 0)
-    }
 }

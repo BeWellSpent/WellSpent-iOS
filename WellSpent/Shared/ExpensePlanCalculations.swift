@@ -1,48 +1,14 @@
 import WellSpentAPI
 
-/// Pure planned-total derivation for the Expense Plan tab, mirroring web's
-/// `getCatPlanned`/`computeCategoryRow` (WellSpent-web/src/components/budget/
-/// expensesPanel/helpers.ts). Kept free of network/view-model state so it's
-/// directly testable.
+/// Pure display derivation for the Expense Plan tab. Kept free of
+/// network/view-model state so it's directly testable.
+///
+/// Once the home of this tab's planned-total math; almost all of it moved to
+/// `GetExpenseSummary` (issue #35), and `plannedTotal` — the last piece, kept
+/// alive only by the Transactions tab's "Exceeded only" filter — went with it
+/// in #61. What remains is genuinely presentational: which of two amounts a
+/// row shows, and how to say so.
 nonisolated enum ExpensePlanCalculations {
-    /// Matches the Savings system category special-case already used for the
-    /// Income category (see docs/features/transactions.md).
-    ///
-    /// Identified by `systemCategory`, not by name: the name is translated, and
-    /// a name comparison that stops matching fails silently — the special case
-    /// just quietly stops applying.
-    static func isSavingsCategory(_ category: Wellspent_V1_Category) -> Bool {
-        category.isSystem(.savings)
-    }
-
-    /// Planned total for a single category:
-    /// 1. Savings category -> sum of savings source amounts.
-    /// 2. Else -> sum of this category's `ExpenseAllocation.plannedAmount` across people.
-    /// 3. If that sum is zero -> fall back to the sum of current-period Fixed
-    ///    transactions' `plannedAmount` for this category.
-    /// Allocations and the fixed fallback are never combined for the same category.
-    static func plannedTotal(
-        for categoryID: Int32,
-        isSavings: Bool,
-        allocations: [Wellspent_V1_ExpenseAllocation],
-        savingsAmounts: [(units: Int64, nanos: Int32)],
-        fixedPlannedAmounts: [(units: Int64, nanos: Int32)]
-    ) -> (units: Int64, nanos: Int32) {
-        if isSavings {
-            return TransactionAmountFormatting.sum(savingsAmounts)
-        }
-
-        let allocationAmounts = allocations
-            .filter { $0.categoryID == categoryID }
-            .map { (units: $0.plannedAmount.units, nanos: $0.plannedAmount.nanos) }
-        let allocationTotal = TransactionAmountFormatting.sum(allocationAmounts)
-        if allocationTotal.units != 0 || allocationTotal.nanos != 0 {
-            return allocationTotal
-        }
-
-        return TransactionAmountFormatting.sum(fixedPlannedAmounts)
-    }
-
     /// What a Plan row's amount column shows: the planned amount, or — when
     /// nothing is planned but a bill is coming — the upcoming amount, flagged
     /// so the view can mute it and caption it with a due date.
@@ -64,26 +30,4 @@ nonisolated enum ExpensePlanCalculations {
         return ((0, 0), false)
     }
 
-    /// Filters to categories that should appear in the Plan list (has
-    /// allocations, is Savings with sources present, or has a nonzero fixed
-    /// fallback), then sorts by planned total descending
-    /// (docs/features/category-list-order.md).
-    static func sortedVisibleCategories(
-        categories: [Wellspent_V1_Category],
-        plannedTotal: (Wellspent_V1_Category) -> (units: Int64, nanos: Int32)
-    ) -> [Wellspent_V1_Category] {
-        categories
-            .filter { category in
-                let total = plannedTotal(category)
-                return total.units != 0 || total.nanos != 0
-            }
-            .sorted { lhs, rhs in
-                let lhsTotal = plannedTotal(lhs)
-                let rhsTotal = plannedTotal(rhs)
-                if lhsTotal.units != rhsTotal.units {
-                    return lhsTotal.units > rhsTotal.units
-                }
-                return lhsTotal.nanos > rhsTotal.nanos
-            }
-    }
 }

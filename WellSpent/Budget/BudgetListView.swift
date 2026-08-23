@@ -246,8 +246,8 @@ struct BudgetListView: View {
 
     private var versionFooter: some View {
         Group {
-            if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
-                Text("v\(version)")
+            if let version = AppVersion.displayText {
+                Text(verbatim: version)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .padding(.bottom, 8)

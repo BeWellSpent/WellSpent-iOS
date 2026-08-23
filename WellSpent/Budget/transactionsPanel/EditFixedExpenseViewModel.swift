@@ -46,6 +46,11 @@ final class EditFixedExpenseViewModel {
     /// would silently give the template a brand-new anchor_date, which can
     /// reschedule its entire due-month cadence for interval>1 expenses (see
     /// `fixedExpenseAnchor` in the backend's `budget_profile_service.go`).
+    /// The saved plan's progress, as the server computed it. Captured at init
+    /// rather than recomputed from the form: progress is a fact about the
+    /// saved plan, not the draft, so it holds still while the user edits and
+    /// updates on save. See `paymentsMadeText`.
+    private let savedPaymentsMade: Int32
     private let hadAnchorDate: Bool
     private let initialStartDate: Date
 
@@ -71,6 +76,7 @@ final class EditFixedExpenseViewModel {
 
         name = expense.name
         amountText = MoneyInput.formatForEditing(units: expense.plannedAmount.units, nanos: expense.plannedAmount.nanos)
+        savedPaymentsMade = expense.paymentsMade
         hadAnchorDate = expense.hasAnchorDate
         let resolvedStartDate = expense.hasAnchorDate
             ? expense.anchorDate.dateOnly
@@ -134,12 +140,16 @@ final class EditFixedExpenseViewModel {
     }
 
     /// "N of M payments made" progress text for the payment-plan section —
-    /// `nil` when there's no plan set. Purely a client-side estimate from
-    /// the schedule, same as web's `computePaymentsMade`.
+    /// `nil` when there's no plan set.
+    ///
+    /// The count comes from the server (`FixedExpensePaymentsMade`), mirroring
+    /// web. It used to be estimated here from the draft's own anchor and
+    /// interval, which could not be right for an expense with no `anchor_date`
+    /// — the real fallback is `created_at`, which is not on the wire — and
+    /// which disagreed with both the transaction row and web (#61).
     var paymentsMadeText: String? {
         guard let totalPayments = Int(paymentsText), totalPayments > 0 else { return nil }
-        let made = FixedExpenseScheduling.paymentsMade(totalPayments: totalPayments, anchor: startDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks)
-        return "\(made) of \(totalPayments) payments made"
+        return "\(savedPaymentsMade) of \(totalPayments) payments made"
     }
 
     func submit() async -> Wellspent_V1_FixedExpense? {

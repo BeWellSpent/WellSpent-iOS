@@ -24,6 +24,8 @@ final class FixedExpensesViewModel {
     private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var paymentMethods: [Wellspent_V1_PaymentMethod] = []
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
+    /// Period totals, computed server-side — see `totalText`.
+    private(set) var summary: Wellspent_V1_GetExpenseSummaryResponse?
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -33,19 +35,14 @@ final class FixedExpensesViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
 
-    private var incomeCategoryID: Int32? {
-        categories.first { $0.isSystem(.income) }?.id
-    }
-
-    /// Only paid Fixed transactions count toward the total — `amount` equals
-    /// `planned_amount` until a transaction is actually marked paid, so an
-    /// unpaid row would otherwise be counted as already spent (matches the
-    /// same fix applied to web's `TransactionsPanel.tsx` grand total).
+    /// Fixed spend for the period, server-computed. Only paid rows count —
+    /// `amount` equals `planned_amount` until a transaction is marked paid, so
+    /// an unpaid row would otherwise read as already spent. That rule, and the
+    /// exclusion rule beside it, now live in one place instead of being
+    /// re-applied here and again on web (#61).
     var totalText: String {
         TransactionAmountFormatting.totalDisplayText(
-            amounts: transactions
-                .filter { !ExpenseOverviewCalculations.isTransactionExcluded($0, incomeCategoryID: incomeCategoryID) && $0.isPaid }
-                .map { (units: $0.amount.units, nanos: $0.amount.nanos) },
+            amounts: [TransactionAmountFormatting.tuple(from: summary?.fixedActualTotal)],
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
         )
@@ -73,6 +70,7 @@ final class FixedExpensesViewModel {
         async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
         async let profileResponse = client.getBudgetProfile(request: .with { $0.id = budgetProfileID })
+        async let summaryResponse = client.getExpenseSummary(request: .with { $0.budgetPeriodID = budgetPeriodID })
 
         switch await transactionsResponse.result {
         case .success(let message):
@@ -100,6 +98,9 @@ final class FixedExpensesViewModel {
         if case .success(let message) = await profileResponse.result {
             autoUpdatePlannedAmount = message.profile.autoUpdatePlannedAmount
         }
+        if case .success(let message) = await summaryResponse.result {
+            summary = message
+        }
     }
 
     /// Confirmed review matches for this Fixed transaction, rendered as
@@ -108,30 +109,22 @@ final class FixedExpensesViewModel {
         TransactionReviewMatching.linkedReviews(forFixedTransactionID: transaction.id, reviews: reviews)
     }
 
-    /// "N / M payments" progress text for a row's linked template — mirrors
-    /// web's row display. Deliberately silent (no `AppLogger` calls, unlike
-    /// `template(for:)`): this runs on every row render, and logging there
-    /// would spam the log stream on every scroll/re-render rather than only
-    /// at the meaningful moments (load, edit-tap) `template(for:)` covers.
+    /// "N / M payments" progress text for a row's linked template.
+    ///
+    /// `paymentsMade` is server-computed. It used to be derived here from a
+    /// reconstructed anchor date, because `anchor_date` is nullable and the
+    /// real fallback — `fixed_expense.created_at` — is not on the wire. Web
+    /// guessed differently, so the same bill read `0 / 12` here and `1/12`
+    /// there (#61).
+    ///
+    /// Deliberately silent (no `AppLogger` calls, unlike `template(for:)`):
+    /// this runs on every row render, and logging here would spam the log
+    /// stream on every scroll rather than only at the meaningful moments.
     func paymentsProgressText(for transaction: Wellspent_V1_Transaction) -> String? {
         guard !transaction.fixedExpenseID.isEmpty,
               let template = fixedExpenses.first(where: { $0.id == transaction.fixedExpenseID }),
               template.totalPayments > 0 else { return nil }
-        let anchor = template.hasAnchorDate
-            ? template.anchorDate.dateOnly
-            : FixedExpenseScheduling.displayDate(
-                dayOfMonth: template.dayOfMonth,
-                dayOfWeek: template.dayOfWeek,
-                isWeekly: template.frequencyUnit == .week
-            )
-        let made = FixedExpenseScheduling.paymentsMade(
-            totalPayments: Int(template.totalPayments),
-            anchor: anchor,
-            frequencyUnit: template.frequencyUnit,
-            intervalMonths: Int(template.intervalMonths),
-            intervalWeeks: Int(template.intervalWeeks)
-        )
-        return "\(made) / \(template.totalPayments) payments"
+        return "\(template.paymentsMade) / \(template.totalPayments) payments"
     }
 
     /// The translated name, so a row's caption and the search that has to
