@@ -65,17 +65,6 @@ nonisolated enum FixedExpenseScheduling {
         max(1, intervalsElapsed(from: anchor, to: endDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks) + 1)
     }
 
-    /// How many payments have come due as of `referenceDate`, clamped to
-    /// `[0, totalPayments]` — used to show "N of M payments made" progress
-    /// in the Edit view. Purely a client-side estimate from the schedule
-    /// (anchor + interval), not derived from actual `is_paid` transaction
-    /// history — same approach web's `computePaymentsMade` uses.
-    static func paymentsMade(totalPayments: Int, anchor: Date, frequencyUnit: Wellspent_V1_FrequencyUnit, intervalMonths: Int, intervalWeeks: Int, referenceDate: Date = Date()) -> Int {
-        guard totalPayments > 0 else { return 0 }
-        let made = intervalsElapsed(from: anchor, to: referenceDate, frequencyUnit: frequencyUnit, intervalMonths: intervalMonths, intervalWeeks: intervalWeeks) + 1
-        return min(max(0, made), totalPayments)
-    }
-
     private static func intervalsElapsed(from anchor: Date, to date: Date, frequencyUnit: Wellspent_V1_FrequencyUnit, intervalMonths: Int, intervalWeeks: Int) -> Int {
         let calendar = Calendar.current
         if frequencyUnit == .week {

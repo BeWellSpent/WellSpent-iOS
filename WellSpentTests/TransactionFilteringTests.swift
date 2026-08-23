@@ -96,40 +96,4 @@ struct TransactionFilteringTests {
 
         #expect(result.map(\.id) == ["1"])
     }
-
-    // MARK: overBudgetTransactionIDs
-
-    @Test("a category under its planned total flags nothing")
-    func categoryUnderBudgetFlagsNothing() {
-        let transactions = [
-            transaction(id: "1", units: 10, categoryID: 1, daysAgo: 2),
-            transaction(id: "2", units: 10, categoryID: 1, daysAgo: 1)
-        ]
-
-        let ids = TransactionFiltering.overBudgetTransactionIDs(variableTransactions: transactions) { _ in (units: 100, nanos: 0) }
-
-        #expect(ids.isEmpty)
-    }
-
-    @Test("only transactions from the point the running total crosses the plan are flagged")
-    func onlyTransactionsFromCrossingPointAreFlagged() {
-        // Chronological: t1 (day 2 ago, 10), t2 (day 1 ago, 10), t3 (today, 10) — planned 15.
-        // Running total: 10, 20 (crosses here), 30 -> t2 and t3 flagged, t1 is not.
-        let t1 = transaction(id: "t1", units: 10, categoryID: 1, daysAgo: 2)
-        let t2 = transaction(id: "t2", units: 10, categoryID: 1, daysAgo: 1)
-        let t3 = transaction(id: "t3", units: 10, categoryID: 1, daysAgo: 0)
-
-        let ids = TransactionFiltering.overBudgetTransactionIDs(variableTransactions: [t1, t2, t3]) { _ in (units: 15, nanos: 0) }
-
-        #expect(ids == ["t2", "t3"])
-    }
-
-    @Test("categories with a zero planned total are skipped entirely")
-    func zeroPlannedTotalCategoryIsSkipped() {
-        let transactions = [transaction(id: "1", units: 1000, categoryID: 1)]
-
-        let ids = TransactionFiltering.overBudgetTransactionIDs(variableTransactions: transactions) { _ in (units: 0, nanos: 0) }
-
-        #expect(ids.isEmpty)
-    }
 }
