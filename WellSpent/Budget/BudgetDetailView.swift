@@ -9,8 +9,8 @@ import WellSpentAPI
 /// 2A/2B-1) are all real. Expense Overview (actual vs. planned) lands in
 /// 2C-2.
 ///
-/// This view is pushed via `NavigationLink` onto `BudgetListView`'s
-/// `NavigationStack`, but also nests its own per-tab `NavigationStack`s
+/// This is the app's home screen (issue #60) — `BudgetHomeView` renders it
+/// directly inside a `NavigationStack`. It nests its own per-tab `NavigationStack`s
 /// inside a `TabView` (`tabView`/`splitView`) so each tab keeps independent
 /// push state. That nesting means the *outer* stack owns the only nav bar
 /// that's actually rendered: `.toolbar` items from an inner stack surface
@@ -22,13 +22,13 @@ import WellSpentAPI
 /// themselves (which still declare their own for canvas-preview accuracy in
 /// isolation, but those never render in the real, nested app).
 struct BudgetDetailView: View {
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(SessionStore.self) private var session
     private let authenticatedClient: ProtocolClient?
     private let currencyCode: String
     private let localeIdentifier: String
     private let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
+    private let onUserUpdated: (Wellspent_V1_User) -> Void
     private let onDeleted: () -> Void
 
     @State private var viewModel: BudgetDetailViewModel?
@@ -43,8 +43,7 @@ struct BudgetDetailView: View {
     @State private var isAddCategoryPresented = false
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
-    @State private var isEditBudgetPresented = false
-    @State private var isDeleteBudgetConfirmationPresented = false
+    @State private var isMenuPresented = false
     @State private var isPaymentMethodRequiredPresented = false
     @State private var isPaymentMethodsPresented = false
 
@@ -55,12 +54,14 @@ struct BudgetDetailView: View {
         currencyCode: String,
         localeIdentifier: String,
         onUpdated: @escaping (Wellspent_V1_BudgetProfile) -> Void,
+        onUserUpdated: @escaping (Wellspent_V1_User) -> Void,
         onDeleted: @escaping () -> Void
     ) {
         self.authenticatedClient = authenticatedClient
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.onUpdated = onUpdated
+        self.onUserUpdated = onUserUpdated
         self.onDeleted = onDeleted
         _viewModel = State(initialValue: authenticatedClient.map {
             BudgetDetailViewModel(profile: profile, overridePeriodID: periodID, authenticatedClient: $0)
@@ -88,7 +89,7 @@ struct BudgetDetailView: View {
                 }
             }
         }
-        .navigationTitle(currentTitle)
+        .navigationTitle(selectedSection.screenTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
         .onChange(of: transactionsSelectedKind) { _, _ in
@@ -110,6 +111,19 @@ struct BudgetDetailView: View {
             // Needed by the toolbar's "+" gate, which is visible before
             // either transaction list mounts and loads its own copy.
             await viewModel?.loadPaymentMethods()
+        }
+        .sheet(isPresented: $isMenuPresented) {
+            if let viewModel {
+                BudgetMenuSheet(
+                    viewModel: viewModel,
+                    authenticatedClient: authenticatedClient,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    onUpdated: onUpdated,
+                    onUserUpdated: onUserUpdated,
+                    onDeleted: onDeleted
+                )
+            }
         }
         .alert("Add a payment method first", isPresented: $isPaymentMethodRequiredPresented) {
             Button("Add a payment method") { isPaymentMethodsPresented = true }
@@ -177,16 +191,6 @@ struct BudgetDetailView: View {
         present()
     }
 
-    /// Combines notifying the parent list (so it drops the deleted profile
-    /// from its own array) with actually popping this screen. Passed down as
-    /// a single closure so `BudgetManageView` — which sits inside its own
-    /// nested `NavigationStack` — doesn't need its own `@Environment(\.dismiss)`,
-    /// which would only pop within that inner stack.
-    private func dismissAfterDelete() {
-        onDeleted()
-        dismiss()
-    }
-
     /// Shown above the tab content, regardless of which tab is selected —
     /// mirrors web's `BudgetView.tsx` banner placement.
     private var archivedPeriodBanner: some View {
@@ -224,33 +228,31 @@ struct BudgetDetailView: View {
             .badge(reviewViewModel?.pendingReviews.count ?? 0)
 
             NavigationStack {
-                manageContent(viewModel: viewModel)
+                reportsContent
             }
-            .tabItem { Label(BudgetSection.manage.title, systemImage: BudgetSection.manage.systemImage) }
-            .tag(BudgetSection.manage)
+            .tabItem { Label(BudgetSection.reports.title, systemImage: BudgetSection.reports.systemImage) }
+            .tag(BudgetSection.reports)
         }
     }
 
-    /// See the type-level doc comment — this tracks `selectedSection` to
-    /// reproduce the per-tab title at the one level that's actually
-    /// displayed.
-    private var currentTitle: String {
-        let locale = AppLanguageStore.currentLocale
-        switch selectedSection {
-        case .plan: return String(localized: "Expense Plan", bundle: AppLanguageStore.currentBundle, locale: locale)
-        case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
-        case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
-        case .manage: return viewModel?.profile.name ?? ""
-        }
-    }
-
-    /// Same reasoning as `currentTitle`, for the primary action button (+
-    /// bell, common to every tab). Mirrors exactly what each leaf view used
-    /// to declare in its own (non-rendering) `.toolbar`.
+    /// Tracks `selectedSection` to reproduce each tab's primary action (plus
+    /// the ☰ and the bell, common to every tab) at the one level that
+    /// actually renders — see the type-level doc comment.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         let canEdit = viewModel?.canEdit ?? true
-        let canManageUsers = viewModel?.canManageUsers ?? true
+        // Everything infrequent lives behind this: period switching, the
+        // manage panels, settings, help, logging out. Leading placement so
+        // it reads as "where am I" rather than "act on this screen", which
+        // is what the trailing side is for.
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                isMenuPresented = true
+            } label: {
+                Image(systemName: "line.3.horizontal")
+            }
+            .accessibilityIdentifier("budgetMenuButton")
+        }
         // Creating a new transaction is fully blocked on an archived period
         // (see docs/features/budget-list-view-rework.md) — Plan additions
         // (expense allocations) are profile-level, not period-level, so
@@ -311,20 +313,8 @@ struct BudgetDetailView: View {
                 }
                 .accessibilityIdentifier("transactionsFilterMenu")
             }
-        case .review:
+        case .review, .reports:
             ToolbarItemGroup {}
-        case .manage:
-            if canManageUsers {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button("Edit Budget") { isEditBudgetPresented = true }
-                        Button("Delete Budget", role: .destructive) { isDeleteBudgetConfirmationPresented = true }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                    .accessibilityIdentifier("budgetDetailMenu")
-                }
-            }
         }
         ToolbarItem(placement: .topBarTrailing) {
             NotificationBellButton(viewModel: notificationViewModel)
@@ -363,9 +353,9 @@ struct BudgetDetailView: View {
                 NavigationStack {
                     reviewContent(viewModel: viewModel)
                 }
-            case .manage:
+            case .reports:
                 NavigationStack {
-                    manageContent(viewModel: viewModel)
+                    reportsContent
                 }
             }
         }
@@ -462,17 +452,13 @@ struct BudgetDetailView: View {
         )
     }
 
-    private func manageContent(viewModel: BudgetDetailViewModel) -> some View {
-        BudgetManageView(
-            viewModel: viewModel,
-            authenticatedClient: authenticatedClient,
-            currencyCode: currencyCode,
-            localeIdentifier: localeIdentifier,
-            onUpdated: onUpdated,
-            isEditSheetPresented: $isEditBudgetPresented,
-            isDeleteConfirmationPresented: $isDeleteBudgetConfirmationPresented,
-            dismissParent: dismissAfterDelete
-        )
+    @ViewBuilder
+    private var reportsContent: some View {
+        if let authenticatedClient {
+            ReportsPlaceholderView(authenticatedClient: authenticatedClient)
+        } else {
+            ProgressView()
+        }
     }
 }
 
@@ -489,6 +475,7 @@ struct BudgetDetailView: View {
             currencyCode: "USD",
             localeIdentifier: "en",
             onUpdated: { _ in },
+            onUserUpdated: { _ in },
             onDeleted: {}
         )
     }

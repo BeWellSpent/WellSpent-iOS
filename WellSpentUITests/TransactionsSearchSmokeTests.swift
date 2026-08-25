@@ -60,9 +60,7 @@ final class TransactionsSearchSmokeTests: XCTestCase {
             skipButton.tap()
         }
 
-        let periodRow = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'periodRow_'")).firstMatch
-        XCTAssertTrue(periodRow.waitForExistence(timeout: 10))
-        periodRow.tap()
+        XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
 
         let transactionsTab = app.tabBars.buttons["Transactions"]
         XCTAssertTrue(transactionsTab.waitForExistence(timeout: 10))
@@ -72,12 +70,13 @@ final class TransactionsSearchSmokeTests: XCTestCase {
         XCTAssertTrue(searchField.waitForExistence(timeout: 10), "Search field should be visible on the Transactions tab without needing a reveal gesture")
 
         // Cleanup: delete the budget so this test leaves no orphan data behind.
-        app.tabBars.buttons["Manage"].tap()
+        // There is no Manage tab any more — it lives behind the ☰.
+        XCTAssertTrue(openManagePanels(app), "expected the ☰ menu to open the manage panels")
         let detailMenu = app.buttons["budgetDetailMenu"]
         XCTAssertTrue(detailMenu.waitForExistence(timeout: 5))
         detailMenu.tap()
         app.buttons["Delete Budget"].tap()
         app.buttons["Delete"].tap()
-        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 15))
     }
 }

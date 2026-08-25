@@ -14,7 +14,7 @@ struct RootView: View {
             UserDefaults.standard.set(pendingInviteToken, forKey: Self.pendingInviteTokenKey)
         }
     }
-    @State private var budgetListRefreshTrigger = 0
+    @State private var budgetHomeRefreshTrigger = 0
     /// Distinct from `pendingInviteToken != nil` — decouples "is there a
     /// pending invite" (persisted data) from "is the cover on screen right
     /// now" (transient UI state), since the Sign In/Register CTAs need to
@@ -68,8 +68,8 @@ struct RootView: View {
                     // caused the Plaid double-tap bug.
                     VerifyEmailGateView(viewModel: verifyGateViewModel)
                 } else {
-                    BudgetListView()
-                        .id(budgetListRefreshTrigger)
+                    BudgetHomeView()
+                        .id(budgetHomeRefreshTrigger)
                 }
             } else {
                 NavigationStack {
@@ -157,7 +157,7 @@ struct RootView: View {
                     onAccepted: {
                         self.pendingInviteToken = nil
                         isInvitePreviewPresented = false
-                        budgetListRefreshTrigger += 1
+                        budgetHomeRefreshTrigger += 1
                     },
                     onDismiss: {
                         // True cancel (the toolbar ✕) — forgets the invite

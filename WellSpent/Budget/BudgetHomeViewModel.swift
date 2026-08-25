@@ -1,22 +1,23 @@
 import Observation
 import WellSpentAPI
 
-/// Real budgets-list screen, replacing the Phase 1 `HomePlaceholderView`
-/// stand-in. Loads the authenticated user (for the verify-email banner and
-/// for `currency`/`language`, used to format money in child screens) and the
-/// user's budget profiles.
+/// Backs the app's home screen. Loads the authenticated user (for
+/// `currency`/`language`, used to format money in every child screen) and the
+/// user's budget profiles, then hands off to `BudgetDetailView`.
+///
+/// Periods deliberately are **not** loaded here any more (issue #60). Home is
+/// the budget itself now, and `BudgetDetailViewModel` already fetches the
+/// period list to resolve which one to show — loading it a second time here
+/// would be two `ListBudgetPeriods` calls per launch answering the same
+/// question. The ☰ menu's period switcher and `PeriodListView` both read that
+/// one copy.
 @MainActor
 @Observable
-final class BudgetListViewModel {
+final class BudgetHomeViewModel {
     private(set) var isLoading = false
     private(set) var profiles: [Wellspent_V1_BudgetProfile] = []
     private(set) var currentUser: Wellspent_V1_User?
     private(set) var errorMessage: String?
-    /// Periods for the user's one owned profile (see
-    /// docs/features/budget-list-view-rework.md — "one budget per account"),
-    /// grouped by year for the year-picker list. Empty when there's no
-    /// profile yet.
-    private(set) var yearGroups: [PeriodYearGroup] = []
 
     /// At most one owned profile per account.
     var profile: Wellspent_V1_BudgetProfile? { profiles.first }
@@ -61,32 +62,11 @@ final class BudgetListViewModel {
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load your budgets."
         }
-
-        await loadPeriods()
-    }
-
-    /// Fetches periods for the (at most one) owned profile. Split out from
-    /// `load()` so it can also be called after `addCreatedProfile` without
-    /// refetching the profile/user too.
-    func loadPeriods() async {
-        guard let profile else {
-            yearGroups = []
-            return
-        }
-        let request = Wellspent_V1_ListBudgetPeriodsRequest.with { $0.budgetProfileID = profile.id }
-        let response = await budgetClient.listBudgetPeriods(request: request)
-        switch response.result {
-        case .success(let message):
-            yearGroups = PeriodGrouping.groupByYear(message.periods)
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load this budget's periods."
-        }
     }
 
     /// Inserts a freshly created profile without a full refetch.
     func addCreatedProfile(_ profile: Wellspent_V1_BudgetProfile) {
         profiles.insert(profile, at: 0)
-        Task { await loadPeriods() }
     }
 
     /// Replaces an edited profile in place without a full refetch.
@@ -102,25 +82,9 @@ final class BudgetListViewModel {
         currentUser = user
     }
 
-    /// Removes a profile that was already deleted elsewhere (e.g. from
-    /// `BudgetDetailView`'s own delete action) — does not issue another
-    /// `DeleteBudgetProfile` call.
+    /// Removes a profile that was already deleted elsewhere (the ☰ menu's
+    /// delete action) — does not issue another `DeleteBudgetProfile` call.
     func removeProfile(id: String) {
         profiles.removeAll { $0.id == id }
-        yearGroups = []
-    }
-
-    func delete(_ profile: Wellspent_V1_BudgetProfile) async {
-        errorMessage = nil
-        let request = Wellspent_V1_DeleteBudgetProfileRequest.with { $0.id = profile.id }
-        let response = await budgetClient.deleteBudgetProfile(request: request)
-
-        switch response.result {
-        case .success:
-            profiles.removeAll { $0.id == profile.id }
-            yearGroups = []
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't delete that budget."
-        }
     }
 }

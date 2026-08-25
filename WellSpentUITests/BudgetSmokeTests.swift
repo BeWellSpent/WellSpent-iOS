@@ -59,14 +59,11 @@ final class BudgetSmokeTests: XCTestCase {
             skipButton.tap()
         }
 
-        // The list now shows periods (not a row per named profile, since
-        // only one owned budget is allowed per account) — the just-created
-        // budget has exactly one (current) period, so match on the row
-        // identifier's prefix rather than a specific month/year label.
-        XCTAssertTrue(app.staticTexts[budgetName].waitForExistence(timeout: 10))
-        let periodRow = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'periodRow_'")).firstMatch
-        XCTAssertTrue(periodRow.waitForExistence(timeout: 10))
-        periodRow.tap()
+        // Finishing setup lands straight on the budget — it is the home
+        // screen now (issue #60), there is no list in between. The manage
+        // panels moved behind the ☰.
+        XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
+        XCTAssertTrue(openManagePanels(app), "expected the ☰ menu to open the manage panels")
 
         // People
         let peopleLink = app.buttons["peopleNavLink"]
@@ -106,13 +103,17 @@ final class BudgetSmokeTests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
 
         // Cleanup: delete the budget so the test leaves no orphan data behind.
+        // Edit/Delete live on the manage screen's own toolbar now that it is a
+        // pushed destination rather than a tab.
         let detailMenu = app.buttons["budgetDetailMenu"]
         XCTAssertTrue(detailMenu.waitForExistence(timeout: 5))
         detailMenu.tap()
         app.buttons["Delete Budget"].tap()
         app.buttons["Delete"].tap()
 
-        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 10))
+        // Deleting the only budget drops the home screen back to its empty
+        // state, which is where addBudgetButton lives now.
+        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts[budgetName].exists)
     }
 }

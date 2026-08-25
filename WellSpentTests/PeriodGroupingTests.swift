@@ -83,11 +83,4 @@ struct PeriodGroupingTests {
         #expect(label.contains("2026"))
     }
 
-    @Test("shouldAutoNavigateToSingleActiveBudget is true only for exactly one profile with periods")
-    func shouldAutoNavigateOnlyForSingleProfileWithPeriods() {
-        #expect(PeriodGrouping.shouldAutoNavigateToSingleActiveBudget(profileCount: 1, hasPeriods: true))
-        #expect(!PeriodGrouping.shouldAutoNavigateToSingleActiveBudget(profileCount: 1, hasPeriods: false))
-        #expect(!PeriodGrouping.shouldAutoNavigateToSingleActiveBudget(profileCount: 0, hasPeriods: false))
-        #expect(!PeriodGrouping.shouldAutoNavigateToSingleActiveBudget(profileCount: 2, hasPeriods: true))
-    }
 }

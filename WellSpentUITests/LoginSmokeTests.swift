@@ -37,7 +37,9 @@ final class LoginSmokeTests: XCTestCase {
         app.buttons["loginButton"].tap()
         dismissSavePasswordPromptIfPresent(app)
 
-        XCTAssertTrue(app.buttons["logoutButton"].waitForExistence(timeout: 10))
+        // Log Out lives in the ☰ menu since issue #60, so a successful login
+        // is proven by the budget home screen rather than by that button.
+        XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after login")
     }
 
     @MainActor
@@ -62,6 +64,6 @@ final class LoginSmokeTests: XCTestCase {
         app.buttons["loginButton"].tap()
 
         XCTAssertTrue(app.staticTexts["loginErrorMessage"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["logoutButton"].exists)
+        XCTAssertFalse(app.buttons["budgetMenuButton"].exists)
     }
 }
