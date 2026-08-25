@@ -43,7 +43,8 @@ struct BudgetDetailView: View {
     @State private var isAddCategoryPresented = false
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
-    @State private var isMenuPresented = false
+    @State private var isMenuOpen = false
+    @State private var menuDestination: BudgetMenuDestination?
     @State private var isPaymentMethodRequiredPresented = false
     @State private var isPaymentMethodsPresented = false
 
@@ -69,7 +70,32 @@ struct BudgetDetailView: View {
     }
 
     var body: some View {
-        content
+        SideDrawer(isOpen: $isMenuOpen) {
+            if let viewModel {
+                BudgetMenuDrawer(
+                    viewModel: viewModel,
+                    localeIdentifier: localeIdentifier,
+                    onSelect: { destination in
+                        closeMenu()
+                        menuDestination = destination
+                    },
+                    onSelectPeriod: { id in
+                        viewModel.selectPeriod(id: id)
+                        closeMenu()
+                    },
+                    onClose: closeMenu
+                )
+            }
+        } content: {
+            content
+        }
+        .navigationTitle(selectedSection.screenTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbarContent }
+    }
+
+    private func closeMenu() {
+        withAnimation(.snappy(duration: 0.28)) { isMenuOpen = false }
     }
 
     private var content: some View {
@@ -89,9 +115,6 @@ struct BudgetDetailView: View {
                 }
             }
         }
-        .navigationTitle(selectedSection.screenTitle)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { toolbarContent }
         .onChange(of: transactionsSelectedKind) { _, _ in
             // Switching Variable <-> Fixed resets the filter rather than
             // silently carrying over an option the other tab doesn't offer.
@@ -112,18 +135,8 @@ struct BudgetDetailView: View {
             // either transaction list mounts and loads its own copy.
             await viewModel?.loadPaymentMethods()
         }
-        .sheet(isPresented: $isMenuPresented) {
-            if let viewModel {
-                BudgetMenuSheet(
-                    viewModel: viewModel,
-                    authenticatedClient: authenticatedClient,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier,
-                    onUpdated: onUpdated,
-                    onUserUpdated: onUserUpdated,
-                    onDeleted: onDeleted
-                )
-            }
+        .sheet(item: $menuDestination) { destination in
+            menuDestinationView(destination)
         }
         .alert("Add a payment method first", isPresented: $isPaymentMethodRequiredPresented) {
             Button("Add a payment method") { isPaymentMethodsPresented = true }
@@ -247,7 +260,7 @@ struct BudgetDetailView: View {
         // is what the trailing side is for.
         ToolbarItem(placement: .topBarLeading) {
             Button {
-                isMenuPresented = true
+                withAnimation(.snappy(duration: 0.28)) { isMenuOpen = true }
             } label: {
                 Image(systemName: "line.3.horizontal")
             }
@@ -450,6 +463,52 @@ struct BudgetDetailView: View {
             isActive: selectedSection == .review,
             canEdit: viewModel.canEdit
         )
+    }
+
+    /// Presented full width, not inside the 320pt drawer. Each gets a
+    /// `NavigationStack` of its own so its pushes (People, Income, …) behave
+    /// normally, and the shared ✕ so it closes the way every other sheet does.
+    @ViewBuilder
+    private func menuDestinationView(_ destination: BudgetMenuDestination) -> some View {
+        if let authenticatedClient, let viewModel {
+            NavigationStack {
+                Group {
+                    switch destination {
+                    case .manage:
+                        BudgetManageView(
+                            viewModel: viewModel,
+                            authenticatedClient: authenticatedClient,
+                            currencyCode: currencyCode,
+                            localeIdentifier: localeIdentifier,
+                            onUpdated: onUpdated,
+                            dismissParent: { onDeleted(); menuDestination = nil }
+                        )
+                    case .settings:
+                        SettingsView(authenticatedClient: authenticatedClient, onUpdated: onUserUpdated)
+                    case .help:
+                        ChangelogView(
+                            authenticatedClient: authenticatedClient,
+                            localeIdentifier: localeIdentifier
+                        )
+                    case .allPeriods:
+                        PeriodListView(
+                            profile: viewModel.profile,
+                            periods: viewModel.periods,
+                            localeIdentifier: localeIdentifier,
+                            onSelect: { id in
+                                viewModel.selectPeriod(id: id)
+                                menuDestination = nil
+                            }
+                        )
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        SheetCancelButton { menuDestination = nil }
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder

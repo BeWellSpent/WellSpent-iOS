@@ -39,13 +39,18 @@ final class SheetChromeSmokeTests: XCTestCase {
         app.buttons["loginButton"].tap()
         dismissSavePasswordPromptIfPresent(app)
 
-        // The ☰ menu is a sheet and is reachable whenever a budget exists,
-        // unlike addBudgetButton, which only appears for an account that has
-        // none. Any sheet exercises the shared chrome equally well.
-        XCTAssertTrue(openBudgetMenu(app), "expected the ☰ menu to open")
+        // Manage is reachable whenever a budget exists, unlike addBudgetButton,
+        // which only appears for an account that has none. Any sheet exercises
+        // the shared chrome equally well.
+        //
+        // The ☰ drawer itself is deliberately not the subject here: it is not a
+        // sheet, so its close button sits in its own header rather than a
+        // navigation bar, and the assertions below are about navigation-bar
+        // chrome specifically.
+        XCTAssertTrue(openManagePanels(app), "expected the ☰ menu to open the manage panels")
 
-        // The sheet is up once one of its own rows is on screen.
-        XCTAssertTrue(app.buttons["manageBudgetLink"].waitForExistence(timeout: 5))
+        // The sheet is up once its content is on screen.
+        XCTAssertTrue(app.buttons["peopleNavLink"].waitForExistence(timeout: 5))
 
         let closeButton = app.navigationBars.buttons["sheetCancelButton"]
         XCTAssertTrue(closeButton.exists, "sheet should carry the shared ✕ button")
@@ -61,5 +66,6 @@ final class SheetChromeSmokeTests: XCTestCase {
 
         closeButton.tap()
         XCTAssertTrue(app.buttons["budgetMenuButton"].waitForExistence(timeout: 5), "✕ should dismiss the sheet")
+        XCTAssertFalse(app.buttons["peopleNavLink"].exists)
     }
 }
