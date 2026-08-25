@@ -1,0 +1,26 @@
+{
+  "component": "ios",
+  "version": "1.36.0",
+  "items": [
+    {
+      "changeType": "added",
+      "summaryEn": "See what changed: new versions now show a short summary the first time you open them.",
+      "summaryEs": "Mira qué cambió: las versiones nuevas ahora muestran un resumen la primera vez que las abres."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "A Help section in Settings lets you browse release notes for any past version, on any platform.",
+      "summaryEs": "Una sección de Ayuda en Ajustes te permite ver las notas de cualquier versión anterior, en cualquier plataforma."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Expanding a category in the Expense Overview now lists each person's transactions under their own row.",
+      "summaryEs": "Al expandir una categoría en el Resumen de gastos ahora ves las transacciones de cada persona bajo su propia fila."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Payment plan progress no longer counts a payment before it is due.",
+      "summaryEs": "El progreso de un plan de pagos ya no cuenta un pago antes de su vencimiento."
+    }
+  ]
+}

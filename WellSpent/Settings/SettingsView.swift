@@ -27,6 +27,7 @@ struct SettingsView: View {
             }
             subscriptionSection
             passwordSection
+            helpSection
             accountManagementSection
         }
         .navigationTitle("Settings")
@@ -139,6 +140,24 @@ struct SettingsView: View {
             }
             .disabled(viewModel.isSavingProfile)
             .accessibilityIdentifier("saveProfileButton")
+        }
+    }
+
+    /// Help — deliberately somewhere you have to go looking for, per issue #59.
+    /// For now it holds one thing: the changelog, browsable per component
+    /// including web, which an iOS reader cannot see any other way.
+    @ViewBuilder
+    private var helpSection: some View {
+        Section("Help") {
+            NavigationLink {
+                ChangelogView(
+                    authenticatedClient: authenticatedClient,
+                    localeIdentifier: AppLanguageStore.currentLocale.identifier
+                )
+            } label: {
+                Label("What's new", systemImage: "sparkles")
+            }
+            .accessibilityIdentifier("changelogNavLink")
         }
     }
 
