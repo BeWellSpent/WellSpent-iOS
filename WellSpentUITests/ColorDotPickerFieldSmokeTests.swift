@@ -58,18 +58,12 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
             skipButton.tap()
         }
 
-        // The list shows budget *periods* grouped by year, not budget profiles —
-        // `budgetRow_<name>` stopped existing with the budget-list rework and this
-        // test had not caught up, so it could no longer get past this point. A
-        // freshly created profile has exactly one period, so the first match is it.
-        // This test still cannot pass end to end — see issue #58 for the two
-        // remaining breakages (the skipped Payment Methods step, and a budget
-        // that can no longer be deleted once it has a payment method).
-        let periodRow = app.buttons
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "periodRow_"))
-            .firstMatch
-        XCTAssertTrue(periodRow.waitForExistence(timeout: 10))
-        periodRow.tap()
+        // Setup finishes straight onto the budget — it is the home screen
+        // since issue #60. This test still cannot pass end to end; see issue
+        // #58 for the two remaining breakages (the skipped Payment Methods
+        // step, and a budget that can no longer be deleted once it has a
+        // payment method).
+        XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
 
         app.tabBars.buttons["Transactions"].tap()
 
@@ -97,13 +91,13 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         app.navigationBars.buttons["sheetCancelButton"].tap()
 
         // Cleanup: delete the budget so the test leaves no orphan data behind.
+        XCTAssertTrue(openManagePanels(app), "expected the ☰ menu to open the manage panels")
         let detailMenu = app.buttons["budgetDetailMenu"]
         XCTAssertTrue(detailMenu.waitForExistence(timeout: 5))
         detailMenu.tap()
         app.buttons["Delete Budget"].tap()
         app.buttons["Delete"].tap()
 
-        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 10))
-        XCTAssertFalse(periodRow.exists)
+        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 15))
     }
 }

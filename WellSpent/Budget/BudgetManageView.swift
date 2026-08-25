@@ -2,28 +2,28 @@ import Foundation
 import SwiftUI
 import WellSpentAPI
 
-/// Content for the "Manage" section: budget header (cycle/period), People and
-/// Income drill-down, and the edit/delete-budget actions. Wrapped in its own
-/// `NavigationStack` by the caller so its push state (e.g. into People/Income)
-/// is independent of the other tabs/sidebar sections.
+/// The manage panels: budget header (cycle/period), the People/Income/…
+/// drill-downs, and edit/delete budget.
+///
+/// Pushed from `BudgetMenuSheet` since issue #60 — it used to be a bottom tab.
+/// That move is why it owns its own `.toolbar` again: as a tab it sat inside
+/// `BudgetDetailView`'s doubly-nested `NavigationStack`s, where an inner
+/// toolbar never renders, so its Edit/Delete menu had to be hoisted into the
+/// parent and flipped through `@Binding`s. A pushed destination inside the
+/// sheet's own stack has a nav bar that renders normally, so the workaround
+/// is gone and the state is local again.
 struct BudgetManageView: View {
     let viewModel: BudgetDetailViewModel
     let authenticatedClient: ProtocolClient?
     let currencyCode: String
     let localeIdentifier: String
     let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
-    /// See `ExpensePlanView.isAddCategoryPresented` — the "Edit"/"Delete"
-    /// menu itself lives in `BudgetDetailView`'s toolbar now (the one level
-    /// that's actually rendered); these just get flipped from there.
-    @Binding var isEditSheetPresented: Bool
-    @Binding var isDeleteConfirmationPresented: Bool
-    /// Called after a successful delete. Deliberately a closure captured by
-    /// the caller from *its own* outer scope, not a locally-declared
-    /// `@Environment(\.dismiss)` here — this view sits inside its own nested
-    /// `NavigationStack`, so a local `dismiss()` would only pop within that
-    /// stack rather than removing the whole budget detail screen from the
-    /// budget list's stack.
+    /// Called after a successful delete, so the presenting sheet can close
+    /// and the home view underneath can fall back to its empty state.
     let dismissParent: () -> Void
+
+    @State private var isEditSheetPresented = false
+    @State private var isDeleteConfirmationPresented = false
 
     var body: some View {
         List {
@@ -138,15 +138,6 @@ struct BudgetManageView: View {
                 }
             }
 
-            if let authenticatedClient {
-                Section("Reports") {
-                    NavigationLink("Reports") {
-                        ReportsPlaceholderView(authenticatedClient: authenticatedClient)
-                    }
-                    .accessibilityIdentifier("reportsNavLink")
-                }
-            }
-
             if let errorMessage = viewModel.errorMessage {
                 Section {
                     Text(errorMessage).foregroundStyle(.red)
@@ -154,6 +145,20 @@ struct BudgetManageView: View {
             }
         }
         .navigationTitle(viewModel.profile.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if viewModel.canManageUsers {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button("Edit Budget") { isEditSheetPresented = true }
+                        Button("Delete Budget", role: .destructive) { isDeleteConfirmationPresented = true }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityIdentifier("budgetDetailMenu")
+                }
+            }
+        }
         .sheet(isPresented: $isEditSheetPresented) {
             if let authenticatedClient {
                 EditBudgetSheet(profile: viewModel.profile, authenticatedClient: authenticatedClient) { updated in
@@ -197,8 +202,6 @@ struct BudgetManageView: View {
             currencyCode: "USD",
             localeIdentifier: "en",
             onUpdated: { _ in },
-            isEditSheetPresented: .constant(false),
-            isDeleteConfirmationPresented: .constant(false),
             dismissParent: {}
         )
     }

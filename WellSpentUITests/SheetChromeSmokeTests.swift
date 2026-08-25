@@ -39,12 +39,13 @@ final class SheetChromeSmokeTests: XCTestCase {
         app.buttons["loginButton"].tap()
         dismissSavePasswordPromptIfPresent(app)
 
-        let addBudget = app.buttons["addBudgetButton"]
-        XCTAssertTrue(addBudget.waitForExistence(timeout: 10))
-        addBudget.tap()
+        // The bottom bar's "More" sheet is reachable whenever a budget exists,
+        // unlike addBudgetButton, which only appears for an account that has
+        // none. Any sheet exercises the shared chrome equally well.
+        XCTAssertTrue(openBudgetMenu(app), "expected the More menu to open")
 
-        // The sheet is up once its first field is on screen.
-        XCTAssertTrue(app.textFields["budgetNameField"].waitForExistence(timeout: 5))
+        // The sheet is up once one of its own rows is on screen.
+        XCTAssertTrue(app.buttons["manageBudgetLink"].waitForExistence(timeout: 5))
 
         let closeButton = app.navigationBars.buttons["sheetCancelButton"]
         XCTAssertTrue(closeButton.exists, "sheet should carry the shared ✕ button")
@@ -59,6 +60,7 @@ final class SheetChromeSmokeTests: XCTestCase {
         // — whether the title is drawn is not observable from here.
 
         closeButton.tap()
-        XCTAssertTrue(addBudget.waitForExistence(timeout: 5), "✕ should dismiss the sheet")
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 5), "✕ should dismiss the sheet")
+        XCTAssertFalse(app.buttons["manageBudgetLink"].exists)
     }
 }

@@ -21,6 +21,16 @@
       "changeType": "fixed",
       "summaryEn": "Payment plan progress no longer counts a payment before it is due.",
       "summaryEs": "El progreso de un plan de pagos ya no cuenta un pago antes de su vencimiento."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The app now opens on your budget instead of a list with one entry in it.",
+      "summaryEs": "La app ahora abre directamente en tu presupuesto en lugar de una lista con una sola entrada."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "A new “More” item in the bottom bar holds period switching, budget management, settings and help — leaving Plan, Transactions, Review and Reports as the main destinations.",
+      "summaryEs": "Un nuevo elemento «Más» en la barra inferior reúne el cambio de período, la administración del presupuesto, los ajustes y la ayuda, y deja Plan, Transacciones, Revisión e Informes como destinos principales."
     }
   ]
 }

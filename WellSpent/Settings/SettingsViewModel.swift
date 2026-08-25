@@ -82,7 +82,7 @@ final class SettingsViewModel {
     }
 
     /// Saves the profile and, on success, returns the updated `User` so the
-    /// caller can propagate it to `BudgetListViewModel` without a refetch.
+    /// caller can propagate it to `BudgetHomeViewModel` without a refetch.
     func saveProfile() async -> Wellspent_V1_User? {
         isSavingProfile = true
         profileErrorMessage = nil

@@ -31,9 +31,16 @@ final class BudgetDetailViewModel {
     }
 
     /// Set when navigating in from a specific (possibly archived) period in
-    /// the budget list — see `BudgetListView`. `nil` means "resolve the true
-    /// active period," the pre-existing default behavior.
-    private let overridePeriodID: String?
+    /// the period list — see `PeriodListView`. `nil` means "resolve the true
+    /// active period," the default. No longer `let`: the ☰ menu's period
+    /// switcher writes it through `selectPeriod(id:)`, so a period change is
+    /// a state change on this screen rather than a fresh push.
+    private var overridePeriodID: String?
+
+    /// Every period on this budget, newest first. Kept (rather than resolved
+    /// and discarded) so the ☰ menu can offer the switcher without a second
+    /// `ListBudgetPeriods` call of its own.
+    private(set) var periods: [Wellspent_V1_BudgetPeriod] = []
 
     /// True when `currentPeriod` is archived — the record itself is frozen
     /// (see docs/features/budget-list-view-rework.md): only a Variable
@@ -61,6 +68,7 @@ final class BudgetDetailViewModel {
 
         switch response.result {
         case .success(let message):
+            periods = message.periods
             currentPeriod = PeriodGrouping.resolvePeriod(message.periods, overrideID: overridePeriodID)
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load this budget's period."
@@ -75,6 +83,16 @@ final class BudgetDetailViewModel {
             paymentMethods = message.methods
         }
         isLoadingPaymentMethods = false
+    }
+
+    /// Switches which period the whole screen is showing, without pushing a
+    /// new one. Resolves out of the already-loaded `periods` rather than
+    /// refetching — the caller only ever passes an ID that came from that
+    /// same list. An unknown ID is ignored rather than blanking the screen.
+    func selectPeriod(id: String) {
+        guard let period = periods.first(where: { $0.id == id }) else { return }
+        overridePeriodID = id
+        currentPeriod = period
     }
 
     func applyUpdatedProfile(_ updated: Wellspent_V1_BudgetProfile) {
