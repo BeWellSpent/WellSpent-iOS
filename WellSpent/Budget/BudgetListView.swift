@@ -5,7 +5,29 @@ import WellSpentAPI
 struct BudgetListView: View {
     @Environment(SessionStore.self) private var session
     @State private var viewModel: BudgetListViewModel?
-    @State private var isCreateSheetPresented = false
+    /// One enum-driven sheet rather than two `.sheet(isPresented:)` modifiers.
+    /// With more than one on a view SwiftUI can only reliably track a single
+    /// presentation and the others get cross-wired — the documented cause of
+    /// the Plaid double-tap bug (v1.25.0).
+    private enum ActiveSheet: Identifiable {
+        case createBudget
+        case whatsNew
+
+        var id: Int {
+            switch self {
+            case .createBudget: return 0
+            case .whatsNew: return 1
+            }
+        }
+    }
+
+    @State private var activeSheet: ActiveSheet?
+    @State private var changelogViewModel: ChangelogViewModel?
+    /// Captured when the decision to announce is made, because the versions are
+    /// marked seen in the same breath — reading them live afterwards would find
+    /// nothing.
+    @State private var announcedAppReleases: [Wellspent_V1_ChangelogRelease] = []
+    @State private var announcedServerReleases: [Wellspent_V1_ChangelogRelease] = []
     @State private var isDeleteConfirmationPresented = false
     @State private var selectedYear: Int?
     /// Drives a one-shot auto-push straight into the active period's
@@ -44,7 +66,7 @@ struct BudgetListView: View {
                     if viewModel?.profiles.isEmpty != false {
                         ToolbarItem(placement: .primaryAction) {
                             Button {
-                                isCreateSheetPresented = true
+                                activeSheet = .createBudget
                             } label: {
                                 Image(systemName: "plus")
                             }
@@ -68,15 +90,24 @@ struct BudgetListView: View {
                 } message: {
                     Text("This will permanently delete \(viewModel?.profile?.name ?? "this budget") and everything in it. This cannot be undone.")
                 }
-                .sheet(isPresented: $isCreateSheetPresented) {
-                    if let authenticatedClient = session.authenticatedClient {
-                        BudgetSetupFlow(
-                            authenticatedClient: authenticatedClient,
-                            currencyCode: viewModel?.currencyCode ?? "USD",
-                            localeIdentifier: viewModel?.localeIdentifier ?? "en"
-                        ) { profile in
-                            viewModel?.addCreatedProfile(profile)
+                .sheet(item: $activeSheet) { sheet in
+                    switch sheet {
+                    case .createBudget:
+                        if let authenticatedClient = session.authenticatedClient {
+                            BudgetSetupFlow(
+                                authenticatedClient: authenticatedClient,
+                                currencyCode: viewModel?.currencyCode ?? "USD",
+                                localeIdentifier: viewModel?.localeIdentifier ?? "en"
+                            ) { profile in
+                                viewModel?.addCreatedProfile(profile)
+                            }
                         }
+                    case .whatsNew:
+                        WhatsNewSheet(
+                            appReleases: announcedAppReleases,
+                            serverReleases: announcedServerReleases,
+                            localeIdentifier: viewModel?.localeIdentifier ?? "en"
+                        ) { activeSheet = nil }
                     }
                 }
                 .task {
@@ -85,6 +116,7 @@ struct BudgetListView: View {
                     viewModel = model
                     await model.load()
                     attemptAutoNavigateIfNeeded()
+                    await announceWhatsNewIfNeeded(authenticatedClient: authenticatedClient)
                 }
                 .refreshable {
                     await viewModel?.load()
@@ -101,6 +133,33 @@ struct BudgetListView: View {
                         )
                     }
                 }
+        }
+    }
+
+    /// Shows release notes the first time a version is opened.
+    ///
+    /// Runs after the auto-navigate check, so a single-budget user who is being
+    /// pushed straight into their budget still gets the sheet — presented from
+    /// this view, which stays in the stack beneath.
+    ///
+    /// Marks the versions seen in the same breath as deciding, and reads the
+    /// releases out first: a launch that announces nothing still has to be
+    /// recorded, or the next launch would treat it as first-ever again and
+    /// never announce anything.
+    private func announceWhatsNewIfNeeded(authenticatedClient: ProtocolClient) async {
+        guard changelogViewModel == nil else { return }
+        let model = ChangelogViewModel(authenticatedClient: authenticatedClient)
+        changelogViewModel = model
+        await model.load()
+
+        announcedAppReleases = model.unseenAppReleases
+        announcedServerReleases = model.unseenServerReleases
+        model.markCurrentVersionsSeen()
+
+        // Never displace a sheet the user opened themselves.
+        guard activeSheet == nil else { return }
+        if !announcedAppReleases.isEmpty || !announcedServerReleases.isEmpty {
+            activeSheet = .whatsNew
         }
     }
 
