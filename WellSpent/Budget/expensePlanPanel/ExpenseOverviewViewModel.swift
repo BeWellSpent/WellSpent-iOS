@@ -9,6 +9,10 @@ final class ExpenseOverviewViewModel {
     private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
     private(set) var transactions: [Wellspent_V1_Transaction] = []
+    /// Needed only to attribute a transaction to a person — a transaction
+    /// names a payment method, and the method names the person. Without this
+    /// the drill-down cannot say who spent what (issue #62).
+    private(set) var paymentMethods: [Wellspent_V1_PaymentMethod] = []
     /// Server-computed planned/actual/remainder/over-budget/unplanned totals
     /// and category visibility/sort order — the single source of truth both
     /// this client and WellSpent-web consume (see
@@ -122,6 +126,25 @@ final class ExpenseOverviewViewModel {
         }
     }
 
+    /// This category's transactions split by who paid, so each person's
+    /// spending can sit under their own row (issue #62).
+    ///
+    /// Keyed on `people`, not on the summary's `personBreakdowns`, because this
+    /// view draws a row for **every** person on the budget — web draws only the
+    /// ones with a plan or spend. A pre-existing difference, left alone here;
+    /// what matters is that the key matches whatever this client actually puts
+    /// on screen, so nothing is filed under a name that isn't there. A
+    /// consequence is that `unclaimed` on iOS is purely unattributed spending,
+    /// where on web it can also hold a person the server omitted.
+    func transactionGroups(for category: Wellspent_V1_Category) -> TransactionOwnerGrouping.Groups {
+        let renderedPersonIDs = Set(people.map(\.id))
+        return TransactionOwnerGrouping.group(
+            transactions(for: category),
+            paymentMethods: paymentMethods,
+            renderedPersonIDs: renderedPersonIDs
+        )
+    }
+
     /// Chart data for the actual-spend chart — colored red for overspent
     /// categories, category color otherwise. Mirrors web's chart-data
     /// construction in `ExpenseOverviewPanel.tsx`.
@@ -153,6 +176,7 @@ final class ExpenseOverviewViewModel {
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
         async let transactionsResponse = client.listTransactions(request: .with { $0.budgetPeriodID = budgetPeriodID })
         async let summaryResponse = client.getExpenseSummary(request: .with { $0.budgetPeriodID = budgetPeriodID })
+        async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
 
         switch await transactionsResponse.result {
         case .success(let message):
@@ -166,6 +190,9 @@ final class ExpenseOverviewViewModel {
         }
         if case .success(let message) = await peopleResponse.result {
             people = message.people
+        }
+        if case .success(let message) = await paymentMethodsResponse.result {
+            paymentMethods = message.methods
         }
         switch await summaryResponse.result {
         case .success(let message):

@@ -132,11 +132,24 @@ struct ExpenseOverviewListView: View {
     }
 
     private func categoryDisclosure(_ category: Wellspent_V1_Category, viewModel: ExpenseOverviewViewModel) -> some View {
-        DisclosureGroup {
+        let groups = viewModel.transactionGroups(for: category)
+        return DisclosureGroup {
             ForEach(viewModel.people, id: \.id) { person in
                 personRow(category, person, viewModel: viewModel)
+                transactionList(groups.byPerson[person.id] ?? [], category: category, owner: person.userName)
             }
-            transactionList(for: category, viewModel: viewModel)
+            // Spending that belongs to nobody — cash, or a payment method with
+            // no person. It counts toward the category total but toward no
+            // person's, so it cannot sit under a name without making that
+            // person's rows contradict their own figure.
+            if !groups.unclaimed.isEmpty {
+                if viewModel.people.count > 1 {
+                    Text("Unattributed")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                transactionList(groups.unclaimed, category: category, owner: "unattributed")
+            }
         } label: {
             categoryRow(category, viewModel: viewModel)
         }
@@ -189,46 +202,53 @@ struct ExpenseOverviewListView: View {
         }
     }
 
+    /// One owner's transactions, flat and newest-first, sitting directly under
+    /// that owner's row.
+    ///
+    /// This used to render every transaction in the category, day-grouped,
+    /// which is what made it impossible to tell who had spent what (issue #62).
+    /// The day headers went with the change: the person is the grouping this
+    /// view is about, and person → day → transaction is a lot of nesting on a
+    /// phone. The Transactions tab is still where you browse by day.
     @ViewBuilder
-    private func transactionList(for category: Wellspent_V1_Category, viewModel: ExpenseOverviewViewModel) -> some View {
-        let dayGroups = TransactionDayGrouping.group(viewModel.transactions(for: category))
-        if !dayGroups.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(dayGroups) { group in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
+    private func transactionList(
+        _ transactions: [Wellspent_V1_Transaction],
+        category: Wellspent_V1_Category,
+        owner: String
+    ) -> some View {
+        if !transactions.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(transactions, id: \.id) { transaction in
+                    HStack {
+                        Text(transaction.name)
+                            .font(.caption)
+                        Spacer()
+                        Text(transaction.date.dateOnly.formatted(date: .abbreviated, time: .omitted))
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
-                        ForEach(group.transactions, id: \.id) { transaction in
-                            HStack {
-                                Text(transaction.name)
-                                    .font(.caption)
-                                Spacer()
-                                // A transaction row, so it reads exactly as it
-                                // does on the Transactions tab: -$X out, +$X in.
-                                // It showed an unsigned magnitude here, so the
-                                // same row disagreed with itself across tabs.
-                                Text(TransactionAmountFormatting.displayText(
-                                    units: transaction.amount.units,
-                                    nanos: transaction.amount.nanos,
-                                    currencyCode: currencyCode,
-                                    localeIdentifier: localeIdentifier
-                                ))
-                                .font(.caption)
-                                .foregroundStyle(
-                                    TransactionAmountFormatting.isReceived(
-                                        units: transaction.amount.units,
-                                        nanos: transaction.amount.nanos
-                                    ) ? .green : .secondary
-                                )
-                            }
-                        }
+                        // A transaction row, so it reads exactly as it does on
+                        // the Transactions tab: -$X out, +$X in. It showed an
+                        // unsigned magnitude here, so the same row disagreed
+                        // with itself across tabs.
+                        Text(TransactionAmountFormatting.displayText(
+                            units: transaction.amount.units,
+                            nanos: transaction.amount.nanos,
+                            currencyCode: currencyCode,
+                            localeIdentifier: localeIdentifier
+                        ))
+                        .font(.caption)
+                        .foregroundStyle(
+                            TransactionAmountFormatting.isReceived(
+                                units: transaction.amount.units,
+                                nanos: transaction.amount.nanos
+                            ) ? .green : .secondary
+                        )
                     }
                 }
             }
-            .padding(.leading, 12)
+            .padding(.leading, 24)
             .padding(.vertical, 2)
-            .accessibilityIdentifier("overviewTransactionList_\(category.name)")
+            .accessibilityIdentifier("overviewTransactionList_\(category.name)_\(owner)")
         }
     }
 
