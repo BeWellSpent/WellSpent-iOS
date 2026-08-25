@@ -12,16 +12,20 @@ func dismissSavePasswordPromptIfPresent(_ app: XCUIApplication) {
     }
 }
 
-/// Opens the ☰ menu that holds everything outside the four bottom tabs —
+/// Opens the menu that holds everything outside the four real bottom tabs —
 /// period switching, the manage panels, settings, help, log out.
 ///
-/// Since issue #60 the budget itself is the home screen, so there is no
-/// budget list to navigate through and no "Manage" tab. Tests that used to
-/// tap `periodRow_…` and then a `…NavLink` go through here instead.
+/// Since issue #60 the budget itself is the home screen, so there is no budget
+/// list to navigate through and no "Manage" tab. Tests that used to tap
+/// `periodRow_…` and then a `…NavLink` go through here instead.
+///
+/// Targets the **last** tab-bar button by index rather than its "More" label:
+/// this suite has a locale-switching test, and the label is translated.
 func openBudgetMenu(_ app: XCUIApplication, timeout: TimeInterval = 15) -> Bool {
-    let menuButton = app.buttons["budgetMenuButton"]
-    guard menuButton.waitForExistence(timeout: timeout) else { return false }
-    menuButton.tap()
+    guard waitForBudgetHome(app, timeout: timeout) else { return false }
+    let tabs = app.tabBars.buttons
+    guard tabs.count > 0 else { return false }
+    tabs.element(boundBy: tabs.count - 1).tap()
     return true
 }
 
@@ -35,9 +39,9 @@ func openManagePanels(_ app: XCUIApplication, timeout: TimeInterval = 15) -> Boo
     return true
 }
 
-/// Waits for the budget home screen to be showing an actual budget — the ☰
-/// only exists once a profile has loaded. Replaces the old
+/// Waits for the budget home screen to be showing an actual budget — the tab
+/// bar only exists once a profile has loaded. Replaces the old
 /// `addBudgetButton` wait, which now only appears when there is *no* budget.
 func waitForBudgetHome(_ app: XCUIApplication, timeout: TimeInterval = 20) -> Bool {
-    app.buttons["budgetMenuButton"].waitForExistence(timeout: timeout)
+    app.tabBars.firstMatch.waitForExistence(timeout: timeout)
 }

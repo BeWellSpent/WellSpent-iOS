@@ -29,8 +29,8 @@
     },
     {
       "changeType": "changed",
-      "summaryEn": "A new side menu — swipe from the left edge or tap ☰ — holds period switching, budget management, settings and help, freeing the bottom bar for Plan, Transactions, Review and Reports.",
-      "summaryEs": "Un nuevo menú lateral —deslizá desde el borde izquierdo o tocá ☰— reúne el cambio de período, la administración del presupuesto, los ajustes y la ayuda, y deja la barra inferior para Plan, Transacciones, Revisión e Informes."
+      "summaryEn": "A new “More” item in the bottom bar holds period switching, budget management, settings and help — leaving Plan, Transactions, Review and Reports as the main destinations.",
+      "summaryEs": "Un nuevo elemento «Más» en la barra inferior reúne el cambio de período, la administración del presupuesto, los ajustes y la ayuda, y deja Plan, Transacciones, Revisión e Informes como destinos principales."
     }
   ]
 }

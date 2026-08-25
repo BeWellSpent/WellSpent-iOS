@@ -64,6 +64,6 @@ final class LoginSmokeTests: XCTestCase {
         app.buttons["loginButton"].tap()
 
         XCTAssertTrue(app.staticTexts["loginErrorMessage"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["budgetMenuButton"].exists)
+        XCTAssertFalse(app.tabBars.firstMatch.exists)
     }
 }

@@ -43,8 +43,7 @@ struct BudgetDetailView: View {
     @State private var isAddCategoryPresented = false
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
-    @State private var isMenuOpen = false
-    @State private var menuDestination: BudgetMenuDestination?
+    @State private var isMenuPresented = false
     @State private var isPaymentMethodRequiredPresented = false
     @State private var isPaymentMethodsPresented = false
 
@@ -70,32 +69,27 @@ struct BudgetDetailView: View {
     }
 
     var body: some View {
-        SideDrawer(isOpen: $isMenuOpen) {
-            if let viewModel {
-                BudgetMenuDrawer(
-                    viewModel: viewModel,
-                    localeIdentifier: localeIdentifier,
-                    onSelect: { destination in
-                        closeMenu()
-                        menuDestination = destination
-                    },
-                    onSelectPeriod: { id in
-                        viewModel.selectPeriod(id: id)
-                        closeMenu()
-                    },
-                    onClose: closeMenu
-                )
-            }
-        } content: {
-            content
-        }
-        .navigationTitle(selectedSection.screenTitle)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { toolbarContent }
+        content
+            .navigationTitle(selectedSection.screenTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
     }
 
-    private func closeMenu() {
-        withAnimation(.snappy(duration: 0.28)) { isMenuOpen = false }
+    /// Intercepts `more`, which is a button wearing a tab's clothes: it opens
+    /// the menu sheet and must never become the selection. The getter always
+    /// reports the real section, so SwiftUI re-reads and leaves the previous
+    /// tab highlighted with no visible flicker.
+    private var tabSelection: Binding<BudgetSection> {
+        Binding(
+            get: { selectedSection },
+            set: { newValue in
+                if newValue == .more {
+                    isMenuPresented = true
+                } else {
+                    selectedSection = newValue
+                }
+            }
+        )
     }
 
     private var content: some View {
@@ -135,8 +129,18 @@ struct BudgetDetailView: View {
             // either transaction list mounts and loads its own copy.
             await viewModel?.loadPaymentMethods()
         }
-        .sheet(item: $menuDestination) { destination in
-            menuDestinationView(destination)
+        .sheet(isPresented: $isMenuPresented) {
+            if let viewModel {
+                BudgetMenuSheet(
+                    viewModel: viewModel,
+                    authenticatedClient: authenticatedClient,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    onUpdated: onUpdated,
+                    onUserUpdated: onUserUpdated,
+                    onDeleted: onDeleted
+                )
+            }
         }
         .alert("Add a payment method first", isPresented: $isPaymentMethodRequiredPresented) {
             Button("Add a payment method") { isPaymentMethodsPresented = true }
@@ -220,7 +224,7 @@ struct BudgetDetailView: View {
     }
 
     private func tabView(viewModel: BudgetDetailViewModel) -> some View {
-        TabView(selection: $selectedSection) {
+        TabView(selection: tabSelection) {
             NavigationStack {
                 planContent(viewModel: viewModel)
             }
@@ -245,27 +249,23 @@ struct BudgetDetailView: View {
             }
             .tabItem { Label(BudgetSection.reports.title, systemImage: BudgetSection.reports.systemImage) }
             .tag(BudgetSection.reports)
+
+            // Content is never shown: selecting this tag opens the menu sheet
+            // and the selection snaps back. It still needs *a* view, or the
+            // tab item has nothing to hang off.
+            Color.clear
+                .tabItem { Label(BudgetSection.more.title, systemImage: BudgetSection.more.systemImage) }
+                .tag(BudgetSection.more)
         }
     }
 
     /// Tracks `selectedSection` to reproduce each tab's primary action (plus
-    /// the ☰ and the bell, common to every tab) at the one level that
-    /// actually renders — see the type-level doc comment.
+    /// the bell, common to every tab) at the one level that actually renders —
+    /// see the type-level doc comment. The menu is not here: it opens from the
+    /// bottom bar's "More" item.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         let canEdit = viewModel?.canEdit ?? true
-        // Everything infrequent lives behind this: period switching, the
-        // manage panels, settings, help, logging out. Leading placement so
-        // it reads as "where am I" rather than "act on this screen", which
-        // is what the trailing side is for.
-        ToolbarItem(placement: .topBarLeading) {
-            Button {
-                withAnimation(.snappy(duration: 0.28)) { isMenuOpen = true }
-            } label: {
-                Image(systemName: "line.3.horizontal")
-            }
-            .accessibilityIdentifier("budgetMenuButton")
-        }
         // Creating a new transaction is fully blocked on an archived period
         // (see docs/features/budget-list-view-rework.md) — Plan additions
         // (expense allocations) are profile-level, not period-level, so
@@ -326,7 +326,7 @@ struct BudgetDetailView: View {
                 }
                 .accessibilityIdentifier("transactionsFilterMenu")
             }
-        case .review, .reports:
+        case .review, .reports, .more:
             ToolbarItemGroup {}
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -341,7 +341,14 @@ struct BudgetDetailView: View {
     private var sidebarSelection: Binding<BudgetSection?> {
         Binding(
             get: { selectedSection },
-            set: { if let newValue = $0 { selectedSection = newValue } }
+            set: {
+                guard let newValue = $0 else { return }
+                if newValue == .more {
+                    isMenuPresented = true
+                } else {
+                    selectedSection = newValue
+                }
+            }
         )
     }
 
@@ -370,6 +377,9 @@ struct BudgetDetailView: View {
                 NavigationStack {
                     reportsContent
                 }
+            case .more:
+                // Unreachable: `more` never becomes the selection.
+                EmptyView()
             }
         }
     }
@@ -463,52 +473,6 @@ struct BudgetDetailView: View {
             isActive: selectedSection == .review,
             canEdit: viewModel.canEdit
         )
-    }
-
-    /// Presented full width, not inside the 320pt drawer. Each gets a
-    /// `NavigationStack` of its own so its pushes (People, Income, …) behave
-    /// normally, and the shared ✕ so it closes the way every other sheet does.
-    @ViewBuilder
-    private func menuDestinationView(_ destination: BudgetMenuDestination) -> some View {
-        if let authenticatedClient, let viewModel {
-            NavigationStack {
-                Group {
-                    switch destination {
-                    case .manage:
-                        BudgetManageView(
-                            viewModel: viewModel,
-                            authenticatedClient: authenticatedClient,
-                            currencyCode: currencyCode,
-                            localeIdentifier: localeIdentifier,
-                            onUpdated: onUpdated,
-                            dismissParent: { onDeleted(); menuDestination = nil }
-                        )
-                    case .settings:
-                        SettingsView(authenticatedClient: authenticatedClient, onUpdated: onUserUpdated)
-                    case .help:
-                        ChangelogView(
-                            authenticatedClient: authenticatedClient,
-                            localeIdentifier: localeIdentifier
-                        )
-                    case .allPeriods:
-                        PeriodListView(
-                            profile: viewModel.profile,
-                            periods: viewModel.periods,
-                            localeIdentifier: localeIdentifier,
-                            onSelect: { id in
-                                viewModel.selectPeriod(id: id)
-                                menuDestination = nil
-                            }
-                        )
-                    }
-                }
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        SheetCancelButton { menuDestination = nil }
-                    }
-                }
-            }
-        }
     }
 
     @ViewBuilder

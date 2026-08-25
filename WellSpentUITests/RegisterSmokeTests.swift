@@ -49,6 +49,6 @@ final class RegisterSmokeTests: XCTestCase {
         // a genuinely fresh signup.
         XCTAssertTrue(app.buttons["resendVerificationButton"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["verifyGateLogoutButton"].exists)
-        XCTAssertFalse(app.buttons["budgetMenuButton"].exists, "an unverified account must not reach the budget")
+        XCTAssertFalse(app.tabBars.firstMatch.exists, "an unverified account must not reach the budget")
     }
 }
