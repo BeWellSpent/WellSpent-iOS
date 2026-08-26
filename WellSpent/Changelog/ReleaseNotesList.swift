@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// A list of releases with their items. Shared by the what's-new sheet and the
 /// Help browser so the two cannot drift into rendering the same notes
@@ -9,7 +10,7 @@ import WellSpentAPI
 /// type: a release usually reads as a short narrative, and re-sorting it into
 /// buckets breaks that for tidiness nobody asked for.
 struct ReleaseNotesList: View {
-    let releases: [Wellspent_V1_ChangelogRelease]
+    let releases: [ChangelogRelease]
     let localeIdentifier: String
 
     var body: some View {
@@ -24,8 +25,12 @@ struct ReleaseNotesList: View {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text(verbatim: release.version)
                                 .font(.subheadline.weight(.bold))
-                            if release.hasReleasedAt {
-                                Text(release.releasedAt.date.formatted(date: .abbreviated, time: .omitted))
+                            // `releasedAt` is required by the contract, so
+                            // there is no "unset" case to guard any more — the
+                            // proto version needed `hasReleasedAt` because
+                            // every message field is optional on the wire.
+                            do {
+                                Text(release.releasedAt.formatted(date: .abbreviated, time: .omitted))
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
                             }
@@ -56,7 +61,7 @@ struct ReleaseNotesList: View {
     /// expense* — Spanish "Fijo". Reusing it here would put "Fijo" on a
     /// bug-fix chip. Identity and display are different jobs; a literal doing
     /// both collides the moment two features want the same word.
-    private static func label(for type: Wellspent_V1_ChangeType) -> String {
+    private static func label(for type: ChangeType) -> String {
         switch type {
         case .added:
             return String(localized: "changelog.type.added", defaultValue: "Added",
@@ -74,7 +79,7 @@ struct ReleaseNotesList: View {
 
     /// Semantic colours, independent of the app accent — an unrecognised type
     /// renders as "changed" rather than falling through to nothing.
-    private static func tint(for type: Wellspent_V1_ChangeType) -> Color {
+    private static func tint(for type: ChangeType) -> Color {
         switch type {
         case .added: return .green
         case .fixed: return .orange
@@ -85,14 +90,19 @@ struct ReleaseNotesList: View {
 
 #Preview {
     ReleaseNotesList(
-        releases: [.with {
-            $0.id = "r1"
-            $0.version = "1.36.0"
-            $0.items = [
-                .with { $0.changeType = .added; $0.summaryEn = "Release notes now appear when you open a new version." },
-                .with { $0.changeType = .fixed; $0.summaryEn = "Payment progress no longer counts a bill before it is due." }
-            ]
-        }],
+        releases: [
+            ChangelogRelease(
+                id: "r1",
+                component: .ios,
+                version: "1.36.0",
+                releasedAt: .now,
+                items: [
+                    ChangelogItem(changeType: .added, summaryEn: "Release notes now appear when you open a new version.", summaryEs: ""),
+                    ChangelogItem(changeType: .fixed, summaryEn: "Payment progress no longer counts a bill before it is due.", summaryEs: "")
+                ],
+                createdAt: .now
+            )
+        ],
         localeIdentifier: "en"
     )
     .padding()

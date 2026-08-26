@@ -1,36 +1,44 @@
 import Foundation
 import SwiftUI
-import WellSpentAPI
+import WellSpentREST
 
 /// Display rules for the operator-authored status banner.
 ///
 /// Mirrors web's `severity.ts` deliberately: both clients read the same rows
-/// from the same RPC, so a banner that reads as a warning in a browser must not
-/// read as reassurance on a phone.
+/// from the same endpoint, so a banner that reads as a warning in a browser
+/// must not read as reassurance on a phone.
+///
+/// One asymmetry worth knowing about. Web's severity is a TypeScript string
+/// union, which is compile-time only — an unrecognised value flows through and
+/// lands on the `default` branch. The generated Swift enum is closed, so an
+/// unrecognised value fails to decode the whole response and the banner simply
+/// does not appear. That is bounded rather than fixed: `status_banner.severity`
+/// carries a database CHECK constraint allowing exactly these three values, so
+/// a fourth cannot exist without a migration and a contract change that ship
+/// together. The `default` arms below still hold for `warning`.
 nonisolated enum StatusBannerPresentation {
     /// Background and foreground are decided together rather than the view
     /// picking a background and hoping white text lands on it. Yellow with
     /// white text is close to unreadable, and the one banner that has to be
     /// legible is the one telling you something is wrong.
-    static func background(for severity: Wellspent_V1_StatusBannerSeverity) -> Color {
+    static func background(for severity: StatusBannerSeverity) -> Color {
         switch severity {
         case .info: return .green
         case .critical: return .red
-        // Includes .unspecified, .warning and anything a future server sends
-        // that this build doesn't know. Understating an unknown severity is
-        // the worse failure, so it never falls through to green.
+        // Covers .warning. Understating a severity is the worse failure of
+        // the two, so nothing falls through to green.
         default: return .yellow
         }
     }
 
-    static func foreground(for severity: Wellspent_V1_StatusBannerSeverity) -> Color {
+    static func foreground(for severity: StatusBannerSeverity) -> Color {
         switch severity {
         case .info, .critical: return .white
         default: return .black
         }
     }
 
-    static func systemImage(for severity: Wellspent_V1_StatusBannerSeverity) -> String {
+    static func systemImage(for severity: StatusBannerSeverity) -> String {
         switch severity {
         case .info: return "checkmark.circle.fill"
         case .critical: return "exclamationmark.octagon.fill"
@@ -41,7 +49,7 @@ nonisolated enum StatusBannerPresentation {
     /// A critical banner can't be dismissed — one the user can swipe away
     /// isn't doing its job. Green and yellow are informational enough that
     /// pinning them would just be noise.
-    static func isDismissible(_ severity: Wellspent_V1_StatusBannerSeverity) -> Bool {
+    static func isDismissible(_ severity: StatusBannerSeverity) -> Bool {
         severity != .critical
     }
 
@@ -51,7 +59,7 @@ nonisolated enum StatusBannerPresentation {
     /// shouldn't be blocked on writing Spanish, and English text beats a blank
     /// bar.
     static func message(
-        for banner: Wellspent_V1_StatusBanner,
+        for banner: StatusBanner,
         languageCode: String = AppLanguageStore.currentLocale.identifier
     ) -> String {
         let spanish = banner.messageEs.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct SettingsView: View {
     @Environment(SessionStore.self) private var session
@@ -10,11 +11,19 @@ struct SettingsView: View {
     /// pure local preference, no network round trip through `SettingsViewModel`.
     @AppStorage("themeMode") private var themeMode: ThemePreference = .system
     private let authenticatedClient: ProtocolClient
+    /// The authenticated REST client, for the Help section's changelog browser.
+    private let restClient: WellSpentREST.Client
     private let onUpdated: (Wellspent_V1_User) -> Void
 
-    init(authenticatedClient: ProtocolClient, onUpdated: @escaping (Wellspent_V1_User) -> Void) {
-        _viewModel = State(initialValue: SettingsViewModel(authenticatedClient: authenticatedClient))
+    init(
+        authenticatedClient: ProtocolClient,
+        publicRESTClient: WellSpentREST.Client,
+        restClient: WellSpentREST.Client,
+        onUpdated: @escaping (Wellspent_V1_User) -> Void
+    ) {
+        _viewModel = State(initialValue: SettingsViewModel(authenticatedClient: authenticatedClient, publicRESTClient: publicRESTClient))
         self.authenticatedClient = authenticatedClient
+        self.restClient = restClient
         self.onUpdated = onUpdated
     }
 
@@ -151,7 +160,7 @@ struct SettingsView: View {
         Section("Help") {
             NavigationLink {
                 ChangelogView(
-                    authenticatedClient: authenticatedClient,
+                    authenticatedClient: restClient,
                     localeIdentifier: AppLanguageStore.currentLocale.identifier
                 )
             } label: {
@@ -259,7 +268,11 @@ struct SettingsView: View {
 
 #Preview {
     NavigationStack {
-        SettingsView(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")) { _ in }
+        SettingsView(
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        ) { _ in }
     }
     .environment(SessionStore())
 }

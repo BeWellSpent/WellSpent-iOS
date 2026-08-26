@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 import os
-import WellSpentAPI
+import WellSpentREST
 
 /// Loads release notes for the "what's new" prompt and the Help browser.
 ///
@@ -14,17 +14,17 @@ final class ChangelogViewModel {
     private static let logger = AppLogger.logger("Changelog")
 
     private(set) var isLoading = false
-    private(set) var releases: [Wellspent_V1_ChangelogRelease] = []
+    private(set) var releases: [ChangelogRelease] = []
     /// What the API reports about itself. A client cannot otherwise tell which
     /// server releases are new to it.
     private(set) var serverVersion = ""
     private(set) var errorMessage: String?
 
-    private let client: Wellspent_V1_ChangelogServiceClient
+    private let client: WellSpentREST.Client
     private let seenStore: ChangelogSeenStore
 
-    init(authenticatedClient: ProtocolClient, seenStore: ChangelogSeenStore = ChangelogSeenStore()) {
-        self.client = Wellspent_V1_ChangelogServiceClient(client: authenticatedClient)
+    init(authenticatedClient: WellSpentREST.Client, seenStore: ChangelogSeenStore = ChangelogSeenStore()) {
+        self.client = authenticatedClient
         self.seenStore = seenStore
     }
 
@@ -35,27 +35,26 @@ final class ChangelogViewModel {
 
         // Every component: the Help browser shows all three, and the prompt
         // filters down from the same response rather than fetching twice.
-        let response = await client.listChangelog(request: .with { _ in })
-        switch response.result {
-        case .success(let message):
-            releases = message.releases
-            serverVersion = message.currentServerVersion
-            Self.logger.info("loaded changelog releases=\(message.releases.count, privacy: .public) serverVersion=\(message.currentServerVersion, privacy: .public)")
-        case .failure(let error):
+        do {
+            let response = try await client.changelog()
+            releases = response.releases
+            serverVersion = response.currentServerVersion
+            Self.logger.info("loaded changelog releases=\(response.releases.count, privacy: .public) serverVersion=\(response.currentServerVersion, privacy: .public)")
+        } catch {
             // Release notes are not worth an error banner over — a reader who
             // cannot see them has lost nothing they were doing.
-            errorMessage = error.message
+            errorMessage = error.localizedDescription
             Self.logger.error("failed to load changelog error=\(String(describing: error), privacy: .public)")
         }
     }
 
-    func releases(for component: Wellspent_V1_ChangelogComponent) -> [Wellspent_V1_ChangelogRelease] {
+    func releases(for component: ChangelogComponent) -> [ChangelogRelease] {
         releases.filter { $0.component == component }
     }
 
     /// This client's unseen releases, and the server's. Empty on a first-ever
     /// run — see `ChangelogAnnouncement`.
-    var unseenAppReleases: [Wellspent_V1_ChangelogRelease] {
+    var unseenAppReleases: [ChangelogRelease] {
         ChangelogAnnouncement.releasesToAnnounce(
             releases(for: .ios),
             currentVersion: AppVersion.marketingVersion ?? "",
@@ -63,7 +62,7 @@ final class ChangelogViewModel {
         )
     }
 
-    var unseenServerReleases: [Wellspent_V1_ChangelogRelease] {
+    var unseenServerReleases: [ChangelogRelease] {
         ChangelogAnnouncement.releasesToAnnounce(
             releases(for: .server),
             currentVersion: serverVersion,
@@ -88,7 +87,7 @@ final class ChangelogViewModel {
     }
 
     /// Test seam, matching `AlertsViewModel`'s.
-    func setStateForTesting(releases: [Wellspent_V1_ChangelogRelease], serverVersion: String) {
+    func setStateForTesting(releases: [ChangelogRelease], serverVersion: String) {
         self.releases = releases
         self.serverVersion = serverVersion
     }

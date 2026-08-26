@@ -1,16 +1,24 @@
 import Foundation
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("ChangelogAnnouncement")
 struct ChangelogAnnouncementTests {
-    private func release(_ version: String) -> Wellspent_V1_ChangelogRelease {
-        .with { $0.id = version; $0.version = version }
+    private func release(_ version: String) -> ChangelogRelease {
+        ChangelogRelease(
+            id: version,
+            component: .ios,
+            version: version,
+            releasedAt: .now,
+            items: [],
+            createdAt: .now
+        )
     }
 
     /// Newest first, the order the server returns them in.
-    private var history: [Wellspent_V1_ChangelogRelease] {
+    private var history: [ChangelogRelease] {
         [release("1.3.0"), release("1.2.0"), release("1.1.0"), release("1.0.0")]
     }
 
@@ -56,7 +64,7 @@ struct ChangelogAnnouncementTests {
 
     @Test("a Spanish reader gets the Spanish summary")
     func localizedSummaryPrefersSpanish() {
-        let item = Wellspent_V1_ChangelogItem.with { $0.summaryEn = "Added a thing"; $0.summaryEs = "Agregamos algo" }
+        let item = ChangelogItem(changeType: .added, summaryEn: "Added a thing", summaryEs: "Agregamos algo")
         #expect(ChangelogAnnouncement.localizedSummary(item, localeIdentifier: "es") == "Agregamos algo")
         #expect(ChangelogAnnouncement.localizedSummary(item, localeIdentifier: "en") == "Added a thing")
     }
@@ -65,8 +73,8 @@ struct ChangelogAnnouncementTests {
     // rather than rendering blank.
     @Test("falls back to English when there is no translation")
     func localizedSummaryFallsBack() {
-        let blank = Wellspent_V1_ChangelogItem.with { $0.summaryEn = "Added a thing"; $0.summaryEs = "" }
-        let spaces = Wellspent_V1_ChangelogItem.with { $0.summaryEn = "Added a thing"; $0.summaryEs = "   " }
+        let blank = ChangelogItem(changeType: .added, summaryEn: "Added a thing", summaryEs: "")
+        let spaces = ChangelogItem(changeType: .added, summaryEn: "Added a thing", summaryEs: "   ")
         #expect(ChangelogAnnouncement.localizedSummary(blank, localeIdentifier: "es") == "Added a thing")
         #expect(ChangelogAnnouncement.localizedSummary(spaces, localeIdentifier: "es") == "Added a thing")
     }

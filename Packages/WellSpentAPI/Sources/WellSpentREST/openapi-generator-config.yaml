@@ -1,0 +1,5 @@
+# Client only — this app never serves the API.
+generate:
+  - types
+  - client
+accessModifier: public

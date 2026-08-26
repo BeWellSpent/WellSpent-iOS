@@ -1,5 +1,5 @@
 import SwiftUI
-import WellSpentAPI
+import WellSpentREST
 
 /// The operator-authored status strip pinned above the whole app.
 ///
@@ -77,16 +77,20 @@ struct StatusBannerView: View {
 }
 
 #Preview {
-    let viewModel = StatusBannerViewModel(publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+    let viewModel = StatusBannerViewModel(publicClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"))
     return VStack(spacing: 0) {
         StatusBannerView(viewModel: viewModel)
         Spacer()
     }
     .task {
-        viewModel.setStateForTesting(banner: .with {
-            $0.id = "preview"
-            $0.severity = .warning
-            $0.messageEn = "Bank syncing is delayed while we work with our provider on a fix."
-        })
+        viewModel.setStateForTesting(banner: StatusBanner(
+            id: "preview",
+            severity: .warning,
+            messageEn: "Bank syncing is delayed while we work with our provider on a fix.",
+            messageEs: "",
+            startsAt: .now,
+            endsAt: .now.addingTimeInterval(3600),
+            createdAt: .now
+        ))
     }
 }

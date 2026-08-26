@@ -1,5 +1,6 @@
 import Foundation
 import WellSpentAPI
+import WellSpentREST
 
 /// Which releases to put in front of the reader, for one component.
 ///
@@ -26,15 +27,15 @@ nonisolated enum ChangelogAnnouncement {
     /// truncated by the per-component limit — falls back to the newest single
     /// release rather than replaying everything.
     static func releasesToAnnounce(
-        _ releases: [Wellspent_V1_ChangelogRelease],
+        _ releases: [ChangelogRelease],
         currentVersion: String,
         lastSeenVersion: String?
-    ) -> [Wellspent_V1_ChangelogRelease] {
+    ) -> [ChangelogRelease] {
         // No notes published for the running version yet: everything here is
         // either older (fine) or not-yet-shipped-to-this-client
         // (indistinguishable from here), so fall through and let the
         // last-seen rules below do the trimming.
-        let visible: [Wellspent_V1_ChangelogRelease]
+        let visible: [ChangelogRelease]
         if let currentIndex = releases.firstIndex(where: { $0.version == currentVersion }) {
             visible = Array(releases[currentIndex...])
         } else {
@@ -51,7 +52,7 @@ nonisolated enum ChangelogAnnouncement {
 
     /// The reader's language, falling back to English when there is no
     /// translation — `summary_es` is optional on the row.
-    static func localizedSummary(_ item: Wellspent_V1_ChangelogItem, localeIdentifier: String) -> String {
+    static func localizedSummary(_ item: ChangelogItem, localeIdentifier: String) -> String {
         if localeIdentifier.hasPrefix("es"), !item.summaryEs.trimmingCharacters(in: .whitespaces).isEmpty {
             return item.summaryEs
         }

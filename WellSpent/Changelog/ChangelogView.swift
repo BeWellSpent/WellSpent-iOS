@@ -1,14 +1,14 @@
 import SwiftUI
-import WellSpentAPI
+import WellSpentREST
 
 /// The Help browser's changelog: every component's full history, including web,
 /// which an iOS reader cannot see any other way.
 struct ChangelogView: View {
-    let authenticatedClient: ProtocolClient
+    let authenticatedClient: WellSpentREST.Client
     let localeIdentifier: String
 
     @State private var viewModel: ChangelogViewModel?
-    @State private var selected: Wellspent_V1_ChangelogComponent = .ios
+    @State private var selected: ChangelogComponent = .ios
 
     var body: some View {
         Group {
@@ -33,9 +33,9 @@ struct ChangelogView: View {
     private func content(viewModel: ChangelogViewModel) -> some View {
         VStack(spacing: 0) {
             Picker("Component", selection: $selected) {
-                Text("iOS").tag(Wellspent_V1_ChangelogComponent.ios)
-                Text("Web").tag(Wellspent_V1_ChangelogComponent.web)
-                Text("Server").tag(Wellspent_V1_ChangelogComponent.server)
+                Text("iOS").tag(ChangelogComponent.ios)
+                Text("Web").tag(ChangelogComponent.web)
+                Text("Server").tag(ChangelogComponent.server)
             }
             .pickerStyle(.segmented)
             .padding()
@@ -63,7 +63,7 @@ struct ChangelogView: View {
 #Preview {
     NavigationStack {
         ChangelogView(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             localeIdentifier: "en"
         )
     }
