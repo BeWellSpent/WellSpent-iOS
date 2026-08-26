@@ -31,6 +31,11 @@
       "changeType": "changed",
       "summaryEn": "A new “More” item in the bottom bar holds period switching, budget management, settings and help — leaving Plan, Transactions, Review and Reports as the main destinations.",
       "summaryEs": "Un nuevo elemento «Más» en la barra inferior reúne el cambio de período, la administración del presupuesto, los ajustes y la ayuda, y deja Plan, Transacciones, Revisión e Informes como destinos principales."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Switching to a different period now actually reloads the plan and transactions instead of leaving the previous period's figures on screen.",
+      "summaryEs": "Cambiar de período ahora recarga realmente el plan y las transacciones, en vez de dejar en pantalla las cifras del período anterior."
     }
   ]
 }
