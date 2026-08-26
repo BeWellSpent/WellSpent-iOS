@@ -398,6 +398,14 @@ struct BudgetDetailView: View {
                 isActive: selectedSection == .plan,
                 canEdit: viewModel.canEdit
             )
+            // Switching period must rebuild this subtree, not just re-pass the
+            // id. ExpensePlanView creates its view model once (`if viewModel ==
+            // nil`) and captures budgetPeriodID at that moment, so a plain
+            // parameter change left it reloading the period the user had
+            // navigated away from. The parent owns selectedKind and the sheet
+            // flags as @State, so those survive; only the period-scoped
+            // internals are discarded, which is exactly what should happen.
+            .id(period.id)
         } else {
             ProgressView()
         }
@@ -459,6 +467,8 @@ struct BudgetDetailView: View {
                     searchQuery: transactionsSearchQuery,
                     filter: transactionsFilter
                 )
+                // Same reason as planContent's — see there.
+                .id(period.id)
             } else {
                 ProgressView()
             }
