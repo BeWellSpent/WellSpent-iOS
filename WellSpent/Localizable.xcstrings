@@ -449,6 +449,38 @@
         }
       }
     },
+    "Add a payment method first — savings come out of one.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a payment method first — savings come out of one."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agrega primero un método de pago: los ahorros salen de uno."
+          }
+        }
+      }
+    },
+    "Add and edit transactions, income and savings — but not manage people.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add and edit transactions, income and savings — but not manage people."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agregar y editar transacciones, ingresos y ahorros, pero no gestionar personas."
+          }
+        }
+      }
+    },
     "Add person": {
       "localizations": {
         "en": {
@@ -927,6 +959,38 @@
         }
       }
     },
+    "Cancel Setup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel Setup"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar configuración"
+          }
+        }
+      }
+    },
+    "Cancel setup?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel setup?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Cancelar la configuración?"
+          }
+        }
+      }
+    },
     "Cancelled": {
       "localizations": {
         "en": {
@@ -1370,6 +1434,22 @@
         }
       }
     },
+    "Couldn't load the country list. Check your connection and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load the country list. Check your connection and try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar la lista de países. Revisa tu conexión e inténtalo de nuevo."
+          }
+        }
+      }
+    },
     "Couldn't re-sync that bank.": {
       "localizations": {
         "en": {
@@ -1398,6 +1478,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "No pudimos reenviar el correo. Inténtalo en un momento."
+          }
+        }
+      }
+    },
+    "Couldn't save that. Please try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't save that. Please try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar. Inténtalo de nuevo."
           }
         }
       }
@@ -1802,6 +1898,22 @@
         }
       }
     },
+    "Delete budget": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete budget"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar presupuesto"
+          }
+        }
+      }
+    },
     "Delete this budget?": {
       "localizations": {
         "en": {
@@ -2135,6 +2247,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Correo electrónico"
+          }
+        }
+      }
+    },
+    "Email (optional)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email (optional)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correo electrónico (opcional)"
           }
         }
       }
@@ -2856,6 +2984,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dejará de aparecer en períodos futuros. Los gastos ya registrados en períodos anteriores se conservan."
+          }
+        }
+      }
+    },
+    "Keep setting up": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep setting up"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguir configurando"
           }
         }
       }
@@ -3795,6 +3939,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cantidad de cuotas: %d"
+          }
+        }
+      }
+    },
+    "One more thing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One more thing"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una cosa más"
           }
         }
       }
@@ -4879,6 +5039,22 @@
         }
       }
     },
+    "See the whole budget without changing anything.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the whole budget without changing anything."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver todo el presupuesto sin cambiar nada."
+          }
+        }
+      }
+    },
     "Select": {
       "localizations": {
         "en": {
@@ -5039,6 +5215,22 @@
         }
       }
     },
+    "Set money aside each period — an emergency fund, a holiday, anything you want kept apart from spending.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set money aside each period — an emergency fund, a holiday, anything you want kept apart from spending."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparta dinero cada período: un fondo de emergencia, unas vacaciones, lo que quieras mantener separado del gasto."
+          }
+        }
+      }
+    },
     "Settings": {
       "localizations": {
         "en": {
@@ -5163,6 +5355,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sesión iniciada con Apple"
+          }
+        }
+      }
+    },
+    "Signing in with Google or Apple doesn't tell us where you are, and WellSpent needs that to handle your currency and taxes correctly.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing in with Google or Apple doesn't tell us where you are, and WellSpent needs that to handle your currency and taxes correctly."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión con Google o Apple no nos dice dónde estás, y WellSpent lo necesita para manejar correctamente tu moneda y tus impuestos."
           }
         }
       }
@@ -5457,6 +5665,38 @@
         }
       }
     },
+    "That doesn't look like an email address.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That doesn't look like an email address."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eso no parece un correo electrónico."
+          }
+        }
+      }
+    },
+    "That invite link isn't valid.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That invite link isn't valid."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ese enlace de invitación no es válido."
+          }
+        }
+      }
+    },
     "The original purchase stays visible but stops counting toward totals.": {
       "localizations": {
         "en": {
@@ -5521,6 +5761,22 @@
         }
       }
     },
+    "They can": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They can"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podrá"
+          }
+        }
+      }
+    },
     "This account can't sign in right now.": {
       "localizations": {
         "en": {
@@ -5549,6 +5805,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Esta aplicación"
+          }
+        }
+      }
+    },
+    "This deletes the budget and everything added to it — people, payment methods, income and savings. Any invitation already sent will stop working.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This deletes the budget and everything added to it — people, payment methods, income and savings. Any invitation already sent will stop working."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto elimina el presupuesto y todo lo que le agregaste: personas, métodos de pago, ingresos y ahorros. Cualquier invitación ya enviada dejará de funcionar."
+          }
+        }
+      }
+    },
+    "This invitation is no longer available. Ask whoever invited you to send a new one.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invitation is no longer available. Ask whoever invited you to send a new one."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta invitación ya no está disponible. Pídele a quien te invitó que te envíe una nueva."
           }
         }
       }

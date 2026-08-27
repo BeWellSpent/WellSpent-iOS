@@ -52,7 +52,12 @@ struct BudgetHomeView: View {
                             BudgetSetupFlow(
                                 authenticatedClient: authenticatedClient,
                                 currencyCode: viewModel?.currencyCode ?? "USD",
-                                localeIdentifier: viewModel?.localeIdentifier ?? "en"
+                                localeIdentifier: viewModel?.localeIdentifier ?? "en",
+                                // The profile was handed over the moment it was
+                                // created, so cancelling has to take it back —
+                                // otherwise this screen keeps rendering a budget
+                                // the server no longer has.
+                                onCancelled: { Task { await viewModel?.load() } }
                             ) { profile in
                                 viewModel?.addCreatedProfile(profile)
                             }
