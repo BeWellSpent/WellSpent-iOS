@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 import Testing
-import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("StatusBannerPresentation")
@@ -9,13 +9,16 @@ struct StatusBannerPresentationTests {
     private func banner(
         messageEn: String = "Bank syncing is delayed.",
         messageEs: String = "La sincronización bancaria está retrasada."
-    ) -> Wellspent_V1_StatusBanner {
-        .with {
-            $0.id = "b1"
-            $0.severity = .warning
-            $0.messageEn = messageEn
-            $0.messageEs = messageEs
-        }
+    ) -> StatusBanner {
+        StatusBanner(
+            id: "b1",
+            severity: .warning,
+            messageEn: messageEn,
+            messageEs: messageEs,
+            startsAt: .now,
+            endsAt: .now.addingTimeInterval(3600),
+            createdAt: .now
+        )
     }
 
     @Test("The three severities map to green, yellow and red")
@@ -25,12 +28,17 @@ struct StatusBannerPresentationTests {
         #expect(StatusBannerPresentation.background(for: .critical) == .red)
     }
 
-    @Test("An unknown severity falls back to yellow, never green")
-    func unknownSeverityIsNotReassuring() {
-        // Understating a severity this build doesn't recognise is the worse
-        // failure of the two.
-        #expect(StatusBannerPresentation.background(for: .unspecified) == .yellow)
-        #expect(StatusBannerPresentation.background(for: .UNRECOGNIZED(42)) == .yellow)
+    @Test("Warning, the default arm, is yellow rather than green")
+    func warningIsNotReassuring() {
+        // This used to assert `.unspecified` and `.UNRECOGNIZED(42)` too. The
+        // REST contract's severity is a closed Swift enum with exactly the
+        // three real values, so neither is representable any more — an
+        // unrecognised value now fails to decode the response rather than
+        // reaching this function. That is bounded by a database CHECK
+        // constraint allowing only these three; see StatusBannerPresentation's
+        // own doc comment. What is still worth pinning is that the `default`
+        // arm resolves to yellow, not green.
+        #expect(StatusBannerPresentation.background(for: .warning) == .yellow)
     }
 
     @Test("Foreground contrasts with its own background")

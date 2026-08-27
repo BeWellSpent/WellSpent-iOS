@@ -67,3 +67,8 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# The OpenAPI contract, fetched from WellSpent-proto at codegen time — same
+# policy as the buf-generated Swift above. `make generate` and
+# ci_scripts/ci_post_clone.sh both write it.
+Packages/WellSpentAPI/Sources/WellSpentREST/openapi.yaml

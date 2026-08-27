@@ -1,12 +1,16 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("RegisterViewModel")
 @MainActor
 struct RegisterViewModelTests {
     private func makeViewModel() -> RegisterViewModel {
-        RegisterViewModel(publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        RegisterViewModel(
+            publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     // MARK: passwordError — mirrors the backend's validatePassword exactly

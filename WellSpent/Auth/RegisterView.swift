@@ -1,12 +1,13 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct RegisterView: View {
     @Environment(SessionStore.self) private var session
     @Bindable private var viewModel: RegisterViewModel
 
-    init(publicClient: ProtocolClient) {
-        _viewModel = Bindable(wrappedValue: RegisterViewModel(publicClient: publicClient))
+    init(publicClient: ProtocolClient, publicRESTClient: WellSpentREST.Client) {
+        _viewModel = Bindable(wrappedValue: RegisterViewModel(publicClient: publicClient, publicRESTClient: publicRESTClient))
     }
 
     var body: some View {
@@ -125,7 +126,10 @@ struct RegisterView: View {
 
 #Preview {
     NavigationStack {
-        RegisterView(publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        RegisterView(
+            publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
     .environment(SessionStore())
 }

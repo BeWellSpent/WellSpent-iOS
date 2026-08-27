@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// The app's home screen: the budget itself.
 ///
@@ -38,8 +39,8 @@ struct BudgetHomeView: View {
     /// Captured when the decision to announce is made, because the versions are
     /// marked seen in the same breath — reading them live afterwards would find
     /// nothing.
-    @State private var announcedAppReleases: [Wellspent_V1_ChangelogRelease] = []
-    @State private var announcedServerReleases: [Wellspent_V1_ChangelogRelease] = []
+    @State private var announcedAppReleases: [ChangelogRelease] = []
+    @State private var announcedServerReleases: [ChangelogRelease] = []
 
     var body: some View {
         NavigationStack {
@@ -69,7 +70,9 @@ struct BudgetHomeView: View {
                     let model = BudgetHomeViewModel(authenticatedClient: authenticatedClient)
                     viewModel = model
                     await model.load()
-                    await announceWhatsNewIfNeeded(authenticatedClient: authenticatedClient)
+                    await announceWhatsNewIfNeeded(
+                        authenticatedClient: session.authenticatedRESTClient ?? session.publicRESTClient
+                    )
                 }
         }
     }
@@ -137,7 +140,7 @@ struct BudgetHomeView: View {
     /// releases out first: a launch that announces nothing still has to be
     /// recorded, or the next launch would treat it as first-ever again and
     /// never announce anything.
-    private func announceWhatsNewIfNeeded(authenticatedClient: ProtocolClient) async {
+    private func announceWhatsNewIfNeeded(authenticatedClient: WellSpentREST.Client) async {
         guard changelogViewModel == nil else { return }
         let model = ChangelogViewModel(authenticatedClient: authenticatedClient)
         changelogViewModel = model

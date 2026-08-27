@@ -125,7 +125,12 @@ struct BudgetMenuSheet: View {
                 .accessibilityIdentifier("manageBudgetLink")
 
                 NavigationLink {
-                    SettingsView(authenticatedClient: authenticatedClient, onUpdated: onUserUpdated)
+                    SettingsView(
+                        authenticatedClient: authenticatedClient,
+                        publicRESTClient: session.publicRESTClient,
+                        restClient: session.authenticatedRESTClient ?? session.publicRESTClient,
+                        onUpdated: onUserUpdated
+                    )
                 } label: {
                     Label("Settings", systemImage: "gearshape")
                 }
@@ -136,7 +141,7 @@ struct BudgetMenuSheet: View {
                 // from this menu directly.
                 NavigationLink {
                     ChangelogView(
-                        authenticatedClient: authenticatedClient,
+                        authenticatedClient: session.authenticatedRESTClient ?? session.publicRESTClient,
                         localeIdentifier: localeIdentifier
                     )
                 } label: {

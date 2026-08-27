@@ -79,7 +79,7 @@ struct LoginView: View {
     private var registerLinkSection: some View {
         Section {
             NavigationLink("Don't have an account? Register") {
-                RegisterView(publicClient: session.publicClient)
+                RegisterView(publicClient: session.publicClient, publicRESTClient: session.publicRESTClient)
             }
             .accessibilityIdentifier("goToRegisterLink")
         }

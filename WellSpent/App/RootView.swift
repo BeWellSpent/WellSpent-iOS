@@ -51,7 +51,7 @@ struct RootView: View {
             // authenticated/unauthenticated swap below — the banner is the one
             // thing on screen that shouldn't reset when you log in or out.
             if statusBannerViewModel == nil {
-                statusBannerViewModel = StatusBannerViewModel(publicClient: session.publicClient)
+                statusBannerViewModel = StatusBannerViewModel(publicClient: session.publicRESTClient)
             }
             await statusBannerViewModel?.load()
         }

@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -28,7 +29,7 @@ final class SettingsViewModel {
     /// letting that artifact spread through the UI.
     private(set) var hasApplePrivateEmail = false
     private(set) var plan: Wellspent_V1_AccountPlan = .unspecified
-    private(set) var countries: [Wellspent_V1_Country] = []
+    private(set) var countries: [Country] = []
     private(set) var isLoading = false
     private(set) var isSavingProfile = false
     private(set) var isChangingPassword = false
@@ -38,6 +39,12 @@ final class SettingsViewModel {
     private(set) var passwordChangeSucceeded = false
 
     private let userClient: Wellspent_V1_UserServiceClient
+    /// The country list moved to the REST transport, where it is cacheable —
+    /// it is the same three rows for every caller on earth and changes roughly
+    /// never. Deliberately the *public* REST client even here, on an
+    /// authenticated screen: sending a token would make the response look
+    /// user-specific to a cache that cannot know otherwise.
+    private let restClient: WellSpentREST.Client
 
     var isUnitedStates: Bool { countryCode == "US" }
 
@@ -45,8 +52,9 @@ final class SettingsViewModel {
         !currentPassword.isEmpty && RegisterViewModel.passwordError(for: newPassword) == nil && !isChangingPassword
     }
 
-    init(authenticatedClient: ProtocolClient) {
+    init(authenticatedClient: ProtocolClient, publicRESTClient: WellSpentREST.Client) {
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+        self.restClient = publicRESTClient
     }
 
     func load() async {
@@ -54,13 +62,13 @@ final class SettingsViewModel {
         defer { isLoading = false }
 
         async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
-        async let countriesResponse = userClient.listCountries(request: Wellspent_V1_ListCountriesRequest())
+        async let countriesResult = try? restClient.enabledCountries()
 
         if case .success(let message) = await meResponse.result {
             apply(message.user)
         }
-        if case .success(let message) = await countriesResponse.result {
-            countries = message.countries.filter(\.isEnabled)
+        if let fetched = await countriesResult {
+            countries = fetched.filter(\.isEnabled)
         }
     }
 

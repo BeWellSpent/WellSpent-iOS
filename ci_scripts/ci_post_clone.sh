@@ -14,3 +14,10 @@ HOMEBREW_NO_AUTO_UPDATE=1 brew install bufbuild/buf/buf
 
 cd "$CI_PRIMARY_REPOSITORY_PATH"
 buf generate
+
+# The REST half of the API is generated from an OpenAPI contract that does not
+# go through BSR — there is no OpenAPI equivalent — so it is fetched over HTTPS
+# from the public WellSpent-proto repo. Only the *contract* is fetched here; the
+# Swift itself is produced by the swift-openapi-generator SPM build plugin
+# during the build, so there is nothing else to run.
+make generate-rest

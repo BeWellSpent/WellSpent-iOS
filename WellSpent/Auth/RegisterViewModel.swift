@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -12,7 +13,7 @@ final class RegisterViewModel {
     var countryCode = ""
     var stateCode = ""
 
-    private(set) var countries: [Wellspent_V1_Country] = []
+    private(set) var countries: [Country] = []
     private(set) var isSubmitting = false
     private(set) var isLoadingCountries = false
     private(set) var errorMessage: String?
@@ -20,6 +21,13 @@ final class RegisterViewModel {
 
     private let authClient: Wellspent_V1_AuthServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
+
+    /// The country list moved to the REST transport, where it is cacheable —
+    /// it is the same three rows for every caller on earth and changes roughly
+    /// never. Deliberately the *public* REST client even here, on an
+    /// authenticated screen: sending a token would make the response look
+    /// user-specific to a cache that cannot know otherwise.
+    private let restClient: WellSpentREST.Client
 
     var isUnitedStates: Bool { countryCode == "US" }
 
@@ -31,9 +39,10 @@ final class RegisterViewModel {
             && !isSubmitting
     }
 
-    init(publicClient: ProtocolClient) {
+    init(publicClient: ProtocolClient, publicRESTClient: WellSpentREST.Client) {
         self.authClient = Wellspent_V1_AuthServiceClient(client: publicClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: publicClient)
+        self.restClient = publicRESTClient
     }
 
     func loadCountries() async {
@@ -41,9 +50,8 @@ final class RegisterViewModel {
         isLoadingCountries = true
         defer { isLoadingCountries = false }
 
-        let response = await userClient.listCountries(request: Wellspent_V1_ListCountriesRequest())
-        if let message = response.message {
-            countries = message.countries.filter(\.isEnabled)
+        if let fetched = try? await restClient.enabledCountries() {
+            countries = fetched.filter(\.isEnabled)
         }
     }
 
