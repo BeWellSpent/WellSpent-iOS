@@ -62,11 +62,14 @@ struct AddFixedExpenseView: View {
     @ViewBuilder
     private var detailsSection: some View {
         Section {
+            AmountHeroField(
+                text: $viewModel.amountText,
+                autoFocus: true,
+                accessibilityIdentifier: "fixedExpenseAmountField"
+            )
+
             TextField("Name", text: $viewModel.name)
                 .accessibilityIdentifier("fixedExpenseNameField")
-
-            AmountTextField(text: $viewModel.amountText)
-                .accessibilityIdentifier("fixedExpenseAmountField")
         }
     }
 

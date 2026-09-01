@@ -78,6 +78,13 @@ struct AddEditTransactionView: View {
                     .accessibilityIdentifier("transactionLockedNotice")
             }
 
+            AmountHeroField(
+                text: $viewModel.amountText,
+                autoFocus: !isEditing,
+                disabled: viewModel.isLocked,
+                accessibilityIdentifier: "transactionAmountField"
+            )
+
             TextField("Name", text: $viewModel.name)
                 .disabled(viewModel.isLocked)
                 .accessibilityIdentifier("transactionNameField")
@@ -89,10 +96,6 @@ struct AddEditTransactionView: View {
             .pickerStyle(.segmented)
             .disabled(viewModel.isLocked)
             .accessibilityIdentifier("transactionFlowPicker")
-
-            AmountTextField(text: $viewModel.amountText)
-                .disabled(viewModel.isLocked)
-                .accessibilityIdentifier("transactionAmountField")
 
             DatePicker("Date", selection: $viewModel.date, displayedComponents: .date)
                 .disabled(viewModel.isLocked)

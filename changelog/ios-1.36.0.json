@@ -71,6 +71,11 @@
       "changeType": "fixed",
       "summaryEn": "An invite link for a budget that no longer exists now explains itself instead of showing a technical error.",
       "summaryEs": "Un enlace de invitación a un presupuesto que ya no existe ahora se explica en vez de mostrar un error técnico."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Adding or editing a transaction or fixed expense now leads with a big, centered amount field. Adding one focuses that field right away; editing doesn't.",
+      "summaryEs": "Agregar o editar una transacción o un gasto fijo ahora empieza con un campo de monto grande y centrado. Al agregar, ese campo se enfoca de inmediato; al editar, no."
     }
   ]
 }
