@@ -330,6 +330,12 @@ struct FixedExpensesListView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            // Without this, a `Button`'s tap target follows the rendered
+            // glyphs of its label (the text characters, the icon) rather than
+            // the full row — the `Spacer` in between renders nothing, so it
+            // isn't hit-testable on its own, which is what made only the
+            // chevron feel reliably tappable.
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
@@ -341,21 +347,33 @@ struct FixedExpensesListView: View {
     private func dayGroupSection(_ group: TransactionDayGrouping.DayGroup, viewModel: FixedExpensesViewModel) -> some View {
         Section {
             ForEach(group.transactions, id: \.id) { transaction in
+                let onEdit = {
+                    Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+                    activeSheet = .editTransaction(transaction)
+                }
                 FixedExpenseRow(
                     transaction: transaction,
                     viewModel: viewModel,
                     linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviewViewModel?.reviews ?? []),
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
-                    canEdit: canEdit,
                     canMutate: canMutate,
                     autoUpdatePlannedAmount: viewModel.autoUpdatePlannedAmount,
-                    onEdit: {
-                        Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
-                        activeSheet = .editTransaction(transaction)
-                    },
                     onMarkPaid: { activeSheet = .markPaid(transaction) }
                 )
+                // Edit lives on a leading (swipe-right) action now, not a row
+                // tap — frees the row itself to toggle the linked-transactions
+                // chevron on tap instead of requiring a precise tap on the
+                // small chevron icon.
+                .swipeActions(edge: .leading) {
+                    if canEdit {
+                        Button(action: onEdit) {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.blue)
+                        .accessibilityIdentifier("editFixedExpense_\(transaction.name)")
+                    }
+                }
             }
             .onDelete(perform: canMutate ? { offsets in
                 for index in offsets {
@@ -380,11 +398,9 @@ private struct FixedExpenseRow: View {
     let linkedReviews: [Wellspent_V1_TransactionReview]
     let currencyCode: String
     let localeIdentifier: String
-    let canEdit: Bool
     let canMutate: Bool
     /// The budget's auto_update_planned_amount setting — drives the re-plan marker.
     let autoUpdatePlannedAmount: Bool
-    let onEdit: () -> Void
     let onMarkPaid: () -> Void
     @State private var isRePlanNoticePresented = false
 
@@ -393,40 +409,40 @@ private struct FixedExpenseRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                if !linkedReviews.isEmpty {
-                    Button {
-                        isExpanded.toggle()
-                    } label: {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
-                }
-
-                Group {
-                    if canEdit {
-                        Button {
-                            onEdit()
-                        } label: {
-                            fixedExpenseNameContent
+                // A real Button, not `.onTapGesture` on the row — List rows
+                // that also carry `.swipeActions` (this one does, from the
+                // caller) don't reliably deliver a plain tap gesture, which is
+                // exactly why this used to only work on the small chevron
+                // icon. `collapsibleHeader` below uses the same Button
+                // approach for the same reason.
+                Button {
+                    guard !linkedReviews.isEmpty else { return }
+                    isExpanded.toggle()
+                } label: {
+                    HStack {
+                        if !linkedReviews.isEmpty {
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
                         }
-                        .buttonStyle(.plain)
-                    } else {
+
                         fixedExpenseNameContent
+                            .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
+
+                        Spacer()
+
+                        Text(MoneyFormatting.format(
+                            units: transaction.amount.units,
+                            nanos: transaction.amount.nanos,
+                            currencyCode: currencyCode,
+                            localeIdentifier: localeIdentifier
+                        ))
+                        .foregroundStyle(.primary)
                     }
+                    .contentShape(Rectangle())
                 }
-                .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
-
-                Spacer()
-
-                Text(MoneyFormatting.format(
-                    units: transaction.amount.units,
-                    nanos: transaction.amount.nanos,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                ))
+                .buttonStyle(.plain)
 
                 if canMutate {
                     Button {

@@ -9,13 +9,13 @@
 /* Begin PBXBuildFile section */
 		5BDD6B86245671A9B3EB8778 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 890D0A1BBC1DEAB3D32AD2ED /* GoogleMobileAds */; };
 		7C750AB0B9F35275D2999B5E /* Connect in Frameworks */ = {isa = PBXBuildFile; productRef = 1D00A22B34D6797B81F033E6 /* Connect */; };
+		A1B2C3D40003REST0000APP1 /* WellSpentREST in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40001REST0000APP0 /* WellSpentREST */; };
+		A1B2C3D40004REST0000TST1 /* WellSpentREST in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40002REST0000TST0 /* WellSpentREST */; };
+		A1B2C3D40013OAPIRUNAPP01 /* OpenAPIRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40011OAPIRUNAPP00 /* OpenAPIRuntime */; };
+		A1B2C3D40014OAPIRUNTST01 /* OpenAPIRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40012OAPIRUNTST00 /* OpenAPIRuntime */; };
 		B31EA8050D6C2062F3086B23 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 7BAA0D07F490001EB5036DCD /* SwiftProtobuf */; };
 		C00A4A212AF9342D18646DD4 /* WellSpentAPI in Frameworks */ = {isa = PBXBuildFile; productRef = BEDFF6349CA442B6388F4A10 /* WellSpentAPI */; };
-		A1B2C3D40004REST0000TST1 /* WellSpentREST in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40002REST0000TST0 /* WellSpentREST */; };
-		A1B2C3D40014OAPIRUNTST01 /* OpenAPIRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40012OAPIRUNTST00 /* OpenAPIRuntime */; };
 		CBA61846B7E41E51899E646F /* WellSpentAPI in Frameworks */ = {isa = PBXBuildFile; productRef = 8F689F5874F9421B2BAA3672 /* WellSpentAPI */; };
-		A1B2C3D40003REST0000APP1 /* WellSpentREST in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40001REST0000APP0 /* WellSpentREST */; };
-		A1B2C3D40013OAPIRUNAPP01 /* OpenAPIRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40011OAPIRUNAPP00 /* OpenAPIRuntime */; };
 		E3311AFD7208DDB82DEA56DC /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 0B50BD53B91943D90645B199 /* SwiftProtobuf */; };
 		E84171120A89BECCDEE3B7AC /* Connect in Frameworks */ = {isa = PBXBuildFile; productRef = 978FC591DDF86444D1D0BB60 /* Connect */; };
 		F7A2E030D1398193AFDE4A72 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 452BD6DDB4172E8A83C7B8E8 /* LinkKit */; };
@@ -443,7 +443,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = WellSpent/WellSpent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = 76FQ7V92H5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -491,7 +491,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = WellSpent/WellSpent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = 76FQ7V92H5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -682,14 +682,6 @@
 				minimumVersion = 1.28.0;
 			};
 		};
-		A1B2C3D40010OPENAPIRUNTIME /* XCRemoteSwiftPackageReference "swift-openapi-runtime" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-openapi-runtime";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.8.0;
-			};
-		};
 		391B5D6CD4E37CCADC7CBBC5 /* XCRemoteSwiftPackageReference "connect-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/connectrpc/connect-swift";
@@ -712,6 +704,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 11.0.0;
+			};
+		};
+		A1B2C3D40010OPENAPIRUNTIME /* XCRemoteSwiftPackageReference "swift-openapi-runtime" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-openapi-runtime";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.8.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -752,10 +752,15 @@
 			package = 391B5D6CD4E37CCADC7CBBC5 /* XCRemoteSwiftPackageReference "connect-swift" */;
 			productName = Connect;
 		};
-		BEDFF6349CA442B6388F4A10 /* WellSpentAPI */ = {
+		A1B2C3D40001REST0000APP0 /* WellSpentREST */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CA3D00EB3B79D7B7B430E074 /* XCLocalSwiftPackageReference "Packages/WellSpentAPI" */;
-			productName = WellSpentAPI;
+			productName = WellSpentREST;
+		};
+		A1B2C3D40002REST0000TST0 /* WellSpentREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA3D00EB3B79D7B7B430E074 /* XCLocalSwiftPackageReference "Packages/WellSpentAPI" */;
+			productName = WellSpentREST;
 		};
 		A1B2C3D40011OAPIRUNAPP00 /* OpenAPIRuntime */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -767,15 +772,10 @@
 			package = A1B2C3D40010OPENAPIRUNTIME /* XCRemoteSwiftPackageReference "swift-openapi-runtime" */;
 			productName = OpenAPIRuntime;
 		};
-		A1B2C3D40001REST0000APP0 /* WellSpentREST */ = {
+		BEDFF6349CA442B6388F4A10 /* WellSpentAPI */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CA3D00EB3B79D7B7B430E074 /* XCLocalSwiftPackageReference "Packages/WellSpentAPI" */;
-			productName = WellSpentREST;
-		};
-		A1B2C3D40002REST0000TST0 /* WellSpentREST */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CA3D00EB3B79D7B7B430E074 /* XCLocalSwiftPackageReference "Packages/WellSpentAPI" */;
-			productName = WellSpentREST;
+			productName = WellSpentAPI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

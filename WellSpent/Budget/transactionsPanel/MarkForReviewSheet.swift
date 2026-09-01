@@ -109,6 +109,10 @@ struct MarkForReviewSheet: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
+                            // Same fix as FixedExpensesListView's collapsibleHeader —
+                            // without this, only the rendered glyphs (text, icon) are
+                            // tappable, not the Spacer gap between them.
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("togglePaidMarkForReviewCandidates")

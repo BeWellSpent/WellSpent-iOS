@@ -62,11 +62,13 @@ struct EditFixedExpenseView: View {
     @ViewBuilder
     private var detailsSection: some View {
         Section {
+            AmountHeroField(
+                text: $viewModel.amountText,
+                accessibilityIdentifier: "editFixedExpenseAmountField"
+            )
+
             TextField("Name", text: $viewModel.name)
                 .accessibilityIdentifier("editFixedExpenseNameField")
-
-            AmountTextField(text: $viewModel.amountText)
-                .accessibilityIdentifier("editFixedExpenseAmountField")
         }
     }
 

@@ -25,6 +25,9 @@ struct RootView: View {
     /// rather than inside the gate view so its state survives the gate being
     /// swapped out and back in (e.g. a failed refresh) without re-fetching.
     @State private var verifyGateViewModel: VerifyEmailGateViewModel?
+    /// Same lifetime and posture as the verification gate above: created once
+    /// per session, kept here so it survives the gate being swapped in and out.
+    @State private var profileGateViewModel: ProfileCompletionGateViewModel?
     /// Built from the *public* client, so the banner works signed out — an
     /// outage notice has to reach someone stuck on the login screen.
     @State private var statusBannerViewModel: StatusBannerViewModel?
@@ -36,6 +39,14 @@ struct RootView: View {
     /// app rather than a verification wall.
     private var isEmailUnverified: Bool {
         if case .unverified = verifyGateViewModel?.state { return true }
+        return false
+    }
+
+    /// True only once GetMe has said the profile is missing a country.
+    /// Unknown renders the app, matching the rule above — a complete account
+    /// must never see this flash on launch.
+    private var isProfileIncomplete: Bool {
+        if case .incomplete = profileGateViewModel?.state { return true }
         return false
     }
 
@@ -67,6 +78,12 @@ struct RootView: View {
                     // presentation modifier on one view is the footgun that
                     // caused the Plaid double-tap bug.
                     VerifyEmailGateView(viewModel: verifyGateViewModel)
+                } else if let profileGateViewModel, isProfileIncomplete {
+                    // Checked after verification so an account missing both is
+                    // asked one thing at a time. In practice the two never
+                    // overlap: only social sign-ups reach this gate, and those
+                    // are verified at creation.
+                    ProfileCompletionGateView(viewModel: profileGateViewModel)
                 } else {
                     BudgetHomeView()
                         .id(budgetHomeRefreshTrigger)
@@ -83,6 +100,7 @@ struct RootView: View {
             // every foreground below.
             guard session.isAuthenticated, let authenticatedClient = session.authenticatedClient else {
                 verifyGateViewModel = nil
+                profileGateViewModel = nil
                 return
             }
             if verifyGateViewModel == nil {
@@ -91,7 +109,14 @@ struct RootView: View {
                     publicClient: session.publicClient
                 )
             }
+            if profileGateViewModel == nil {
+                profileGateViewModel = ProfileCompletionGateViewModel(
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.publicRESTClient
+                )
+            }
             await verifyGateViewModel?.refresh()
+            await profileGateViewModel?.refresh()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -142,11 +167,11 @@ struct RootView: View {
             guard session.isAuthenticated else { return }
             await TrackingPermission.requestIfNeeded()
         }
-        // Suppressed while the gate is up, so an invite can't be accepted
-        // around it. The token is kept, not discarded, so the cover returns
-        // on its own once the account verifies.
+        // Suppressed while either gate is up, so an invite can't be accepted
+        // around one. The token is kept, not discarded, so the cover returns
+        // on its own once the account verifies and its profile is complete.
         .fullScreenCover(isPresented: Binding(
-            get: { isInvitePreviewPresented && !isEmailUnverified },
+            get: { isInvitePreviewPresented && !isEmailUnverified && !isProfileIncomplete },
             set: { isInvitePreviewPresented = $0 }
         )) {
             if let pendingInviteToken {

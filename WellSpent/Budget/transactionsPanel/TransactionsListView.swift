@@ -145,6 +145,20 @@ struct TransactionsListView: View {
                     Section {
                         ForEach(group.transactions, id: \.id) { transaction in
                             transactionRow(transaction, viewModel: viewModel, reviews: reviews)
+                                // Edit lives on a leading (swipe-right) action now,
+                                // not a row tap — frees the row itself for a plain
+                                // tap gesture (e.g. an expand affordance) later.
+                                .swipeActions(edge: .leading) {
+                                    if canEdit {
+                                        Button {
+                                            editingTransaction = transaction
+                                        } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
+                                        .tint(.blue)
+                                        .accessibilityIdentifier("editTransaction_\(transaction.name)")
+                                    }
+                                }
                                 .swipeActions(edge: .trailing) {
                                     if canMutate && !transaction.isPlaidImported {
                                         Button("Delete", role: .destructive) {
@@ -295,19 +309,8 @@ struct TransactionsListView: View {
         }
 
         return HStack {
-            Group {
-                if canEdit {
-                    Button {
-                        editingTransaction = transaction
-                    } label: {
-                        nameContent
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    nameContent
-                }
-            }
-            .accessibilityIdentifier("transactionRow_\(transaction.name)")
+            nameContent
+                .accessibilityIdentifier("transactionRow_\(transaction.name)")
 
             Spacer()
 

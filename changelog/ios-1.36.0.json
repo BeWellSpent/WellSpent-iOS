@@ -5,17 +5,17 @@
     {
       "changeType": "added",
       "summaryEn": "See what changed: new versions now show a short summary the first time you open them.",
-      "summaryEs": "Mira qu\u00e9 cambi\u00f3: las versiones nuevas ahora muestran un resumen la primera vez que las abres."
+      "summaryEs": "Mira qué cambió: las versiones nuevas ahora muestran un resumen la primera vez que las abres."
     },
     {
       "changeType": "added",
       "summaryEn": "A Help section in Settings lets you browse release notes for any past version, on any platform.",
-      "summaryEs": "Una secci\u00f3n de Ayuda en Ajustes te permite ver las notas de cualquier versi\u00f3n anterior, en cualquier plataforma."
+      "summaryEs": "Una sección de Ayuda en Ajustes te permite ver las notas de cualquier versión anterior, en cualquier plataforma."
     },
     {
       "changeType": "changed",
       "summaryEn": "Expanding a category in the Expense Overview now lists each person's transactions under their own row.",
-      "summaryEs": "Al expandir una categor\u00eda en el Resumen de gastos ahora ves las transacciones de cada persona bajo su propia fila."
+      "summaryEs": "Al expandir una categoría en el Resumen de gastos ahora ves las transacciones de cada persona bajo su propia fila."
     },
     {
       "changeType": "fixed",
@@ -29,18 +29,58 @@
     },
     {
       "changeType": "changed",
-      "summaryEn": "A new \u201cMore\u201d item in the bottom bar holds period switching, budget management, settings and help \u2014 leaving Plan, Transactions, Review and Reports as the main destinations.",
-      "summaryEs": "Un nuevo elemento \u00abM\u00e1s\u00bb en la barra inferior re\u00fane el cambio de per\u00edodo, la administraci\u00f3n del presupuesto, los ajustes y la ayuda, y deja Plan, Transacciones, Revisi\u00f3n e Informes como destinos principales."
+      "summaryEn": "A new “More” item in the bottom bar holds period switching, budget management, settings and help — leaving Plan, Transactions, Review and Reports as the main destinations.",
+      "summaryEs": "Un nuevo elemento «Más» en la barra inferior reúne el cambio de período, la administración del presupuesto, los ajustes y la ayuda, y deja Plan, Transacciones, Revisión e Informes como destinos principales."
     },
     {
       "changeType": "fixed",
       "summaryEn": "Switching to a different period now actually reloads the plan and transactions instead of leaving the previous period's figures on screen.",
-      "summaryEs": "Cambiar de per\u00edodo ahora recarga realmente el plan y las transacciones, en vez de dejar en pantalla las cifras del per\u00edodo anterior."
+      "summaryEs": "Cambiar de período ahora recarga realmente el plan y las transacciones, en vez de dejar en pantalla las cifras del período anterior."
     },
     {
       "changeType": "changed",
       "summaryEn": "The status banner, the country picker and release notes now load from cache on repeat visits, so screens settle faster.",
-      "summaryEs": "El aviso de estado, el selector de pa\u00eds y las notas de la versi\u00f3n ahora se cargan desde la cach\u00e9 en visitas repetidas, por lo que las pantallas se estabilizan m\u00e1s r\u00e1pido."
+      "summaryEs": "El aviso de estado, el selector de país y las notas de la versión ahora se cargan desde la caché en visitas repetidas, por lo que las pantallas se estabilizan más rápido."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Budget setup now has a savings step, so you can set money aside from the start instead of finding it later.",
+      "summaryEs": "La configuración del presupuesto ahora tiene un paso de ahorros, para apartar dinero desde el principio en vez de descubrirlo después."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "You can now give someone an email while adding them to a budget, and choose whether they can edit it or only look at it. The invitation goes out as soon as they're added.",
+      "summaryEs": "Ahora puedes indicar el correo de alguien al agregarlo al presupuesto y elegir si puede editarlo o solo verlo. La invitación se envía apenas se agrega."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Budget setup can be cancelled at any point, which removes the half-finished budget and everything added to it.",
+      "summaryEs": "La configuración del presupuesto se puede cancelar en cualquier momento, lo que elimina el presupuesto a medio crear y todo lo que se le agregó."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Signing in with Google or Apple now asks for your country before you start, so currency and tax handling work from day one.",
+      "summaryEs": "Iniciar sesión con Google o Apple ahora pregunta tu país antes de empezar, para que la moneda y los impuestos funcionen desde el primer día."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Payment methods are now set up before income, since savings need a payment method to come out of.",
+      "summaryEs": "Los métodos de pago ahora se configuran antes que los ingresos, ya que los ahorros necesitan un método de pago del cual salir."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "An invite link for a budget that no longer exists now explains itself instead of showing a technical error.",
+      "summaryEs": "Un enlace de invitación a un presupuesto que ya no existe ahora se explica en vez de mostrar un error técnico."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Adding or editing a transaction or fixed expense now leads with a big, centered amount field. Adding one focuses that field right away; editing doesn't.",
+      "summaryEs": "Agregar o editar una transacción o un gasto fijo ahora empieza con un campo de monto grande y centrado. Al agregar, ese campo se enfoca de inmediato; al editar, no."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Editing a transaction now happens from a swipe instead of tapping the row, so tapping a fixed expense row expands it directly.",
+      "summaryEs": "Editar una transacción ahora se hace deslizando en vez de tocar la fila, así que tocar una fila de gasto fijo la expande directamente."
     }
   ]
 }
