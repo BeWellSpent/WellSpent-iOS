@@ -403,24 +403,40 @@ private struct FixedExpenseRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                if !linkedReviews.isEmpty {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
+                // A real Button, not `.onTapGesture` on the row — List rows
+                // that also carry `.swipeActions` (this one does, from the
+                // caller) don't reliably deliver a plain tap gesture, which is
+                // exactly why this used to only work on the small chevron
+                // icon. `collapsibleHeader` below uses the same Button
+                // approach for the same reason.
+                Button {
+                    guard !linkedReviews.isEmpty else { return }
+                    isExpanded.toggle()
+                } label: {
+                    HStack {
+                        if !linkedReviews.isEmpty {
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
+                        }
+
+                        fixedExpenseNameContent
+                            .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
+
+                        Spacer()
+
+                        Text(MoneyFormatting.format(
+                            units: transaction.amount.units,
+                            nanos: transaction.amount.nanos,
+                            currencyCode: currencyCode,
+                            localeIdentifier: localeIdentifier
+                        ))
+                        .foregroundStyle(.primary)
+                    }
+                    .contentShape(Rectangle())
                 }
-
-                fixedExpenseNameContent
-                    .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
-
-                Spacer()
-
-                Text(MoneyFormatting.format(
-                    units: transaction.amount.units,
-                    nanos: transaction.amount.nanos,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                ))
+                .buttonStyle(.plain)
 
                 if canMutate {
                     Button {
@@ -488,13 +504,6 @@ private struct FixedExpenseRow: View {
                 .padding(.top, 6)
                 .accessibilityIdentifier("linkedTransactions_\(transaction.name)")
             }
-        }
-        // Edit moved to a leading swipe action, so the row itself is free to
-        // toggle the linked-transactions chevron on tap — no longer limited
-        // to a precise tap on the small chevron icon.
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if !linkedReviews.isEmpty { isExpanded.toggle() }
         }
     }
 
