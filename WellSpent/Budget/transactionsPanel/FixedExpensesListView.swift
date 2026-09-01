@@ -59,6 +59,12 @@ struct FixedExpensesListView: View {
     /// Deleting an upcoming template stops a recurring bill for every future
     /// period, so it confirms first — unlike deleting a single transaction.
     @State private var deletingTemplate: Wellspent_V1_FixedExpense?
+    /// Staged by the spawned-transaction swipe-to-delete below, same
+    /// stage-then-confirm shape as `deletingTemplate` — `.onDelete`'s own
+    /// swipe button calls its closure immediately with no way to interpose a
+    /// dialog, so the closure only records the target and the actual delete
+    /// happens from the confirmation button.
+    @State private var deletingTransaction: Wellspent_V1_Transaction?
     /// Paid rows are collapsed by default (docs/features/transactions.md) —
     /// no native collapsible `List` `Section` exists in SwiftUI, so this
     /// gates whether the paid day-groups render at all, same manual-toggle
@@ -307,6 +313,23 @@ struct FixedExpensesListView: View {
         } message: {
             Text("It will stop appearing in future periods. Expenses already recorded in past periods are kept.")
         }
+        .confirmationDialog(
+            "Delete this transaction?",
+            isPresented: Binding(
+                get: { deletingTransaction != nil },
+                set: { if !$0 { deletingTransaction = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let deletingTransaction {
+                    Task { await viewModel.delete(deletingTransaction) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This can't be undone.")
+        }
     }
 
     /// One tappable section header with a chevron, shared by Unpaid, Paid and
@@ -376,10 +399,8 @@ struct FixedExpensesListView: View {
                 }
             }
             .onDelete(perform: canMutate ? { offsets in
-                for index in offsets {
-                    let transaction = group.transactions[index]
-                    Task { await viewModel.delete(transaction) }
-                }
+                guard let index = offsets.first else { return }
+                deletingTransaction = group.transactions[index]
             } : nil)
         } header: {
             Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
@@ -409,40 +430,56 @@ private struct FixedExpenseRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                // A real Button, not `.onTapGesture` on the row — List rows
-                // that also carry `.swipeActions` (this one does, from the
-                // caller) don't reliably deliver a plain tap gesture, which is
-                // exactly why this used to only work on the small chevron
-                // icon. `collapsibleHeader` below uses the same Button
-                // approach for the same reason.
-                Button {
-                    guard !linkedReviews.isEmpty else { return }
-                    isExpanded.toggle()
-                } label: {
-                    HStack {
-                        if !linkedReviews.isEmpty {
-                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
-                        }
-
-                        fixedExpenseNameContent
-                            .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
-
-                        Spacer()
-
-                        Text(MoneyFormatting.format(
-                            units: transaction.amount.units,
-                            nanos: transaction.amount.nanos,
-                            currencyCode: currencyCode,
-                            localeIdentifier: localeIdentifier
-                        ))
-                        .foregroundStyle(.primary)
+                // A plain HStack with a `.simultaneousGesture` tap, not a
+                // `Button` — a `Button` spanning nearly the whole row (via
+                // `.contentShape(Rectangle())`) has to be proven NOT a tap
+                // before UIKit will commit to this row's `.swipeActions` pan
+                // gesture, and that arbitration is exactly what showed up as
+                // a ~1s hitch before either swipe direction's reveal
+                // animation started (reported after this row picked up
+                // `.swipeActions(edge: .leading)` below). `.simultaneousGesture`
+                // recognizes independently of — rather than competing
+                // exclusively with — the row's swipe/scroll recognizers, so
+                // it doesn't block them and isn't blocked by them.
+                // `.onTapGesture` (`.gesture(TapGesture())`) was tried first
+                // and is NOT a substitute here: on a `List` row that also
+                // carries `.swipeActions`, it can lose the same arbitration
+                // outright and simply never fire — which is the original bug
+                // this row's tap-to-expand was fixed for. `collapsibleHeader`
+                // below stays a real `Button`, since section headers aren't
+                // swipeable and have nothing to arbitrate against.
+                HStack {
+                    if !linkedReviews.isEmpty {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
                     }
-                    .contentShape(Rectangle())
+
+                    fixedExpenseNameContent
+                        .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
+
+                    Spacer()
+
+                    Text(MoneyFormatting.format(
+                        units: transaction.amount.units,
+                        nanos: transaction.amount.nanos,
+                        currencyCode: currencyCode,
+                        localeIdentifier: localeIdentifier
+                    ))
+                    .foregroundStyle(.primary)
                 }
-                .buttonStyle(.plain)
+                .contentShape(Rectangle())
+                // `Button` gave this row its tap-is-a-button accessibility
+                // trait for free; restore it explicitly now that the tap is
+                // a plain gesture instead.
+                .accessibilityAddTraits(linkedReviews.isEmpty ? [] : .isButton)
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        guard !linkedReviews.isEmpty else { return }
+                        isExpanded.toggle()
+                    }
+                )
 
                 if canMutate {
                     Button {

@@ -86,6 +86,16 @@
       "changeType": "changed",
       "summaryEn": "The app now stays in portrait — it no longer rotates when you turn your phone or iPad sideways.",
       "summaryEs": "La app ahora se mantiene en vertical: ya no gira cuando inclinas el teléfono o el iPad de lado."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Swiping a transaction now animates smoothly instead of pausing for a moment before the buttons appear.",
+      "summaryEs": "Deslizar una transacción ahora se anima sin interrupciones, en vez de detenerse un momento antes de que aparezcan los botones."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Deleting a transaction now asks you to confirm first.",
+      "summaryEs": "Eliminar una transacción ahora te pide confirmarlo primero."
     }
   ]
 }
