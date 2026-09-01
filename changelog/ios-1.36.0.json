@@ -81,6 +81,11 @@
       "changeType": "changed",
       "summaryEn": "Editing a transaction now happens from a swipe instead of tapping the row, so tapping a fixed expense row expands it directly.",
       "summaryEs": "Editar una transacción ahora se hace deslizando en vez de tocar la fila, así que tocar una fila de gasto fijo la expande directamente."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The app now stays in portrait — it no longer rotates when you turn your phone or iPad sideways.",
+      "summaryEs": "La app ahora se mantiene en vertical: ya no gira cuando inclinas el teléfono o el iPad de lado."
     }
   ]
 }
