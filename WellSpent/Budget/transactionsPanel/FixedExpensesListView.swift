@@ -330,6 +330,12 @@ struct FixedExpensesListView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            // Without this, a `Button`'s tap target follows the rendered
+            // glyphs of its label (the text characters, the icon) rather than
+            // the full row — the `Spacer` in between renders nothing, so it
+            // isn't hit-testable on its own, which is what made only the
+            // chevron feel reliably tappable.
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
