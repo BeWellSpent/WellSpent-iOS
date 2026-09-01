@@ -46,6 +46,10 @@ struct TransactionsListView: View {
     @State private var markReviewTarget: Wellspent_V1_Transaction?
     @State private var installmentTarget: Wellspent_V1_Transaction?
     @State private var unsplitTarget: Wellspent_V1_Transaction?
+    /// Staged by the swipe-to-delete button below, then confirmed via
+    /// `.confirmationDialog` — same shape as `unsplitTarget`/`installmentTarget`,
+    /// so a swipe can't delete a transaction outright with no way back.
+    @State private var deletingTransaction: Wellspent_V1_Transaction?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -162,7 +166,7 @@ struct TransactionsListView: View {
                                 .swipeActions(edge: .trailing) {
                                     if canMutate && !transaction.isPlaidImported {
                                         Button("Delete", role: .destructive) {
-                                            Task { await viewModel.delete(id: transaction.id) }
+                                            deletingTransaction = transaction
                                         }
                                     }
                                 }
@@ -242,6 +246,23 @@ struct TransactionsListView: View {
             }
         } message: {
             Text("The plan and its remaining payments will be deleted, and this purchase will count toward its period again.")
+        }
+        .confirmationDialog(
+            "Delete this transaction?",
+            isPresented: Binding(
+                get: { deletingTransaction != nil },
+                set: { if !$0 { deletingTransaction = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let deletingTransaction {
+                    Task { await viewModel.delete(id: deletingTransaction.id) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This can't be undone.")
         }
         .sheet(isPresented: Binding(
             get: { installmentTarget != nil },
