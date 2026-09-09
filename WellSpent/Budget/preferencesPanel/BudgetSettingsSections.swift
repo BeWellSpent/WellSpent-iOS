@@ -36,13 +36,15 @@ struct BudgetSettingsSections: View {
             }
         )
 
-        // Whether paying a bill at a different amount re-plans future periods.
+        // Whether paying a bill differently than planned re-syncs its template
+        // — amount, due date, category, and payment method. See
+        // docs/features/planned-amount-follows-paid.md.
         BudgetSettingToggleSection(
             budgetProfileID: budgetProfileID,
             authenticatedClient: authenticatedClient,
-            header: "Planned amounts",
-            title: "Update the plan when a bill costs more",
-            footer: "When you mark a bill paid at a different amount, plan future periods at that new amount. The period you're paying keeps its original plan — only later ones change. Turn this off to keep your planned amounts exactly as you set them.",
+            header: "Fixed expenses",
+            title: "Keep fixed expenses in sync with reality",
+            footer: "When a fixed expense is paid differently than planned, update its template for future periods: the amount actually paid, the day it was actually paid (not the original due day), and — when matching a bank transaction reveals a different one — its category and payment method. The period you're paying keeps its own values; only later ones change. Turn this off to keep your fixed expense templates exactly as you set them.",
             accessibilityID: "plannedAmountSyncToggle",
             read: { $0.autoUpdatePlannedAmount },
             write: { client, profileID, enabled in
