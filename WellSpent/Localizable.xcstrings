@@ -7126,6 +7126,54 @@
           }
         }
       }
+    },
+    "Fixed expenses": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fixed expenses"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gastos fijos"
+          }
+        }
+      }
+    },
+    "Keep fixed expenses in sync with reality": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep fixed expenses in sync with reality"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantener los gastos fijos alineados con la realidad"
+          }
+        }
+      }
+    },
+    "When a fixed expense is paid differently than planned, update its template for future periods: the amount actually paid, the day it was actually paid (not the original due day), and — when matching a bank transaction reveals a different one — its category and payment method. The period you're paying keeps its own values; only later ones change. Turn this off to keep your fixed expense templates exactly as you set them.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a fixed expense is paid differently than planned, update its template for future periods: the amount actually paid, the day it was actually paid (not the original due day), and — when matching a bank transaction reveals a different one — its category and payment method. The period you're paying keeps its own values; only later ones change. Turn this off to keep your fixed expense templates exactly as you set them."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando un gasto fijo se paga de forma distinta a lo planificado, actualiza su plantilla para los períodos futuros: el importe realmente pagado, el día en que realmente se pagó (no el día de vencimiento original) y, cuando coincidir con una transacción bancaria revela una distinta, su categoría y método de pago. El período que estás pagando conserva sus propios valores; solo cambian los siguientes. Desactívalo para mantener tus plantillas de gastos fijos tal como las definiste."
+          }
+        }
+      }
     }
   },
   "version": "1.1"
