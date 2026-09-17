@@ -106,6 +106,11 @@
       "changeType": "fixed",
       "summaryEn": "Bank transactions whose name includes a changing date or reference number are now recognized as the same recurring bill each time, instead of needing to be matched by hand every period.",
       "summaryEs": "Las transacciones bancarias cuyo nombre incluye una fecha o número de referencia variable ahora se reconocen como la misma factura recurrente cada vez, en lugar de tener que emparejarlas manualmente cada período."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Pro and Lifetime members can turn automatic fixed-expense matching on or off for their own transactions, in Preferences.",
+      "summaryEs": "Los miembros Pro y Lifetime pueden activar o desactivar la coincidencia automática con gastos fijos para sus propias transacciones, en Preferencias."
     }
   ]
 }
