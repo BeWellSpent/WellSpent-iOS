@@ -44,6 +44,19 @@ struct PreferencesView: View {
                         Text("These settings are yours alone — other people on this budget keep their own.")
                     }
                     .disabled(viewModel.isSaving)
+
+                    Section {
+                        Toggle("Match my transactions to fixed expenses", isOn: Binding(
+                            get: { viewModel.manualMatchReview },
+                            set: { newValue in Task { await viewModel.updateManualMatchReview(newValue) } }
+                        ))
+                        .accessibilityIdentifier("manualMatchReviewPreference")
+                    } footer: {
+                        Text(viewModel.isFree
+                            ? "Available on Pro and Lifetime. Your own transactions won't be matched on the free plan, even with this on."
+                            : "When you add or edit a transaction, check it against your fixed expenses for a possible match, same as bank-synced transactions.")
+                    }
+                    .disabled(viewModel.isSaving)
                 }
 
                 if let errorMessage = viewModel.errorMessage {
