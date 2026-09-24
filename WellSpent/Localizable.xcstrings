@@ -7225,6 +7225,54 @@
           }
         }
       }
+    },
+    "Focused View — show only my own data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focused View — show only my own data"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista enfocada — mostrar solo mis datos"
+          }
+        }
+      }
+    },
+    "Scopes Plan, Overview, Transactions, Income, and Savings to your own numbers plus anything unattributed. Pending reviews always show everyone, flagged when they involve someone else.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scopes Plan, Overview, Transactions, Income, and Savings to your own numbers plus anything unattributed. Pending reviews always show everyone, flagged when they involve someone else."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limita Plan, Resumen, Transacciones, Ingresos y Ahorros a tus propios números más lo que no esté atribuido a nadie. Las revisiones pendientes siempre muestran a todos, marcadas cuando involucran a otra persona."
+          }
+        }
+      }
+    },
+    "Involves someone else's data — switch to Full View to review it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Involves someone else's data — switch to Full View to review it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluye datos de otra persona — cambia a Vista completa para revisarlo."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

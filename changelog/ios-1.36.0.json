@@ -111,6 +111,11 @@
       "changeType": "added",
       "summaryEn": "Pro and Lifetime members can turn automatic fixed-expense matching on or off for their own transactions, in Preferences.",
       "summaryEs": "Los miembros Pro y Lifetime pueden activar o desactivar la coincidencia automática con gastos fijos para sus propias transacciones, en Preferencias."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "A new Focused View setting in Preferences scopes Plan, Overview, Transactions, Income, and Savings to your own numbers plus anything unattributed.",
+      "summaryEs": "Un nuevo ajuste de Vista Enfocada en Preferencias limita Plan, Resumen, Transacciones, Ingresos y Ahorros a tus propios números más lo que no esté atribuido a nadie."
     }
   ]
 }

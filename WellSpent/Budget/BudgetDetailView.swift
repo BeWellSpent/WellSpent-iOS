@@ -44,6 +44,13 @@ struct BudgetDetailView: View {
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
     @State private var isMenuPresented = false
+    /// Bumped whenever the Focused View toggle changes in `BudgetMenuSheet`,
+    /// so Plan/Transactions rebuild and refetch immediately instead of
+    /// showing the old scope until the user leaves and re-enters the tab.
+    /// Folded into `.id(period.id)` below — the same trick that already
+    /// forces a fresh subtree (and thus a fresh `.task`/load) on a period
+    /// switch, reused here for the same reason.
+    @State private var focusedViewToken = UUID()
     @State private var isPaymentMethodRequiredPresented = false
     @State private var isPaymentMethodsPresented = false
 
@@ -138,7 +145,8 @@ struct BudgetDetailView: View {
                     localeIdentifier: localeIdentifier,
                     onUpdated: onUpdated,
                     onUserUpdated: onUserUpdated,
-                    onDeleted: onDeleted
+                    onDeleted: onDeleted,
+                    onFocusedViewChanged: { focusedViewToken = UUID() }
                 )
             }
         }
@@ -190,6 +198,7 @@ struct BudgetDetailView: View {
             if reviewViewModel == nil {
                 reviewViewModel = TransactionReviewViewModel(
                     budgetProfileID: viewModel.profile.id,
+                    currentUserID: session.userID,
                     authenticatedClient: authenticatedClient
                 )
             }
@@ -405,7 +414,9 @@ struct BudgetDetailView: View {
             // navigated away from. The parent owns selectedKind and the sheet
             // flags as @State, so those survive; only the period-scoped
             // internals are discarded, which is exactly what should happen.
-            .id(period.id)
+            // `focusedViewToken` rides along for the same reason: flipping
+            // Focused View needs the same fresh reload a period switch gets.
+            .id("\(period.id)|\(focusedViewToken)")
         } else {
             ProgressView()
         }
@@ -468,7 +479,7 @@ struct BudgetDetailView: View {
                     filter: transactionsFilter
                 )
                 // Same reason as planContent's — see there.
-                .id(period.id)
+                .id("\(period.id)|\(focusedViewToken)")
             } else {
                 ProgressView()
             }

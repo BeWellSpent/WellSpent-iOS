@@ -15,6 +15,7 @@ struct FixedExpensesViewModelTests {
             budgetProfileID: "budget-1",
             currencyCode: "USD",
             localeIdentifier: "en",
+            currentUserID: nil,
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

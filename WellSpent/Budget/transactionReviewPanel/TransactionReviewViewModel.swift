@@ -6,9 +6,11 @@ import WellSpentAPI
 final class TransactionReviewViewModel {
     private(set) var isLoading = false
     private(set) var reviews: [Wellspent_V1_TransactionReview] = []
+    private(set) var people: [Wellspent_V1_BudgetPerson] = []
     private(set) var errorMessage: String?
 
     let budgetProfileID: String
+    let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
 
@@ -20,15 +22,30 @@ final class TransactionReviewViewModel {
         reviews.filter { $0.status == "pending" }
     }
 
-    init(budgetProfileID: String, authenticatedClient: ProtocolClient) {
+    /// The review queue is never filtered by Focused View — an actionable
+    /// item shouldn't be hidden behind a display toggle — but a row that
+    /// involves someone other than the caller gets flagged instead, using
+    /// the resolved person ids the backend attaches to each side of a match.
+    func spansOutsideMyView(_ review: Wellspent_V1_TransactionReview) -> Bool {
+        guard let myPerson = ChartPreference.myPerson(currentUserID: currentUserID, people: people),
+              myPerson.focusedViewEnabled else { return false }
+        func involvesSomeoneElse(_ personID: Int64) -> Bool {
+            personID != 0 && personID != myPerson.id
+        }
+        return involvesSomeoneElse(review.transactionPersonID) || involvesSomeoneElse(review.matchedTransactionPersonID)
+    }
+
+    init(budgetProfileID: String, currentUserID: String? = nil, authenticatedClient: ProtocolClient) {
         self.budgetProfileID = budgetProfileID
+        self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
     }
 
-    /// Not private, so `pendingReviews` is testable without a live
-    /// `ListTransactionReviews` call.
-    func setStateForTesting(reviews: [Wellspent_V1_TransactionReview]) {
+    /// Not private, so `pendingReviews`/`spansOutsideMyView` are testable
+    /// without a live `ListTransactionReviews`/`ListBudgetPeople` call.
+    func setStateForTesting(reviews: [Wellspent_V1_TransactionReview], people: [Wellspent_V1_BudgetPerson] = []) {
         self.reviews = reviews
+        self.people = people
     }
 
     /// Started once from `BudgetDetailView`'s own `.task` (same shape as
@@ -49,12 +66,17 @@ final class TransactionReviewViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        let response = await client.listTransactionReviews(request: .with { $0.budgetProfileID = budgetProfileID })
-        switch response.result {
+        async let reviewsResponse = client.listTransactionReviews(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
+
+        switch await reviewsResponse.result {
         case .success(let message):
             reviews = message.reviews
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load transaction reviews."
+        }
+        if case .success(let message) = await peopleResponse.result {
+            people = message.people
         }
     }
 

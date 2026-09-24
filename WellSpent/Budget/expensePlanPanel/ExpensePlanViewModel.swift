@@ -23,14 +23,16 @@ final class ExpensePlanViewModel {
     let budgetProfileID: String
     let currencyCode: String
     let localeIdentifier: String
+    let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
+        self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
     }
 
@@ -94,7 +96,6 @@ final class ExpensePlanViewModel {
         async let allocationsResponse = client.listExpenseAllocations(request: .with { $0.budgetProfileID = budgetProfileID })
         async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let summaryResponse = client.getExpenseSummary(request: .with { $0.budgetPeriodID = budgetPeriodID })
 
         switch await allocationsResponse.result {
         case .success(let message):
@@ -109,7 +110,13 @@ final class ExpensePlanViewModel {
         if case .success(let message) = await peopleResponse.result {
             people = message.people
         }
-        switch await summaryResponse.result {
+
+        // Needs `people` resolved first, so this can't join the batch above.
+        let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
+        switch await client.getExpenseSummary(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        }).result {
         case .success(let message):
             summary = message
         case .failure(let error):

@@ -11,6 +11,7 @@ final class IncomeViewModel {
     private(set) var errorMessage: String?
 
     let budgetProfileID: String
+    let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
@@ -24,16 +25,28 @@ final class IncomeViewModel {
         isFree && sources.count >= 2
     }
 
-    init(budgetProfileID: String, authenticatedClient: ProtocolClient) {
+    /// `IncomeSource` already carries `budgetPersonID` on the wire, so this is
+    /// a plain equality filter over already-fetched data, not arithmetic —
+    /// no backend scoping needed here, unlike `ListTransactions`/`GetExpenseSummary`.
+    var visibleSources: [Wellspent_V1_IncomeSource] {
+        guard let myPerson = ChartPreference.myPerson(currentUserID: currentUserID, people: people),
+              myPerson.focusedViewEnabled else { return sources }
+        return sources.filter { FocusedViewFiltering.isMineOrUnattributed($0.budgetPersonID, myPersonID: myPerson.id) }
+    }
+
+    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
         self.budgetProfileID = budgetProfileID
+        self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
     }
 
-    /// Not private, so `isAtLimit` is testable without a live `GetMe` call.
-    func setStateForTesting(sources: [Wellspent_V1_IncomeSource], isFree: Bool) {
+    /// Not private, so `isAtLimit`/`visibleSources` are testable without a
+    /// live `GetMe`/`ListBudgetPeople` call.
+    func setStateForTesting(sources: [Wellspent_V1_IncomeSource], isFree: Bool, people: [Wellspent_V1_BudgetPerson] = []) {
         self.sources = sources
         self.isFree = isFree
+        self.people = people
     }
 
     func load() async {

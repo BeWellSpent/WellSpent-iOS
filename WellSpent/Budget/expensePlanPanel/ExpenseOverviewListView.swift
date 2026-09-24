@@ -33,6 +33,7 @@ struct ExpenseOverviewListView: View {
                     budgetProfileID: budgetProfileID,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
+                    currentUserID: session.userID,
                     authenticatedClient: authenticatedClient
                 )
             }

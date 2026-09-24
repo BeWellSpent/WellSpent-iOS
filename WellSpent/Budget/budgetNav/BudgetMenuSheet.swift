@@ -31,6 +31,15 @@ struct BudgetMenuSheet: View {
     let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
     let onUserUpdated: (Wellspent_V1_User) -> Void
     let onDeleted: () -> Void
+    /// Fired the moment the toggle below is flipped, so the tabs sitting
+    /// behind this sheet rebuild and refetch under the new scope instead of
+    /// waiting for the user to leave and re-enter them.
+    let onFocusedViewChanged: () -> Void
+
+    /// Owns just the Focused View toggle here — reuses `PreferencesViewModel`
+    /// rather than a dedicated type, since it already does exactly the
+    /// person-resolution + load/update this one control needs.
+    @State private var preferencesViewModel: PreferencesViewModel?
 
     /// Periods sharing a year with whatever is currently being shown —
     /// including archived ones, since switching to a past period is exactly
@@ -47,6 +56,7 @@ struct BudgetMenuSheet: View {
         NavigationStack {
             List {
                 periodSection
+                focusedViewSection
                 destinationsSection
                 logoutSection
                 versionSection
@@ -57,6 +67,45 @@ struct BudgetMenuSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     SheetCancelButton { dismiss() }
                 }
+            }
+            .task {
+                guard let authenticatedClient else { return }
+                if preferencesViewModel == nil {
+                    preferencesViewModel = PreferencesViewModel(
+                        budgetProfileID: viewModel.profile.id,
+                        currentUserID: session.userID,
+                        authenticatedClient: authenticatedClient
+                    )
+                }
+                await preferencesViewModel?.load()
+            }
+        }
+    }
+
+    /// A quick toggle right on the root menu, not a screen deeper inside
+    /// Preferences — this is flipped far more often than a set-once
+    /// preference, so it needs to be reachable in one tap.
+    @ViewBuilder
+    private var focusedViewSection: some View {
+        if let preferencesViewModel, preferencesViewModel.isLinkedMember {
+            Section {
+                Toggle("Focused View — show only my own data", isOn: Binding(
+                    get: { preferencesViewModel.focusedView },
+                    set: { newValue in
+                        Task {
+                            await preferencesViewModel.updateFocusedView(newValue)
+                            // Fires whether the save succeeded or was rolled
+                            // back — either way `focusedView` now holds the
+                            // authoritative value the tabs behind this sheet
+                            // should reflect.
+                            onFocusedViewChanged()
+                        }
+                    }
+                ))
+                .disabled(preferencesViewModel.isSaving)
+                .accessibilityIdentifier("focusedViewPreference")
+            } footer: {
+                Text("Scopes Plan, Overview, Transactions, Income, and Savings to your own numbers plus anything unattributed. Pending reviews always show everyone, flagged when they involve someone else.")
             }
         }
     }
@@ -194,7 +243,8 @@ struct BudgetMenuSheet: View {
         localeIdentifier: "en",
         onUpdated: { _ in },
         onUserUpdated: { _ in },
-        onDeleted: {}
+        onDeleted: {},
+        onFocusedViewChanged: {}
     )
     .environment(SessionStore())
 }

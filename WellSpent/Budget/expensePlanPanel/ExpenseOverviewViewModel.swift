@@ -27,14 +27,16 @@ final class ExpenseOverviewViewModel {
     let budgetProfileID: String
     let currencyCode: String
     let localeIdentifier: String
+    let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
+        self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
     }
 
@@ -174,16 +176,7 @@ final class ExpenseOverviewViewModel {
 
         async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let transactionsResponse = client.listTransactions(request: .with { $0.budgetPeriodID = budgetPeriodID })
-        async let summaryResponse = client.getExpenseSummary(request: .with { $0.budgetPeriodID = budgetPeriodID })
         async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
-
-        switch await transactionsResponse.result {
-        case .success(let message):
-            transactions = message.transactions
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load the expense overview."
-        }
 
         if case .success(let message) = await categoriesResponse.result {
             categories = message.categories
@@ -194,6 +187,25 @@ final class ExpenseOverviewViewModel {
         if case .success(let message) = await paymentMethodsResponse.result {
             paymentMethods = message.methods
         }
+
+        // Needs `people` resolved first, so these can't join the batch above.
+        let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
+        async let transactionsResponse = client.listTransactions(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        })
+        async let summaryResponse = client.getExpenseSummary(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        })
+
+        switch await transactionsResponse.result {
+        case .success(let message):
+            transactions = message.transactions
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load the expense overview."
+        }
+
         switch await summaryResponse.result {
         case .success(let message):
             summary = message

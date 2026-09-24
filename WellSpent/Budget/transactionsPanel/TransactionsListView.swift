@@ -41,6 +41,7 @@ struct TransactionsListView: View {
 
     private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: TransactionsViewModel?
     @State private var editingTransaction: Wellspent_V1_Transaction?
     @State private var markReviewTarget: Wellspent_V1_Transaction?
@@ -95,6 +96,7 @@ struct TransactionsListView: View {
                     budgetProfileID: budgetProfileID,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
+                    currentUserID: session.userID,
                     authenticatedClient: authenticatedClient
                 )
             }

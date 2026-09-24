@@ -92,6 +92,17 @@ struct TransactionReviewListView: View {
                 .font(.headline)
             }
 
+            if viewModel.spansOutsideMyView(review) {
+                HStack(spacing: 4) {
+                    Image(systemName: "eye")
+                        .font(.caption)
+                    Text("Involves someone else's data — switch to Full View to review it.")
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("reviewSpansOutsideView_\(review.id)")
+            }
+
             HStack {
                 Text("\(Int(review.matchScore))% match")
                     .font(.caption)

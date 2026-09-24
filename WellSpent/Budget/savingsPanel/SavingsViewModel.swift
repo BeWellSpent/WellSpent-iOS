@@ -14,21 +14,32 @@ final class SavingsViewModel {
     let budgetProfileID: String
     let currencyCode: String
     let localeIdentifier: String
+    let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
 
+    /// `SavingsSource` already carries `budgetPersonID` on the wire, so this
+    /// is a plain equality filter over already-fetched data, not arithmetic —
+    /// no backend scoping needed here, unlike `ListTransactions`/`GetExpenseSummary`.
+    var visibleSources: [Wellspent_V1_SavingsSource] {
+        guard let myPerson = ChartPreference.myPerson(currentUserID: currentUserID, people: people),
+              myPerson.focusedViewEnabled else { return sources }
+        return sources.filter { FocusedViewFiltering.isMineOrUnattributed($0.budgetPersonID, myPersonID: myPerson.id) }
+    }
+
     var totalText: String {
         TransactionAmountFormatting.totalDisplayText(
-            amounts: sources.map { (units: $0.amount.units, nanos: $0.amount.nanos) },
+            amounts: visibleSources.map { (units: $0.amount.units, nanos: $0.amount.nanos) },
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
         )
     }
 
-    init(budgetProfileID: String, currencyCode: String, localeIdentifier: String, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
+        self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
     }
 
@@ -73,6 +84,13 @@ final class SavingsViewModel {
 
     func paymentMethodColor(for paymentMethodID: String) -> String {
         paymentMethods.first(where: { $0.id == paymentMethodID })?.color ?? ""
+    }
+
+    /// Not private, so `visibleSources` is testable without a live
+    /// `ListSavingsSources`/`ListBudgetPeople` call.
+    func setStateForTesting(sources: [Wellspent_V1_SavingsSource], people: [Wellspent_V1_BudgetPerson] = []) {
+        self.sources = sources
+        self.people = people
     }
 
     func addSource(_ source: Wellspent_V1_SavingsSource) {

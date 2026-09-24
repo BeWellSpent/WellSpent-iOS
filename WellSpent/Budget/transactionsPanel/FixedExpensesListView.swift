@@ -49,6 +49,7 @@ struct FixedExpensesListView: View {
 
     private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: FixedExpensesViewModel?
     /// One `.sheet(item:)` instead of a `.sheet(isPresented:)` per case:
     /// stacking those on a single view is what caused the Plaid double-tap
@@ -96,6 +97,7 @@ struct FixedExpensesListView: View {
                     budgetProfileID: budgetProfileID,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
+                    currentUserID: session.userID,
                     authenticatedClient: authenticatedClient
                 )
             }

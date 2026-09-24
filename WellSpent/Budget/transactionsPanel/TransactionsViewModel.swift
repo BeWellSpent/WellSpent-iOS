@@ -26,6 +26,7 @@ final class TransactionsViewModel {
     let budgetProfileID: String
     let currencyCode: String
     let localeIdentifier: String
+    let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
 
@@ -54,11 +55,12 @@ final class TransactionsViewModel {
         )
     }
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
+        self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
     }
 
@@ -67,21 +69,9 @@ final class TransactionsViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let transactionsResponse = client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.transactionTypeID = Self.variableTypeID
-        })
         async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
         async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let summaryResponse = client.getExpenseSummary(request: .with { $0.budgetPeriodID = budgetPeriodID })
-
-        switch await transactionsResponse.result {
-        case .success(let message):
-            transactions = message.transactions.sorted { $0.date.date > $1.date.date }
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load transactions."
-        }
 
         if case .success(let message) = await categoriesResponse.result {
             categories = message.categories
@@ -92,6 +82,26 @@ final class TransactionsViewModel {
         if case .success(let message) = await peopleResponse.result {
             people = message.people
         }
+
+        // Needs `people` resolved first, so these can't join the batch above.
+        let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
+        async let transactionsResponse = client.listTransactions(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.transactionTypeID = Self.variableTypeID
+            $0.focusedView = focusedView
+        })
+        async let summaryResponse = client.getExpenseSummary(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        })
+
+        switch await transactionsResponse.result {
+        case .success(let message):
+            transactions = message.transactions.sorted { $0.date.date > $1.date.date }
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load transactions."
+        }
+
         if case .success(let message) = await summaryResponse.result {
             summary = message
         }

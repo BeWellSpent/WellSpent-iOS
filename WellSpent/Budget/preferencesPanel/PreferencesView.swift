@@ -57,6 +57,9 @@ struct PreferencesView: View {
                             : "When you add or edit a transaction, check it against your fixed expenses for a possible match, same as bank-synced transactions.")
                     }
                     .disabled(viewModel.isSaving)
+                    // Focused View's own toggle lives in the root "More" menu
+                    // (`BudgetMenuSheet`), not here — it's flipped often enough
+                    // that burying it a screen deeper wasn't reachable enough.
                 }
 
                 if let errorMessage = viewModel.errorMessage {
