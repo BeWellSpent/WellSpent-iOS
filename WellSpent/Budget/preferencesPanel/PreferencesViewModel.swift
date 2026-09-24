@@ -8,6 +8,7 @@ final class PreferencesViewModel {
     private(set) var planChart: ExpenseChartView.ChartType = ChartPreference.fallback
     private(set) var overviewChart: ExpenseChartView.ChartType = ChartPreference.fallback
     private(set) var manualMatchReview = true
+    private(set) var focusedView = false
     private(set) var isFree = false
     private(set) var isLoading = false
     private(set) var isSaving = false
@@ -48,6 +49,7 @@ final class PreferencesViewModel {
         planChart = ChartPreference.chartType(for: me.planChartType)
         overviewChart = ChartPreference.chartType(for: me.overviewChartType)
         manualMatchReview = me.manualMatchReviewEnabled
+        focusedView = me.focusedViewEnabled
     }
 
     func update(plan: ExpenseChartView.ChartType, overview: ExpenseChartView.ChartType) async {
@@ -94,6 +96,29 @@ final class PreferencesViewModel {
 
         if case .failure(let error) = response.result {
             manualMatchReview = previous
+            errorMessage = error.message ?? String(
+                localized: "Couldn't save your preferences.",
+                bundle: AppLanguageStore.currentBundle,
+                locale: AppLanguageStore.currentLocale
+            )
+        }
+    }
+
+    func updateFocusedView(_ enabled: Bool) async {
+        let previous = focusedView
+        focusedView = enabled
+
+        isSaving = true
+        defer { isSaving = false }
+        errorMessage = nil
+
+        let response = await client.updateMyFocusedViewPreference(request: .with {
+            $0.budgetProfileID = budgetProfileID
+            $0.enabled = enabled
+        })
+
+        if case .failure(let error) = response.result {
+            focusedView = previous
             errorMessage = error.message ?? String(
                 localized: "Couldn't save your preferences.",
                 bundle: AppLanguageStore.currentBundle,

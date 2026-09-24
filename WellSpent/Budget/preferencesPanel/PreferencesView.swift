@@ -57,6 +57,17 @@ struct PreferencesView: View {
                             : "When you add or edit a transaction, check it against your fixed expenses for a possible match, same as bank-synced transactions.")
                     }
                     .disabled(viewModel.isSaving)
+
+                    Section {
+                        Toggle("Focused View — show only my own data", isOn: Binding(
+                            get: { viewModel.focusedView },
+                            set: { newValue in Task { await viewModel.updateFocusedView(newValue) } }
+                        ))
+                        .accessibilityIdentifier("focusedViewPreference")
+                    } footer: {
+                        Text("Scopes Plan, Overview, Transactions, Income, and Savings to your own numbers plus anything unattributed. Pending reviews always show everyone, flagged when they involve someone else.")
+                    }
+                    .disabled(viewModel.isSaving)
                 }
 
                 if let errorMessage = viewModel.errorMessage {

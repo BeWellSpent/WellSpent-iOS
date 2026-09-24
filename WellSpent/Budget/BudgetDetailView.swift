@@ -190,6 +190,7 @@ struct BudgetDetailView: View {
             if reviewViewModel == nil {
                 reviewViewModel = TransactionReviewViewModel(
                     budgetProfileID: viewModel.profile.id,
+                    currentUserID: session.userID,
                     authenticatedClient: authenticatedClient
                 )
             }

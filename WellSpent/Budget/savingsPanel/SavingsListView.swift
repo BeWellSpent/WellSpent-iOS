@@ -9,6 +9,7 @@ struct SavingsListView: View {
     let localeIdentifier: String
     let canEdit: Bool
 
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: SavingsViewModel?
     @State private var isAddSheetPresented = false
     @State private var editingSource: Wellspent_V1_SavingsSource?
@@ -40,6 +41,7 @@ struct SavingsListView: View {
                     budgetProfileID: budgetProfileID,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
+                    currentUserID: session.userID,
                     authenticatedClient: authenticatedClient
                 )
             }
@@ -59,13 +61,13 @@ struct SavingsListView: View {
             }
 
             Section {
-                if viewModel.sources.isEmpty && viewModel.isLoading {
+                if viewModel.visibleSources.isEmpty && viewModel.isLoading {
                     ProgressView()
-                } else if viewModel.sources.isEmpty {
+                } else if viewModel.visibleSources.isEmpty {
                     Text("No savings sources yet.")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(viewModel.sources, id: \.id) { source in
+                    ForEach(viewModel.visibleSources, id: \.id) { source in
                         sourceRow(source, viewModel: viewModel)
                             .swipeActions(edge: .trailing) {
                                 if canEdit && !source.isTaxReserve {

@@ -32,6 +32,7 @@ final class FixedExpensesViewModel {
     let budgetProfileID: String
     let currencyCode: String
     let localeIdentifier: String
+    let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
 
@@ -48,11 +49,12 @@ final class FixedExpensesViewModel {
         )
     }
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
+        self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
     }
 
@@ -61,27 +63,11 @@ final class FixedExpensesViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let transactionsResponse = client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.transactionTypeID = Self.fixedTypeID
-        })
         async let fixedExpensesResponse = client.listFixedExpenses(request: .with { $0.budgetProfileID = budgetProfileID })
         async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
         async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
         async let profileResponse = client.getBudgetProfile(request: .with { $0.id = budgetProfileID })
-        async let summaryResponse = client.getExpenseSummary(request: .with { $0.budgetPeriodID = budgetPeriodID })
-
-        switch await transactionsResponse.result {
-        case .success(let message):
-            // Oldest first: the Fixed list is a schedule, so the month should
-            // run top to bottom. Variable stays newest-first — it's a feed.
-            transactions = message.transactions.sorted { $0.date.date < $1.date.date }
-            Self.logger.info("loaded fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) count=\(self.transactions.count, privacy: .public)")
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load fixed expenses."
-            Self.logger.error("failed to load fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) error=\(String(describing: error), privacy: .public)")
-        }
 
         if case .success(let message) = await fixedExpensesResponse.result {
             fixedExpenses = message.expenses
@@ -98,6 +84,30 @@ final class FixedExpensesViewModel {
         if case .success(let message) = await profileResponse.result {
             autoUpdatePlannedAmount = message.profile.autoUpdatePlannedAmount
         }
+
+        // Needs `people` resolved first, so these can't join the batch above.
+        let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
+        async let transactionsResponse = client.listTransactions(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.transactionTypeID = Self.fixedTypeID
+            $0.focusedView = focusedView
+        })
+        async let summaryResponse = client.getExpenseSummary(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        })
+
+        switch await transactionsResponse.result {
+        case .success(let message):
+            // Oldest first: the Fixed list is a schedule, so the month should
+            // run top to bottom. Variable stays newest-first — it's a feed.
+            transactions = message.transactions.sorted { $0.date.date < $1.date.date }
+            Self.logger.info("loaded fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) count=\(self.transactions.count, privacy: .public)")
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load fixed expenses."
+            Self.logger.error("failed to load fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) error=\(String(describing: error), privacy: .public)")
+        }
+
         if case .success(let message) = await summaryResponse.result {
             summary = message
         }

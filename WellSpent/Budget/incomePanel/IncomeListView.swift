@@ -9,6 +9,7 @@ struct IncomeListView: View {
     let localeIdentifier: String
     let canEdit: Bool
 
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: IncomeViewModel?
     @State private var isAddSheetPresented = false
     @State private var editingSource: Wellspent_V1_IncomeSource?
@@ -37,7 +38,7 @@ struct IncomeListView: View {
         }
         .task {
             if viewModel == nil {
-                viewModel = IncomeViewModel(budgetProfileID: budgetProfileID, authenticatedClient: authenticatedClient)
+                viewModel = IncomeViewModel(budgetProfileID: budgetProfileID, currentUserID: session.userID, authenticatedClient: authenticatedClient)
             }
             await viewModel?.load()
         }
@@ -58,18 +59,18 @@ struct IncomeListView: View {
                 }
             }
 
-            if viewModel.sources.isEmpty && viewModel.isLoading {
+            if viewModel.visibleSources.isEmpty && viewModel.isLoading {
                 ProgressView()
-            } else if viewModel.sources.isEmpty {
+            } else if viewModel.visibleSources.isEmpty {
                 Text("No income sources yet.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(viewModel.sources, id: \.id) { source in
+                ForEach(viewModel.visibleSources, id: \.id) { source in
                     sourceRow(source, viewModel: viewModel)
                 }
                 .onDelete(perform: canEdit ? { offsets in
                     for index in offsets {
-                        let source = viewModel.sources[index]
+                        let source = viewModel.visibleSources[index]
                         Task { await viewModel.delete(id: source.id) }
                     }
                 } : nil)
