@@ -32,6 +32,11 @@ struct BudgetMenuSheet: View {
     let onUserUpdated: (Wellspent_V1_User) -> Void
     let onDeleted: () -> Void
 
+    /// Owns just the Focused View toggle here — reuses `PreferencesViewModel`
+    /// rather than a dedicated type, since it already does exactly the
+    /// person-resolution + load/update this one control needs.
+    @State private var preferencesViewModel: PreferencesViewModel?
+
     /// Periods sharing a year with whatever is currently being shown —
     /// including archived ones, since switching to a past period is exactly
     /// what this control is for.
@@ -47,6 +52,7 @@ struct BudgetMenuSheet: View {
         NavigationStack {
             List {
                 periodSection
+                focusedViewSection
                 destinationsSection
                 logoutSection
                 versionSection
@@ -57,6 +63,36 @@ struct BudgetMenuSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     SheetCancelButton { dismiss() }
                 }
+            }
+            .task {
+                guard let authenticatedClient else { return }
+                if preferencesViewModel == nil {
+                    preferencesViewModel = PreferencesViewModel(
+                        budgetProfileID: viewModel.profile.id,
+                        currentUserID: session.userID,
+                        authenticatedClient: authenticatedClient
+                    )
+                }
+                await preferencesViewModel?.load()
+            }
+        }
+    }
+
+    /// A quick toggle right on the root menu, not a screen deeper inside
+    /// Preferences — this is flipped far more often than a set-once
+    /// preference, so it needs to be reachable in one tap.
+    @ViewBuilder
+    private var focusedViewSection: some View {
+        if let preferencesViewModel, preferencesViewModel.isLinkedMember {
+            Section {
+                Toggle("Focused View — show only my own data", isOn: Binding(
+                    get: { preferencesViewModel.focusedView },
+                    set: { newValue in Task { await preferencesViewModel.updateFocusedView(newValue) } }
+                ))
+                .disabled(preferencesViewModel.isSaving)
+                .accessibilityIdentifier("focusedViewPreference")
+            } footer: {
+                Text("Scopes Plan, Overview, Transactions, Income, and Savings to your own numbers plus anything unattributed. Pending reviews always show everyone, flagged when they involve someone else.")
             }
         }
     }
