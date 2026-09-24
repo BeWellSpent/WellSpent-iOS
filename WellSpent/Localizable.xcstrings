@@ -7273,6 +7273,70 @@
           }
         }
       }
+    },
+    "Create a fixed expense": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a fixed expense"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear un gasto fijo"
+          }
+        }
+      }
+    },
+    "First due date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First due date"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primera fecha de vencimiento"
+          }
+        }
+      }
+    },
+    "This transaction will be matched to the new fixed expense and marked paid.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This transaction will be matched to the new fixed expense and marked paid."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta transacción se emparejará con el nuevo gasto fijo y se marcará como pagada."
+          }
+        }
+      }
+    },
+    "Couldn't create the fixed expense.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't create the fixed expense."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo crear el gasto fijo."
+          }
+        }
+      }
     }
   },
   "version": "1.1"
