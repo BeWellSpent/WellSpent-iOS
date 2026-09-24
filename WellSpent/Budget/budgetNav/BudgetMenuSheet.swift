@@ -31,6 +31,10 @@ struct BudgetMenuSheet: View {
     let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
     let onUserUpdated: (Wellspent_V1_User) -> Void
     let onDeleted: () -> Void
+    /// Fired the moment the toggle below is flipped, so the tabs sitting
+    /// behind this sheet rebuild and refetch under the new scope instead of
+    /// waiting for the user to leave and re-enter them.
+    let onFocusedViewChanged: () -> Void
 
     /// Owns just the Focused View toggle here — reuses `PreferencesViewModel`
     /// rather than a dedicated type, since it already does exactly the
@@ -87,7 +91,16 @@ struct BudgetMenuSheet: View {
             Section {
                 Toggle("Focused View — show only my own data", isOn: Binding(
                     get: { preferencesViewModel.focusedView },
-                    set: { newValue in Task { await preferencesViewModel.updateFocusedView(newValue) } }
+                    set: { newValue in
+                        Task {
+                            await preferencesViewModel.updateFocusedView(newValue)
+                            // Fires whether the save succeeded or was rolled
+                            // back — either way `focusedView` now holds the
+                            // authoritative value the tabs behind this sheet
+                            // should reflect.
+                            onFocusedViewChanged()
+                        }
+                    }
                 ))
                 .disabled(preferencesViewModel.isSaving)
                 .accessibilityIdentifier("focusedViewPreference")
@@ -230,7 +243,8 @@ struct BudgetMenuSheet: View {
         localeIdentifier: "en",
         onUpdated: { _ in },
         onUserUpdated: { _ in },
-        onDeleted: {}
+        onDeleted: {},
+        onFocusedViewChanged: {}
     )
     .environment(SessionStore())
 }
