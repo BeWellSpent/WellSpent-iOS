@@ -46,6 +46,7 @@ struct TransactionsListView: View {
     @State private var editingTransaction: Wellspent_V1_Transaction?
     @State private var markReviewTarget: Wellspent_V1_Transaction?
     @State private var installmentTarget: Wellspent_V1_Transaction?
+    @State private var fixedFromTxTarget: Wellspent_V1_Transaction?
     @State private var unsplitTarget: Wellspent_V1_Transaction?
     /// Staged by the swipe-to-delete button below, then confirmed via
     /// `.confirmationDialog` — same shape as `unsplitTarget`/`installmentTarget`,
@@ -282,6 +283,20 @@ struct TransactionsListView: View {
                 }
             }
         }
+        .sheet(isPresented: Binding(
+            get: { fixedFromTxTarget != nil },
+            set: { if !$0 { fixedFromTxTarget = nil } }
+        )) {
+            if let fixedFromTxTarget {
+                CreateFixedFromTransactionSheet(
+                    transaction: fixedFromTxTarget,
+                    budgetPeriodID: budgetPeriodID,
+                    authenticatedClient: authenticatedClient
+                ) {
+                    Task { await viewModel.load() }
+                }
+            }
+        }
     }
 
     private func transactionRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
@@ -373,6 +388,16 @@ struct TransactionsListView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("splitIntoInstallments_\(transaction.name)")
+            }
+
+            if canEdit && CreateFixedFromTransaction.canCreate(transaction) {
+                Button {
+                    fixedFromTxTarget = transaction
+                } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("createFixedFromTransaction_\(transaction.name)")
             }
 
             if canMutate {
