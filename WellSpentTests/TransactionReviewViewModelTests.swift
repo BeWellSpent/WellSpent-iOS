@@ -82,4 +82,16 @@ struct TransactionReviewViewModelTests {
         )
         #expect(!viewModel.spansOutsideMyView(viewModel.reviews[0]))
     }
+
+    @Test("a group spans outside my view if any member does")
+    func groupSpansOutsideViewIfAnyMemberDoes() {
+        let viewModel = makeViewModel(currentUserID: "me")
+        let reviews = [
+            review(id: "1", status: "pending", transactionPersonID: 1),
+            review(id: "2", status: "pending", transactionPersonID: 2),
+        ]
+        viewModel.setStateForTesting(reviews: reviews, people: [person(id: 1, userID: "me", focusedView: true)])
+        let group = ReviewGroup(matchedTransactionID: "fe-1", matchedTransactionName: "Rent", matchedTransactionPersonID: 0, reviews: reviews)
+        #expect(viewModel.spansOutsideMyView(group))
+    }
 }
