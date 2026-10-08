@@ -121,6 +121,11 @@
       "changeType": "added",
       "summaryEn": "A variable transaction can now become a recurring fixed expense in one step, automatically matched and marked as paid.",
       "summaryEs": "Una transacción variable ahora puede convertirse en un gasto fijo recurrente en un solo paso, con coincidencia y pago automáticos."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "A fixed expense can now be matched to several variable transactions at once, so a payment split across more than one bank transfer still adds up to the full amount.",
+      "summaryEs": "Un gasto fijo ahora puede emparejarse con varias transacciones variables a la vez, de modo que un pago dividido en más de una transferencia bancaria siga sumando el monto total."
     }
   ]
 }

@@ -12,12 +12,14 @@ struct FixedExpensesListView: View {
         case editTransaction(Wellspent_V1_Transaction)
         case editTemplate(Wellspent_V1_FixedExpense)
         case markPaid(Wellspent_V1_Transaction)
+        case matchTransactions(Wellspent_V1_Transaction)
 
         var id: String {
             switch self {
             case .editTransaction(let transaction): return "editTransaction-\(transaction.id)"
             case .editTemplate(let expense): return "editTemplate-\(expense.id)"
             case .markPaid(let transaction): return "markPaid-\(transaction.id)"
+            case .matchTransactions(let transaction): return "matchTransactions-\(transaction.id)"
             }
         }
     }
@@ -296,6 +298,18 @@ struct FixedExpensesListView: View {
                 MarkAsPaidView(transaction: transaction, currencyCode: currencyCode) { amount, date in
                     Task { await viewModel.markPaid(transaction, paidAmount: amount, paidAt: date) }
                 }
+
+            case .matchTransactions(let transaction):
+                MatchTransactionsSheet(
+                    matchedTransaction: transaction,
+                    budgetPeriodID: budgetPeriodID,
+                    budgetProfileID: budgetProfileID,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    authenticatedClient: authenticatedClient
+                ) {
+                    Task { await reviewViewModel?.load() }
+                }
             }
         }
         .confirmationDialog(
@@ -384,7 +398,8 @@ struct FixedExpensesListView: View {
                     localeIdentifier: localeIdentifier,
                     canMutate: canMutate,
                     autoUpdatePlannedAmount: viewModel.autoUpdatePlannedAmount,
-                    onMarkPaid: { activeSheet = .markPaid(transaction) }
+                    onMarkPaid: { activeSheet = .markPaid(transaction) },
+                    onMatchTransactions: { activeSheet = .matchTransactions(transaction) }
                 )
                 // Edit lives on a leading (swipe-right) action now, not a row
                 // tap — frees the row itself to toggle the linked-transactions
@@ -425,6 +440,7 @@ private struct FixedExpenseRow: View {
     /// The budget's auto_update_planned_amount setting — drives the re-plan marker.
     let autoUpdatePlannedAmount: Bool
     let onMarkPaid: () -> Void
+    let onMatchTransactions: () -> Void
     @State private var isRePlanNoticePresented = false
 
     @State private var isExpanded = false
@@ -516,6 +532,15 @@ private struct FixedExpenseRow: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier(transaction.isPaid ? "unmarkPaid_\(transaction.name)" : "markPaid_\(transaction.name)")
+
+                    if !transaction.isPaid {
+                        Button(action: onMatchTransactions) {
+                            Image(systemName: "link.badge.plus")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("matchTransactions_\(transaction.name)")
+                    }
 
                     Button {
                         Task { await viewModel.toggleExcluded(transaction) }
