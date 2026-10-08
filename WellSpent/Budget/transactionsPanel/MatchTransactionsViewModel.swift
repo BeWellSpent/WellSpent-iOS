@@ -1,11 +1,7 @@
 import Observation
 import WellSpentAPI
 
-/// Fixed-row-initiated counterpart to `MarkForReviewViewModel` — lets several
-/// Variable transactions (e.g. a savings payment split across bank
-/// transfers) all match the same Fixed one. Each selection becomes its own
-/// review via the same RPC the single-select flow uses; the backend sums
-/// every confirmed match on that fixed transaction.
+/// Fixed-row counterpart to `MarkForReviewViewModel` — multi-select instead of one.
 @MainActor
 @Observable
 final class MatchTransactionsViewModel {
