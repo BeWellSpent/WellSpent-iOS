@@ -35,6 +35,10 @@ final class TransactionReviewViewModel {
         return involvesSomeoneElse(review.transactionPersonID) || involvesSomeoneElse(review.matchedTransactionPersonID)
     }
 
+    func spansOutsideMyView(_ group: ReviewGroup) -> Bool {
+        group.reviews.contains { spansOutsideMyView($0) }
+    }
+
     init(budgetProfileID: String, currentUserID: String? = nil, authenticatedClient: ProtocolClient) {
         self.budgetProfileID = budgetProfileID
         self.currentUserID = currentUserID
@@ -121,6 +125,19 @@ final class TransactionReviewViewModel {
             reviews.removeAll { $0.id == review.id }
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't dismiss that match."
+        }
+    }
+
+    // Sequential, not a task group — each confirm must see the last one's write.
+    func confirmGroup(_ group: ReviewGroup) async {
+        for review in group.reviews {
+            await confirm(review)
+        }
+    }
+
+    func dismissGroup(_ group: ReviewGroup) async {
+        for review in group.reviews {
+            await dismiss(review)
         }
     }
 }

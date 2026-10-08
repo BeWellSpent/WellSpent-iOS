@@ -56,8 +56,8 @@ struct TransactionReviewListView: View {
                 .listRowBackground(Color.clear)
             } else {
                 Section {
-                    ForEach(viewModel.pendingReviews, id: \.id) { review in
-                        reviewRow(review, viewModel: viewModel)
+                    ForEach(ReviewGrouping.group(viewModel.pendingReviews)) { group in
+                        reviewGroupRow(group, viewModel: viewModel)
                     }
                 }
             }
@@ -70,29 +70,44 @@ struct TransactionReviewListView: View {
         }
     }
 
-    private func reviewRow(_ review: Wellspent_V1_TransactionReview, viewModel: TransactionReviewViewModel) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(review.transactionName)
-                        .font(.headline)
-                    if !review.matchedTransactionName.isEmpty {
-                        Text("Matches \(review.matchedTransactionName)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-                Text(MoneyFormatting.format(
-                    units: review.transactionAmount.units,
-                    nanos: review.transactionAmount.nanos,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                ))
-                .font(.headline)
+    private func reviewGroupRow(_ group: ReviewGroup, viewModel: TransactionReviewViewModel) -> some View {
+        let isSplit = group.reviews.count > 1
+        let total = TransactionAmountFormatting.sum(group.reviews.map { (units: $0.transactionAmount.units, nanos: $0.transactionAmount.nanos) })
+
+        return VStack(alignment: .leading, spacing: 8) {
+            if !group.matchedTransactionName.isEmpty {
+                Text("Matches \(group.matchedTransactionName)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            if viewModel.spansOutsideMyView(review) {
+            ForEach(group.reviews, id: \.id) { review in
+                HStack {
+                    Text(review.transactionName)
+                        .font(.headline)
+                    Spacer()
+                    Text(MoneyFormatting.format(
+                        units: review.transactionAmount.units,
+                        nanos: review.transactionAmount.nanos,
+                        currencyCode: currencyCode,
+                        localeIdentifier: localeIdentifier
+                    ))
+                    .font(.headline)
+                }
+            }
+
+            if isSplit {
+                HStack {
+                    Text("Total")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text(MoneyFormatting.format(units: total.units, nanos: total.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier))
+                        .font(.subheadline.weight(.semibold))
+                }
+                .padding(.top, 2)
+            }
+
+            if viewModel.spansOutsideMyView(group) {
                 HStack(spacing: 4) {
                     Image(systemName: "eye")
                         .font(.caption)
@@ -100,38 +115,40 @@ struct TransactionReviewListView: View {
                         .font(.caption)
                 }
                 .foregroundStyle(.secondary)
-                .accessibilityIdentifier("reviewSpansOutsideView_\(review.id)")
+                .accessibilityIdentifier("reviewSpansOutsideView_\(group.matchedTransactionID)")
             }
 
             HStack {
-                Text("\(Int(review.matchScore))% match")
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(review.matchScore >= 90 ? .green.opacity(0.2) : .orange.opacity(0.2))
-                    .foregroundStyle(review.matchScore >= 90 ? .green : .orange)
-                    .clipShape(Capsule())
-                    .accessibilityIdentifier("reviewScore_\(review.id)")
+                if !isSplit {
+                    Text("\(Int(group.reviews[0].matchScore))% match")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(group.reviews[0].matchScore >= 90 ? .green.opacity(0.2) : .orange.opacity(0.2))
+                        .foregroundStyle(group.reviews[0].matchScore >= 90 ? .green : .orange)
+                        .clipShape(Capsule())
+                        .accessibilityIdentifier("reviewScore_\(group.reviews[0].id)")
+                }
 
                 Spacer()
 
                 if canEdit {
                     Button("Dismiss") {
-                        Task { await viewModel.dismiss(review) }
+                        Task { await viewModel.dismissGroup(group) }
                     }
                     .buttonStyle(.bordered)
-                    .accessibilityIdentifier("dismissReview_\(review.id)")
+                    .accessibilityIdentifier("dismissReview_\(group.matchedTransactionID)")
 
                     Button("Confirm") {
-                        Task { await viewModel.confirm(review) }
+                        Task { await viewModel.confirmGroup(group) }
                     }
                     .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("confirmReview_\(review.id)")
+                    .accessibilityIdentifier("confirmReview_\(group.matchedTransactionID)")
                 }
             }
         }
         .padding(.vertical, 4)
-        .accessibilityIdentifier("reviewRow_\(review.transactionName)")
+        .accessibilityIdentifier("reviewRow_\(group.matchedTransactionName)")
     }
 }
 
