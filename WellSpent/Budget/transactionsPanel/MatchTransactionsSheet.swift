@@ -78,9 +78,11 @@ struct MatchTransactionsSheet: View {
 
             if !viewModel.selectedIDs.isEmpty {
                 let total = viewModel.selectedTotal
-                Text("Selected: \(MoneyFormatting.format(units: total.units, nanos: total.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier))")
+                let matches = viewModel.matchesExactly(matchedTransaction)
+                let totalText = MoneyFormatting.format(units: total.units, nanos: total.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+                (matches ? Text("Selected: \(totalText)") : Text("Selected \(totalText) — must total \(MoneyFormatting.format(units: matchedTransaction.plannedAmount.units, nanos: matchedTransaction.plannedAmount.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)) exactly to match"))
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(matches ? .green : .secondary)
                     .padding(.top, 8)
             }
 
@@ -102,7 +104,7 @@ struct MatchTransactionsSheet: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(viewModel.selectedIDs.isEmpty || viewModel.isSubmitting)
+            .disabled(!viewModel.matchesExactly(matchedTransaction) || viewModel.isSubmitting)
             .padding()
             .accessibilityIdentifier("confirmMatchTransactions")
         }

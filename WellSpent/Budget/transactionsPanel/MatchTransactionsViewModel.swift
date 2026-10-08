@@ -29,6 +29,14 @@ final class MatchTransactionsViewModel {
         return TransactionAmountFormatting.sum(amounts)
     }
 
+    /// Confirming only makes sense once the selection sums to the full amount.
+    func matchesExactly(_ matchedTransaction: Wellspent_V1_Transaction) -> Bool {
+        guard !selectedIDs.isEmpty else { return false }
+        let total = selectedTotal
+        return total.units == matchedTransaction.plannedAmount.units
+            && total.nanos == matchedTransaction.plannedAmount.nanos
+    }
+
     func load() async {
         isLoading = true
         errorMessage = nil
@@ -44,6 +52,11 @@ final class MatchTransactionsViewModel {
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load transactions."
         }
+    }
+
+    func setStateForTesting(variableTransactions: [Wellspent_V1_Transaction], selectedIDs: Set<String>) {
+        self.variableTransactions = variableTransactions
+        self.selectedIDs = selectedIDs
     }
 
     func matchSelected(to matchedTransaction: Wellspent_V1_Transaction) async -> Bool {
