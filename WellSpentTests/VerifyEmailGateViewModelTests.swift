@@ -1,5 +1,6 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("VerifyEmailGateViewModel")
@@ -7,7 +8,11 @@ import WellSpentAPI
 struct VerifyEmailGateViewModelTests {
     private func makeViewModel() -> VerifyEmailGateViewModel {
         let client = APIClient.makePublicClient(baseURL: "http://localhost:1")
-        return VerifyEmailGateViewModel(authenticatedClient: client, publicClient: client)
+        return VerifyEmailGateViewModel(
+            authenticatedClient: client,
+            publicClient: client,
+            csharpPublicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     private func makeUser(email: String = "ada@example.com", verified: Bool) -> Wellspent_V1_User {

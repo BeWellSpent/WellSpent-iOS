@@ -1,6 +1,7 @@
 import Observation
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 import os
 
 @MainActor
@@ -27,6 +28,7 @@ final class VerifyEmailGateViewModel {
 
     private let userClient: Wellspent_V1_UserServiceClient
     private let authClient: Wellspent_V1_AuthServiceClient
+    private let csharpPublicRESTClient: WellSpentREST.Client
 
     private static let logger = AppLogger.logger("VerifyEmailGate")
 
@@ -54,9 +56,14 @@ final class VerifyEmailGateViewModel {
             && !isSavingEmail
     }
 
-    init(authenticatedClient: ProtocolClient, publicClient: ProtocolClient) {
+    init(
+        authenticatedClient: ProtocolClient,
+        publicClient: ProtocolClient,
+        csharpPublicRESTClient: WellSpentREST.Client
+    ) {
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
         self.authClient = Wellspent_V1_AuthServiceClient(client: publicClient)
+        self.csharpPublicRESTClient = csharpPublicRESTClient
     }
 
     /// Re-reads verification status. Called on appear and every time the app
@@ -87,6 +94,11 @@ final class VerifyEmailGateViewModel {
         errorMessage = nil
         defer { isResending = false }
 
+        if FeatureFlags.csharpAuthEnabled {
+            await resendViaREST()
+            return
+        }
+
         let request = Wellspent_V1_ResendVerificationEmailRequest.with { $0.email = email }
         let response = await authClient.resendVerificationEmail(request: request)
 
@@ -99,6 +111,28 @@ final class VerifyEmailGateViewModel {
                 localized: "Couldn't resend the email. Try again in a moment.",
                 locale: AppLanguageStore.currentLocale
             )
+        }
+    }
+
+    private func resendViaREST() async {
+        let fallback = String(localized: "Couldn't resend the email. Try again in a moment.", locale: AppLanguageStore.currentLocale)
+        do {
+            let output = try await csharpPublicRESTClient.resendVerificationEmail(.init(body: .json(.init(email: email))))
+            switch output {
+            case .ok:
+                cooldownEndsAt = Date().addingTimeInterval(Self.resendCooldown)
+            case .badRequest(let badRequest):
+                // Only 400 case is the cooldown — pass the server's message through.
+                let message = (try? badRequest.body.json.message) ?? fallback
+                Self.logger.error("verifyGate.resend REST failed: \(message, privacy: .public)")
+                errorMessage = message
+            default:
+                Self.logger.error("verifyGate.resend REST failed with an unexpected response")
+                errorMessage = fallback
+            }
+        } catch {
+            Self.logger.error("verifyGate.resend REST failed: \(error.localizedDescription, privacy: .public)")
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
     }
 
@@ -271,7 +305,8 @@ struct VerifyEmailGateView: View {
         viewModel: {
             let viewModel = VerifyEmailGateViewModel(
                 authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-                publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+                publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+                csharpPublicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
             )
             viewModel.apply(.with {
                 $0.email = "typo@exmaple.com"

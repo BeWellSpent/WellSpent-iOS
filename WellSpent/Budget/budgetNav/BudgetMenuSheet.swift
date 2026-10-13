@@ -177,7 +177,9 @@ struct BudgetMenuSheet: View {
                     SettingsView(
                         authenticatedClient: authenticatedClient,
                         publicRESTClient: session.publicRESTClient,
-                        restClient: session.authenticatedRESTClient ?? session.publicRESTClient,
+                        restClient: FeatureFlags.csharpStatusChangelogEnabled
+                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
+                            : (session.authenticatedRESTClient ?? session.publicRESTClient),
                         onUpdated: onUserUpdated
                     )
                 } label: {
@@ -190,7 +192,9 @@ struct BudgetMenuSheet: View {
                 // from this menu directly.
                 NavigationLink {
                     ChangelogView(
-                        authenticatedClient: session.authenticatedRESTClient ?? session.publicRESTClient,
+                        authenticatedClient: FeatureFlags.csharpStatusChangelogEnabled
+                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
+                            : (session.authenticatedRESTClient ?? session.publicRESTClient),
                         localeIdentifier: localeIdentifier
                     )
                 } label: {

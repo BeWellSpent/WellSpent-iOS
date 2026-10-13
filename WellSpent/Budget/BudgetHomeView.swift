@@ -76,7 +76,9 @@ struct BudgetHomeView: View {
                     viewModel = model
                     await model.load()
                     await announceWhatsNewIfNeeded(
-                        authenticatedClient: session.authenticatedRESTClient ?? session.publicRESTClient
+                        authenticatedClient: FeatureFlags.csharpStatusChangelogEnabled
+                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
+                            : (session.authenticatedRESTClient ?? session.publicRESTClient)
                     )
                 }
         }

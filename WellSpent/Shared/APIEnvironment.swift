@@ -9,13 +9,7 @@ nonisolated enum APIEnvironment {
         (Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String) ?? "http://localhost:8080"
     }
 
-    /// The C# rewrite's base URL (issue #78), used only for a domain whose
-    /// feature flag (`FeatureFlags.csharpStatusChangelogEnabled`, etc.) is on.
-    /// `CSHARP_API_BASE_URL` build setting — currently `http://localhost:5021`
-    /// on **both** Debug and Release, since the C# backend has no Cloud Run
-    /// deployment yet. Repoint Release once one exists, same gap API_BASE_URL
-    /// itself once had (see this repo's CLAUDE.md, "Release's API_BASE_URL
-    /// was still localhost").
+    /// The C# rewrite's base URL (issue #78) — same localhost on both configs until it's deployed.
     static var csharpBaseURL: String {
         (Bundle.main.object(forInfoDictionaryKey: "CSharpAPIBaseURL") as? String) ?? "http://localhost:5021"
     }

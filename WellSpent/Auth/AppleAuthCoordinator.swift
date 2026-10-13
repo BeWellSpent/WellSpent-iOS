@@ -4,6 +4,7 @@ import Observation
 import os
 import UIKit
 import WellSpentAPI
+import WellSpentREST
 
 /// Drives native Sign in with Apple.
 ///
@@ -95,10 +96,16 @@ final class AppleAuthCoordinator: NSObject {
         // never again, so it has to be forwarded now or it's lost — the
         // backend stores it at account-creation time and never overwrites it.
         let name = Self.nameComponents(from: credential.fullName)
+        let authorizationCode = Self.string(from: credential.authorizationCode) ?? ""
+
+        if FeatureFlags.csharpAuthEnabled {
+            await submitViaREST(identityToken: identityToken, authorizationCode: authorizationCode, name: name, session: session)
+            return
+        }
 
         let response = await client.signInWithApple(request: .with {
             $0.identityToken = identityToken
-            $0.authorizationCode = Self.string(from: credential.authorizationCode) ?? ""
+            $0.authorizationCode = authorizationCode
             $0.firstName = name.first
             $0.lastName = name.last
         })
@@ -109,6 +116,37 @@ final class AppleAuthCoordinator: NSObject {
         case .failure(let error):
             Self.logger.error("signInWithApple RPC failed code=\(String(describing: error.code), privacy: .public)")
             errorMessage = Self.errorMessage(for: error)
+        }
+    }
+
+    private func submitViaREST(
+        identityToken: String,
+        authorizationCode: String,
+        name: (first: String, last: String),
+        session: SessionStore
+    ) async {
+        do {
+            let output = try await session.csharpPublicRESTClient.signInWithApple(.init(body: .json(.init(
+                identityToken: identityToken,
+                authorizationCode: authorizationCode,
+                firstName: name.first,
+                lastName: name.last,
+                language: "",
+                currency: ""
+            ))))
+            switch output {
+            case .ok(let ok):
+                session.startSession(token: try ok.body.json.accessToken)
+            case .badRequest:
+                errorMessage = Self.errorMessage(forRESTCode: "invalid_argument")
+            case .forbidden:
+                errorMessage = Self.errorMessage(forRESTCode: "forbidden")
+            default:
+                errorMessage = Self.genericErrorMessage()
+            }
+        } catch {
+            Self.logger.error("signInWithApple REST call failed: \(error.localizedDescription, privacy: .public)")
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? Self.genericErrorMessage()
         }
     }
 
@@ -159,6 +197,24 @@ final class AppleAuthCoordinator: NSObject {
 
     nonisolated static func genericErrorMessage() -> String {
         String(localized: "Apple sign-in failed. Please try again.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+    }
+
+    /// Same mapping as `errorMessage(for: ConnectError)`, keyed on the REST `_Error.code` string instead.
+    nonisolated static func errorMessage(forRESTCode code: String) -> String {
+        switch code {
+        case "invalid_argument":
+            return String(
+                localized: "Apple sign-in couldn't be verified. Please try again.",
+                locale: AppLanguageStore.currentLocale
+            )
+        case "forbidden":
+            return String(
+                localized: "This account can't sign in right now.",
+                locale: AppLanguageStore.currentLocale
+            )
+        default:
+            return genericErrorMessage()
+        }
     }
 }
 

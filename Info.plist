@@ -12,6 +12,8 @@
 	<string>$(FEATURE_GOOGLE_AUTH)</string>
 	<key>FeatureCSharpStatusChangelog</key>
 	<string>$(FEATURE_CSHARP_STATUS_CHANGELOG)</string>
+	<key>FeatureCSharpAuth</key>
+	<string>$(FEATURE_CSHARP_AUTH)</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-8875066498176869~1740075152</string>
 </dict>
