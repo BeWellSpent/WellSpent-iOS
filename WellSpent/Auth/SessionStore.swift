@@ -36,7 +36,7 @@ final class SessionStore {
         self.baseURL = baseURL
         self.tokenStore = tokenStore
         self.publicClient = APIClient.makePublicClient(baseURL: baseURL)
-        self.publicRESTClient = RESTClient.makePublicClient(baseURL: baseURL)
+        self.publicRESTClient = RESTClient.makePublicClient(baseURL: Self.restBaseURL(fallback: baseURL))
 
         if let token = tokenStore.readToken(), let claims = JWT.decode(token), !claims.isExpired {
             isAuthenticated = true
@@ -52,7 +52,7 @@ final class SessionStore {
             authenticatedClient = Self.makeAuthenticatedClient(baseURL: baseURL, tokenStore: tokenStore) { [weak self] in
                 self?.endSession()
             }
-            authenticatedRESTClient = Self.makeAuthenticatedRESTClient(baseURL: baseURL, tokenStore: tokenStore)
+            authenticatedRESTClient = Self.makeAuthenticatedRESTClient(baseURL: Self.restBaseURL(fallback: baseURL), tokenStore: tokenStore)
         }
     }
 
@@ -64,7 +64,15 @@ final class SessionStore {
         authenticatedClient = Self.makeAuthenticatedClient(baseURL: baseURL, tokenStore: tokenStore) { [weak self] in
             self?.endSession()
         }
-        authenticatedRESTClient = Self.makeAuthenticatedRESTClient(baseURL: baseURL, tokenStore: tokenStore)
+        authenticatedRESTClient = Self.makeAuthenticatedRESTClient(baseURL: Self.restBaseURL(fallback: baseURL), tokenStore: tokenStore)
+    }
+
+    /// The REST transport's base URL: the C# backend when
+    /// `FeatureFlags.csharpStatusChangelogEnabled` is on (the only domain
+    /// cut over so far, issue #87), otherwise the Go backend's own
+    /// `baseURL` — same URL the ConnectRPC clients use.
+    private static func restBaseURL(fallback baseURL: String) -> String {
+        FeatureFlags.csharpStatusChangelogEnabled ? APIEnvironment.csharpBaseURL : baseURL
     }
 
     func endSession() {

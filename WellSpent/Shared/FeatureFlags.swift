@@ -19,6 +19,15 @@ nonisolated enum FeatureFlags {
         return isEnabled("FEATURE_GOOGLE_AUTH", in: ["FEATURE_GOOGLE_AUTH": value])
     }
 
+    /// Strangler-fig cutover switch for the Status+Changelog domain (issue
+    /// #78/#87, first domain) — routes `SessionStore`'s REST clients at the
+    /// C# backend (`APIEnvironment.csharpBaseURL`) instead of the Go one when
+    /// on. Off by default on both Debug and Release until confirmed working.
+    static var csharpStatusChangelogEnabled: Bool {
+        let value = Bundle.main.object(forInfoDictionaryKey: "FeatureCSharpStatusChangelog") as? String ?? ""
+        return isEnabled("FEATURE_CSHARP_STATUS_CHANGELOG", in: ["FEATURE_CSHARP_STATUS_CHANGELOG": value])
+    }
+
     /// Pure so it's testable without touching `ProcessInfo` — pass any dictionary in.
     static func isEnabled(_ key: String, in environment: [String: String]) -> Bool {
         switch environment[key]?.lowercased() {

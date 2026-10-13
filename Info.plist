@@ -6,8 +6,12 @@
 	<false/>
 	<key>APIBaseURL</key>
 	<string>$(API_BASE_URL)</string>
+	<key>CSharpAPIBaseURL</key>
+	<string>$(CSHARP_API_BASE_URL)</string>
 	<key>FeatureGoogleAuth</key>
 	<string>$(FEATURE_GOOGLE_AUTH)</string>
+	<key>FeatureCSharpStatusChangelog</key>
+	<string>$(FEATURE_CSHARP_STATUS_CHANGELOG)</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-8875066498176869~1740075152</string>
 </dict>
