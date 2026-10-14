@@ -38,8 +38,12 @@ struct WellSpentApp: App {
         // strong reference from a static var.
         AppDelegate.onDeviceToken = { [weak sessionStore] data in
             Task { @MainActor in
-                guard let client = sessionStore?.authenticatedClient else { return }
-                await PushNotificationRegistrar.register(deviceToken: data, authenticatedClient: client)
+                guard let session = sessionStore, let client = session.authenticatedClient else { return }
+                await PushNotificationRegistrar.register(
+                    deviceToken: data,
+                    authenticatedClient: client,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                )
             }
         }
     }

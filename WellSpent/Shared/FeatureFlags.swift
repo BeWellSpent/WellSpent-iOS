@@ -37,6 +37,12 @@ nonisolated enum FeatureFlags {
         return isEnabled("FEATURE_CSHARP_USER", in: ["FEATURE_CSHARP_USER": value])
     }
 
+    /// Same pattern, for the Notification domain (issue #87). Off by default.
+    static var csharpNotificationEnabled: Bool {
+        let value = Bundle.main.object(forInfoDictionaryKey: "FeatureCSharpNotification") as? String ?? ""
+        return isEnabled("FEATURE_CSHARP_NOTIFICATION", in: ["FEATURE_CSHARP_NOTIFICATION": value])
+    }
+
     /// Pure so it's testable without touching `ProcessInfo` — pass any dictionary in.
     static func isEnabled(_ key: String, in environment: [String: String]) -> Bool {
         switch environment[key]?.lowercased() {

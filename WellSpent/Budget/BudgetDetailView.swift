@@ -183,7 +183,8 @@ struct BudgetDetailView: View {
             if notificationViewModel == nil {
                 notificationViewModel = NotificationBellViewModel(
                     budgetProfileID: viewModel.profile.id,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await notificationViewModel?.pollUnreadCount()
