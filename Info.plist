@@ -20,6 +20,8 @@
 	<string>$(FEATURE_CSHARP_NOTIFICATION)</string>
 	<key>FeatureCSharpInvite</key>
 	<string>$(FEATURE_CSHARP_INVITE)</string>
+	<key>FeatureCSharpPlaid</key>
+	<string>$(FEATURE_CSHARP_PLAID)</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-8875066498176869~1740075152</string>
 </dict>
