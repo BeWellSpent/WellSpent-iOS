@@ -51,6 +51,7 @@ struct BudgetHomeView: View {
                         if let authenticatedClient = session.authenticatedClient {
                             BudgetSetupFlow(
                                 authenticatedClient: authenticatedClient,
+                                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
                                 currencyCode: viewModel?.currencyCode ?? "USD",
                                 localeIdentifier: viewModel?.localeIdentifier ?? "en",
                                 // The profile was handed over the moment it was

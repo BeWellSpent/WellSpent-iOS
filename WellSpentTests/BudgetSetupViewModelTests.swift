@@ -1,12 +1,16 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("BudgetSetupViewModel")
 @MainActor
 struct BudgetSetupViewModelTests {
     private func makeViewModel() -> BudgetSetupViewModel {
-        BudgetSetupViewModel(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        BudgetSetupViewModel(
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     @Test("starts on the create step")

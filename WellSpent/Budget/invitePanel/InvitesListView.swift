@@ -24,7 +24,8 @@ struct InvitesListView: View {
                     budgetProfileID: budgetProfileID,
                     budgetOwnerUserID: budgetOwnerUserID,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await viewModel?.load()

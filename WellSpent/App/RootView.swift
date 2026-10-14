@@ -184,6 +184,8 @@ struct RootView: View {
                     token: pendingInviteToken,
                     publicClient: session.publicClient,
                     authenticatedClient: session.authenticatedClient,
+                    publicRESTClient: session.csharpPublicRESTClient,
+                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient,
                     onAccepted: {
                         self.pendingInviteToken = nil
                         isInvitePreviewPresented = false

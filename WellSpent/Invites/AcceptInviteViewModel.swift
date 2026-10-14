@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -18,11 +19,21 @@ final class AcceptInviteViewModel {
     /// authenticated — `load()` (the public preview) still works either way;
     /// `accept()` requires this to be set.
     private let authenticatedClient: Wellspent_V1_InviteServiceClient?
+    private let publicRESTClient: WellSpentREST.Client
+    private let csharpAuthenticatedRESTClient: WellSpentREST.Client?
 
-    init(token: String, publicClient: ProtocolClient, authenticatedClient: ProtocolClient?) {
+    init(
+        token: String,
+        publicClient: ProtocolClient,
+        authenticatedClient: ProtocolClient?,
+        publicRESTClient: WellSpentREST.Client,
+        csharpAuthenticatedRESTClient: WellSpentREST.Client?
+    ) {
         self.token = token
         self.publicClient = Wellspent_V1_InviteServiceClient(client: publicClient)
         self.authenticatedClient = authenticatedClient.map { Wellspent_V1_InviteServiceClient(client: $0) }
+        self.publicRESTClient = publicRESTClient
+        self.csharpAuthenticatedRESTClient = csharpAuthenticatedRESTClient
     }
 
     func load() async {
@@ -30,12 +41,45 @@ final class AcceptInviteViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
+        if FeatureFlags.csharpInviteEnabled {
+            await loadViaREST()
+            return
+        }
+
         let response = await publicClient.getBudgetInvite(request: .with { $0.token = token })
         switch response.result {
         case .success(let message):
             invite = message.invite
         case .failure(let error):
             errorMessage = Self.loadErrorMessage(for: error)
+        }
+    }
+
+    /// Mirrors `loadErrorMessage(for: ConnectError)` — same "not found" vs.
+    /// "badRequest" split, just keyed on the REST transport instead. A truly
+    /// nonexistent token comes back **404**, which the OpenAPI contract
+    /// doesn't document (confirmed live), so it lands in `.undocumented`
+    /// rather than a named case.
+    private func loadViaREST() async {
+        let locale = AppLanguageStore.currentLocale
+        let bundle = AppLanguageStore.currentBundle
+        let notFoundMessage = String(localized: "This invitation is no longer available. Ask whoever invited you to send a new one.", bundle: bundle, locale: locale)
+        let genericMessage = String(localized: "That invite link isn't valid.", bundle: bundle, locale: locale)
+        do {
+            let output = try await publicRESTClient.getBudgetInvite(.init(path: .init(token: token)))
+            switch output {
+            case .ok(let ok):
+                guard let body = try? ok.body.json else { errorMessage = genericMessage; return }
+                invite = InviteRESTMapping.invite(from: body.invite)
+            case .badRequest(let badRequest):
+                errorMessage = (try? badRequest.body.json.message) ?? genericMessage
+            case .undocumented(let statusCode, _):
+                errorMessage = statusCode == 404 ? notFoundMessage : genericMessage
+            default:
+                errorMessage = genericMessage
+            }
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? genericMessage
         }
     }
 
@@ -69,14 +113,32 @@ final class AcceptInviteViewModel {
     }
 
     func accept() async {
+        isAccepting = true
+        errorMessage = nil
+        defer { isAccepting = false }
+
+        if FeatureFlags.csharpInviteEnabled {
+            guard let csharpAuthenticatedRESTClient else { return }
+            do {
+                let output = try await csharpAuthenticatedRESTClient.acceptBudgetInvite(.init(path: .init(token: token)))
+                switch output {
+                case .ok(let ok):
+                    acceptedBudgetProfileID = try? ok.body.json.budgetProfileId
+                case .badRequest(let badRequest):
+                    errorMessage = (try? badRequest.body.json.message) ?? "Couldn't accept that invite."
+                default:
+                    errorMessage = "Couldn't accept that invite."
+                }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't accept that invite."
+            }
+            return
+        }
+
         // Defensive only — the UI replaces this action with Sign In/Register
         // buttons whenever `authenticatedClient` is nil, so this guard
         // shouldn't be reachable in practice.
         guard let authenticatedClient else { return }
-
-        isAccepting = true
-        errorMessage = nil
-        defer { isAccepting = false }
 
         let response = await authenticatedClient.acceptBudgetInvite(request: .with { $0.token = token })
         switch response.result {

@@ -1,5 +1,6 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("InvitesViewModel")
@@ -10,7 +11,8 @@ struct InvitesViewModelTests {
             budgetProfileID: "profile-1",
             budgetOwnerUserID: budgetOwnerUserID,
             currentUserID: currentUserID,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 

@@ -43,6 +43,12 @@ nonisolated enum FeatureFlags {
         return isEnabled("FEATURE_CSHARP_NOTIFICATION", in: ["FEATURE_CSHARP_NOTIFICATION": value])
     }
 
+    /// Same pattern, for the Invite domain (issue #87). Off by default.
+    static var csharpInviteEnabled: Bool {
+        let value = Bundle.main.object(forInfoDictionaryKey: "FeatureCSharpInvite") as? String ?? ""
+        return isEnabled("FEATURE_CSHARP_INVITE", in: ["FEATURE_CSHARP_INVITE": value])
+    }
+
     /// Pure so it's testable without touching `ProcessInfo` — pass any dictionary in.
     static func isEnabled(_ key: String, in environment: [String: String]) -> Bool {
         switch environment[key]?.lowercased() {

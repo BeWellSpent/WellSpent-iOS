@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 /// Orchestrates the budget setup wizard, mirroring web's `BudgetSetupFlow.tsx`.
 ///
@@ -45,10 +46,12 @@ final class BudgetSetupViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
     private let inviteClient: Wellspent_V1_InviteServiceClient
+    private let restClient: WellSpentREST.Client
 
-    init(authenticatedClient: ProtocolClient) {
+    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.inviteClient = Wellspent_V1_InviteServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     /// Called once step 0's `CreateBudgetViewModel.submit()` succeeds.
@@ -118,6 +121,24 @@ final class BudgetSetupViewModel {
     }
 
     private func sendInvite(email: String, role: Wellspent_V1_BudgetRole, personID: Int64, profileID: String) async {
+        let fallback = "The person was added, but the invitation couldn't be sent."
+
+        if FeatureFlags.csharpInviteEnabled {
+            do {
+                let output = try await restClient.sendBudgetInvite(.init(body: .json(.init(
+                    budgetProfileId: profileID,
+                    email: email,
+                    role: InviteRESTMapping.sendRole(from: role),
+                    budgetPersonId: personID == 0 ? nil : personID
+                ))))
+                if case .ok = output { return }
+                errorMessage = fallback
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_SendBudgetInviteRequest.with {
             $0.budgetProfileID = profileID
             $0.email = email
@@ -126,7 +147,7 @@ final class BudgetSetupViewModel {
         }
         let response = await inviteClient.sendBudgetInvite(request: request)
         if case .failure(let error) = response.result {
-            errorMessage = error.message ?? "The person was added, but the invitation couldn't be sent."
+            errorMessage = error.message ?? fallback
         }
     }
 

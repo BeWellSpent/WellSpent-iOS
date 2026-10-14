@@ -1,5 +1,6 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("AcceptInviteViewModel")
@@ -10,7 +11,9 @@ struct AcceptInviteViewModelTests {
         let viewModel = AcceptInviteViewModel(
             token: "preview-token",
             publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-            authenticatedClient: nil
+            authenticatedClient: nil,
+            publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+            csharpAuthenticatedRESTClient: nil
         )
 
         await viewModel.accept()

@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// The budget setup wizard (Create -> People -> Payment Methods -> Income
 /// -> Savings). Mirrors web's `BudgetSetupFlow.tsx`: one sheet whose content
@@ -26,12 +27,13 @@ struct BudgetSetupFlow: View {
 
     init(
         authenticatedClient: ProtocolClient,
+        restClient: WellSpentREST.Client,
         currencyCode: String,
         localeIdentifier: String,
         onCancelled: @escaping () -> Void = {},
         onCreated: @escaping (Wellspent_V1_BudgetProfile) -> Void
     ) {
-        _viewModel = State(initialValue: BudgetSetupViewModel(authenticatedClient: authenticatedClient))
+        _viewModel = State(initialValue: BudgetSetupViewModel(authenticatedClient: authenticatedClient, restClient: restClient))
         _createViewModel = State(initialValue: CreateBudgetViewModel(authenticatedClient: authenticatedClient))
         self.authenticatedClient = authenticatedClient
         self.currencyCode = currencyCode
@@ -166,6 +168,7 @@ struct BudgetSetupFlow: View {
 #Preview {
     BudgetSetupFlow(
         authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         currencyCode: "USD",
         localeIdentifier: "en"
     ) { _ in }
