@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -19,12 +20,14 @@ final class PreferencesViewModel {
     private let currentUserID: String?
     private let client: Wellspent_V1_BudgetServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
+    private let restClient: WellSpentREST.Client
 
-    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func load() async {
@@ -32,10 +35,10 @@ final class PreferencesViewModel {
         defer { isLoading = false }
 
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
+        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
 
-        if case .success(let message) = await meResponse.result {
-            isFree = message.user.plan == .free
+        if let user = await user {
+            isFree = user.plan == .free
         }
 
         guard case .success(let message) = await peopleResponse.result else { return }

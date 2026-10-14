@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -18,6 +19,7 @@ final class PeopleViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
+    private let restClient: WellSpentREST.Client
 
     var canAddPerson: Bool {
         !newPersonName.trimmingCharacters(in: .whitespaces).isEmpty && !isAtLimit
@@ -30,11 +32,12 @@ final class PeopleViewModel {
         isFree && people.count >= 2
     }
 
-    init(budgetProfileID: String, budgetOwnerUserID: String, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, budgetOwnerUserID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.budgetOwnerUserID = budgetOwnerUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     /// Not private, so `isAtLimit` is testable without a live `GetMe` call.
@@ -50,7 +53,7 @@ final class PeopleViewModel {
 
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
         async let incomeResponse = client.listIncomeSources(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
+        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
 
         switch await peopleResponse.result {
         case .success(let message):
@@ -63,8 +66,8 @@ final class PeopleViewModel {
             incomeSources = message.sources
         }
 
-        if case .success(let message) = await meResponse.result {
-            isFree = message.user.plan == .free
+        if let user = await user {
+            isFree = user.plan == .free
         }
     }
 

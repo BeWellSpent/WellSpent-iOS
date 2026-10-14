@@ -74,7 +74,8 @@ struct BudgetMenuSheet: View {
                     preferencesViewModel = PreferencesViewModel(
                         budgetProfileID: viewModel.profile.id,
                         currentUserID: session.userID,
-                        authenticatedClient: authenticatedClient
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                     )
                 }
                 await preferencesViewModel?.load()
@@ -180,6 +181,7 @@ struct BudgetMenuSheet: View {
                         restClient: FeatureFlags.csharpStatusChangelogEnabled
                             ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
                             : (session.authenticatedRESTClient ?? session.publicRESTClient),
+                        csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
                         onUpdated: onUserUpdated
                     )
                 } label: {

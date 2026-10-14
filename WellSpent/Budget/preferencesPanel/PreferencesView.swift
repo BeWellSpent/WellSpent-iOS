@@ -84,7 +84,8 @@ struct PreferencesView: View {
                 viewModel = PreferencesViewModel(
                     budgetProfileID: budgetProfileID,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await viewModel?.load()

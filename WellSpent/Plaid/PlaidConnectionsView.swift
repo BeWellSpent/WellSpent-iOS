@@ -45,6 +45,7 @@ struct PlaidConnectionsView: View {
     }
 
     let authenticatedClient: ProtocolClient
+    @SwiftUI.Environment(SessionStore.self) private var session
     /// Supplied by Settings, which has already fetched it. Left nil elsewhere,
     /// in which case the view model resolves it.
     var plan: Wellspent_V1_AccountPlan?
@@ -72,6 +73,7 @@ struct PlaidConnectionsView: View {
             if viewModel == nil {
                 viewModel = PlaidConnectionsViewModel(
                     authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
                     budgetProfileID: budgetProfileID,
                     plan: plan
                 )
@@ -240,6 +242,7 @@ struct PlaidConnectionsView: View {
             )
         }
     }
+    .environment(SessionStore())
 }
 
 #Preview("One budget") {
@@ -250,4 +253,5 @@ struct PlaidConnectionsView: View {
             budgetProfileID: "budget-1"
         )
     }
+    .environment(SessionStore())
 }

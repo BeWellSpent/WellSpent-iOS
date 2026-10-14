@@ -1,12 +1,17 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("AlertsViewModel")
 @MainActor
 struct AlertsViewModelTests {
     private func makeViewModel() -> AlertsViewModel {
-        AlertsViewModel(budgetProfileID: "profile-1", authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        AlertsViewModel(
+            budgetProfileID: "profile-1",
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     private func subscription(type: AlertType) -> Wellspent_V1_AlertSubscription {

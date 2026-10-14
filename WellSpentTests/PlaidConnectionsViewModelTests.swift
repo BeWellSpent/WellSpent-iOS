@@ -1,12 +1,16 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("PlaidConnectionsViewModel")
 @MainActor
 struct PlaidConnectionsViewModelTests {
     private func makeViewModel() -> PlaidConnectionsViewModel {
-        PlaidConnectionsViewModel(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        PlaidConnectionsViewModel(
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     @Test("budgetName(for:) finds the matching budget's name")
@@ -54,6 +58,7 @@ struct PlaidConnectionsViewModelBudgetScopeTests {
     private func makeViewModel(budgetProfileID: String?) -> PlaidConnectionsViewModel {
         PlaidConnectionsViewModel(
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             budgetProfileID: budgetProfileID
         )
     }

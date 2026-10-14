@@ -11,7 +11,8 @@ struct VerifyEmailGateViewModelTests {
         return VerifyEmailGateViewModel(
             authenticatedClient: client,
             publicClient: client,
-            csharpPublicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+            csharpPublicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+            csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 

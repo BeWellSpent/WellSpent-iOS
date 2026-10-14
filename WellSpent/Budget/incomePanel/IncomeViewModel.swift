@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -15,6 +16,7 @@ final class IncomeViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Free tier caps income sources at 2 per person (`docs/features/tiered-subscriptions.md`).
     /// This budget-wide view can't attribute sources to a specific person by
@@ -34,11 +36,12 @@ final class IncomeViewModel {
         return sources.filter { FocusedViewFiltering.isMineOrUnattributed($0.budgetPersonID, myPersonID: myPerson.id) }
     }
 
-    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     /// Not private, so `isAtLimit`/`visibleSources` are testable without a
@@ -56,7 +59,7 @@ final class IncomeViewModel {
 
         async let sourcesResponse = client.listIncomeSources(request: .with { $0.budgetProfileID = budgetProfileID })
         async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
+        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
 
         switch await sourcesResponse.result {
         case .success(let message):
@@ -69,8 +72,8 @@ final class IncomeViewModel {
             people = message.people
         }
 
-        if case .success(let message) = await meResponse.result {
-            isFree = message.user.plan == .free
+        if let user = await user {
+            isFree = user.plan == .free
         }
     }
 

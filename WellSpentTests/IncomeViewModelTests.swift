@@ -1,12 +1,18 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("IncomeViewModel")
 @MainActor
 struct IncomeViewModelTests {
     private func makeViewModel(currentUserID: String? = nil) -> IncomeViewModel {
-        IncomeViewModel(budgetProfileID: "profile-1", currentUserID: currentUserID, authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        IncomeViewModel(
+            budgetProfileID: "profile-1",
+            currentUserID: currentUserID,
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     private func source(id: Int64, budgetPersonID: Int64 = 0) -> Wellspent_V1_IncomeSource {

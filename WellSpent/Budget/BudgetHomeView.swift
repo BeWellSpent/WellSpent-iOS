@@ -72,7 +72,10 @@ struct BudgetHomeView: View {
                 }
                 .task {
                     guard viewModel == nil, let authenticatedClient = session.authenticatedClient else { return }
-                    let model = BudgetHomeViewModel(authenticatedClient: authenticatedClient)
+                    let model = BudgetHomeViewModel(
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    )
                     viewModel = model
                     await model.load()
                     await announceWhatsNewIfNeeded(

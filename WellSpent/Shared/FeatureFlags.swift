@@ -31,6 +31,12 @@ nonisolated enum FeatureFlags {
         return isEnabled("FEATURE_CSHARP_AUTH", in: ["FEATURE_CSHARP_AUTH": value])
     }
 
+    /// Same pattern, for the User domain (issue #87). Off by default.
+    static var csharpUserEnabled: Bool {
+        let value = Bundle.main.object(forInfoDictionaryKey: "FeatureCSharpUser") as? String ?? ""
+        return isEnabled("FEATURE_CSHARP_USER", in: ["FEATURE_CSHARP_USER": value])
+    }
+
     /// Pure so it's testable without touching `ProcessInfo` — pass any dictionary in.
     static func isEnabled(_ key: String, in environment: [String: String]) -> Bool {
         switch environment[key]?.lowercased() {

@@ -38,7 +38,12 @@ struct IncomeListView: View {
         }
         .task {
             if viewModel == nil {
-                viewModel = IncomeViewModel(budgetProfileID: budgetProfileID, currentUserID: session.userID, authenticatedClient: authenticatedClient)
+                viewModel = IncomeViewModel(
+                    budgetProfileID: budgetProfileID,
+                    currentUserID: session.userID,
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                )
             }
             await viewModel?.load()
         }

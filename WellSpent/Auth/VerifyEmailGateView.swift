@@ -29,6 +29,7 @@ final class VerifyEmailGateViewModel {
     private let userClient: Wellspent_V1_UserServiceClient
     private let authClient: Wellspent_V1_AuthServiceClient
     private let csharpPublicRESTClient: WellSpentREST.Client
+    private let csharpAuthenticatedRESTClient: WellSpentREST.Client
 
     private static let logger = AppLogger.logger("VerifyEmailGate")
 
@@ -59,27 +60,27 @@ final class VerifyEmailGateViewModel {
     init(
         authenticatedClient: ProtocolClient,
         publicClient: ProtocolClient,
-        csharpPublicRESTClient: WellSpentREST.Client
+        csharpPublicRESTClient: WellSpentREST.Client,
+        csharpAuthenticatedRESTClient: WellSpentREST.Client
     ) {
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
         self.authClient = Wellspent_V1_AuthServiceClient(client: publicClient)
         self.csharpPublicRESTClient = csharpPublicRESTClient
+        self.csharpAuthenticatedRESTClient = csharpAuthenticatedRESTClient
     }
 
     /// Re-reads verification status. Called on appear and every time the app
     /// returns to the foreground — the verification link opens in a browser,
     /// so coming back is exactly when the answer may have changed.
     func refresh() async {
-        let response = await userClient.getMe(request: Wellspent_V1_GetMeRequest())
-        switch response.result {
-        case .success(let message):
-            apply(message.user)
-        case .failure(let error):
-            // Deliberately leaves `state` alone. A failed check must not
-            // promote an unverified account to verified, and must not lock a
-            // verified one out over a dropped connection.
-            Self.logger.error("verifyGate.getMe failed: \(error.message ?? "unknown", privacy: .public)")
+        // Deliberately leaves `state` alone on failure either way. A failed
+        // check must not promote an unverified account to verified, and must
+        // not lock a verified one out over a dropped connection.
+        guard let user = await UserRESTMapping.currentUser(connectClient: userClient, restClient: csharpAuthenticatedRESTClient, useREST: FeatureFlags.csharpUserEnabled) else {
+            Self.logger.error("verifyGate.getMe failed")
+            return
         }
+        apply(user)
     }
 
     /// Internal (not private) so the state mapping is testable as a pure step,
@@ -156,6 +157,11 @@ final class VerifyEmailGateViewModel {
         changeEmailErrorMessage = nil
         defer { isSavingEmail = false }
 
+        if FeatureFlags.csharpUserEnabled {
+            await changeEmailViaREST()
+            return
+        }
+
         let request = Wellspent_V1_ChangeEmailRequest.with { $0.newEmail = newEmail }
         let response = await userClient.changeEmail(request: request)
 
@@ -174,6 +180,30 @@ final class VerifyEmailGateViewModel {
                 localized: "Couldn't change your email address. Try again.",
                 locale: AppLanguageStore.currentLocale
             )
+        }
+    }
+
+    private func changeEmailViaREST() async {
+        let fallback = String(localized: "Couldn't change your email address. Try again.", locale: AppLanguageStore.currentLocale)
+        do {
+            let output = try await csharpAuthenticatedRESTClient.changeEmail(.init(body: .json(.init(newEmail: newEmail))))
+            switch output {
+            case .ok(let ok):
+                guard let body = try? ok.body.json else { changeEmailErrorMessage = fallback; return }
+                apply(UserRESTMapping.proto(from: body.user))
+                cooldownEndsAt = Date().addingTimeInterval(Self.resendCooldown)
+                isChangingEmail = false
+                newEmail = ""
+            case .badRequest(let badRequest):
+                changeEmailErrorMessage = (try? badRequest.body.json.message) ?? fallback
+            case .conflict:
+                changeEmailErrorMessage = String(localized: "That email address is already in use.", locale: AppLanguageStore.currentLocale)
+            default:
+                changeEmailErrorMessage = fallback
+            }
+        } catch {
+            Self.logger.error("verifyGate.changeEmail REST failed: \(error.localizedDescription, privacy: .public)")
+            changeEmailErrorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
     }
 
@@ -306,7 +336,8 @@ struct VerifyEmailGateView: View {
             let viewModel = VerifyEmailGateViewModel(
                 authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
                 publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-                csharpPublicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+                csharpPublicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+                csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
             )
             viewModel.apply(.with {
                 $0.email = "typo@exmaple.com"

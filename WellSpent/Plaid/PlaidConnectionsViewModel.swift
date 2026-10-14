@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import os
 import WellSpentAPI
+import WellSpentREST
 
 /// Backs both Plaid screens.
 ///
@@ -52,6 +53,7 @@ final class PlaidConnectionsViewModel {
     private let plaidClient: Wellspent_V1_PlaidServiceClient
     private let budgetClient: Wellspent_V1_BudgetServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// The caller's plan. Supplied by Settings, which has already fetched it;
     /// resolved here for the budget screen, which hasn't — the same
@@ -66,10 +68,11 @@ final class PlaidConnectionsViewModel {
 
     private static let logger = AppLogger.logger("Plaid")
 
-    init(authenticatedClient: ProtocolClient, budgetProfileID: String? = nil, plan: Wellspent_V1_AccountPlan? = nil) {
+    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client, budgetProfileID: String? = nil, plan: Wellspent_V1_AccountPlan? = nil) {
         self.plaidClient = Wellspent_V1_PlaidServiceClient(client: authenticatedClient)
         self.budgetClient = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+        self.restClient = restClient
         self.budgetProfileID = budgetProfileID
         self.plan = plan ?? .unspecified
         self.needsPlanFetch = plan == nil
@@ -152,9 +155,8 @@ final class PlaidConnectionsViewModel {
             budgets = message.profiles
         }
 
-        if needsPlanFetch,
-           case .success(let message) = await userClient.getMe(request: Wellspent_V1_GetMeRequest()).result {
-            plan = message.user.plan
+        if needsPlanFetch, let user = await UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled) {
+            plan = user.plan
         }
     }
 

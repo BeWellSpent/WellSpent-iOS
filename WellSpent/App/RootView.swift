@@ -109,13 +109,15 @@ struct RootView: View {
                 verifyGateViewModel = VerifyEmailGateViewModel(
                     authenticatedClient: authenticatedClient,
                     publicClient: session.publicClient,
-                    csharpPublicRESTClient: session.csharpPublicRESTClient
+                    csharpPublicRESTClient: session.csharpPublicRESTClient,
+                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             if profileGateViewModel == nil {
                 profileGateViewModel = ProfileCompletionGateViewModel(
                     authenticatedClient: authenticatedClient,
-                    restClient: session.publicRESTClient
+                    restClient: session.publicRESTClient,
+                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await verifyGateViewModel?.refresh()

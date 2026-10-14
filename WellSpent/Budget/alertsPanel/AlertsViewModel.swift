@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -15,6 +16,7 @@ final class AlertsViewModel {
     private let notificationClient: Wellspent_V1_NotificationServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
     private let budgetClient: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Free tier doesn't offer `new_transaction` at all (`docs/features/tiered-subscriptions.md`).
     var visibleAlertTypes: [AlertType] {
@@ -27,11 +29,12 @@ final class AlertsViewModel {
         isFree && subscriptions.count >= 2
     }
 
-    init(budgetProfileID: String, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.notificationClient = Wellspent_V1_NotificationServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
         self.budgetClient = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     /// Not private, so `visibleAlertTypes`/`isAtLimit` are testable without a
@@ -51,7 +54,7 @@ final class AlertsViewModel {
         defer { isLoading = false }
 
         async let subsResponse = notificationClient.listAlertSubscriptions(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
+        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
         async let categoriesResponse = budgetClient.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
 
         switch await subsResponse.result {
@@ -61,8 +64,8 @@ final class AlertsViewModel {
             errorMessage = error.message ?? "Couldn't load alert settings."
         }
 
-        if case .success(let message) = await meResponse.result {
-            isFree = message.user.plan == .free
+        if let user = await user {
+            isFree = user.plan == .free
         }
 
         if case .success(let message) = await categoriesResponse.result {
