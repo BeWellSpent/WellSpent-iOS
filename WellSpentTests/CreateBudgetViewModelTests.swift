@@ -1,12 +1,16 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("CreateBudgetViewModel")
 @MainActor
 struct CreateBudgetViewModelTests {
     private func makeViewModel() -> CreateBudgetViewModel {
-        CreateBudgetViewModel(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        CreateBudgetViewModel(
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     @Test("submit is disabled until a non-blank name is present")

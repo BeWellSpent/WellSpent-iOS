@@ -98,6 +98,7 @@ struct BudgetHomeView: View {
                 BudgetDetailView(
                     profile: profile,
                     authenticatedClient: session.authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
                     currencyCode: viewModel.currencyCode,
                     localeIdentifier: viewModel.localeIdentifier,
                     onUpdated: { viewModel.replaceProfile($0) },

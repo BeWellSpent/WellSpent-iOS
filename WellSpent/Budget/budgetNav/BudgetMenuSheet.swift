@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Everything that isn't a frequent destination: which period you're looking
 /// at, the manage panels, settings, help, and logging out.
@@ -242,7 +243,8 @@ struct BudgetMenuSheet: View {
                 $0.cycle = .monthly
                 $0.countryCode = "US"
             },
-            authenticatedClient: client
+            authenticatedClient: client,
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         ),
         authenticatedClient: client,
         currencyCode: "USD",

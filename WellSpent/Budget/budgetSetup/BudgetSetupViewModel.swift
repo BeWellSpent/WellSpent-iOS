@@ -166,13 +166,28 @@ final class BudgetSetupViewModel {
         errorMessage = nil
         defer { isCancelling = false }
 
+        let fallback = "Couldn't cancel setup."
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteBudgetProfile(.init(path: .init(id: profile.id))) else {
+                    errorMessage = fallback
+                    return false
+                }
+                self.profile = nil
+                return true
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                return false
+            }
+        }
+
         let response = await client.deleteBudgetProfile(request: .with { $0.id = profile.id })
         switch response.result {
         case .success:
             self.profile = nil
             return true
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't cancel setup."
+            errorMessage = error.message ?? fallback
             return false
         }
     }

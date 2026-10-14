@@ -34,7 +34,7 @@ struct BudgetSetupFlow: View {
         onCreated: @escaping (Wellspent_V1_BudgetProfile) -> Void
     ) {
         _viewModel = State(initialValue: BudgetSetupViewModel(authenticatedClient: authenticatedClient, restClient: restClient))
-        _createViewModel = State(initialValue: CreateBudgetViewModel(authenticatedClient: authenticatedClient))
+        _createViewModel = State(initialValue: CreateBudgetViewModel(authenticatedClient: authenticatedClient, restClient: restClient))
         self.authenticatedClient = authenticatedClient
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier

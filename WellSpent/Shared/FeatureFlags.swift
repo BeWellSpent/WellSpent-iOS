@@ -55,6 +55,16 @@ nonisolated enum FeatureFlags {
         return isEnabled("FEATURE_CSHARP_PLAID", in: ["FEATURE_CSHARP_PLAID": value])
     }
 
+    /// One shared flag for the whole Budget domain (issue #87), unlike every other domain's own
+    /// flag — a half-flipped Budget module isn't a coherent deployable state, same reasoning as
+    /// web's `csharpBudget`. Covers all 8 planned sub-batches (profile/period, people/
+    /// preferences, income/savings, categories/payment methods, transactions, installment/fixed
+    /// expenses, allocations/expense summary, transaction review).
+    static var csharpBudgetEnabled: Bool {
+        let value = Bundle.main.object(forInfoDictionaryKey: "FeatureCSharpBudget") as? String ?? ""
+        return isEnabled("FEATURE_CSHARP_BUDGET", in: ["FEATURE_CSHARP_BUDGET": value])
+    }
+
     /// Pure so it's testable without touching `ProcessInfo` — pass any dictionary in.
     static func isEnabled(_ key: String, in environment: [String: String]) -> Bool {
         switch environment[key]?.lowercased() {

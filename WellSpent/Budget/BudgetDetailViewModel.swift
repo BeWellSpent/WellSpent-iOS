@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -51,11 +52,13 @@ final class BudgetDetailViewModel {
     var isArchivedPeriod: Bool { currentPeriod?.isArchived ?? false }
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
-    init(profile: Wellspent_V1_BudgetProfile, overridePeriodID: String? = nil, authenticatedClient: ProtocolClient) {
+    init(profile: Wellspent_V1_BudgetProfile, overridePeriodID: String? = nil, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.profile = profile
         self.overridePeriodID = overridePeriodID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func loadPeriod() async {
@@ -63,15 +66,33 @@ final class BudgetDetailViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
+        guard let fetched = await fetchPeriods() else { return }
+        periods = fetched
+        currentPeriod = PeriodGrouping.resolvePeriod(fetched, overrideID: overridePeriodID)
+    }
+
+    private func fetchPeriods() async -> [Wellspent_V1_BudgetPeriod]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listBudgetPeriods(.init(path: .init(id: profile.id)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load this budget's period."
+                    return nil
+                }
+                return body.periods.map(BudgetRESTMapping.period(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load this budget's period."
+                return nil
+            }
+        }
         let request = Wellspent_V1_ListBudgetPeriodsRequest.with { $0.budgetProfileID = profile.id }
         let response = await client.listBudgetPeriods(request: request)
-
         switch response.result {
         case .success(let message):
-            periods = message.periods
-            currentPeriod = PeriodGrouping.resolvePeriod(message.periods, overrideID: overridePeriodID)
+            return message.periods
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load this budget's period."
+            return nil
         }
     }
 
@@ -109,6 +130,21 @@ final class BudgetDetailViewModel {
 
     func delete() async -> Bool {
         errorMessage = nil
+        let fallback = "Couldn't delete that budget."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteBudgetProfile(.init(path: .init(id: profile.id))) else {
+                    errorMessage = fallback
+                    return false
+                }
+                return true
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                return false
+            }
+        }
+
         let request = Wellspent_V1_DeleteBudgetProfileRequest.with { $0.id = profile.id }
         let response = await client.deleteBudgetProfile(request: request)
 
@@ -116,7 +152,7 @@ final class BudgetDetailViewModel {
         case .success:
             return true
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't delete that budget."
+            errorMessage = error.message ?? fallback
             return false
         }
     }

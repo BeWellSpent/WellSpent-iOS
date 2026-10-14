@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Adaptive navigation shell for a budget: a bottom tab bar on iPhone
 /// (`.compact` horizontal size class), a `NavigationSplitView` sidebar on
@@ -54,10 +55,13 @@ struct BudgetDetailView: View {
     @State private var isPaymentMethodRequiredPresented = false
     @State private var isPaymentMethodsPresented = false
 
+    private let restClient: WellSpentREST.Client
+
     init(
         profile: Wellspent_V1_BudgetProfile,
         periodID: String? = nil,
         authenticatedClient: ProtocolClient?,
+        restClient: WellSpentREST.Client,
         currencyCode: String,
         localeIdentifier: String,
         onUpdated: @escaping (Wellspent_V1_BudgetProfile) -> Void,
@@ -65,13 +69,14 @@ struct BudgetDetailView: View {
         onDeleted: @escaping () -> Void
     ) {
         self.authenticatedClient = authenticatedClient
+        self.restClient = restClient
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.onUpdated = onUpdated
         self.onUserUpdated = onUserUpdated
         self.onDeleted = onDeleted
         _viewModel = State(initialValue: authenticatedClient.map {
-            BudgetDetailViewModel(profile: profile, overridePeriodID: periodID, authenticatedClient: $0)
+            BudgetDetailViewModel(profile: profile, overridePeriodID: periodID, authenticatedClient: $0, restClient: restClient)
         })
     }
 
@@ -517,6 +522,7 @@ struct BudgetDetailView: View {
                 $0.countryCode = "US"
             },
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
             onUpdated: { _ in },

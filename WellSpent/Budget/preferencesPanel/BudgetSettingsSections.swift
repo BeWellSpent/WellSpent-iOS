@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// The budget-wide settings shown beneath the per-person chart preferences.
 /// Both are Admin-only and both spell their rule out rather than naming it:
@@ -8,6 +9,9 @@ import WellSpentAPI
 struct BudgetSettingsSections: View {
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient?
+    @Environment(SessionStore.self) private var session
+
+    private static let saveFallback = String(localized: "Couldn't save this setting.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
 
     var body: some View {
         // Carrying a closed period's ending balance forward — see
@@ -20,17 +24,25 @@ struct BudgetSettingsSections: View {
             footer: "When a period ends, roll its balance into the next one. Money left over is added to Savings; if you overspent, the shortfall is split across the payment methods you spent it on, so the debt shows where it came from.",
             accessibilityID: "carryoverToggle",
             read: { $0.carryoverEnabled },
-            write: { client, profileID, enabled in
+            write: { profileID, enabled in
+                if FeatureFlags.csharpBudgetEnabled {
+                    let restClient = session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    do {
+                        let output = try await restClient.setBudgetCarryoverEnabled(.init(path: .init(id: profileID), body: .json(.init(enabled: enabled))))
+                        if case .ok = output { return nil }
+                        return Self.saveFallback
+                    } catch {
+                        return RESTNetworkError.connectivityMessage(for: error) ?? Self.saveFallback
+                    }
+                }
+                guard let authenticatedClient else { return Self.saveFallback }
+                let client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
                 let response = await client.setBudgetCarryoverEnabled(request: .with {
                     $0.budgetProfileID = profileID
                     $0.enabled = enabled
                 })
                 if case .failure(let error) = response.result {
-                    return error.message ?? String(
-                        localized: "Couldn't save this setting.",
-                        bundle: AppLanguageStore.currentBundle,
-                        locale: AppLanguageStore.currentLocale
-                    )
+                    return error.message ?? Self.saveFallback
                 }
                 return nil
             }
@@ -47,17 +59,25 @@ struct BudgetSettingsSections: View {
             footer: "When a fixed expense is paid differently than planned, update its template for future periods: the amount actually paid, the day it was actually paid (not the original due day), and — when matching a bank transaction reveals a different one — its category and payment method. The period you're paying keeps its own values; only later ones change. Turn this off to keep your fixed expense templates exactly as you set them.",
             accessibilityID: "plannedAmountSyncToggle",
             read: { $0.autoUpdatePlannedAmount },
-            write: { client, profileID, enabled in
+            write: { profileID, enabled in
+                if FeatureFlags.csharpBudgetEnabled {
+                    let restClient = session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    do {
+                        let output = try await restClient.setBudgetAutoUpdatePlannedAmount(.init(path: .init(id: profileID), body: .json(.init(enabled: enabled))))
+                        if case .ok = output { return nil }
+                        return Self.saveFallback
+                    } catch {
+                        return RESTNetworkError.connectivityMessage(for: error) ?? Self.saveFallback
+                    }
+                }
+                guard let authenticatedClient else { return Self.saveFallback }
+                let client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
                 let response = await client.setBudgetAutoUpdatePlannedAmount(request: .with {
                     $0.budgetProfileID = profileID
                     $0.enabled = enabled
                 })
                 if case .failure(let error) = response.result {
-                    return error.message ?? String(
-                        localized: "Couldn't save this setting.",
-                        bundle: AppLanguageStore.currentBundle,
-                        locale: AppLanguageStore.currentLocale
-                    )
+                    return error.message ?? Self.saveFallback
                 }
                 return nil
             }
