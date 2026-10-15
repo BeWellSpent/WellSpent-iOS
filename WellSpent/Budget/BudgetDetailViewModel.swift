@@ -121,11 +121,22 @@ final class BudgetDetailViewModel {
     }
 
     func loadRole(currentUserID: String?) async {
-        let response = await client.listBudgetPeople(request: .with { $0.budgetProfileID = profile.id })
-        guard case .success(let message) = response.result else { return }
-        let role = BudgetRoleResolver.role(currentUserID: currentUserID, budgetOwnerUserID: profile.userID, people: message.people)
+        guard let people = await fetchPeople() else { return }
+        let role = BudgetRoleResolver.role(currentUserID: currentUserID, budgetOwnerUserID: profile.userID, people: people)
         canEdit = BudgetRoleResolver.canEdit(role)
         canManageUsers = BudgetRoleResolver.canManageUsers(role)
+    }
+
+    private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: profile.id))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.people.map(BudgetRESTMapping.person(from:))
+        }
+        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = profile.id }).result else {
+            return nil
+        }
+        return message.people
     }
 
     func delete() async -> Bool {

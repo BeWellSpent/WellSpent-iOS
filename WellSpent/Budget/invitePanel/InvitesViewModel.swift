@@ -65,15 +65,27 @@ final class InvitesViewModel {
         defer { isLoading = false }
 
         async let invitesResult = fetchInvites()
-        async let peopleResponse = budgetClient.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let peopleResult = fetchPeople()
 
         if let fetched = await invitesResult {
             invites = fetched
         }
 
-        if case .success(let message) = await peopleResponse.result {
-            people = message.people
+        if let fetched = await peopleResult {
+            people = fetched
         }
+    }
+
+    private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.people.map(BudgetRESTMapping.person(from:))
+        }
+        guard case .success(let message) = await budgetClient.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.people
     }
 
     private func fetchInvites() async -> [Wellspent_V1_BudgetInvite]? {

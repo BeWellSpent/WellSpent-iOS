@@ -49,13 +49,12 @@ final class BudgetSettingToggleViewModel {
         guard let profile = await fetchProfile() else { return }
         isEnabled = read(profile)
 
-        let peopleResponse = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        guard case .success(let peopleMessage) = peopleResponse.result else { return }
+        guard let people = await fetchPeople() else { return }
         isAdmin = BudgetRoleResolver.canManageUsers(
             BudgetRoleResolver.role(
                 currentUserID: currentUserID,
                 budgetOwnerUserID: profile.userID,
-                people: peopleMessage.people
+                people: people
             )
         )
     }
@@ -69,6 +68,18 @@ final class BudgetSettingToggleViewModel {
         let response = await client.getBudgetProfile(request: .with { $0.id = budgetProfileID })
         guard case .success(let message) = response.result else { return nil }
         return message.profile
+    }
+
+    private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.people.map(BudgetRESTMapping.person(from:))
+        }
+        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.people
     }
 
     func update(enabled: Bool) async {

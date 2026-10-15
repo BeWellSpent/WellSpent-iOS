@@ -51,4 +51,62 @@ nonisolated enum BudgetRESTMapping {
             $0.isArchived = p.isArchived
         }
     }
+
+    static func person(from p: Components.Schemas.BudgetPerson) -> Wellspent_V1_BudgetPerson {
+        .with {
+            $0.id = p.id
+            $0.budgetProfileID = p.budgetProfileId
+            $0.userName = p.userName ?? ""
+            $0.userID = p.userId ?? ""
+            $0.color = p.color
+            $0.role = role(from: p.role)
+            $0.planChartType = chartType(from: p.planChartType)
+            $0.overviewChartType = chartType(from: p.overviewChartType)
+            $0.manualMatchReviewEnabled = p.manualMatchReviewEnabled
+            $0.focusedViewEnabled = p.focusedViewEnabled
+        }
+    }
+
+    static func role(from r: Components.Schemas.BudgetPersonRole) -> Wellspent_V1_BudgetRole {
+        switch r {
+        case .admin: return .admin
+        case .collaborator: return .collaborator
+        case .viewer: return .viewer
+        case .unspecified: return .unspecified
+        }
+    }
+
+    static func restRole(from r: Wellspent_V1_BudgetRole) -> Components.Schemas.BudgetPersonRole {
+        switch r {
+        case .admin: return .admin
+        case .collaborator: return .collaborator
+        case .viewer: return .viewer
+        default: return .unspecified
+        }
+    }
+
+    /// `UpdateBudgetPersonRoleRequest.role` has no `unspecified` case — callers only ever send a real role.
+    static func restSendRole(from r: Wellspent_V1_BudgetRole) -> Components.Schemas.UpdateBudgetPersonRoleRequest.rolePayload {
+        switch r {
+        case .collaborator: return .collaborator
+        case .viewer: return .viewer
+        default: return .admin
+        }
+    }
+
+    static func chartType(from c: Components.Schemas.ChartType?) -> Wellspent_V1_ChartType {
+        switch c {
+        case .pie: return .pie
+        case .bar: return .bar
+        case nil: return .unspecified
+        }
+    }
+
+    static func restChartType(from c: Wellspent_V1_ChartType) -> Components.Schemas.ChartType? {
+        switch c {
+        case .pie: return .pie
+        case .bar: return .bar
+        default: return nil
+        }
+    }
 }
