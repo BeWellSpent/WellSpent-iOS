@@ -56,6 +56,7 @@ struct BudgetSetupFlow: View {
                     PaymentMethodsSetupStepView(
                         people: viewModel.people,
                         authenticatedClient: authenticatedClient,
+                        restClient: restClient,
                         onFinish: { viewModel.advance() }
                     )
                 case .income:

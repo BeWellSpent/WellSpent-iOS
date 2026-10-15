@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct TransactionsListView: View {
     /// Local to this file, not a `Shared/` enum like `BudgetSection` — this
@@ -98,7 +99,8 @@ struct TransactionsListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await viewModel?.load()

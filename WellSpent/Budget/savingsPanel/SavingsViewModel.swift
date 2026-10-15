@@ -53,7 +53,7 @@ final class SavingsViewModel {
 
         async let sourcesResult = fetchSources()
         async let peopleResult = fetchPeople()
-        async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let methodsResult = fetchPaymentMethods()
 
         if let fetched = await sourcesResult {
             sources = fetched
@@ -62,9 +62,21 @@ final class SavingsViewModel {
         if let fetched = await peopleResult {
             people = fetched
         }
-        if case .success(let message) = await paymentMethodsResponse.result {
-            paymentMethods = message.methods
+        if let fetched = await methodsResult {
+            paymentMethods = fetched
         }
+    }
+
+    private func fetchPaymentMethods() async -> [Wellspent_V1_PaymentMethod]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listPaymentMethods(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.methods.map(BudgetRESTMapping.paymentMethod(from:))
+        }
+        guard case .success(let message) = await client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.methods
     }
 
     private func fetchSources() async -> [Wellspent_V1_SavingsSource]? {

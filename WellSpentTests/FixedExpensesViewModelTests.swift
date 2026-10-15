@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 /// Covers the local state each delete path leaves behind. The RPC itself is
@@ -16,7 +17,8 @@ struct FixedExpensesViewModelTests {
             currencyCode: "USD",
             localeIdentifier: "en",
             currentUserID: nil,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 

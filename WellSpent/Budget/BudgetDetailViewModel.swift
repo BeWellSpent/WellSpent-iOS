@@ -99,6 +99,14 @@ final class BudgetDetailViewModel {
     /// Reloaded after the user adds one from the gate's sheet, so the "+"
     /// starts working again without leaving the screen.
     func loadPaymentMethods() async {
+        if FeatureFlags.csharpBudgetEnabled {
+            if let output = try? await restClient.listPaymentMethods(.init(path: .init(id: profile.id))),
+               case .ok(let ok) = output, let body = try? ok.body.json {
+                paymentMethods = body.methods.map(BudgetRESTMapping.paymentMethod(from:))
+            }
+            isLoadingPaymentMethods = false
+            return
+        }
         let response = await client.listPaymentMethods(request: .with { $0.budgetProfileID = profile.id })
         if case .success(let message) = response.result {
             paymentMethods = message.methods

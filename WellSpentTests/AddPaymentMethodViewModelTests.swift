@@ -1,12 +1,16 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("AddPaymentMethodViewModel")
 @MainActor
 struct AddPaymentMethodViewModelTests {
     private func makeViewModel() -> AddPaymentMethodViewModel {
-        AddPaymentMethodViewModel(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        AddPaymentMethodViewModel(
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     @Test("submit requires a non-blank name and a selected owner")

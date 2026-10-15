@@ -55,7 +55,7 @@ final class AlertsViewModel {
 
         async let subs = fetchSubscriptions()
         async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
-        async let categoriesResponse = budgetClient.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let categoriesResult = fetchCategories()
 
         if let subs = await subs {
             subscriptions = subs
@@ -65,9 +65,21 @@ final class AlertsViewModel {
             isFree = user.plan == .free
         }
 
-        if case .success(let message) = await categoriesResponse.result {
-            categories = message.categories
+        if let fetched = await categoriesResult {
+            categories = fetched
         }
+    }
+
+    private func fetchCategories() async -> [Wellspent_V1_Category]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listCategories(.init(query: .init(budgetProfileId: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.categories.map(BudgetRESTMapping.category(from:))
+        }
+        guard case .success(let message) = await budgetClient.listCategories(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.categories
     }
 
     private func fetchSubscriptions() async -> [Wellspent_V1_AlertSubscription]? {

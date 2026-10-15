@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Step 3 (final) of `BudgetSetupFlow`. Hosts `AddPaymentMethodViewModel`
 /// as-is — each successful add is followed by a fresh instance so the form
@@ -9,16 +10,18 @@ import WellSpentAPI
 struct PaymentMethodsSetupStepView: View {
     let people: [Wellspent_V1_BudgetPerson]
     let authenticatedClient: ProtocolClient
+    let restClient: WellSpentREST.Client
     let onFinish: () -> Void
 
     @State private var viewModel: AddPaymentMethodViewModel
     @State private var addedMethods: [Wellspent_V1_PaymentMethod] = []
 
-    init(people: [Wellspent_V1_BudgetPerson], authenticatedClient: ProtocolClient, onFinish: @escaping () -> Void) {
+    init(people: [Wellspent_V1_BudgetPerson], authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client, onFinish: @escaping () -> Void) {
         self.people = people
         self.authenticatedClient = authenticatedClient
+        self.restClient = restClient
         self.onFinish = onFinish
-        let initial = AddPaymentMethodViewModel(authenticatedClient: authenticatedClient)
+        let initial = AddPaymentMethodViewModel(authenticatedClient: authenticatedClient, restClient: restClient)
         initial.personID = people.first?.id ?? 0
         _viewModel = State(initialValue: initial)
     }
@@ -56,7 +59,7 @@ struct PaymentMethodsSetupStepView: View {
                     Task {
                         if let method = await viewModel.submit() {
                             addedMethods.append(method)
-                            let fresh = AddPaymentMethodViewModel(authenticatedClient: authenticatedClient)
+                            let fresh = AddPaymentMethodViewModel(authenticatedClient: authenticatedClient, restClient: restClient)
                             fresh.personID = people.first?.id ?? 0
                             viewModel = fresh
                         }
@@ -90,7 +93,8 @@ struct PaymentMethodsSetupStepView: View {
     NavigationStack {
         PaymentMethodsSetupStepView(
             people: [.with { $0.id = 1; $0.userName = "Jane" }],
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         ) {}
     }
 }

@@ -184,6 +184,88 @@ nonisolated enum BudgetRESTMapping {
         }
     }
 
+    static func category(from c: Components.Schemas.Category) -> Wellspent_V1_Category {
+        .with {
+            $0.id = c.id
+            $0.name = c.name
+            $0.isSystem = c.isSystem
+            $0.color = c.color
+            $0.systemCategory = systemCategory(from: c.systemKey)
+        }
+    }
+
+    /// Matches `category.system_key`'s snake_case values, backfilled once in migration 000054
+    /// and never since renumbered — `name == "eating_out"` ↔ `.eatingOut`, etc.
+    static func systemCategory(from key: String?) -> Wellspent_V1_SystemCategory {
+        switch key {
+        case "entertainment": return .entertainment
+        case "insurance": return .insurance
+        case "loan": return .loan
+        case "wellness": return .wellness
+        case "services": return .services
+        case "subscription": return .subscription
+        case "rent": return .rent
+        case "travel": return .travel
+        case "eating_out": return .eatingOut
+        case "groceries": return .groceries
+        case "baby": return .baby
+        case "pet": return .pet
+        case "misc": return .misc
+        case "house": return .house
+        case "gas": return .gas
+        case "auto": return .auto
+        case "savings": return .savings
+        case "shopping": return .shopping
+        case "family": return .family
+        case "income": return .income
+        case "payment": return .payment
+        case "transfer": return .transfer
+        case "transportation": return .transportation
+        case "utilities": return .utilities
+        case "debt": return .debt
+        default: return .unspecified
+        }
+    }
+
+    static func paymentMethod(from m: Components.Schemas.PaymentMethod) -> Wellspent_V1_PaymentMethod {
+        .with {
+            $0.id = m.id
+            $0.name = m.name
+            $0.type = paymentType(from: m._type)
+            $0.budgetPersonID = m.budgetPersonId
+            $0.color = m.color
+            $0.alias = m.alias
+        }
+    }
+
+    static func paymentType(from t: Components.Schemas.PaymentType) -> Wellspent_V1_PaymentType {
+        switch t {
+        case .cash: return .cash
+        case .credit: return .credit
+        case .debit: return .debit
+        case .digital_wallet: return .digitalWallet
+        case .bank_transfer: return .bankTransfer
+        case .crypto: return .crypto
+        case .investment: return .investment
+        case .other: return .other
+        case .unspecified: return .unspecified
+        }
+    }
+
+    static func restPaymentType(from t: Wellspent_V1_PaymentType) -> Components.Schemas.PaymentType {
+        switch t {
+        case .cash: return .cash
+        case .credit: return .credit
+        case .debit: return .debit
+        case .digitalWallet: return .digital_wallet
+        case .bankTransfer: return .bank_transfer
+        case .crypto: return .crypto
+        case .investment: return .investment
+        case .other: return .other
+        default: return .unspecified
+        }
+    }
+
     static func savingsSource(from s: Components.Schemas.SavingsSource) -> Wellspent_V1_SavingsSource {
         .with {
             $0.id = s.id

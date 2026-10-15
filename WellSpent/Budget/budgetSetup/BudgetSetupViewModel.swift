@@ -72,6 +72,13 @@ final class BudgetSetupViewModel {
     /// returns at least one person once it succeeds.
     func loadPeople() async {
         guard let profile else { return }
+        if FeatureFlags.csharpBudgetEnabled {
+            if let output = try? await restClient.listBudgetPeople(.init(path: .init(id: profile.id))),
+               case .ok(let ok) = output, let body = try? ok.body.json {
+                people = body.people.map(BudgetRESTMapping.person(from:))
+            }
+            return
+        }
         let response = await client.listBudgetPeople(request: .with { $0.budgetProfileID = profile.id })
         if case .success(let message) = response.result {
             people = message.people
@@ -83,6 +90,13 @@ final class BudgetSetupViewModel {
     /// consumer.
     func loadPaymentMethods() async {
         guard let profile else { return }
+        if FeatureFlags.csharpBudgetEnabled {
+            if let output = try? await restClient.listPaymentMethods(.init(path: .init(id: profile.id))),
+               case .ok(let ok) = output, let body = try? ok.body.json {
+                paymentMethods = body.methods.map(BudgetRESTMapping.paymentMethod(from:))
+            }
+            return
+        }
         let response = await client.listPaymentMethods(request: .with { $0.budgetProfileID = profile.id })
         if case .success(let message) = response.result {
             paymentMethods = message.methods

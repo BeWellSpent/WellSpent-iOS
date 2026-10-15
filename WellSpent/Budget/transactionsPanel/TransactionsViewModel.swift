@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -29,6 +30,7 @@ final class TransactionsViewModel {
     let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Which transactions crossed their category's plan — server-computed.
     ///
@@ -55,13 +57,14 @@ final class TransactionsViewModel {
         )
     }
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func load() async {
@@ -69,18 +72,18 @@ final class TransactionsViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let categoriesResult = fetchCategories()
+        async let paymentMethodsResult = fetchPaymentMethods()
+        async let peopleResult = fetchPeople()
 
-        if case .success(let message) = await categoriesResponse.result {
-            categories = message.categories
+        if let fetched = await categoriesResult {
+            categories = fetched
         }
-        if case .success(let message) = await paymentMethodsResponse.result {
-            paymentMethods = message.methods
+        if let fetched = await paymentMethodsResult {
+            paymentMethods = fetched
         }
-        if case .success(let message) = await peopleResponse.result {
-            people = message.people
+        if let fetched = await peopleResult {
+            people = fetched
         }
 
         // Needs `people` resolved first, so these can't join the batch above.
@@ -105,6 +108,42 @@ final class TransactionsViewModel {
         if case .success(let message) = await summaryResponse.result {
             summary = message
         }
+    }
+
+    private func fetchCategories() async -> [Wellspent_V1_Category]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listCategories(.init(query: .init(budgetProfileId: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.categories.map(BudgetRESTMapping.category(from:))
+        }
+        guard case .success(let message) = await client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.categories
+    }
+
+    private func fetchPaymentMethods() async -> [Wellspent_V1_PaymentMethod]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listPaymentMethods(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.methods.map(BudgetRESTMapping.paymentMethod(from:))
+        }
+        guard case .success(let message) = await client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.methods
+    }
+
+    private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.people.map(BudgetRESTMapping.person(from:))
+        }
+        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.people
     }
 
     /// Excludes transactions whose review was confirmed — those are shown

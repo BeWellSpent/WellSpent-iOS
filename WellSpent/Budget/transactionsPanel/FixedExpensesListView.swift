@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 import os
 
 struct FixedExpensesListView: View {
@@ -100,7 +101,8 @@ struct FixedExpensesListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await viewModel?.load()
