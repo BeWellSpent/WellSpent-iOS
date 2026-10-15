@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// A budget-wide, Admin-only boolean setting.
 ///
@@ -16,7 +17,7 @@ struct BudgetSettingToggleSection: View {
     let footer: LocalizedStringKey
     let accessibilityID: String
     let read: (Wellspent_V1_BudgetProfile) -> Bool
-    let write: (Wellspent_V1_BudgetServiceClient, String, Bool) async -> String?
+    let write: (String, Bool) async -> String?
 
     @Environment(SessionStore.self) private var session
     @State private var viewModel: BudgetSettingToggleViewModel?
@@ -67,6 +68,7 @@ struct BudgetSettingToggleSection: View {
                     budgetProfileID: budgetProfileID,
                     currentUserID: session.userID,
                     authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
                     read: read,
                     write: write
                 )

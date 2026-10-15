@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 import os
 
 struct FixedExpensesListView: View {
@@ -100,7 +101,8 @@ struct FixedExpensesListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await viewModel?.load()
@@ -242,7 +244,8 @@ struct FixedExpensesListView: View {
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
-                authenticatedClient: authenticatedClient
+                authenticatedClient: authenticatedClient,
+                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
             ) { expense, transaction in
                 viewModel.addFromCreate(expense: expense, transaction: transaction)
             }
@@ -262,7 +265,8 @@ struct FixedExpensesListView: View {
                         currencyCode: currencyCode,
                         categories: viewModel.categories,
                         paymentMethods: viewModel.paymentMethods,
-                        authenticatedClient: authenticatedClient
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                     ) { _ in
                         Task { await viewModel.handleTemplateUpdated() }
                     }
@@ -275,7 +279,8 @@ struct FixedExpensesListView: View {
                         paymentMethods: viewModel.paymentMethods,
                         isArchivedPeriod: isArchivedPeriod,
                         forceLocked: true,
-                        authenticatedClient: authenticatedClient
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                     ) { _ in
                         Task { await viewModel.load() }
                     }
@@ -289,7 +294,8 @@ struct FixedExpensesListView: View {
                     currencyCode: currencyCode,
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 ) { _ in
                     Task { await viewModel.handleTemplateUpdated() }
                 }

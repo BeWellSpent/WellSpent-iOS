@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -27,6 +28,11 @@ final class LoginViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
+        if FeatureFlags.csharpAuthEnabled {
+            await submitViaREST(session: session)
+            return
+        }
+
         let request = Wellspent_V1_LoginRequest.with {
             $0.email = email
             $0.password = password
@@ -39,6 +45,28 @@ final class LoginViewModel {
             session.startSession(token: message.accessToken)
         case .failure(let error):
             errorMessage = LoginViewModel.errorMessage(for: error)
+        }
+    }
+
+    private func submitViaREST(session: SessionStore) async {
+        do {
+            let output = try await session.csharpPublicRESTClient.login(.init(body: .json(.init(
+                email: email,
+                password: password,
+                rememberMe: rememberMe
+            ))))
+            switch output {
+            case .ok(let ok):
+                session.startSession(token: try ok.body.json.accessToken)
+            case .badRequest:
+                errorMessage = "Incorrect email or password."
+            case .forbidden(let forbidden):
+                errorMessage = (try? forbidden.body.json.message) ?? "This account can't sign in right now."
+            default:
+                errorMessage = "Something went wrong. Please try again."
+            }
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Something went wrong. Please try again."
         }
     }
 

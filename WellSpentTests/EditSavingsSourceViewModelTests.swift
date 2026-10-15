@@ -1,5 +1,6 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("EditSavingsSourceViewModel")
@@ -21,7 +22,8 @@ struct EditSavingsSourceViewModelTests {
             source: source,
             currencyCode: "USD",
             periodStartDate: nil,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 

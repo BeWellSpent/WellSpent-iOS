@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 /// Kept separate from `AddPaymentMethodViewModel` — payment type is
 /// immutable after creation (see docs/features/transactions.md), so the
@@ -16,18 +17,20 @@ final class EditPaymentMethodViewModel {
     private(set) var errorMessage: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
     private let methodID: String
 
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSubmitting
     }
 
-    init(method: Wellspent_V1_PaymentMethod, authenticatedClient: ProtocolClient) {
+    init(method: Wellspent_V1_PaymentMethod, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.name = method.name
         self.alias = method.alias
         self.color = method.color
         self.methodID = method.id
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func submit() async -> Wellspent_V1_PaymentMethod? {
@@ -35,12 +38,32 @@ final class EditPaymentMethodViewModel {
         isSubmitting = true
         errorMessage = nil
         defer { isSubmitting = false }
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedAlias = alias.trimmingCharacters(in: .whitespaces)
+        let fallback = "Couldn't update that payment method."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.updatePaymentMethod(.init(
+                    path: .init(id: methodID),
+                    body: .json(.init(name: trimmedName, color: color, alias: trimmedAlias))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    return nil
+                }
+                return BudgetRESTMapping.paymentMethod(from: body.method)
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                return nil
+            }
+        }
 
         let request = Wellspent_V1_UpdatePaymentMethodRequest.with {
             $0.id = methodID
-            $0.name = name.trimmingCharacters(in: .whitespaces)
+            $0.name = trimmedName
             $0.color = color
-            $0.alias = alias.trimmingCharacters(in: .whitespaces)
+            $0.alias = trimmedAlias
         }
         let response = await client.updatePaymentMethod(request: request)
 
@@ -48,7 +71,7 @@ final class EditPaymentMethodViewModel {
         case .success(let message):
             return message.method
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't update that payment method."
+            errorMessage = error.message ?? fallback
             return nil
         }
     }

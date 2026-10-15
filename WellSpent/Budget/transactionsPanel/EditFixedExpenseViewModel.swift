@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import os
 import WellSpentAPI
+import WellSpentREST
 
 /// Kept separate from `AddFixedExpenseViewModel` — same field shape, but
 /// edit submits `UpdateFixedExpense` against an existing template id rather
@@ -34,6 +35,7 @@ final class EditFixedExpenseViewModel {
     private let budgetProfileID: String
     private let currencyCode: String
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Whether the template already had an explicit `anchor_date` when this
     /// view model was created, and what `startDate` was initially prefilled
@@ -68,11 +70,12 @@ final class EditFixedExpenseViewModel {
         hadAnchorDate || startDate != initialStartDate
     }
 
-    init(expense: Wellspent_V1_FixedExpense, currencyCode: String, authenticatedClient: ProtocolClient) {
+    init(expense: Wellspent_V1_FixedExpense, currencyCode: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.expenseID = expense.id
         self.budgetProfileID = expense.budgetProfileID
         self.currencyCode = currencyCode
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
 
         name = expense.name
         amountText = MoneyInput.formatForEditing(units: expense.plannedAmount.units, nanos: expense.plannedAmount.nanos)
@@ -163,6 +166,43 @@ final class EditFixedExpenseViewModel {
             $0.nanos = amount.nanos
             $0.currency = currencyCode
         }
+        let totalPayments = Int32(paymentsText) ?? 0
+        let fallback = "Couldn't update that fixed expense."
+        Self.logger.info("updating fixed expense fixedExpenseID=\(self.expenseID, privacy: .public) hasPaymentPlan=\(self.endDate != nil, privacy: .public) totalPayments=\(totalPayments, privacy: .public)")
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.updateFixedExpense(.init(
+                    path: .init(id: budgetProfileID, feId: expenseID),
+                    body: .json(.init(
+                        name: name.trimmingCharacters(in: .whitespaces),
+                        plannedAmount: BudgetRESTMapping.restMoney(from: money),
+                        categoryId: categoryID,
+                        paymentMethodId: paymentMethodID,
+                        dayOfMonth: FixedExpenseScheduling.dayOfMonth(for: startDate),
+                        intervalMonths: Int32(intervalMonths),
+                        anchorDate: shouldSendAnchorDate ? Google_Protobuf_Timestamp(dateOnly: startDate).restDateString : nil,
+                        frequencyUnit: BudgetRESTMapping.restFrequencyUnit(from: frequencyUnit),
+                        intervalWeeks: Int32(intervalWeeks),
+                        dayOfWeek: FixedExpenseScheduling.dayOfWeek(for: startDate),
+                        endDate: endDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
+                        totalPayments: totalPayments
+                    ))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    Self.logger.error("update fixed expense failed fixedExpenseID=\(self.expenseID, privacy: .public)")
+                    return nil
+                }
+                Self.logger.info("update fixed expense succeeded fixedExpenseID=\(self.expenseID, privacy: .public)")
+                return BudgetRESTMapping.fixedExpense(from: body.fixedExpense)
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                Self.logger.error("update fixed expense failed fixedExpenseID=\(self.expenseID, privacy: .public) error=\(String(describing: error), privacy: .public)")
+                return nil
+            }
+        }
+
         var request = Wellspent_V1_UpdateFixedExpenseRequest.with {
             $0.id = expenseID
             $0.budgetProfileID = budgetProfileID
@@ -183,12 +223,11 @@ final class EditFixedExpenseViewModel {
             if let endDate {
                 $0.endDate = Google_Protobuf_Timestamp(dateOnly: endDate)
             }
-            $0.totalPayments = Int32(paymentsText) ?? 0
+            $0.totalPayments = totalPayments
         }
         if shouldSendAnchorDate {
             request.anchorDate = Google_Protobuf_Timestamp(dateOnly: startDate)
         }
-        Self.logger.info("updating fixed expense fixedExpenseID=\(self.expenseID, privacy: .public) hasPaymentPlan=\(self.endDate != nil, privacy: .public) totalPayments=\(request.totalPayments, privacy: .public)")
         let response = await client.updateFixedExpense(request: request)
 
         switch response.result {
@@ -196,7 +235,7 @@ final class EditFixedExpenseViewModel {
             Self.logger.info("update fixed expense succeeded fixedExpenseID=\(self.expenseID, privacy: .public)")
             return message.expense
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't update that fixed expense."
+            errorMessage = error.message ?? fallback
             Self.logger.error("update fixed expense failed fixedExpenseID=\(self.expenseID, privacy: .public) error=\(String(describing: error), privacy: .public)")
             return nil
         }

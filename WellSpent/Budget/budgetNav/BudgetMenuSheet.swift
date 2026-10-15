@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Everything that isn't a frequent destination: which period you're looking
 /// at, the manage panels, settings, help, and logging out.
@@ -74,7 +75,8 @@ struct BudgetMenuSheet: View {
                     preferencesViewModel = PreferencesViewModel(
                         budgetProfileID: viewModel.profile.id,
                         currentUserID: session.userID,
-                        authenticatedClient: authenticatedClient
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                     )
                 }
                 await preferencesViewModel?.load()
@@ -177,7 +179,10 @@ struct BudgetMenuSheet: View {
                     SettingsView(
                         authenticatedClient: authenticatedClient,
                         publicRESTClient: session.publicRESTClient,
-                        restClient: session.authenticatedRESTClient ?? session.publicRESTClient,
+                        restClient: FeatureFlags.csharpStatusChangelogEnabled
+                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
+                            : (session.authenticatedRESTClient ?? session.publicRESTClient),
+                        csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
                         onUpdated: onUserUpdated
                     )
                 } label: {
@@ -190,7 +195,9 @@ struct BudgetMenuSheet: View {
                 // from this menu directly.
                 NavigationLink {
                     ChangelogView(
-                        authenticatedClient: session.authenticatedRESTClient ?? session.publicRESTClient,
+                        authenticatedClient: FeatureFlags.csharpStatusChangelogEnabled
+                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
+                            : (session.authenticatedRESTClient ?? session.publicRESTClient),
                         localeIdentifier: localeIdentifier
                     )
                 } label: {
@@ -236,7 +243,8 @@ struct BudgetMenuSheet: View {
                 $0.cycle = .monthly
                 $0.countryCode = "US"
             },
-            authenticatedClient: client
+            authenticatedClient: client,
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         ),
         authenticatedClient: client,
         currencyCode: "USD",

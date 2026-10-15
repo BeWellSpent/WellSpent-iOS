@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 /// Orchestrates the budget setup wizard, mirroring web's `BudgetSetupFlow.tsx`.
 ///
@@ -45,10 +46,12 @@ final class BudgetSetupViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
     private let inviteClient: Wellspent_V1_InviteServiceClient
+    private let restClient: WellSpentREST.Client
 
-    init(authenticatedClient: ProtocolClient) {
+    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.inviteClient = Wellspent_V1_InviteServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     /// Called once step 0's `CreateBudgetViewModel.submit()` succeeds.
@@ -69,6 +72,13 @@ final class BudgetSetupViewModel {
     /// returns at least one person once it succeeds.
     func loadPeople() async {
         guard let profile else { return }
+        if FeatureFlags.csharpBudgetEnabled {
+            if let output = try? await restClient.listBudgetPeople(.init(path: .init(id: profile.id))),
+               case .ok(let ok) = output, let body = try? ok.body.json {
+                people = body.people.map(BudgetRESTMapping.person(from:))
+            }
+            return
+        }
         let response = await client.listBudgetPeople(request: .with { $0.budgetProfileID = profile.id })
         if case .success(let message) = response.result {
             people = message.people
@@ -80,6 +90,13 @@ final class BudgetSetupViewModel {
     /// consumer.
     func loadPaymentMethods() async {
         guard let profile else { return }
+        if FeatureFlags.csharpBudgetEnabled {
+            if let output = try? await restClient.listPaymentMethods(.init(path: .init(id: profile.id))),
+               case .ok(let ok) = output, let body = try? ok.body.json {
+                paymentMethods = body.methods.map(BudgetRESTMapping.paymentMethod(from:))
+            }
+            return
+        }
         let response = await client.listPaymentMethods(request: .with { $0.budgetProfileID = profile.id })
         if case .success(let message) = response.result {
             paymentMethods = message.methods
@@ -118,6 +135,24 @@ final class BudgetSetupViewModel {
     }
 
     private func sendInvite(email: String, role: Wellspent_V1_BudgetRole, personID: Int64, profileID: String) async {
+        let fallback = "The person was added, but the invitation couldn't be sent."
+
+        if FeatureFlags.csharpInviteEnabled {
+            do {
+                let output = try await restClient.sendBudgetInvite(.init(body: .json(.init(
+                    budgetProfileId: profileID,
+                    email: email,
+                    role: InviteRESTMapping.sendRole(from: role),
+                    budgetPersonId: personID == 0 ? nil : personID
+                ))))
+                if case .ok = output { return }
+                errorMessage = fallback
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_SendBudgetInviteRequest.with {
             $0.budgetProfileID = profileID
             $0.email = email
@@ -126,7 +161,7 @@ final class BudgetSetupViewModel {
         }
         let response = await inviteClient.sendBudgetInvite(request: request)
         if case .failure(let error) = response.result {
-            errorMessage = error.message ?? "The person was added, but the invitation couldn't be sent."
+            errorMessage = error.message ?? fallback
         }
     }
 
@@ -145,13 +180,28 @@ final class BudgetSetupViewModel {
         errorMessage = nil
         defer { isCancelling = false }
 
+        let fallback = "Couldn't cancel setup."
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteBudgetProfile(.init(path: .init(id: profile.id))) else {
+                    errorMessage = fallback
+                    return false
+                }
+                self.profile = nil
+                return true
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                return false
+            }
+        }
+
         let response = await client.deleteBudgetProfile(request: .with { $0.id = profile.id })
         switch response.result {
         case .success:
             self.profile = nil
             return true
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't cancel setup."
+            errorMessage = error.message ?? fallback
             return false
         }
     }

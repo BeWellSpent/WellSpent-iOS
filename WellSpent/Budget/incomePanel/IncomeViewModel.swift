@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -15,6 +16,7 @@ final class IncomeViewModel {
 
     private let client: Wellspent_V1_BudgetServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Free tier caps income sources at 2 per person (`docs/features/tiered-subscriptions.md`).
     /// This budget-wide view can't attribute sources to a specific person by
@@ -34,11 +36,12 @@ final class IncomeViewModel {
         return sources.filter { FocusedViewFiltering.isMineOrUnattributed($0.budgetPersonID, myPersonID: myPerson.id) }
     }
 
-    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     /// Not private, so `isAtLimit`/`visibleSources` are testable without a
@@ -54,24 +57,57 @@ final class IncomeViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let sourcesResponse = client.listIncomeSources(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
+        async let sourcesResult = fetchSources()
+        async let peopleResult = fetchPeople()
+        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
 
-        switch await sourcesResponse.result {
+        if let fetched = await sourcesResult {
+            sources = fetched
+        }
+
+        if let fetched = await peopleResult {
+            people = fetched
+        }
+
+        if let user = await user {
+            isFree = user.plan == .free
+        }
+    }
+
+    private func fetchSources() async -> [Wellspent_V1_IncomeSource]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listIncomeSources(.init(path: .init(id: budgetProfileID)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load income sources."
+                    return nil
+                }
+                return body.sources.map(BudgetRESTMapping.incomeSource(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load income sources."
+                return nil
+            }
+        }
+        let response = await client.listIncomeSources(request: .with { $0.budgetProfileID = budgetProfileID })
+        switch response.result {
         case .success(let message):
-            sources = message.sources
+            return message.sources
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load income sources."
+            return nil
         }
+    }
 
-        if case .success(let message) = await peopleResponse.result {
-            people = message.people
+    private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.people.map(BudgetRESTMapping.person(from:))
         }
-
-        if case .success(let message) = await meResponse.result {
-            isFree = message.user.plan == .free
+        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
         }
+        return message.people
     }
 
     func personName(for budgetPersonID: Int64) -> String? {
@@ -94,6 +130,21 @@ final class IncomeViewModel {
 
     func delete(id: Int64) async {
         errorMessage = nil
+        let fallback = "Couldn't delete that income source."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteIncomeSource(.init(path: .init(id: budgetProfileID, sourceId: id))) else {
+                    errorMessage = fallback
+                    return
+                }
+                sources.removeAll { $0.id == id }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_DeleteIncomeSourceRequest.with {
             $0.id = id
             $0.budgetProfileID = budgetProfileID
@@ -104,7 +155,7 @@ final class IncomeViewModel {
         case .success:
             sources.removeAll { $0.id == id }
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't delete that income source."
+            errorMessage = error.message ?? fallback
         }
     }
 }

@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -14,13 +15,15 @@ final class AddPaymentMethodViewModel {
     private(set) var errorMessage: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && personID != 0 && !isSubmitting
     }
 
-    init(authenticatedClient: ProtocolClient) {
+    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func submit() async -> Wellspent_V1_PaymentMethod? {
@@ -28,9 +31,30 @@ final class AddPaymentMethodViewModel {
         isSubmitting = true
         errorMessage = nil
         defer { isSubmitting = false }
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let fallback = "Couldn't create that payment method."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.createPaymentMethod(.init(body: .json(.init(
+                    name: trimmedName,
+                    _type: BudgetRESTMapping.restPaymentType(from: type),
+                    budgetPersonId: personID,
+                    color: color
+                ))))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    return nil
+                }
+                return BudgetRESTMapping.paymentMethod(from: body.method)
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                return nil
+            }
+        }
 
         let request = Wellspent_V1_CreatePaymentMethodRequest.with {
-            $0.name = name.trimmingCharacters(in: .whitespaces)
+            $0.name = trimmedName
             $0.type = type
             $0.budgetPersonID = personID
             $0.color = color
@@ -41,7 +65,7 @@ final class AddPaymentMethodViewModel {
         case .success(let message):
             return message.method
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't create that payment method."
+            errorMessage = error.message ?? fallback
             return nil
         }
     }

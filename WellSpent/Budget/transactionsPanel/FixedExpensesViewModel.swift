@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import os
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -35,6 +36,7 @@ final class FixedExpensesViewModel {
     let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Fixed spend for the period, server-computed. Only paid rows count —
     /// `amount` equals `planned_amount` until a transaction is marked paid, so
@@ -49,13 +51,14 @@ final class FixedExpensesViewModel {
         )
     }
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func load() async {
@@ -63,54 +66,150 @@ final class FixedExpensesViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let fixedExpensesResponse = client.listFixedExpenses(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let profileResponse = client.getBudgetProfile(request: .with { $0.id = budgetProfileID })
+        async let fixedExpensesResult = fetchFixedExpenses()
+        async let categoriesResult = fetchCategories()
+        async let paymentMethodsResult = fetchPaymentMethods()
+        async let peopleResult = fetchPeople()
+        async let profileResult = fetchProfile()
 
-        if case .success(let message) = await fixedExpensesResponse.result {
-            fixedExpenses = message.expenses
+        if let fetched = await fixedExpensesResult {
+            fixedExpenses = fetched
         }
-        if case .success(let message) = await categoriesResponse.result {
-            categories = message.categories
+        if let fetched = await categoriesResult {
+            categories = fetched
         }
-        if case .success(let message) = await paymentMethodsResponse.result {
-            paymentMethods = message.methods
+        if let fetched = await paymentMethodsResult {
+            paymentMethods = fetched
         }
-        if case .success(let message) = await peopleResponse.result {
-            people = message.people
+        if let fetched = await peopleResult {
+            people = fetched
         }
-        if case .success(let message) = await profileResponse.result {
-            autoUpdatePlannedAmount = message.profile.autoUpdatePlannedAmount
+        if let fetched = await profileResult {
+            autoUpdatePlannedAmount = fetched.autoUpdatePlannedAmount
         }
 
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        async let transactionsResponse = client.listTransactions(request: .with {
+        async let transactionsResult = fetchTransactions(focusedView: focusedView)
+        async let summaryResult = fetchSummary(focusedView: focusedView)
+
+        if let fetched = await transactionsResult {
+            // Oldest first: the Fixed list is a schedule, so the month should
+            // run top to bottom. Variable stays newest-first — it's a feed.
+            transactions = fetched.sorted { $0.date.date < $1.date.date }
+            Self.logger.info("loaded fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) count=\(self.transactions.count, privacy: .public)")
+        } else {
+            Self.logger.error("failed to load fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public)")
+        }
+
+        if let fetched = await summaryResult {
+            summary = fetched
+        }
+    }
+
+    private func fetchSummary(focusedView: Bool) async -> Wellspent_V1_GetExpenseSummaryResponse? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return BudgetRESTMapping.expenseSummary(from: body)
+        }
+        guard case .success(let message) = await client.getExpenseSummary(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        }).result else { return nil }
+        return message
+    }
+
+    private func fetchTransactions(focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listTransactions(.init(query: .init(
+                    budgetPeriodId: budgetPeriodID,
+                    transactionType: BudgetRESTMapping.restExpenseType(from: Self.fixedTypeID),
+                    focusedView: focusedView
+                )))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load fixed expenses."
+                    return nil
+                }
+                return body.transactions.map(BudgetRESTMapping.transaction(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load fixed expenses."
+                return nil
+            }
+        }
+        let response = await client.listTransactions(request: .with {
             $0.budgetPeriodID = budgetPeriodID
             $0.transactionTypeID = Self.fixedTypeID
             $0.focusedView = focusedView
         })
-        async let summaryResponse = client.getExpenseSummary(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.focusedView = focusedView
-        })
-
-        switch await transactionsResponse.result {
+        switch response.result {
         case .success(let message):
-            // Oldest first: the Fixed list is a schedule, so the month should
-            // run top to bottom. Variable stays newest-first — it's a feed.
-            transactions = message.transactions.sorted { $0.date.date < $1.date.date }
-            Self.logger.info("loaded fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) count=\(self.transactions.count, privacy: .public)")
+            return message.transactions
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load fixed expenses."
-            Self.logger.error("failed to load fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) error=\(String(describing: error), privacy: .public)")
+            return nil
         }
+    }
 
-        if case .success(let message) = await summaryResponse.result {
-            summary = message
+    private func fetchCategories() async -> [Wellspent_V1_Category]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listCategories(.init(query: .init(budgetProfileId: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.categories.map(BudgetRESTMapping.category(from:))
         }
+        guard case .success(let message) = await client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.categories
+    }
+
+    private func fetchPaymentMethods() async -> [Wellspent_V1_PaymentMethod]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listPaymentMethods(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.methods.map(BudgetRESTMapping.paymentMethod(from:))
+        }
+        guard case .success(let message) = await client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.methods
+    }
+
+    private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.people.map(BudgetRESTMapping.person(from:))
+        }
+        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.people
+    }
+
+    private func fetchProfile() async -> Wellspent_V1_BudgetProfile? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.getBudgetProfile(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return BudgetRESTMapping.profile(from: body.profile)
+        }
+        guard case .success(let message) = await client.getBudgetProfile(request: .with { $0.id = budgetProfileID }).result else {
+            return nil
+        }
+        return message.profile
+    }
+
+    private func fetchFixedExpenses() async -> [Wellspent_V1_FixedExpense]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listFixedExpenses(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.fixedExpenses.map(BudgetRESTMapping.fixedExpense(from:))
+        }
+        guard case .success(let message) = await client.listFixedExpenses(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.expenses
     }
 
     /// Confirmed review matches for this Fixed transaction, rendered as
@@ -205,6 +304,29 @@ final class FixedExpensesViewModel {
 
     func markPaid(_ transaction: Wellspent_V1_Transaction, paidAmount: Wellspent_V1_Money, paidAt: Date) async {
         errorMessage = nil
+        let fallback = "Couldn't mark that as paid."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.markTransactionAsPaid(.init(
+                    path: .init(id: transaction.id),
+                    body: .json(.init(
+                        budgetPeriodId: budgetPeriodID,
+                        paidAmount: BudgetRESTMapping.restMoney(from: paidAmount),
+                        paidDate: Google_Protobuf_Timestamp(dateOnly: paidAt).restDateString
+                    ))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    return
+                }
+                replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_MarkTransactionAsPaidRequest.with {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
@@ -217,12 +339,31 @@ final class FixedExpensesViewModel {
         case .success(let message):
             replaceTransaction(message.transaction)
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't mark that as paid."
+            errorMessage = error.message ?? fallback
         }
     }
 
     func unmark(_ transaction: Wellspent_V1_Transaction) async {
         errorMessage = nil
+        let fallback = "Couldn't unmark that transaction."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.unmarkTransactionAsPaid(.init(
+                    path: .init(id: transaction.id),
+                    body: .json(.init(budgetPeriodId: budgetPeriodID))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    return
+                }
+                replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_UnmarkTransactionAsPaidRequest.with {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
@@ -233,16 +374,37 @@ final class FixedExpensesViewModel {
         case .success(let message):
             replaceTransaction(message.transaction)
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't unmark that transaction."
+            errorMessage = error.message ?? fallback
         }
     }
 
     func toggleExcluded(_ transaction: Wellspent_V1_Transaction) async {
         errorMessage = nil
+        let fallback = "Couldn't update that transaction."
+        let newExcluded = !transaction.isExcluded
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.setTransactionExcluded(.init(
+                    path: .init(id: transaction.id),
+                    body: .json(.init(budgetPeriodId: budgetPeriodID, excluded: newExcluded))
+                )) else {
+                    errorMessage = fallback
+                    return
+                }
+                if let index = transactions.firstIndex(where: { $0.id == transaction.id }) {
+                    transactions[index].isExcluded = newExcluded
+                }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_SetTransactionExcludedRequest.with {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
-            $0.excluded = !transaction.isExcluded
+            $0.excluded = newExcluded
         }
         let response = await client.setTransactionExcluded(request: request)
 
@@ -252,7 +414,7 @@ final class FixedExpensesViewModel {
                 transactions[index].isExcluded.toggle()
             }
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't update that transaction."
+            errorMessage = error.message ?? fallback
         }
     }
 
@@ -277,6 +439,27 @@ final class FixedExpensesViewModel {
     /// transaction-row caller can also drop its own row.
     private func deleteFixedExpense(id: String) async -> Bool {
         errorMessage = nil
+        let fallback = String(
+            localized: "Couldn't delete that fixed expense.",
+            bundle: AppLanguageStore.currentBundle,
+            locale: AppLanguageStore.currentLocale
+        )
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteFixedExpense(.init(path: .init(id: budgetProfileID, feId: id))) else {
+                    errorMessage = fallback
+                    Self.logger.error("delete fixed expense failed id=\(id, privacy: .public)")
+                    return false
+                }
+                fixedExpenses.removeAll { $0.id == id }
+                return true
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                Self.logger.error("delete fixed expense failed id=\(id, privacy: .public) error=\(String(describing: error), privacy: .public)")
+                return false
+            }
+        }
 
         let request = Wellspent_V1_DeleteFixedExpenseRequest.with {
             $0.id = id
@@ -290,11 +473,7 @@ final class FixedExpensesViewModel {
             return true
         case .failure(let error):
             Self.logger.error("delete fixed expense failed id=\(id, privacy: .public) message=\(error.message ?? "none", privacy: .public)")
-            errorMessage = error.message ?? String(
-                localized: "Couldn't delete that fixed expense.",
-                bundle: AppLanguageStore.currentBundle,
-                locale: AppLanguageStore.currentLocale
-            )
+            errorMessage = error.message ?? fallback
             return false
         }
     }

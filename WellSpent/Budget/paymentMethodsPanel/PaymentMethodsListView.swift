@@ -1,11 +1,13 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct PaymentMethodsListView: View {
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
     let canEdit: Bool
 
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: PaymentMethodsViewModel?
     @State private var isAddSheetPresented = false
     @State private var editingMethod: Wellspent_V1_PaymentMethod?
@@ -34,7 +36,11 @@ struct PaymentMethodsListView: View {
         }
         .task {
             if viewModel == nil {
-                viewModel = PaymentMethodsViewModel(budgetProfileID: budgetProfileID, authenticatedClient: authenticatedClient)
+                viewModel = PaymentMethodsViewModel(
+                    budgetProfileID: budgetProfileID,
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                )
             }
             await viewModel?.load()
         }
@@ -64,7 +70,11 @@ struct PaymentMethodsListView: View {
             }
         }
         .sheet(isPresented: $isAddSheetPresented) {
-            AddPaymentMethodView(people: viewModel.people, authenticatedClient: authenticatedClient) { method in
+            AddPaymentMethodView(
+                people: viewModel.people,
+                authenticatedClient: authenticatedClient,
+                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+            ) { method in
                 viewModel.addMethod(method)
             }
         }
@@ -73,7 +83,11 @@ struct PaymentMethodsListView: View {
             set: { if !$0 { editingMethod = nil } }
         )) {
             if let editingMethod {
-                EditPaymentMethodView(method: editingMethod, authenticatedClient: authenticatedClient) { updated in
+                EditPaymentMethodView(
+                    method: editingMethod,
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                ) { updated in
                     viewModel.replaceMethod(updated)
                 }
             }
@@ -142,4 +156,5 @@ struct PaymentMethodsListView: View {
             canEdit: true
         )
     }
+    .environment(SessionStore())
 }

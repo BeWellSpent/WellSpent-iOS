@@ -1,5 +1,6 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("AddEditTransactionViewModel")
@@ -11,7 +12,8 @@ struct AddEditTransactionViewModelTests {
             budgetPeriodID: "period-1",
             currencyCode: "USD",
             isArchivedPeriod: isArchivedPeriod,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 

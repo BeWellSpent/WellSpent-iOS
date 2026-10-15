@@ -1,5 +1,6 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("EditPaymentMethodViewModel")
@@ -15,7 +16,11 @@ struct EditPaymentMethodViewModelTests {
             $0.color = "#5C6BC0"
             $0.alias = "Household Card"
         }
-        let viewModel = EditPaymentMethodViewModel(method: method, authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        let viewModel = EditPaymentMethodViewModel(
+            method: method,
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
 
         #expect(viewModel.name == "Chase Visa")
         #expect(viewModel.alias == "Household Card")
@@ -28,7 +33,11 @@ struct EditPaymentMethodViewModelTests {
             $0.id = "pm-1"
             $0.name = "Chase Visa"
         }
-        let viewModel = EditPaymentMethodViewModel(method: method, authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        let viewModel = EditPaymentMethodViewModel(
+            method: method,
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
         #expect(viewModel.canSubmit)
 
         viewModel.name = "   "

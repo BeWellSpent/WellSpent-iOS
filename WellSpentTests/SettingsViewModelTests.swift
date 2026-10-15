@@ -9,7 +9,8 @@ struct SettingsViewModelTests {
     private func makeViewModel() -> SettingsViewModel {
         SettingsViewModel(
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-            publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+            publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+            csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 

@@ -4,6 +4,7 @@ import WellSpentAPI
 struct AlertsListView: View {
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
+    @Environment(SessionStore.self) private var session
 
     @State private var viewModel: AlertsViewModel?
 
@@ -18,7 +19,11 @@ struct AlertsListView: View {
         .navigationTitle("Alert Settings")
         .task {
             if viewModel == nil {
-                viewModel = AlertsViewModel(budgetProfileID: budgetProfileID, authenticatedClient: authenticatedClient)
+                viewModel = AlertsViewModel(
+                    budgetProfileID: budgetProfileID,
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                )
             }
             await viewModel?.load()
         }
@@ -150,4 +155,5 @@ private struct AlertRow: View {
             authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
+    .environment(SessionStore())
 }

@@ -51,6 +51,7 @@ struct BudgetHomeView: View {
                         if let authenticatedClient = session.authenticatedClient {
                             BudgetSetupFlow(
                                 authenticatedClient: authenticatedClient,
+                                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
                                 currencyCode: viewModel?.currencyCode ?? "USD",
                                 localeIdentifier: viewModel?.localeIdentifier ?? "en",
                                 // The profile was handed over the moment it was
@@ -72,11 +73,16 @@ struct BudgetHomeView: View {
                 }
                 .task {
                     guard viewModel == nil, let authenticatedClient = session.authenticatedClient else { return }
-                    let model = BudgetHomeViewModel(authenticatedClient: authenticatedClient)
+                    let model = BudgetHomeViewModel(
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    )
                     viewModel = model
                     await model.load()
                     await announceWhatsNewIfNeeded(
-                        authenticatedClient: session.authenticatedRESTClient ?? session.publicRESTClient
+                        authenticatedClient: FeatureFlags.csharpStatusChangelogEnabled
+                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
+                            : (session.authenticatedRESTClient ?? session.publicRESTClient)
                     )
                 }
         }
@@ -92,6 +98,7 @@ struct BudgetHomeView: View {
                 BudgetDetailView(
                     profile: profile,
                     authenticatedClient: session.authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
                     currencyCode: viewModel.currencyCode,
                     localeIdentifier: viewModel.localeIdentifier,
                     onUpdated: { viewModel.replaceProfile($0) },

@@ -29,6 +29,10 @@ final class SessionStore {
     let publicRESTClient: WellSpentREST.Client
     private(set) var authenticatedRESTClient: WellSpentREST.Client?
 
+    /// C# backend REST clients, fixed — each domain's call site picks this pair or the Go one via its own flag.
+    let csharpPublicRESTClient: WellSpentREST.Client
+    private(set) var csharpAuthenticatedRESTClient: WellSpentREST.Client?
+
     private let tokenStore: KeychainTokenStore
     private let baseURL: String
 
@@ -37,6 +41,7 @@ final class SessionStore {
         self.tokenStore = tokenStore
         self.publicClient = APIClient.makePublicClient(baseURL: baseURL)
         self.publicRESTClient = RESTClient.makePublicClient(baseURL: baseURL)
+        self.csharpPublicRESTClient = RESTClient.makePublicClient(baseURL: APIEnvironment.csharpBaseURL)
 
         if let token = tokenStore.readToken(), let claims = JWT.decode(token), !claims.isExpired {
             isAuthenticated = true
@@ -48,11 +53,13 @@ final class SessionStore {
         }
         authenticatedClient = nil
         authenticatedRESTClient = nil
+        csharpAuthenticatedRESTClient = nil
         if isAuthenticated {
             authenticatedClient = Self.makeAuthenticatedClient(baseURL: baseURL, tokenStore: tokenStore) { [weak self] in
                 self?.endSession()
             }
             authenticatedRESTClient = Self.makeAuthenticatedRESTClient(baseURL: baseURL, tokenStore: tokenStore)
+            csharpAuthenticatedRESTClient = Self.makeAuthenticatedRESTClient(baseURL: APIEnvironment.csharpBaseURL, tokenStore: tokenStore)
         }
     }
 
@@ -65,12 +72,14 @@ final class SessionStore {
             self?.endSession()
         }
         authenticatedRESTClient = Self.makeAuthenticatedRESTClient(baseURL: baseURL, tokenStore: tokenStore)
+        csharpAuthenticatedRESTClient = Self.makeAuthenticatedRESTClient(baseURL: APIEnvironment.csharpBaseURL, tokenStore: tokenStore)
     }
 
     func endSession() {
         tokenStore.deleteToken()
         authenticatedClient = nil
         authenticatedRESTClient = nil
+        csharpAuthenticatedRESTClient = nil
         isAuthenticated = false
         userID = nil
         AppLanguageStore.clear()

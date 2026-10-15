@@ -55,16 +55,16 @@ final class ProfileCompletionGateViewModel {
 
     private let userClient: Wellspent_V1_UserServiceClient
     private let restClient: WellSpentREST.Client
+    private let csharpAuthenticatedRESTClient: WellSpentREST.Client
 
-    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client, csharpAuthenticatedRESTClient: WellSpentREST.Client) {
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
         self.restClient = restClient
+        self.csharpAuthenticatedRESTClient = csharpAuthenticatedRESTClient
     }
 
     func refresh() async {
-        let response = await userClient.getMe(request: .init())
-        guard case .success(let message) = response.result else { return }
-        let user = message.user
+        guard let user = await UserRESTMapping.currentUser(connectClient: userClient, restClient: csharpAuthenticatedRESTClient, useREST: FeatureFlags.csharpUserEnabled) else { return }
         firstName = user.firstName
         lastName = user.lastName
         language = user.language
@@ -94,6 +94,11 @@ final class ProfileCompletionGateViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
+        if FeatureFlags.csharpUserEnabled {
+            await submitViaREST()
+            return
+        }
+
         let request = Wellspent_V1_UpdateMeRequest.with {
             $0.firstName = firstName
             $0.lastName = lastName
@@ -111,6 +116,29 @@ final class ProfileCompletionGateViewModel {
             errorMessage = error.message ?? String(localized: "Couldn't save that. Please try again.",
                                                    bundle: AppLanguageStore.currentBundle,
                                                    locale: AppLanguageStore.currentLocale)
+        }
+    }
+
+    private func submitViaREST() async {
+        let fallback = String(localized: "Couldn't save that. Please try again.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        do {
+            let output = try await csharpAuthenticatedRESTClient.updateMe(.init(body: .json(.init(
+                firstName: firstName,
+                lastName: lastName,
+                countryCode: countryCode,
+                stateCode: isUnitedStates ? stateCode : "",
+                filingStatus: isUnitedStates ? filingStatus.rawValue : 0,
+                taxPaymentFrequency: 0,
+                language: language,
+                currency: currency
+            ))))
+            guard case .ok = output else {
+                errorMessage = fallback
+                return
+            }
+            state = .complete
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
     }
 }

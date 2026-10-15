@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// The manage panels: budget header (cycle/period), the People/Income/…
 /// drill-downs, and edit/delete budget.
@@ -21,6 +22,7 @@ struct BudgetManageView: View {
     /// Called after a successful delete, so the presenting sheet can close
     /// and the home view underneath can fall back to its empty state.
     let dismissParent: () -> Void
+    @Environment(SessionStore.self) private var session
 
     @State private var isEditSheetPresented = false
     @State private var isDeleteConfirmationPresented = false
@@ -161,7 +163,11 @@ struct BudgetManageView: View {
         }
         .sheet(isPresented: $isEditSheetPresented) {
             if let authenticatedClient {
-                EditBudgetSheet(profile: viewModel.profile, authenticatedClient: authenticatedClient) { updated in
+                EditBudgetSheet(
+                    profile: viewModel.profile,
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                ) { updated in
                     viewModel.applyUpdatedProfile(updated)
                     onUpdated(updated)
                 }
@@ -196,7 +202,8 @@ struct BudgetManageView: View {
                     $0.cycle = .monthly
                     $0.countryCode = "US"
                 },
-                authenticatedClient: client
+                authenticatedClient: client,
+                restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
             ),
             authenticatedClient: client,
             currencyCode: "USD",
@@ -205,4 +212,5 @@ struct BudgetManageView: View {
             dismissParent: {}
         )
     }
+    .environment(SessionStore())
 }

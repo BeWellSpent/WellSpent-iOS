@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -30,14 +31,16 @@ final class ExpenseOverviewViewModel {
     let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     private var incomeCategoryID: Int32? {
@@ -174,45 +177,109 @@ final class ExpenseOverviewViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let categoriesResponse = client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let categoriesResult = fetchCategories()
+        async let peopleResult = fetchPeople()
+        async let paymentMethodsResult = fetchPaymentMethods()
 
-        if case .success(let message) = await categoriesResponse.result {
-            categories = message.categories
+        if let fetched = await categoriesResult {
+            categories = fetched
         }
-        if case .success(let message) = await peopleResponse.result {
-            people = message.people
+        if let fetched = await peopleResult {
+            people = fetched
         }
-        if case .success(let message) = await paymentMethodsResponse.result {
-            paymentMethods = message.methods
+        if let fetched = await paymentMethodsResult {
+            paymentMethods = fetched
         }
 
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        async let transactionsResponse = client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.focusedView = focusedView
-        })
-        async let summaryResponse = client.getExpenseSummary(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.focusedView = focusedView
-        })
+        async let transactionsResult = fetchTransactions(focusedView: focusedView)
+        async let summaryResult = fetchSummary(focusedView: focusedView)
 
-        switch await transactionsResponse.result {
-        case .success(let message):
-            transactions = message.transactions
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load the expense overview."
+        if let fetched = await transactionsResult {
+            transactions = fetched
         }
 
-        switch await summaryResponse.result {
-        case .success(let message):
-            summary = message
-        case .failure(let error):
-            if errorMessage == nil {
-                errorMessage = error.message ?? "Couldn't load the expense summary."
+        if let fetched = await summaryResult {
+            summary = fetched
+        } else if errorMessage == nil {
+            errorMessage = "Couldn't load the expense summary."
+        }
+    }
+
+    private func fetchSummary(focusedView: Bool) async -> Wellspent_V1_GetExpenseSummaryResponse? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return BudgetRESTMapping.expenseSummary(from: body)
+        }
+        guard case .success(let message) = await client.getExpenseSummary(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        }).result else { return nil }
+        return message
+    }
+
+    private func fetchCategories() async -> [Wellspent_V1_Category]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listCategories(.init(query: .init(budgetProfileId: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.categories.map(BudgetRESTMapping.category(from:))
+        }
+        guard case .success(let message) = await client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.categories
+    }
+
+    private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.people.map(BudgetRESTMapping.person(from:))
+        }
+        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.people
+    }
+
+    private func fetchPaymentMethods() async -> [Wellspent_V1_PaymentMethod]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listPaymentMethods(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.methods.map(BudgetRESTMapping.paymentMethod(from:))
+        }
+        guard case .success(let message) = await client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.methods
+    }
+
+    private func fetchTransactions(focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listTransactions(.init(query: .init(budgetPeriodId: budgetPeriodID, focusedView: focusedView)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load the expense overview."
+                    return nil
+                }
+                return body.transactions.map(BudgetRESTMapping.transaction(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load the expense overview."
+                return nil
             }
+        }
+        let response = await client.listTransactions(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        })
+        switch response.result {
+        case .success(let message):
+            return message.transactions
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load the expense overview."
+            return nil
         }
     }
 }

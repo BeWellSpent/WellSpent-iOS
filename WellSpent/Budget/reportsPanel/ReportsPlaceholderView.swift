@@ -8,6 +8,7 @@ import WellSpentAPI
 /// `BudgetSection` tab is a one-line change once Reports is a real feature.
 struct ReportsPlaceholderView: View {
     let authenticatedClient: ProtocolClient
+    @Environment(SessionStore.self) private var session
 
     @State private var viewModel: ReportsPlaceholderViewModel?
 
@@ -41,7 +42,10 @@ struct ReportsPlaceholderView: View {
         .navigationTitle("Reports")
         .task {
             if viewModel == nil {
-                viewModel = ReportsPlaceholderViewModel(authenticatedClient: authenticatedClient)
+                viewModel = ReportsPlaceholderViewModel(
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                )
             }
             await viewModel?.load()
         }
@@ -52,4 +56,5 @@ struct ReportsPlaceholderView: View {
     NavigationStack {
         ReportsPlaceholderView(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
     }
+    .environment(SessionStore())
 }

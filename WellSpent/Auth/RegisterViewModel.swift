@@ -61,6 +61,11 @@ final class RegisterViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
+        if FeatureFlags.csharpAuthEnabled {
+            await submitViaREST(session: session)
+            return
+        }
+
         let request = Wellspent_V1_RegisterRequest.with {
             $0.email = email
             $0.password = password
@@ -77,6 +82,36 @@ final class RegisterViewModel {
             didRegister = true
         case .failure(let error):
             errorMessage = RegisterViewModel.errorMessage(for: error)
+        }
+    }
+
+    /// Empty language/currency/captchaToken — required-present but let the backend default; no Turnstile on iOS.
+    private func submitViaREST(session: SessionStore) async {
+        do {
+            let output = try await session.csharpPublicRESTClient.registerUser(.init(body: .json(.init(
+                email: email,
+                password: password,
+                firstName: firstName,
+                lastName: lastName,
+                countryCode: countryCode,
+                stateCode: isUnitedStates ? stateCode : "",
+                language: "",
+                currency: "",
+                captchaToken: ""
+            ))))
+            switch output {
+            case .ok(let ok):
+                session.startSession(token: try ok.body.json.accessToken)
+                didRegister = true
+            case .conflict:
+                errorMessage = "An account with that email already exists."
+            case .badRequest(let badRequest):
+                errorMessage = (try? badRequest.body.json.message) ?? "Please check your details and try again."
+            default:
+                errorMessage = "Something went wrong. Please try again."
+            }
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Something went wrong. Please try again."
         }
     }
 

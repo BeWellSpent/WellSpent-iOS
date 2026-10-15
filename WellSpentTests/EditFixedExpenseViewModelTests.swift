@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("EditFixedExpenseViewModel")
@@ -25,7 +26,8 @@ struct EditFixedExpenseViewModelTests {
         EditFixedExpenseViewModel(
             expense: expense,
             currencyCode: "USD",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// The wizard's final step: recurring savings.
 ///
@@ -13,6 +14,7 @@ struct SavingsSetupStepView: View {
     let currencyCode: String
     let paymentMethods: [Wellspent_V1_PaymentMethod]
     let authenticatedClient: ProtocolClient
+    let restClient: WellSpentREST.Client
     let onFinish: () -> Void
 
     @State private var viewModel: AddSavingsSourceViewModel
@@ -23,12 +25,14 @@ struct SavingsSetupStepView: View {
         currencyCode: String,
         paymentMethods: [Wellspent_V1_PaymentMethod],
         authenticatedClient: ProtocolClient,
+        restClient: WellSpentREST.Client,
         onFinish: @escaping () -> Void
     ) {
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.paymentMethods = paymentMethods
         self.authenticatedClient = authenticatedClient
+        self.restClient = restClient
         self.onFinish = onFinish
         _viewModel = State(initialValue: AddSavingsSourceViewModel(
             budgetProfileID: budgetProfileID,
@@ -36,7 +40,8 @@ struct SavingsSetupStepView: View {
             // No period to anchor to yet — a brand-new budget's first period
             // starts today, which is what the view model falls back to.
             periodStartDate: nil,
-            authenticatedClient: authenticatedClient
+            authenticatedClient: authenticatedClient,
+            restClient: restClient
         ))
     }
 
@@ -97,7 +102,8 @@ struct SavingsSetupStepView: View {
                                     budgetProfileID: budgetProfileID,
                                     currencyCode: currencyCode,
                                     periodStartDate: nil,
-                                    authenticatedClient: authenticatedClient
+                                    authenticatedClient: authenticatedClient,
+                                    restClient: restClient
                                 )
                             }
                         }
@@ -133,7 +139,8 @@ struct SavingsSetupStepView: View {
             budgetProfileID: "preview",
             currencyCode: "USD",
             paymentMethods: [.with { $0.id = "pm"; $0.name = "Checking" }],
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         ) {}
     }
 }

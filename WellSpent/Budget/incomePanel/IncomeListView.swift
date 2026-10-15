@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct IncomeListView: View {
     let budgetProfileID: String
@@ -38,7 +39,12 @@ struct IncomeListView: View {
         }
         .task {
             if viewModel == nil {
-                viewModel = IncomeViewModel(budgetProfileID: budgetProfileID, currentUserID: session.userID, authenticatedClient: authenticatedClient)
+                viewModel = IncomeViewModel(
+                    budgetProfileID: budgetProfileID,
+                    currentUserID: session.userID,
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                )
             }
             await viewModel?.load()
         }
@@ -89,7 +95,8 @@ struct IncomeListView: View {
                 countryCode: budgetCountryCode,
                 currencyCode: currencyCode,
                 people: viewModel.people,
-                authenticatedClient: authenticatedClient
+                authenticatedClient: authenticatedClient,
+                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
             ) { source in
                 viewModel.addSource(source)
             }
@@ -105,7 +112,8 @@ struct IncomeListView: View {
                     countryCode: budgetCountryCode,
                     currencyCode: currencyCode,
                     people: viewModel.people,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 ) { updated in
                     viewModel.replaceSource(updated)
                 }

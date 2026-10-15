@@ -43,8 +43,11 @@ final class SettingsViewModel {
     /// it is the same three rows for every caller on earth and changes roughly
     /// never. Deliberately the *public* REST client even here, on an
     /// authenticated screen: sending a token would make the response look
-    /// user-specific to a cache that cannot know otherwise.
+    /// user-specific to a cache that cannot know otherwise. Always Go — the
+    /// C# backend has no countries endpoint at all, same as web's `useCountries.ts`.
     private let restClient: WellSpentREST.Client
+    /// The C# backend's authenticated client, for GetMe/UpdateMe/ChangePassword/DeleteMe.
+    private let csharpAuthenticatedRESTClient: WellSpentREST.Client
 
     var isUnitedStates: Bool { countryCode == "US" }
 
@@ -52,20 +55,21 @@ final class SettingsViewModel {
         !currentPassword.isEmpty && RegisterViewModel.passwordError(for: newPassword) == nil && !isChangingPassword
     }
 
-    init(authenticatedClient: ProtocolClient, publicRESTClient: WellSpentREST.Client) {
+    init(authenticatedClient: ProtocolClient, publicRESTClient: WellSpentREST.Client, csharpAuthenticatedRESTClient: WellSpentREST.Client) {
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
         self.restClient = publicRESTClient
+        self.csharpAuthenticatedRESTClient = csharpAuthenticatedRESTClient
     }
 
     func load() async {
         isLoading = true
         defer { isLoading = false }
 
-        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
+        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: csharpAuthenticatedRESTClient, useREST: FeatureFlags.csharpUserEnabled)
         async let countriesResult = try? restClient.enabledCountries()
 
-        if case .success(let message) = await meResponse.result {
-            apply(message.user)
+        if let user = await user {
+            apply(user)
         }
         if let fetched = await countriesResult {
             countries = fetched.filter(\.isEnabled)
@@ -96,6 +100,10 @@ final class SettingsViewModel {
         profileErrorMessage = nil
         defer { isSavingProfile = false }
 
+        if FeatureFlags.csharpUserEnabled {
+            return await saveProfileViaREST()
+        }
+
         let request = Wellspent_V1_UpdateMeRequest.with {
             $0.firstName = firstName
             $0.lastName = lastName
@@ -118,12 +126,42 @@ final class SettingsViewModel {
         }
     }
 
+    private func saveProfileViaREST() async -> Wellspent_V1_User? {
+        do {
+            let output = try await csharpAuthenticatedRESTClient.updateMe(.init(body: .json(.init(
+                firstName: firstName,
+                lastName: lastName,
+                countryCode: countryCode,
+                stateCode: isUnitedStates ? stateCode : "",
+                filingStatus: isUnitedStates ? filingStatus.rawValue : 0,
+                taxPaymentFrequency: isUnitedStates ? taxPaymentFrequency.rawValue : 0,
+                language: language,
+                currency: currency
+            ))))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                profileErrorMessage = "Couldn't save your profile."
+                return nil
+            }
+            let user = UserRESTMapping.proto(from: body.user)
+            apply(user)
+            return user
+        } catch {
+            profileErrorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't save your profile."
+            return nil
+        }
+    }
+
     func changePassword() async {
         guard canSubmitPassword else { return }
         isChangingPassword = true
         passwordErrorMessage = nil
         passwordChangeSucceeded = false
         defer { isChangingPassword = false }
+
+        if FeatureFlags.csharpUserEnabled {
+            await changePasswordViaREST()
+            return
+        }
 
         let request = Wellspent_V1_ChangePasswordRequest.with {
             $0.currentPassword = currentPassword
@@ -141,10 +179,35 @@ final class SettingsViewModel {
         }
     }
 
+    private func changePasswordViaREST() async {
+        do {
+            let output = try await csharpAuthenticatedRESTClient.changePassword(.init(body: .json(.init(
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            ))))
+            switch output {
+            case .ok:
+                currentPassword = ""
+                newPassword = ""
+                passwordChangeSucceeded = true
+            case .badRequest(let badRequest):
+                passwordErrorMessage = (try? badRequest.body.json.message) ?? "Please check your current password and try again."
+            default:
+                passwordErrorMessage = "Something went wrong. Please try again."
+            }
+        } catch {
+            passwordErrorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Something went wrong. Please try again."
+        }
+    }
+
     func deleteAccount() async -> Bool {
         isDeleting = true
         profileErrorMessage = nil
         defer { isDeleting = false }
+
+        if FeatureFlags.csharpUserEnabled {
+            return await deleteAccountViaREST()
+        }
 
         let response = await userClient.deleteMe(request: Wellspent_V1_DeleteMeRequest())
         switch response.result {
@@ -152,6 +215,19 @@ final class SettingsViewModel {
             return true
         case .failure(let error):
             profileErrorMessage = error.message ?? "Couldn't delete your account."
+            return false
+        }
+    }
+
+    private func deleteAccountViaREST() async -> Bool {
+        do {
+            guard case .ok = try await csharpAuthenticatedRESTClient.deleteMe(.init()) else {
+                profileErrorMessage = "Couldn't delete your account."
+                return false
+            }
+            return true
+        } catch {
+            profileErrorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't delete your account."
             return false
         }
     }

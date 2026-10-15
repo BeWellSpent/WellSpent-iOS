@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct AddSavingsSourceView: View {
     @Environment(\.dismiss) private var dismiss
@@ -13,13 +14,15 @@ struct AddSavingsSourceView: View {
         periodStartDate: Date?,
         paymentMethods: [Wellspent_V1_PaymentMethod],
         authenticatedClient: ProtocolClient,
+        restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_SavingsSource) -> Void
     ) {
         _viewModel = Bindable(wrappedValue: AddSavingsSourceViewModel(
             budgetProfileID: budgetProfileID,
             currencyCode: currencyCode,
             periodStartDate: periodStartDate,
-            authenticatedClient: authenticatedClient
+            authenticatedClient: authenticatedClient,
+            restClient: restClient
         ))
         self.paymentMethods = paymentMethods
         self.onDone = onDone
@@ -89,6 +92,7 @@ struct AddSavingsSourceView: View {
         currencyCode: "USD",
         periodStartDate: nil,
         paymentMethods: [.with { $0.id = "pm-1"; $0.name = "Chase Checking" }],
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }

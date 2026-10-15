@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct ExpensePlanView: View {
     /// Local to this file, not a `Shared/` enum — mirrors `TransactionKind`
@@ -80,7 +81,8 @@ struct ExpensePlanView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await viewModel?.load()

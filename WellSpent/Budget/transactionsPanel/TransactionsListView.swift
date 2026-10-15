@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct TransactionsListView: View {
     /// Local to this file, not a `Shared/` enum like `BudgetSection` — this
@@ -98,7 +99,8 @@ struct TransactionsListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await viewModel?.load()
@@ -194,7 +196,8 @@ struct TransactionsListView: View {
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
-                authenticatedClient: authenticatedClient
+                authenticatedClient: authenticatedClient,
+                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
             ) { transaction in
                 viewModel.addTransaction(transaction)
             }
@@ -211,7 +214,8 @@ struct TransactionsListView: View {
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
                     isArchivedPeriod: isArchivedPeriod,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 ) { updated in
                     viewModel.replaceTransaction(updated)
                 }

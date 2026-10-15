@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -15,6 +16,7 @@ final class AlertsViewModel {
     private let notificationClient: Wellspent_V1_NotificationServiceClient
     private let userClient: Wellspent_V1_UserServiceClient
     private let budgetClient: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Free tier doesn't offer `new_transaction` at all (`docs/features/tiered-subscriptions.md`).
     var visibleAlertTypes: [AlertType] {
@@ -27,11 +29,12 @@ final class AlertsViewModel {
         isFree && subscriptions.count >= 2
     }
 
-    init(budgetProfileID: String, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.notificationClient = Wellspent_V1_NotificationServiceClient(client: authenticatedClient)
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
         self.budgetClient = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     /// Not private, so `visibleAlertTypes`/`isAtLimit` are testable without a
@@ -50,23 +53,56 @@ final class AlertsViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let subsResponse = notificationClient.listAlertSubscriptions(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
-        async let categoriesResponse = budgetClient.listCategories(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let subs = fetchSubscriptions()
+        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
+        async let categoriesResult = fetchCategories()
 
-        switch await subsResponse.result {
+        if let subs = await subs {
+            subscriptions = subs
+        }
+
+        if let user = await user {
+            isFree = user.plan == .free
+        }
+
+        if let fetched = await categoriesResult {
+            categories = fetched
+        }
+    }
+
+    private func fetchCategories() async -> [Wellspent_V1_Category]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listCategories(.init(query: .init(budgetProfileId: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.categories.map(BudgetRESTMapping.category(from:))
+        }
+        guard case .success(let message) = await budgetClient.listCategories(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.categories
+    }
+
+    private func fetchSubscriptions() async -> [Wellspent_V1_AlertSubscription]? {
+        if FeatureFlags.csharpNotificationEnabled {
+            do {
+                let output = try await restClient.listAlertSubscriptions(.init(query: .init(budgetProfileId: budgetProfileID)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load alert settings."
+                    return nil
+                }
+                return body.subscriptions.map(NotificationRESTMapping.alertSubscription(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load alert settings."
+                return nil
+            }
+        }
+        let response = await notificationClient.listAlertSubscriptions(request: .with { $0.budgetProfileID = budgetProfileID })
+        switch response.result {
         case .success(let message):
-            subscriptions = message.subscriptions
+            return message.subscriptions
         case .failure(let error):
             errorMessage = error.message ?? "Couldn't load alert settings."
-        }
-
-        if case .success(let message) = await meResponse.result {
-            isFree = message.user.plan == .free
-        }
-
-        if case .success(let message) = await categoriesResponse.result {
-            categories = message.categories
+            return nil
         }
     }
 
@@ -131,6 +167,12 @@ final class AlertsViewModel {
 
     private func upsert(_ type: AlertType, channel: AlertChannel, thresholdPct: Float, scope: ThresholdScope, categoryID: Int32) async {
         errorMessage = nil
+
+        if FeatureFlags.csharpNotificationEnabled {
+            await upsertViaREST(type, channel: channel, thresholdPct: thresholdPct, scope: scope, categoryID: categoryID)
+            return
+        }
+
         let response = await notificationClient.upsertAlertSubscription(request: .with {
             $0.budgetProfileID = budgetProfileID
             $0.alertType = type.rawValue
@@ -152,8 +194,51 @@ final class AlertsViewModel {
         }
     }
 
+    private func upsertViaREST(_ type: AlertType, channel: AlertChannel, thresholdPct: Float, scope: ThresholdScope, categoryID: Int32) async {
+        let fallback = "Couldn't save that alert."
+        do {
+            let output = try await restClient.upsertAlertSubscription(.init(body: .json(.init(
+                budgetProfileId: budgetProfileID,
+                alertType: type.rawValue,
+                channel: channel.rawValue,
+                thresholdPct: Double(thresholdPct),
+                thresholdScope: scope.rawValue,
+                categoryId: Int(categoryID),
+                notifyAllMembers: false
+            ))))
+            switch output {
+            case .ok(let ok):
+                guard let body = try? ok.body.json else { errorMessage = fallback; return }
+                let subscription = NotificationRESTMapping.alertSubscription(from: body.subscription)
+                if let index = subscriptions.firstIndex(where: { $0.alertType == type.rawValue }) {
+                    subscriptions[index] = subscription
+                } else {
+                    subscriptions.append(subscription)
+                }
+            case .badRequest(let badRequest):
+                errorMessage = (try? badRequest.body.json.message) ?? fallback
+            case .notFound(let notFound):
+                errorMessage = (try? notFound.body.json.message) ?? fallback
+            default:
+                errorMessage = fallback
+            }
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        }
+    }
+
     private func delete(id: String) async {
         errorMessage = nil
+
+        if FeatureFlags.csharpNotificationEnabled {
+            guard case .ok = try? await restClient.deleteAlertSubscription(.init(path: .init(id: id))) else {
+                errorMessage = "Couldn't turn off that alert."
+                return
+            }
+            subscriptions.removeAll { $0.id == id }
+            return
+        }
+
         let response = await notificationClient.deleteAlertSubscription(request: .with { $0.id = id })
 
         switch response.result {

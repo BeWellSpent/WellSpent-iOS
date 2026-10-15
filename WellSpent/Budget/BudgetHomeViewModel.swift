@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 /// Backs the app's home screen. Loads the authenticated user (for
 /// `currency`/`language`, used to format money in every child screen) and the
@@ -24,6 +25,7 @@ final class BudgetHomeViewModel {
 
     let userClient: Wellspent_V1_UserServiceClient
     let budgetClient: Wellspent_V1_BudgetServiceClient
+    let restClient: WellSpentREST.Client
 
     /// ISO 4217 code. Falls back to "USD" when the profile hasn't loaded yet
     /// or the user hasn't set one — same default the backend uses.
@@ -38,9 +40,10 @@ final class BudgetHomeViewModel {
         return language.isEmpty ? "en" : language
     }
 
-    init(authenticatedClient: ProtocolClient) {
+    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
         self.budgetClient = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func load() async {
@@ -48,12 +51,12 @@ final class BudgetHomeViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let meResponse = userClient.getMe(request: Wellspent_V1_GetMeRequest())
+        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
         async let profilesResponse = budgetClient.listBudgetProfiles(request: Wellspent_V1_ListBudgetProfilesRequest())
 
-        if case .success(let message) = await meResponse.result {
-            currentUser = message.user
-            AppLanguageStore.apply(message.user.language)
+        if let user = await user {
+            currentUser = user
+            AppLanguageStore.apply(user.language)
         }
 
         switch await profilesResponse.result {

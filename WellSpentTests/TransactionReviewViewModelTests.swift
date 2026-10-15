@@ -1,12 +1,18 @@
 import Testing
 import WellSpentAPI
+import WellSpentREST
 @testable import WellSpent
 
 @Suite("TransactionReviewViewModel")
 @MainActor
 struct TransactionReviewViewModelTests {
     private func makeViewModel(currentUserID: String? = nil) -> TransactionReviewViewModel {
-        TransactionReviewViewModel(budgetProfileID: "profile-1", currentUserID: currentUserID, authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        TransactionReviewViewModel(
+            budgetProfileID: "profile-1",
+            currentUserID: currentUserID,
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        )
     }
 
     private func review(id: String, status: String, transactionPersonID: Int64 = 0, matchedTransactionPersonID: Int64 = 0) -> Wellspent_V1_TransactionReview {

@@ -1,11 +1,13 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct CategoriesListView: View {
     let budgetProfileID: String
     let authenticatedClient: ProtocolClient
     let canEdit: Bool
 
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: CategoriesViewModel?
     @State private var isAddSheetPresented = false
     @State private var editingCategory: Wellspent_V1_Category?
@@ -36,7 +38,11 @@ struct CategoriesListView: View {
         }
         .task {
             if viewModel == nil {
-                viewModel = CategoriesViewModel(budgetProfileID: budgetProfileID, authenticatedClient: authenticatedClient)
+                viewModel = CategoriesViewModel(
+                    budgetProfileID: budgetProfileID,
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                )
             }
             await viewModel?.load()
         }
@@ -98,7 +104,11 @@ struct CategoriesListView: View {
             }
         }
         .sheet(isPresented: $isAddSheetPresented) {
-            AddEditCategoryView(mode: .add, authenticatedClient: authenticatedClient) { category in
+            AddEditCategoryView(
+                mode: .add,
+                authenticatedClient: authenticatedClient,
+                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+            ) { category in
                 viewModel.addCategory(category)
             }
         }
@@ -107,7 +117,11 @@ struct CategoriesListView: View {
             set: { if !$0 { editingCategory = nil } }
         )) {
             if let editingCategory {
-                AddEditCategoryView(mode: .edit(editingCategory), authenticatedClient: authenticatedClient) { updated in
+                AddEditCategoryView(
+                    mode: .edit(editingCategory),
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                ) { updated in
                     viewModel.replaceCategory(updated)
                 }
             }
@@ -188,4 +202,5 @@ struct CategoriesListView: View {
             canEdit: true
         )
     }
+    .environment(SessionStore())
 }

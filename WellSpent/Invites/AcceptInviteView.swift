@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct AcceptInviteView: View {
     @State private var viewModel: AcceptInviteViewModel
@@ -19,6 +20,8 @@ struct AcceptInviteView: View {
         token: String,
         publicClient: ProtocolClient,
         authenticatedClient: ProtocolClient?,
+        publicRESTClient: WellSpentREST.Client,
+        csharpAuthenticatedRESTClient: WellSpentREST.Client?,
         onAccepted: @escaping () -> Void,
         onDismiss: @escaping () -> Void,
         onRequestAuth: @escaping () -> Void
@@ -26,7 +29,9 @@ struct AcceptInviteView: View {
         _viewModel = State(initialValue: AcceptInviteViewModel(
             token: token,
             publicClient: publicClient,
-            authenticatedClient: authenticatedClient
+            authenticatedClient: authenticatedClient,
+            publicRESTClient: publicRESTClient,
+            csharpAuthenticatedRESTClient: csharpAuthenticatedRESTClient
         ))
         self.isAuthenticated = authenticatedClient != nil
         self.onAccepted = onAccepted
@@ -127,6 +132,8 @@ struct AcceptInviteView: View {
         token: "preview-token",
         publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+        csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         onAccepted: {},
         onDismiss: {},
         onRequestAuth: {}

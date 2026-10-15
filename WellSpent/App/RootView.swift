@@ -62,7 +62,9 @@ struct RootView: View {
             // authenticated/unauthenticated swap below — the banner is the one
             // thing on screen that shouldn't reset when you log in or out.
             if statusBannerViewModel == nil {
-                statusBannerViewModel = StatusBannerViewModel(publicClient: session.publicRESTClient)
+                statusBannerViewModel = StatusBannerViewModel(
+                    publicClient: FeatureFlags.csharpStatusChangelogEnabled ? session.csharpPublicRESTClient : session.publicRESTClient
+                )
             }
             await statusBannerViewModel?.load()
         }
@@ -106,13 +108,16 @@ struct RootView: View {
             if verifyGateViewModel == nil {
                 verifyGateViewModel = VerifyEmailGateViewModel(
                     authenticatedClient: authenticatedClient,
-                    publicClient: session.publicClient
+                    publicClient: session.publicClient,
+                    csharpPublicRESTClient: session.csharpPublicRESTClient,
+                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             if profileGateViewModel == nil {
                 profileGateViewModel = ProfileCompletionGateViewModel(
                     authenticatedClient: authenticatedClient,
-                    restClient: session.publicRESTClient
+                    restClient: session.publicRESTClient,
+                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await verifyGateViewModel?.refresh()
@@ -179,6 +184,8 @@ struct RootView: View {
                     token: pendingInviteToken,
                     publicClient: session.publicClient,
                     authenticatedClient: session.authenticatedClient,
+                    publicRESTClient: session.csharpPublicRESTClient,
+                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient,
                     onAccepted: {
                         self.pendingInviteToken = nil
                         isInvitePreviewPresented = false

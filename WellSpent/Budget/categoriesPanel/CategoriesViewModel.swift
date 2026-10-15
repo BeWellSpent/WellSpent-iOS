@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -11,6 +12,7 @@ final class CategoriesViewModel {
     let budgetProfileID: String
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Sorted by the *displayed* name: the server orders by the English
     /// name, which stops being the reader's order once system categories are
@@ -23,15 +25,30 @@ final class CategoriesViewModel {
         SystemCategoryNames.sorted(categories.filter { !$0.isSystem })
     }
 
-    init(budgetProfileID: String, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func load() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listCategories(.init(query: .init(budgetProfileId: budgetProfileID)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load categories."
+                    return
+                }
+                categories = body.categories.map(BudgetRESTMapping.category(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load categories."
+            }
+            return
+        }
 
         let request = Wellspent_V1_ListCategoriesRequest.with { $0.budgetProfileID = budgetProfileID }
         let response = await client.listCategories(request: request)
@@ -58,6 +75,25 @@ final class CategoriesViewModel {
     /// color-code the shared global categories for their own view).
     func updateColor(_ category: Wellspent_V1_Category, color: String) async {
         errorMessage = nil
+        let fallback = "Couldn't update that category's color."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.updateCategory(.init(
+                    path: .init(id: category.id),
+                    body: .json(.init(name: category.name, color: color))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    return
+                }
+                replaceCategory(BudgetRESTMapping.category(from: body.category))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_UpdateCategoryRequest.with {
             $0.id = category.id
             $0.name = category.name
@@ -69,7 +105,7 @@ final class CategoriesViewModel {
         case .success(let message):
             replaceCategory(message.category)
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't update that category's color."
+            errorMessage = error.message ?? fallback
         }
     }
 
@@ -85,6 +121,22 @@ final class CategoriesViewModel {
     @discardableResult
     func delete(id: Int32, replacementID: Int32) async -> Bool {
         errorMessage = nil
+        let fallback = "Couldn't delete that category."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteCategory(.init(path: .init(id: id), query: .init(replacementId: replacementID))) else {
+                    errorMessage = fallback
+                    return false
+                }
+                categories.removeAll { $0.id == id }
+                return true
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                return false
+            }
+        }
+
         let request = Wellspent_V1_DeleteCategoryRequest.with {
             $0.id = id
             $0.replacementID = replacementID
@@ -96,7 +148,7 @@ final class CategoriesViewModel {
             categories.removeAll { $0.id == id }
             return true
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't delete that category."
+            errorMessage = error.message ?? fallback
             return false
         }
     }

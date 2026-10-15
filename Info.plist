@@ -6,8 +6,24 @@
 	<false/>
 	<key>APIBaseURL</key>
 	<string>$(API_BASE_URL)</string>
+	<key>CSharpAPIBaseURL</key>
+	<string>$(CSHARP_API_BASE_URL)</string>
 	<key>FeatureGoogleAuth</key>
 	<string>$(FEATURE_GOOGLE_AUTH)</string>
+	<key>FeatureCSharpStatusChangelog</key>
+	<string>$(FEATURE_CSHARP_STATUS_CHANGELOG)</string>
+	<key>FeatureCSharpAuth</key>
+	<string>$(FEATURE_CSHARP_AUTH)</string>
+	<key>FeatureCSharpUser</key>
+	<string>$(FEATURE_CSHARP_USER)</string>
+	<key>FeatureCSharpNotification</key>
+	<string>$(FEATURE_CSHARP_NOTIFICATION)</string>
+	<key>FeatureCSharpInvite</key>
+	<string>$(FEATURE_CSHARP_INVITE)</string>
+	<key>FeatureCSharpPlaid</key>
+	<string>$(FEATURE_CSHARP_PLAID)</string>
+	<key>FeatureCSharpBudget</key>
+	<string>$(FEATURE_CSHARP_BUDGET)</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-8875066498176869~1740075152</string>
 </dict>

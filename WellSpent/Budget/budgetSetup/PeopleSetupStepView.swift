@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Step 1 of `BudgetSetupFlow`. Each "Add" tap is its own immediate
 /// `AddBudgetPeople` call (see `BudgetSetupViewModel.addPerson`) rather than
@@ -110,6 +111,9 @@ struct PeopleSetupStepView: View {
 
 #Preview {
     NavigationStack {
-        PeopleSetupStepView(viewModel: BudgetSetupViewModel(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")))
+        PeopleSetupStepView(viewModel: BudgetSetupViewModel(
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        ))
     }
 }

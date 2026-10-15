@@ -8,4 +8,9 @@ nonisolated enum APIEnvironment {
     static var baseURL: String {
         (Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String) ?? "http://localhost:8080"
     }
+
+    /// The C# rewrite's base URL (issue #78) — same localhost on both configs until it's deployed.
+    static var csharpBaseURL: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CSharpAPIBaseURL") as? String) ?? "http://localhost:5021"
+    }
 }

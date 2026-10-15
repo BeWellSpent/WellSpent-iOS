@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Converts a variable purchase into a card installment plan.
 ///
@@ -14,6 +15,7 @@ struct InstallmentPlanSheet: View {
     let onCreated: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: InstallmentPlanViewModel?
 
     var body: some View {
@@ -46,7 +48,8 @@ struct InstallmentPlanSheet: View {
                 viewModel = InstallmentPlanViewModel(
                     transaction: transaction,
                     budgetPeriodID: budgetPeriodID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
         }
@@ -127,4 +130,5 @@ struct InstallmentPlanSheet: View {
         authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         onCreated: {}
     )
+    .environment(SessionStore())
 }

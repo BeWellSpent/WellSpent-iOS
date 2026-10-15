@@ -6,6 +6,7 @@ struct PeopleListView: View {
     let budgetOwnerUserID: String
     let authenticatedClient: ProtocolClient
     let canManageUsers: Bool
+    @Environment(SessionStore.self) private var session
 
     @State private var viewModel: PeopleViewModel?
     @State private var editingPerson: Wellspent_V1_BudgetPerson?
@@ -25,7 +26,8 @@ struct PeopleListView: View {
                 viewModel = PeopleViewModel(
                     budgetProfileID: budgetProfileID,
                     budgetOwnerUserID: budgetOwnerUserID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
             await viewModel?.load()
@@ -170,4 +172,5 @@ struct PeopleListView: View {
             canManageUsers: true
         )
     }
+    .environment(SessionStore())
 }
