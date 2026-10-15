@@ -24,7 +24,7 @@ public enum RESTClient {
     /// that has no way to know otherwise, which throws away the only thing this
     /// transport buys.
     public static func makePublicClient(baseURL: String) -> Client {
-        Client(serverURL: url(baseURL), transport: URLSessionTransport())
+        Client(serverURL: url(baseURL), configuration: configuration, transport: URLSessionTransport())
     }
 
     /// Client that attaches `Authorization: Bearer <token>` to every request.
@@ -38,6 +38,7 @@ public enum RESTClient {
     ) -> Client {
         Client(
             serverURL: url(baseURL),
+            configuration: configuration,
             transport: URLSessionTransport(),
             middlewares: [BearerTokenMiddleware(tokenProvider: tokenProvider)]
         )
@@ -47,6 +48,31 @@ public enum RESTClient {
         // The generated client appends the contract's paths, which already
         // carry their `/rest/v1` prefix, so the server URL is just the host.
         URL(string: baseURL) ?? URL(string: "http://localhost:8080")!
+    }
+
+    /// .NET's default `DateTime` JSON serialization includes fractional
+    /// seconds whenever the value has any (true for essentially every
+    /// `timestamptz` column), which the generator's plain `.iso8601`
+    /// transcoder rejects outright — see `transactionReview(from:)`'s
+    /// `createdAt`, the one `format: date-time` field in the contract so far.
+    private static let configuration = Configuration(dateTranscoder: LenientISO8601DateTranscoder())
+}
+
+/// Accepts both ISO-8601 shapes .NET can emit for a `DateTime` — with
+/// fractional seconds (the common case, any non-zero sub-second component)
+/// and without (a value that lands exactly on a whole second) — rather than
+/// gambling on which one `JsonSerializer` chooses for a given value.
+struct LenientISO8601DateTranscoder: DateTranscoder {
+    private let withFractionalSeconds = ISO8601DateTranscoder(options: [.withInternetDateTime, .withFractionalSeconds])
+    private let strict = ISO8601DateTranscoder(options: [.withInternetDateTime])
+
+    func encode(_ date: Date) throws -> String {
+        try withFractionalSeconds.encode(date)
+    }
+
+    func decode(_ dateString: String) throws -> Date {
+        if let date = try? withFractionalSeconds.decode(dateString) { return date }
+        return try strict.decode(dateString)
     }
 }
 
