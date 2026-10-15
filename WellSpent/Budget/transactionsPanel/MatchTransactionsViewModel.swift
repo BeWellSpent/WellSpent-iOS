@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 /// Fixed-row counterpart to `MarkForReviewViewModel` — multi-select instead of one.
 @MainActor
@@ -15,11 +16,13 @@ final class MatchTransactionsViewModel {
     let budgetProfileID: String
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
-    init(budgetPeriodID: String, budgetProfileID: String, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     var selectedTotal: (units: Int64, nanos: Int32) {
@@ -41,6 +44,23 @@ final class MatchTransactionsViewModel {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listTransactions(.init(query: .init(
+                    budgetPeriodId: budgetPeriodID,
+                    transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID)
+                )))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load transactions."
+                    return
+                }
+                variableTransactions = body.transactions.map(BudgetRESTMapping.transaction(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load transactions."
+            }
+            return
+        }
 
         let response = await client.listTransactions(request: .with {
             $0.budgetPeriodID = budgetPeriodID

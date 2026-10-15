@@ -90,29 +90,55 @@ final class FixedExpensesViewModel {
 
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        async let transactionsResponse = client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.transactionTypeID = Self.fixedTypeID
-            $0.focusedView = focusedView
-        })
+        async let transactionsResult = fetchTransactions(focusedView: focusedView)
         async let summaryResponse = client.getExpenseSummary(request: .with {
             $0.budgetPeriodID = budgetPeriodID
             $0.focusedView = focusedView
         })
 
-        switch await transactionsResponse.result {
-        case .success(let message):
+        if let fetched = await transactionsResult {
             // Oldest first: the Fixed list is a schedule, so the month should
             // run top to bottom. Variable stays newest-first — it's a feed.
-            transactions = message.transactions.sorted { $0.date.date < $1.date.date }
+            transactions = fetched.sorted { $0.date.date < $1.date.date }
             Self.logger.info("loaded fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) count=\(self.transactions.count, privacy: .public)")
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load fixed expenses."
-            Self.logger.error("failed to load fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public) error=\(String(describing: error), privacy: .public)")
+        } else {
+            Self.logger.error("failed to load fixed transactions budgetPeriodID=\(self.budgetPeriodID, privacy: .public)")
         }
 
         if case .success(let message) = await summaryResponse.result {
             summary = message
+        }
+    }
+
+    private func fetchTransactions(focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listTransactions(.init(query: .init(
+                    budgetPeriodId: budgetPeriodID,
+                    transactionType: BudgetRESTMapping.restExpenseType(from: Self.fixedTypeID),
+                    focusedView: focusedView
+                )))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load fixed expenses."
+                    return nil
+                }
+                return body.transactions.map(BudgetRESTMapping.transaction(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load fixed expenses."
+                return nil
+            }
+        }
+        let response = await client.listTransactions(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.transactionTypeID = Self.fixedTypeID
+            $0.focusedView = focusedView
+        })
+        switch response.result {
+        case .success(let message):
+            return message.transactions
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load fixed expenses."
+            return nil
         }
     }
 
@@ -256,6 +282,29 @@ final class FixedExpensesViewModel {
 
     func markPaid(_ transaction: Wellspent_V1_Transaction, paidAmount: Wellspent_V1_Money, paidAt: Date) async {
         errorMessage = nil
+        let fallback = "Couldn't mark that as paid."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.markTransactionAsPaid(.init(
+                    path: .init(id: transaction.id),
+                    body: .json(.init(
+                        budgetPeriodId: budgetPeriodID,
+                        paidAmount: BudgetRESTMapping.restMoney(from: paidAmount),
+                        paidDate: Google_Protobuf_Timestamp(dateOnly: paidAt).restDateString
+                    ))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    return
+                }
+                replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_MarkTransactionAsPaidRequest.with {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
@@ -268,12 +317,31 @@ final class FixedExpensesViewModel {
         case .success(let message):
             replaceTransaction(message.transaction)
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't mark that as paid."
+            errorMessage = error.message ?? fallback
         }
     }
 
     func unmark(_ transaction: Wellspent_V1_Transaction) async {
         errorMessage = nil
+        let fallback = "Couldn't unmark that transaction."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.unmarkTransactionAsPaid(.init(
+                    path: .init(id: transaction.id),
+                    body: .json(.init(budgetPeriodId: budgetPeriodID))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    return
+                }
+                replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_UnmarkTransactionAsPaidRequest.with {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
@@ -284,16 +352,37 @@ final class FixedExpensesViewModel {
         case .success(let message):
             replaceTransaction(message.transaction)
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't unmark that transaction."
+            errorMessage = error.message ?? fallback
         }
     }
 
     func toggleExcluded(_ transaction: Wellspent_V1_Transaction) async {
         errorMessage = nil
+        let fallback = "Couldn't update that transaction."
+        let newExcluded = !transaction.isExcluded
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.setTransactionExcluded(.init(
+                    path: .init(id: transaction.id),
+                    body: .json(.init(budgetPeriodId: budgetPeriodID, excluded: newExcluded))
+                )) else {
+                    errorMessage = fallback
+                    return
+                }
+                if let index = transactions.firstIndex(where: { $0.id == transaction.id }) {
+                    transactions[index].isExcluded = newExcluded
+                }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_SetTransactionExcludedRequest.with {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
-            $0.excluded = !transaction.isExcluded
+            $0.excluded = newExcluded
         }
         let response = await client.setTransactionExcluded(request: request)
 
@@ -303,7 +392,7 @@ final class FixedExpensesViewModel {
                 transactions[index].isExcluded.toggle()
             }
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't update that transaction."
+            errorMessage = error.message ?? fallback
         }
     }
 

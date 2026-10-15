@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct MatchTransactionsSheet: View {
     let matchedTransaction: Wellspent_V1_Transaction
@@ -11,6 +12,7 @@ struct MatchTransactionsSheet: View {
     let onMatched: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: MatchTransactionsViewModel?
     @State private var filter = ""
 
@@ -34,7 +36,8 @@ struct MatchTransactionsSheet: View {
                     viewModel = MatchTransactionsViewModel(
                         budgetPeriodID: budgetPeriodID,
                         budgetProfileID: budgetProfileID,
-                        authenticatedClient: authenticatedClient
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                     )
                 }
                 await viewModel?.load()
@@ -152,4 +155,5 @@ struct MatchTransactionsSheet: View {
         authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         onMatched: {}
     )
+    .environment(SessionStore())
 }

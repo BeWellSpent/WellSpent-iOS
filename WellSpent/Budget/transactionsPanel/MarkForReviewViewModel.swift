@@ -1,5 +1,6 @@
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 /// Mirrors web's `MarkForReviewDialog.tsx` — lets the user manually flag a
 /// Variable transaction as matching one of the period's own Fixed-type
@@ -16,17 +17,36 @@ final class MarkForReviewViewModel {
     let budgetProfileID: String
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
-    init(budgetPeriodID: String, budgetProfileID: String, authenticatedClient: ProtocolClient) {
+    init(budgetPeriodID: String, budgetProfileID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func load() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listTransactions(.init(query: .init(
+                    budgetPeriodId: budgetPeriodID,
+                    transactionType: BudgetRESTMapping.restExpenseType(from: FixedExpensesViewModel.fixedTypeID)
+                )))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load fixed expenses."
+                    return
+                }
+                fixedTransactions = body.transactions.map(BudgetRESTMapping.transaction(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load fixed expenses."
+            }
+            return
+        }
 
         let response = await client.listTransactions(request: .with {
             $0.budgetPeriodID = budgetPeriodID

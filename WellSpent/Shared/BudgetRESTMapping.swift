@@ -266,6 +266,75 @@ nonisolated enum BudgetRESTMapping {
         }
     }
 
+    static func transaction(from t: Components.Schemas.Transaction) -> Wellspent_V1_Transaction {
+        .with {
+            $0.id = t.id
+            $0.name = t.name ?? ""
+            $0.amount = money(from: t.amount)
+            $0.plannedAmount = money(from: t.plannedAmount)
+            if let date = t.date, let ts = SwiftProtobuf.Google_Protobuf_Timestamp(restDate: date) {
+                $0.date = ts
+            }
+            if let renewal = t.renewalDate, let ts = SwiftProtobuf.Google_Protobuf_Timestamp(restDate: renewal) {
+                $0.renewalDate = ts
+            }
+            $0.budgetPeriodID = t.budgetPeriodId ?? ""
+            $0.categoryID = t.categoryId
+            $0.paymentMethodID = t.paymentMethodId ?? ""
+            $0.transactionFrequencyID = transactionFrequencyID(from: t.transactionFrequency)
+            $0.transactionTypeID = expenseTypeID(from: t.transactionType)
+            $0.isPaid = t.isPaid
+            if let paidAt = t.paidAt, let ts = SwiftProtobuf.Google_Protobuf_Timestamp(restDate: paidAt) {
+                $0.paidAt = ts
+            }
+            $0.fixedExpenseID = t.fixedExpenseId ?? ""
+            $0.isExcluded = t.isExcluded
+            $0.isPlaidImported = t.isPlaidImported
+            $0.installmentFixedExpenseID = t.installmentFixedExpenseId ?? ""
+            $0.carriedFromBudgetPeriodID = t.carriedFromBudgetPeriodId ?? ""
+        }
+    }
+
+    /// `transaction_type` lookup table seed order (migration 000001): Fixed = 1, Variable = 2.
+    /// Raw int32 FK on the proto wire, unlike REST's real `ExpenseType` string enum.
+    static func expenseTypeID(from t: Components.Schemas.ExpenseType) -> Int32 {
+        switch t {
+        case .fixed: return 1
+        case .variable: return 2
+        case .unspecified: return 0
+        }
+    }
+
+    static func restExpenseType(from id: Int32) -> Components.Schemas.ExpenseType {
+        switch id {
+        case 1: return .fixed
+        case 2: return .variable
+        default: return .unspecified
+        }
+    }
+
+    /// `transaction_frequency` lookup table seed order (migration 000001): One-off = 1,
+    /// Weekly = 2, Bi-weekly = 3, Monthly = 4, Yearly = 5. Raw int32 FK on the proto wire.
+    static func transactionFrequencyID(from f: Components.Schemas.RecurringFrequency) -> Int32 {
+        switch f {
+        case .one_off: return 1
+        case .weekly: return 2
+        case .bi_weekly: return 3
+        case .monthly: return 4
+        case .yearly: return 5
+        }
+    }
+
+    static func restTransactionFrequency(from id: Int32) -> Components.Schemas.RecurringFrequency {
+        switch id {
+        case 2: return .weekly
+        case 3: return .bi_weekly
+        case 4: return .monthly
+        case 5: return .yearly
+        default: return .one_off
+        }
+    }
+
     static func savingsSource(from s: Components.Schemas.SavingsSource) -> Wellspent_V1_SavingsSource {
         .with {
             $0.id = s.id

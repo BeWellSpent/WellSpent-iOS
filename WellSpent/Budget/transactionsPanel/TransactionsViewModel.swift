@@ -88,25 +88,50 @@ final class TransactionsViewModel {
 
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        async let transactionsResponse = client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.transactionTypeID = Self.variableTypeID
-            $0.focusedView = focusedView
-        })
+        async let transactionsResult = fetchTransactions(transactionTypeID: Self.variableTypeID, focusedView: focusedView)
         async let summaryResponse = client.getExpenseSummary(request: .with {
             $0.budgetPeriodID = budgetPeriodID
             $0.focusedView = focusedView
         })
 
-        switch await transactionsResponse.result {
-        case .success(let message):
-            transactions = message.transactions.sorted { $0.date.date > $1.date.date }
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load transactions."
+        if let fetched = await transactionsResult {
+            transactions = fetched.sorted { $0.date.date > $1.date.date }
         }
 
         if case .success(let message) = await summaryResponse.result {
             summary = message
+        }
+    }
+
+    private func fetchTransactions(transactionTypeID: Int32, focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listTransactions(.init(query: .init(
+                    budgetPeriodId: budgetPeriodID,
+                    transactionType: BudgetRESTMapping.restExpenseType(from: transactionTypeID),
+                    focusedView: focusedView
+                )))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load transactions."
+                    return nil
+                }
+                return body.transactions.map(BudgetRESTMapping.transaction(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load transactions."
+                return nil
+            }
+        }
+        let response = await client.listTransactions(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.transactionTypeID = transactionTypeID
+            $0.focusedView = focusedView
+        })
+        switch response.result {
+        case .success(let message):
+            return message.transactions
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load transactions."
+            return nil
         }
     }
 
@@ -224,10 +249,31 @@ final class TransactionsViewModel {
 
     func toggleExcluded(_ transaction: Wellspent_V1_Transaction) async {
         errorMessage = nil
+        let fallback = "Couldn't update that transaction."
+        let newExcluded = !transaction.isExcluded
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.setTransactionExcluded(.init(
+                    path: .init(id: transaction.id),
+                    body: .json(.init(budgetPeriodId: budgetPeriodID, excluded: newExcluded))
+                )) else {
+                    errorMessage = fallback
+                    return
+                }
+                if let index = transactions.firstIndex(where: { $0.id == transaction.id }) {
+                    transactions[index].isExcluded = newExcluded
+                }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_SetTransactionExcludedRequest.with {
             $0.id = transaction.id
             $0.budgetPeriodID = budgetPeriodID
-            $0.excluded = !transaction.isExcluded
+            $0.excluded = newExcluded
         }
         let response = await client.setTransactionExcluded(request: request)
 
@@ -237,12 +283,27 @@ final class TransactionsViewModel {
                 transactions[index].isExcluded.toggle()
             }
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't update that transaction."
+            errorMessage = error.message ?? fallback
         }
     }
 
     func delete(id: String) async {
         errorMessage = nil
+        let fallback = "Couldn't delete that transaction."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteTransaction(.init(path: .init(id: id))) else {
+                    errorMessage = fallback
+                    return
+                }
+                transactions.removeAll { $0.id == id }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_DeleteTransactionRequest.with {
             $0.id = id
             $0.budgetPeriodID = budgetPeriodID
@@ -253,7 +314,7 @@ final class TransactionsViewModel {
         case .success:
             transactions.removeAll { $0.id == id }
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't delete that transaction."
+            errorMessage = error.message ?? fallback
         }
     }
 }

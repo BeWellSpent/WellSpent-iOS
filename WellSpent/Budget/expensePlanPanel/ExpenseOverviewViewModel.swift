@@ -193,20 +193,14 @@ final class ExpenseOverviewViewModel {
 
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        async let transactionsResponse = client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.focusedView = focusedView
-        })
+        async let transactionsResult = fetchTransactions(focusedView: focusedView)
         async let summaryResponse = client.getExpenseSummary(request: .with {
             $0.budgetPeriodID = budgetPeriodID
             $0.focusedView = focusedView
         })
 
-        switch await transactionsResponse.result {
-        case .success(let message):
-            transactions = message.transactions
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load the expense overview."
+        if let fetched = await transactionsResult {
+            transactions = fetched
         }
 
         switch await summaryResponse.result {
@@ -253,5 +247,32 @@ final class ExpenseOverviewViewModel {
             return nil
         }
         return message.methods
+    }
+
+    private func fetchTransactions(focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listTransactions(.init(query: .init(budgetPeriodId: budgetPeriodID, focusedView: focusedView)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load the expense overview."
+                    return nil
+                }
+                return body.transactions.map(BudgetRESTMapping.transaction(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load the expense overview."
+                return nil
+            }
+        }
+        let response = await client.listTransactions(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        })
+        switch response.result {
+        case .success(let message):
+            return message.transactions
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load the expense overview."
+            return nil
+        }
     }
 }

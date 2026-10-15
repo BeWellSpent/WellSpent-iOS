@@ -277,7 +277,8 @@ struct FixedExpensesListView: View {
                         paymentMethods: viewModel.paymentMethods,
                         isArchivedPeriod: isArchivedPeriod,
                         forceLocked: true,
-                        authenticatedClient: authenticatedClient
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                     ) { _ in
                         Task { await viewModel.load() }
                     }

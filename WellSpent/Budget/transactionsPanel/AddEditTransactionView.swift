@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct AddEditTransactionView: View {
     @Environment(\.dismiss) private var dismiss
@@ -17,6 +18,7 @@ struct AddEditTransactionView: View {
         isArchivedPeriod: Bool = false,
         forceLocked: Bool = false,
         authenticatedClient: ProtocolClient,
+        restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_Transaction) -> Void
     ) {
         _viewModel = Bindable(wrappedValue: AddEditTransactionViewModel(
@@ -25,7 +27,8 @@ struct AddEditTransactionView: View {
             currencyCode: currencyCode,
             isArchivedPeriod: isArchivedPeriod,
             forceLocked: forceLocked,
-            authenticatedClient: authenticatedClient
+            authenticatedClient: authenticatedClient,
+            restClient: restClient
         ))
         self.categories = categories
         self.paymentMethods = paymentMethods
@@ -158,7 +161,8 @@ private let previewPaymentMethods: [Wellspent_V1_PaymentMethod] = [
         currencyCode: "USD",
         categories: previewCategories,
         paymentMethods: previewPaymentMethods,
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }
 
@@ -175,6 +179,7 @@ private let previewPaymentMethods: [Wellspent_V1_PaymentMethod] = [
         currencyCode: "USD",
         categories: previewCategories,
         paymentMethods: previewPaymentMethods,
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }

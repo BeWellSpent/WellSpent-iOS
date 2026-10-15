@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import os
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -37,6 +38,7 @@ final class AddEditTransactionViewModel {
     private let budgetPeriodID: String
     private let currencyCode: String
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// `transaction_frequency` lookup table seed order (see
     /// WellSpent-backend/internal/db/migrations/000001_init_schema.sql):
@@ -53,11 +55,12 @@ final class AddEditTransactionViewModel {
             && !paymentMethodID.isEmpty
     }
 
-    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, forceLocked: Bool = false, authenticatedClient: ProtocolClient) {
+    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, forceLocked: Bool = false, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.mode = mode
         self.budgetPeriodID = budgetPeriodID
         self.currencyCode = currencyCode
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
 
         switch mode {
         case .add:
@@ -109,8 +112,38 @@ final class AddEditTransactionViewModel {
         // immediately before submit closes that race the same way the
         // equivalent web fix does.
         if case .edit(let existing) = mode, isLocked {
-            let listResponse = await client.listTransactions(request: .with { $0.budgetPeriodID = budgetPeriodID })
-            let current = listResponse.message?.transactions.first(where: { $0.id == existing.id }) ?? existing
+            let current = await fetchTransaction(id: existing.id) ?? existing
+            let fallback = "Couldn't update that transaction."
+
+            if FeatureFlags.csharpBudgetEnabled {
+                do {
+                    let output = try await restClient.updateTransaction(.init(
+                        path: .init(id: current.id),
+                        body: .json(.init(
+                            name: current.name,
+                            amount: BudgetRESTMapping.restMoney(from: current.amount),
+                            plannedAmount: BudgetRESTMapping.restMoney(from: current.plannedAmount),
+                            date: current.hasDate ? current.date.restDateString : nil,
+                            categoryId: categoryID,
+                            paymentMethodId: current.paymentMethodID,
+                            transactionFrequency: BudgetRESTMapping.restTransactionFrequency(from: current.transactionFrequencyID),
+                            transactionType: BudgetRESTMapping.restExpenseType(from: current.transactionTypeID)
+                        ))
+                    ))
+                    guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                        errorMessage = fallback
+                        Self.logger.error("locked-edit submit failed transactionID=\(existing.id, privacy: .public)")
+                        return nil
+                    }
+                    Self.logger.info("locked-edit submit succeeded transactionID=\(existing.id, privacy: .public)")
+                    return BudgetRESTMapping.transaction(from: body.transaction)
+                } catch {
+                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                    Self.logger.error("locked-edit submit failed transactionID=\(existing.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
+                    return nil
+                }
+            }
+
             let request = Wellspent_V1_UpdateTransactionRequest.with {
                 $0.id = current.id
                 $0.name = current.name
@@ -129,7 +162,7 @@ final class AddEditTransactionViewModel {
                 Self.logger.info("locked-edit submit succeeded transactionID=\(existing.id, privacy: .public)")
                 return message.transaction
             case .failure(let error):
-                errorMessage = error.message ?? "Couldn't update that transaction."
+                errorMessage = error.message ?? fallback
                 Self.logger.error("locked-edit submit failed transactionID=\(existing.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
                 return nil
             }
@@ -137,6 +170,34 @@ final class AddEditTransactionViewModel {
 
         switch mode {
         case .add:
+            let fallback = "Couldn't add that transaction."
+            if FeatureFlags.csharpBudgetEnabled {
+                do {
+                    let output = try await restClient.createTransaction(.init(body: .json(.init(
+                        name: trimmedName,
+                        amount: BudgetRESTMapping.restMoney(from: money),
+                        plannedAmount: BudgetRESTMapping.restMoney(from: money),
+                        date: timestamp.restDateString,
+                        budgetPeriodId: budgetPeriodID,
+                        categoryId: categoryID,
+                        paymentMethodId: paymentMethodID,
+                        transactionFrequency: BudgetRESTMapping.restTransactionFrequency(from: transactionFrequencyID),
+                        transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID)
+                    ))))
+                    guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                        errorMessage = fallback
+                        Self.logger.error("create submit failed")
+                        return nil
+                    }
+                    Self.logger.info("create submit succeeded transactionID=\(body.transaction.id, privacy: .public)")
+                    return BudgetRESTMapping.transaction(from: body.transaction)
+                } catch {
+                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                    Self.logger.error("create submit failed error=\(String(describing: error), privacy: .public)")
+                    return nil
+                }
+            }
+
             let request = Wellspent_V1_CreateTransactionRequest.with {
                 $0.name = trimmedName
                 $0.amount = money
@@ -155,11 +216,41 @@ final class AddEditTransactionViewModel {
                 Self.logger.info("create submit succeeded transactionID=\(message.transaction.id, privacy: .public)")
                 return message.transaction
             case .failure(let error):
-                errorMessage = error.message ?? "Couldn't add that transaction."
+                errorMessage = error.message ?? fallback
                 Self.logger.error("create submit failed error=\(String(describing: error), privacy: .public)")
                 return nil
             }
         case .edit(let existing):
+            let fallback = "Couldn't update that transaction."
+            if FeatureFlags.csharpBudgetEnabled {
+                do {
+                    let output = try await restClient.updateTransaction(.init(
+                        path: .init(id: existing.id),
+                        body: .json(.init(
+                            name: trimmedName,
+                            amount: BudgetRESTMapping.restMoney(from: money),
+                            plannedAmount: BudgetRESTMapping.restMoney(from: money),
+                            date: timestamp.restDateString,
+                            categoryId: categoryID,
+                            paymentMethodId: paymentMethodID,
+                            transactionFrequency: BudgetRESTMapping.restTransactionFrequency(from: transactionFrequencyID),
+                            transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID)
+                        ))
+                    ))
+                    guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                        errorMessage = fallback
+                        Self.logger.error("edit submit failed transactionID=\(existing.id, privacy: .public)")
+                        return nil
+                    }
+                    Self.logger.info("edit submit succeeded transactionID=\(existing.id, privacy: .public)")
+                    return BudgetRESTMapping.transaction(from: body.transaction)
+                } catch {
+                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                    Self.logger.error("edit submit failed transactionID=\(existing.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
+                    return nil
+                }
+            }
+
             let request = Wellspent_V1_UpdateTransactionRequest.with {
                 $0.id = existing.id
                 $0.name = trimmedName
@@ -178,10 +269,20 @@ final class AddEditTransactionViewModel {
                 Self.logger.info("edit submit succeeded transactionID=\(existing.id, privacy: .public)")
                 return message.transaction
             case .failure(let error):
-                errorMessage = error.message ?? "Couldn't update that transaction."
+                errorMessage = error.message ?? fallback
                 Self.logger.error("edit submit failed transactionID=\(existing.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
                 return nil
             }
         }
+    }
+
+    private func fetchTransaction(id: String) async -> Wellspent_V1_Transaction? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listTransactions(.init(query: .init(budgetPeriodId: budgetPeriodID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.transactions.map(BudgetRESTMapping.transaction(from:)).first { $0.id == id }
+        }
+        let listResponse = await client.listTransactions(request: .with { $0.budgetPeriodID = budgetPeriodID })
+        return listResponse.message?.transactions.first { $0.id == id }
     }
 }

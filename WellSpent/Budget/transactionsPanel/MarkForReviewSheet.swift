@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct MarkForReviewSheet: View {
     let transaction: Wellspent_V1_Transaction
@@ -11,6 +12,7 @@ struct MarkForReviewSheet: View {
     let onMarked: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: MarkForReviewViewModel?
     @State private var selectedID: String?
     @State private var filter = ""
@@ -48,7 +50,8 @@ struct MarkForReviewSheet: View {
                     viewModel = MarkForReviewViewModel(
                         budgetPeriodID: budgetPeriodID,
                         budgetProfileID: budgetProfileID,
-                        authenticatedClient: authenticatedClient
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                     )
                 }
                 await viewModel?.load()
@@ -196,4 +199,5 @@ struct MarkForReviewSheet: View {
         authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         onMarked: {}
     )
+    .environment(SessionStore())
 }

@@ -196,7 +196,8 @@ struct TransactionsListView: View {
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
-                authenticatedClient: authenticatedClient
+                authenticatedClient: authenticatedClient,
+                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
             ) { transaction in
                 viewModel.addTransaction(transaction)
             }
@@ -213,7 +214,8 @@ struct TransactionsListView: View {
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
                     isArchivedPeriod: isArchivedPeriod,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 ) { updated in
                     viewModel.replaceTransaction(updated)
                 }
