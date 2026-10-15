@@ -205,7 +205,8 @@ struct BudgetDetailView: View {
                 reviewViewModel = TransactionReviewViewModel(
                     budgetProfileID: viewModel.profile.id,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: restClient
                 )
             }
             await reviewViewModel?.pollPendingCount()

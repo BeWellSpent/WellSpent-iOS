@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import os
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -19,18 +20,20 @@ final class CreateFixedFromTransactionViewModel {
     let transaction: Wellspent_V1_Transaction
     let budgetPeriodID: String
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSubmitting
     }
 
-    init(transaction: Wellspent_V1_Transaction, budgetPeriodID: String, authenticatedClient: ProtocolClient) {
+    init(transaction: Wellspent_V1_Transaction, budgetPeriodID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.transaction = transaction
         self.budgetPeriodID = budgetPeriodID
         self.name = transaction.name
         // dateOnly, not .date: `date` is a DATE-only field at midnight UTC.
         self.startDate = transaction.hasDate ? transaction.date.dateOnly : Date()
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func setStartDate(_ value: Date) {
@@ -55,6 +58,36 @@ final class CreateFixedFromTransactionViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
+        let fallback = String(localized: "Couldn't create the fixed expense.", locale: AppLanguageStore.currentLocale)
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.createFixedExpenseFromTransaction(.init(
+                    path: .init(id: transaction.id),
+                    query: .init(budgetPeriodId: budgetPeriodID),
+                    body: .json(.init(
+                        name: name.trimmingCharacters(in: .whitespaces),
+                        anchorDate: Google_Protobuf_Timestamp(dateOnly: startDate).restDateString,
+                        frequencyUnit: BudgetRESTMapping.restFrequencyUnit(from: frequencyUnit),
+                        intervalMonths: Int32(intervalMonths),
+                        intervalWeeks: Int32(intervalWeeks),
+                        dayOfWeek: FixedExpenseScheduling.dayOfWeek(for: startDate)
+                    ))
+                ))
+                guard case .ok = output else {
+                    errorMessage = fallback
+                    Self.logger.error("create fixed from transaction failed transaction=\(self.transaction.id, privacy: .public)")
+                    return false
+                }
+                Self.logger.info("created fixed expense from transaction=\(self.transaction.id, privacy: .public)")
+                return true
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                Self.logger.error("create fixed from transaction failed transaction=\(self.transaction.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
+                return false
+            }
+        }
+
         let response = await client.createFixedExpenseFromTransaction(request: .with {
             $0.transactionID = transaction.id
             $0.budgetPeriodID = budgetPeriodID
@@ -72,10 +105,7 @@ final class CreateFixedFromTransactionViewModel {
             return true
         case .failure(let error):
             Self.logger.error("create fixed from transaction failed transaction=\(self.transaction.id, privacy: .public) message=\(error.message ?? "", privacy: .public)")
-            errorMessage = error.message ?? String(
-                localized: "Couldn't create the fixed expense.",
-                locale: AppLanguageStore.currentLocale
-            )
+            errorMessage = error.message ?? fallback
             return false
         }
     }

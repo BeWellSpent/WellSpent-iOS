@@ -338,6 +338,23 @@ nonisolated enum BudgetRESTMapping {
         }
     }
 
+    static func transactionReview(from r: Components.Schemas.TransactionReview) -> Wellspent_V1_TransactionReview {
+        .with {
+            $0.id = r.id
+            $0.budgetPeriodID = r.budgetPeriodId
+            $0.transactionID = r.transactionId
+            $0.matchedTransactionID = r.matchedTransactionId
+            $0.matchScore = r.matchScore
+            $0.status = r.status.rawValue
+            $0.createdAt = SwiftProtobuf.Google_Protobuf_Timestamp(date: r.createdAt)
+            $0.transactionName = r.transactionName ?? ""
+            $0.transactionAmount = money(from: r.transactionAmount)
+            $0.matchedTransactionName = r.matchedTransactionName ?? ""
+            $0.transactionPersonID = r.transactionPersonId
+            $0.matchedTransactionPersonID = r.matchedTransactionPersonId
+        }
+    }
+
     static func expenseAllocation(from a: Components.Schemas.ExpenseAllocation) -> Wellspent_V1_ExpenseAllocation {
         .with {
             $0.id = a.id

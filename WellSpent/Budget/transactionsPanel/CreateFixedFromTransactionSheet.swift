@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Turns a variable transaction into a recurring fixed expense; the backend
 /// auto-confirms the match, so the transaction is excluded on success.
@@ -10,6 +11,7 @@ struct CreateFixedFromTransactionSheet: View {
     let onCreated: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionStore.self) private var session
     @State private var viewModel: CreateFixedFromTransactionViewModel?
 
     var body: some View {
@@ -42,7 +44,8 @@ struct CreateFixedFromTransactionSheet: View {
                 viewModel = CreateFixedFromTransactionViewModel(
                     transaction: transaction,
                     budgetPeriodID: budgetPeriodID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }
         }
@@ -107,4 +110,5 @@ struct CreateFixedFromTransactionSheet: View {
         authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         onCreated: {}
     )
+    .environment(SessionStore())
 }

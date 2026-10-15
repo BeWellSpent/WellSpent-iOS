@@ -65,6 +65,24 @@ final class MarkForReviewViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
+        let fallback = "Couldn't flag that transaction."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.markTransactionForReview(.init(
+                    path: .init(id: transaction.id),
+                    body: .json(.init(matchedTransactionId: matchedTransaction.id, budgetProfileId: budgetProfileID))
+                )) else {
+                    errorMessage = fallback
+                    return false
+                }
+                return true
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                return false
+            }
+        }
+
         let response = await client.markTransactionForReview(request: .with {
             $0.transactionID = transaction.id
             $0.matchedTransactionID = matchedTransaction.id
@@ -75,7 +93,7 @@ final class MarkForReviewViewModel {
         case .success:
             return true
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't flag that transaction."
+            errorMessage = error.message ?? fallback
             return false
         }
     }

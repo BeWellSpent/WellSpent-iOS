@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Owned by `BudgetDetailView` (not created locally here) — the pending
 /// count backs the Review tab's badge, so the view model needs to be shared
@@ -157,7 +158,8 @@ struct TransactionReviewListView: View {
         TransactionReviewListView(
             viewModel: TransactionReviewViewModel(
                 budgetProfileID: "preview-budget",
-                authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+                authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+                restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
             ),
             currencyCode: "USD",
             localeIdentifier: "en",

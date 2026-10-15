@@ -85,13 +85,30 @@ final class MatchTransactionsViewModel {
         defer { isSubmitting = false }
 
         for transactionID in selectedIDs {
+            let fallback = "Couldn't match that transaction."
+            if FeatureFlags.csharpBudgetEnabled {
+                do {
+                    guard case .ok = try await restClient.markTransactionForReview(.init(
+                        path: .init(id: transactionID),
+                        body: .json(.init(matchedTransactionId: matchedTransaction.id, budgetProfileId: budgetProfileID))
+                    )) else {
+                        errorMessage = fallback
+                        return false
+                    }
+                } catch {
+                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                    return false
+                }
+                continue
+            }
+
             let response = await client.markTransactionForReview(request: .with {
                 $0.transactionID = transactionID
                 $0.matchedTransactionID = matchedTransaction.id
                 $0.budgetProfileID = budgetProfileID
             })
             if case .failure(let error) = response.result {
-                errorMessage = error.message ?? "Couldn't match that transaction."
+                errorMessage = error.message ?? fallback
                 return false
             }
         }
