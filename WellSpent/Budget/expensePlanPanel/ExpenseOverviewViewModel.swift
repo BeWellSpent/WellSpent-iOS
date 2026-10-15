@@ -194,23 +194,30 @@ final class ExpenseOverviewViewModel {
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
         async let transactionsResult = fetchTransactions(focusedView: focusedView)
-        async let summaryResponse = client.getExpenseSummary(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.focusedView = focusedView
-        })
+        async let summaryResult = fetchSummary(focusedView: focusedView)
 
         if let fetched = await transactionsResult {
             transactions = fetched
         }
 
-        switch await summaryResponse.result {
-        case .success(let message):
-            summary = message
-        case .failure(let error):
-            if errorMessage == nil {
-                errorMessage = error.message ?? "Couldn't load the expense summary."
-            }
+        if let fetched = await summaryResult {
+            summary = fetched
+        } else if errorMessage == nil {
+            errorMessage = "Couldn't load the expense summary."
         }
+    }
+
+    private func fetchSummary(focusedView: Bool) async -> Wellspent_V1_GetExpenseSummaryResponse? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return BudgetRESTMapping.expenseSummary(from: body)
+        }
+        guard case .success(let message) = await client.getExpenseSummary(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        }).result else { return nil }
+        return message
     }
 
     private func fetchCategories() async -> [Wellspent_V1_Category]? {

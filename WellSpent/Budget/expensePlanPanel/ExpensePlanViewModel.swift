@@ -96,15 +96,12 @@ final class ExpensePlanViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let allocationsResponse = client.listExpenseAllocations(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let allocationsResult = fetchAllocations()
         async let categoriesResult = fetchCategories()
         async let peopleResult = fetchPeople()
 
-        switch await allocationsResponse.result {
-        case .success(let message):
-            allocations = message.allocations
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load the expense plan."
+        if let fetched = await allocationsResult {
+            allocations = fetched
         }
 
         if let fetched = await categoriesResult {
@@ -116,16 +113,59 @@ final class ExpensePlanViewModel {
 
         // Needs `people` resolved first, so this can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        switch await client.getExpenseSummary(request: .with {
+        if let fetched = await fetchSummary(focusedView: focusedView) {
+            summary = fetched
+        }
+    }
+
+    private func fetchAllocations() async -> [Wellspent_V1_ExpenseAllocation]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listExpenseAllocations(.init(path: .init(id: budgetProfileID)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load the expense plan."
+                    return nil
+                }
+                return body.allocations.map(BudgetRESTMapping.expenseAllocation(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load the expense plan."
+                return nil
+            }
+        }
+        let response = await client.listExpenseAllocations(request: .with { $0.budgetProfileID = budgetProfileID })
+        switch response.result {
+        case .success(let message):
+            return message.allocations
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load the expense plan."
+            return nil
+        }
+    }
+
+    private func fetchSummary(focusedView: Bool) async -> Wellspent_V1_GetExpenseSummaryResponse? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    if errorMessage == nil { errorMessage = "Couldn't load the expense summary." }
+                    return nil
+                }
+                return BudgetRESTMapping.expenseSummary(from: body)
+            } catch {
+                if errorMessage == nil { errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load the expense summary." }
+                return nil
+            }
+        }
+        let response = await client.getExpenseSummary(request: .with {
             $0.budgetPeriodID = budgetPeriodID
             $0.focusedView = focusedView
-        }).result {
+        })
+        switch response.result {
         case .success(let message):
-            summary = message
+            return message
         case .failure(let error):
-            if errorMessage == nil {
-                errorMessage = error.message ?? "Couldn't load the expense summary."
-            }
+            if errorMessage == nil { errorMessage = error.message ?? "Couldn't load the expense summary." }
+            return nil
         }
     }
 
@@ -164,6 +204,25 @@ final class ExpensePlanViewModel {
         errorMessage = nil
 
         for change in upserted {
+            if FeatureFlags.csharpBudgetEnabled {
+                do {
+                    guard case .ok = try await restClient.upsertExpenseAllocation(.init(
+                        path: .init(id: budgetProfileID),
+                        body: .json(.init(
+                            categoryId: change.categoryID,
+                            budgetPersonId: change.budgetPersonID == 0 ? nil : change.budgetPersonID,
+                            plannedAmount: BudgetRESTMapping.restMoney(from: change.plannedAmount)
+                        ))
+                    )) else {
+                        errorMessage = "Couldn't save that allocation."
+                        continue
+                    }
+                } catch {
+                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't save that allocation."
+                }
+                continue
+            }
+
             let response = await client.upsertExpenseAllocation(request: .with {
                 $0.budgetProfileID = budgetProfileID
                 $0.categoryID = change.categoryID
@@ -176,6 +235,22 @@ final class ExpensePlanViewModel {
         }
 
         for id in deletedIDs {
+            if FeatureFlags.csharpBudgetEnabled {
+                do {
+                    // allocationId is declared int32 in the contract despite ExpenseAllocation.id being
+                    // int64 (SERIAL bigint) everywhere else — a minor, non-blocking contract inconsistency,
+                    // unlike the RecurringFrequency gap; truncating avoids a crash on the (never-reached-in-
+                    // practice) case where this table's row count exceeds Int32.max.
+                    guard case .ok = try await restClient.deleteExpenseAllocation(.init(path: .init(id: budgetProfileID, allocationId: Int32(truncatingIfNeeded: id)))) else {
+                        errorMessage = "Couldn't remove that allocation."
+                        continue
+                    }
+                } catch {
+                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't remove that allocation."
+                }
+                continue
+            }
+
             let response = await client.deleteExpenseAllocation(request: .with {
                 $0.id = id
                 $0.budgetProfileID = budgetProfileID

@@ -338,6 +338,63 @@ nonisolated enum BudgetRESTMapping {
         }
     }
 
+    static func expenseAllocation(from a: Components.Schemas.ExpenseAllocation) -> Wellspent_V1_ExpenseAllocation {
+        .with {
+            $0.id = a.id
+            $0.budgetProfileID = a.budgetProfileId
+            $0.categoryID = a.categoryId
+            $0.budgetPersonID = a.budgetPersonId
+            $0.plannedAmount = money(from: a.plannedAmount)
+        }
+    }
+
+    static func personExpenseSummary(from p: Components.Schemas.PersonExpenseSummary) -> Wellspent_V1_PersonExpenseSummary {
+        .with {
+            $0.budgetPersonID = p.budgetPersonId
+            $0.plannedTotal = money(from: p.plannedTotal)
+            $0.actualTotal = money(from: p.actualTotal)
+        }
+    }
+
+    static func categoryExpenseSummary(from c: Components.Schemas.CategoryExpenseSummary) -> Wellspent_V1_CategoryExpenseSummary {
+        .with {
+            $0.categoryID = c.categoryId
+            $0.plannedTotal = money(from: c.plannedTotal)
+            if let actual = c.actualTotal {
+                $0.actualTotal = money(from: actual)
+            }
+            $0.isOver = c.isOver
+            $0.personBreakdowns = c.personBreakdowns.map(personExpenseSummary(from:))
+            if let notDue = c.notDuePlannedTotal {
+                $0.notDuePlannedTotal = money(from: notDue)
+            }
+            if let nextDue = c.nextDueDate, let ts = SwiftProtobuf.Google_Protobuf_Timestamp(restDate: nextDue) {
+                $0.nextDueDate = ts
+            }
+        }
+    }
+
+    static func expenseSummary(from s: Components.Schemas.GetExpenseSummaryResponse) -> Wellspent_V1_GetExpenseSummaryResponse {
+        .with {
+            $0.incomeFromSources = money(from: s.incomeFromSources)
+            $0.incomeFromEntries = money(from: s.incomeFromEntries)
+            $0.totalCommitted = money(from: s.totalCommitted)
+            $0.totalPlanned = money(from: s.totalPlanned)
+            $0.totalActual = money(from: s.totalActual)
+            $0.uncategorizedActual = money(from: s.uncategorizedActual)
+            $0.totalOverBudget = money(from: s.totalOverBudget)
+            $0.totalUnplanned = money(from: s.totalUnplanned)
+            $0.remainderPlan = money(from: s.remainderPlan)
+            $0.remainderActual = money(from: s.remainderActual)
+            $0.remainderPlanned = money(from: s.remainderPlanned)
+            $0.planCategories = s.planCategories.map(categoryExpenseSummary(from:))
+            $0.overviewCategories = s.overviewCategories.map(categoryExpenseSummary(from:))
+            $0.fixedActualTotal = money(from: s.fixedActualTotal)
+            $0.variableActualTotal = money(from: s.variableActualTotal)
+            $0.overBudgetTransactionIds = s.overBudgetTransactionIds
+        }
+    }
+
     static func fixedExpense(from f: Components.Schemas.FixedExpense) -> Wellspent_V1_FixedExpense {
         .with {
             $0.id = f.id

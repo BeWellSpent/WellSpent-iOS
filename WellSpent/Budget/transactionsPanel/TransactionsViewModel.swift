@@ -89,18 +89,28 @@ final class TransactionsViewModel {
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
         async let transactionsResult = fetchTransactions(transactionTypeID: Self.variableTypeID, focusedView: focusedView)
-        async let summaryResponse = client.getExpenseSummary(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.focusedView = focusedView
-        })
+        async let summaryResult = fetchSummary(focusedView: focusedView)
 
         if let fetched = await transactionsResult {
             transactions = fetched.sorted { $0.date.date > $1.date.date }
         }
 
-        if case .success(let message) = await summaryResponse.result {
-            summary = message
+        if let fetched = await summaryResult {
+            summary = fetched
         }
+    }
+
+    private func fetchSummary(focusedView: Bool) async -> Wellspent_V1_GetExpenseSummaryResponse? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return BudgetRESTMapping.expenseSummary(from: body)
+        }
+        guard case .success(let message) = await client.getExpenseSummary(request: .with {
+            $0.budgetPeriodID = budgetPeriodID
+            $0.focusedView = focusedView
+        }).result else { return nil }
+        return message
     }
 
     private func fetchTransactions(transactionTypeID: Int32, focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
