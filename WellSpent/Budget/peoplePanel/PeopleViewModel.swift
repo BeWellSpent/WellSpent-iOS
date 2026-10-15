@@ -52,20 +52,32 @@ final class PeopleViewModel {
         defer { isLoading = false }
 
         async let peopleResult = fetchPeople()
-        async let incomeResponse = client.listIncomeSources(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let incomeResult = fetchIncomeSources()
         async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
 
         if let fetched = await peopleResult {
             people = fetched
         }
 
-        if case .success(let message) = await incomeResponse.result {
-            incomeSources = message.sources
+        if let fetched = await incomeResult {
+            incomeSources = fetched
         }
 
         if let user = await user {
             isFree = user.plan == .free
         }
+    }
+
+    private func fetchIncomeSources() async -> [Wellspent_V1_IncomeSource]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listIncomeSources(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.sources.map(BudgetRESTMapping.incomeSource(from:))
+        }
+        guard case .success(let message) = await client.listIncomeSources(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.sources
     }
 
     private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {

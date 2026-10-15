@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// Step 2 of `BudgetSetupFlow`. Hosts `AddEditIncomeViewModel` in `.add`
 /// mode as-is (same view model the standalone Income panel uses) — each
@@ -14,6 +15,7 @@ struct IncomeSetupStepView: View {
     let currencyCode: String
     let people: [Wellspent_V1_BudgetPerson]
     let authenticatedClient: ProtocolClient
+    let restClient: WellSpentREST.Client
     let onContinue: () -> Void
 
     @State private var viewModel: AddEditIncomeViewModel
@@ -25,6 +27,7 @@ struct IncomeSetupStepView: View {
         currencyCode: String,
         people: [Wellspent_V1_BudgetPerson],
         authenticatedClient: ProtocolClient,
+        restClient: WellSpentREST.Client,
         onContinue: @escaping () -> Void
     ) {
         self.budgetProfileID = budgetProfileID
@@ -32,13 +35,15 @@ struct IncomeSetupStepView: View {
         self.currencyCode = currencyCode
         self.people = people
         self.authenticatedClient = authenticatedClient
+        self.restClient = restClient
         self.onContinue = onContinue
         _viewModel = State(initialValue: AddEditIncomeViewModel(
             mode: .add,
             budgetProfileID: budgetProfileID,
             countryCode: countryCode,
             currencyCode: currencyCode,
-            authenticatedClient: authenticatedClient
+            authenticatedClient: authenticatedClient,
+            restClient: restClient
         ))
     }
 
@@ -84,7 +89,8 @@ struct IncomeSetupStepView: View {
                                 budgetProfileID: budgetProfileID,
                                 countryCode: countryCode,
                                 currencyCode: currencyCode,
-                                authenticatedClient: authenticatedClient
+                                authenticatedClient: authenticatedClient,
+                                restClient: restClient
                             )
                         }
                     }
@@ -120,7 +126,8 @@ struct IncomeSetupStepView: View {
             countryCode: "US",
             currencyCode: "USD",
             people: [.with { $0.id = 1; $0.userName = "Jane" }],
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         ) {}
     }
 }

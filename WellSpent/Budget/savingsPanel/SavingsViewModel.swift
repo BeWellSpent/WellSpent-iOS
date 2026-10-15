@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -17,6 +18,7 @@ final class SavingsViewModel {
     let currentUserID: String?
 
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// `SavingsSource` already carries `budgetPersonID` on the wire, so this
     /// is a plain equality filter over already-fetched data, not arithmetic —
@@ -35,12 +37,13 @@ final class SavingsViewModel {
         )
     }
 
-    init(budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func load() async {
@@ -48,23 +51,56 @@ final class SavingsViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let sourcesResponse = client.listSavingsSources(request: .with { $0.budgetProfileID = budgetProfileID })
-        async let peopleResponse = client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let sourcesResult = fetchSources()
+        async let peopleResult = fetchPeople()
         async let paymentMethodsResponse = client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID })
 
-        switch await sourcesResponse.result {
-        case .success(let message):
-            sources = message.sources
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load savings."
+        if let fetched = await sourcesResult {
+            sources = fetched
         }
 
-        if case .success(let message) = await peopleResponse.result {
-            people = message.people
+        if let fetched = await peopleResult {
+            people = fetched
         }
         if case .success(let message) = await paymentMethodsResponse.result {
             paymentMethods = message.methods
         }
+    }
+
+    private func fetchSources() async -> [Wellspent_V1_SavingsSource]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.listSavingsSources(.init(path: .init(id: budgetProfileID)))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = "Couldn't load savings."
+                    return nil
+                }
+                return body.sources.map(BudgetRESTMapping.savingsSource(from:))
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load savings."
+                return nil
+            }
+        }
+        let response = await client.listSavingsSources(request: .with { $0.budgetProfileID = budgetProfileID })
+        switch response.result {
+        case .success(let message):
+            return message.sources
+        case .failure(let error):
+            errorMessage = error.message ?? "Couldn't load savings."
+            return nil
+        }
+    }
+
+    private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.people.map(BudgetRESTMapping.person(from:))
+        }
+        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.people
     }
 
     func personName(for personID: Int64) -> String? {
@@ -106,6 +142,21 @@ final class SavingsViewModel {
     /// other rows the way payment methods/categories are.
     func delete(id: Int64) async {
         errorMessage = nil
+        let fallback = "Couldn't delete that savings source."
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteSavingsSource(.init(path: .init(id: budgetProfileID, sourceId: id))) else {
+                    errorMessage = fallback
+                    return
+                }
+                sources.removeAll { $0.id == id }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let request = Wellspent_V1_DeleteSavingsSourceRequest.with {
             $0.id = id
             $0.budgetProfileID = budgetProfileID
@@ -116,7 +167,7 @@ final class SavingsViewModel {
         case .success:
             sources.removeAll { $0.id == id }
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't delete that savings source."
+            errorMessage = error.message ?? fallback
         }
     }
 }

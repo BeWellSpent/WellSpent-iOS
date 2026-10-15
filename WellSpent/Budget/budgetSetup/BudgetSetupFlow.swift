@@ -19,6 +19,7 @@ struct BudgetSetupFlow: View {
     @State private var viewModel: BudgetSetupViewModel
     @State private var createViewModel: CreateBudgetViewModel
     private let authenticatedClient: ProtocolClient
+    private let restClient: WellSpentREST.Client
     private let currencyCode: String
     private let localeIdentifier: String
     private let onCreated: (Wellspent_V1_BudgetProfile) -> Void
@@ -36,6 +37,7 @@ struct BudgetSetupFlow: View {
         _viewModel = State(initialValue: BudgetSetupViewModel(authenticatedClient: authenticatedClient, restClient: restClient))
         _createViewModel = State(initialValue: CreateBudgetViewModel(authenticatedClient: authenticatedClient, restClient: restClient))
         self.authenticatedClient = authenticatedClient
+        self.restClient = restClient
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.onCancelled = onCancelled
@@ -63,6 +65,7 @@ struct BudgetSetupFlow: View {
                         currencyCode: currencyCode,
                         people: viewModel.people,
                         authenticatedClient: authenticatedClient,
+                        restClient: restClient,
                         onContinue: { viewModel.advance() }
                     )
                 case .savings:
@@ -71,6 +74,7 @@ struct BudgetSetupFlow: View {
                         currencyCode: currencyCode,
                         paymentMethods: viewModel.paymentMethods,
                         authenticatedClient: authenticatedClient,
+                        restClient: restClient,
                         onFinish: { dismiss() }
                     )
                 }

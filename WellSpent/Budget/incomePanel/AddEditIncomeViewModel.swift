@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -27,6 +28,7 @@ final class AddEditIncomeViewModel {
     private let budgetProfileID: String
     private let currencyCode: String
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     /// Matches the backend's `before_tax_income` country feature flag — only
     /// meaningful for US users (see docs/specs/03-data-model.md).
@@ -40,12 +42,13 @@ final class AddEditIncomeViewModel {
             && !isSubmitting
     }
 
-    init(mode: Mode, budgetProfileID: String, countryCode: String, currencyCode: String, authenticatedClient: ProtocolClient) {
+    init(mode: Mode, budgetProfileID: String, countryCode: String, currencyCode: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.mode = mode
         self.budgetProfileID = budgetProfileID
         self.countryCode = countryCode
         self.currencyCode = currencyCode
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
 
         switch mode {
         case .add:
@@ -83,6 +86,32 @@ final class AddEditIncomeViewModel {
 
         switch mode {
         case .add:
+            let fallback = "Couldn't add that income source."
+            if FeatureFlags.csharpBudgetEnabled {
+                do {
+                    let output = try await restClient.addIncomeSource(.init(
+                        path: .init(id: budgetProfileID),
+                        body: .json(.init(
+                            name: trimmedName,
+                            incomeType: BudgetRESTMapping.restIncomeType(from: incomeType),
+                            defaultAmount: BudgetRESTMapping.restMoney(from: money),
+                            recurring: recurring,
+                            budgetPersonId: personID,
+                            paymentFrequency: BudgetRESTMapping.restRecurringFrequency(from: paymentFrequency),
+                            beforeTax: applyBeforeTax
+                        ))
+                    ))
+                    guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                        errorMessage = fallback
+                        return nil
+                    }
+                    return BudgetRESTMapping.incomeSource(from: body.source)
+                } catch {
+                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                    return nil
+                }
+            }
+
             let request = Wellspent_V1_AddIncomeSourceRequest.with {
                 $0.budgetProfileID = budgetProfileID
                 $0.name = trimmedName
@@ -98,10 +127,36 @@ final class AddEditIncomeViewModel {
             case .success(let message):
                 return message.source
             case .failure(let error):
-                errorMessage = error.message ?? "Couldn't add that income source."
+                errorMessage = error.message ?? fallback
                 return nil
             }
         case .edit(let existing):
+            let fallback = "Couldn't update that income source."
+            if FeatureFlags.csharpBudgetEnabled {
+                do {
+                    let output = try await restClient.updateIncomeSource(.init(
+                        path: .init(id: budgetProfileID, sourceId: existing.id),
+                        body: .json(.init(
+                            name: trimmedName,
+                            incomeType: BudgetRESTMapping.restIncomeType(from: incomeType),
+                            defaultAmount: BudgetRESTMapping.restMoney(from: money),
+                            recurring: recurring,
+                            budgetPersonId: personID,
+                            paymentFrequency: BudgetRESTMapping.restRecurringFrequency(from: paymentFrequency),
+                            beforeTax: applyBeforeTax
+                        ))
+                    ))
+                    guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                        errorMessage = fallback
+                        return nil
+                    }
+                    return BudgetRESTMapping.incomeSource(from: body.source)
+                } catch {
+                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                    return nil
+                }
+            }
+
             let request = Wellspent_V1_UpdateIncomeSourceRequest.with {
                 $0.id = existing.id
                 $0.budgetProfileID = budgetProfileID
@@ -118,7 +173,7 @@ final class AddEditIncomeViewModel {
             case .success(let message):
                 return message.source
             case .failure(let error):
-                errorMessage = error.message ?? "Couldn't update that income source."
+                errorMessage = error.message ?? fallback
                 return nil
             }
         }
