@@ -405,7 +405,8 @@ struct FixedExpensesListView: View {
                     canMutate: canMutate,
                     autoUpdatePlannedAmount: viewModel.autoUpdatePlannedAmount,
                     onMarkPaid: { activeSheet = .markPaid(transaction) },
-                    onMatchTransactions: { activeSheet = .matchTransactions(transaction) }
+                    onMatchTransactions: { activeSheet = .matchTransactions(transaction) },
+                    onUnmarked: { Task { await reviewViewModel?.load() } }
                 )
                 // Edit lives on a leading (swipe-right) action now, not a row
                 // tap — frees the row itself to toggle the linked-transactions
@@ -447,6 +448,7 @@ private struct FixedExpenseRow: View {
     let autoUpdatePlannedAmount: Bool
     let onMarkPaid: () -> Void
     let onMatchTransactions: () -> Void
+    let onUnmarked: () -> Void
     @State private var isRePlanNoticePresented = false
 
     @State private var isExpanded = false
@@ -528,7 +530,17 @@ private struct FixedExpenseRow: View {
                             }
                         }
                         if transaction.isPaid {
-                            Task { await viewModel.unmark(transaction) }
+                            Task {
+                                await viewModel.unmark(transaction)
+                                // Unmarking resets any confirmed TransactionReview
+                                // matched to this transaction back to "pending"
+                                // server-side — reviewViewModel's own cached
+                                // `reviews` array doesn't know that happened, so
+                                // the chevron/linked-transactions display stays
+                                // stale (confirmed) until its next poll unless
+                                // told to refresh now.
+                                onUnmarked()
+                            }
                         } else {
                             onMarkPaid()
                         }
