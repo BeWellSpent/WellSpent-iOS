@@ -244,7 +244,8 @@ struct FixedExpensesListView: View {
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
-                authenticatedClient: authenticatedClient
+                authenticatedClient: authenticatedClient,
+                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
             ) { expense, transaction in
                 viewModel.addFromCreate(expense: expense, transaction: transaction)
             }
@@ -264,7 +265,8 @@ struct FixedExpensesListView: View {
                         currencyCode: currencyCode,
                         categories: viewModel.categories,
                         paymentMethods: viewModel.paymentMethods,
-                        authenticatedClient: authenticatedClient
+                        authenticatedClient: authenticatedClient,
+                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                     ) { _ in
                         Task { await viewModel.handleTemplateUpdated() }
                     }
@@ -292,7 +294,8 @@ struct FixedExpensesListView: View {
                     currencyCode: currencyCode,
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
-                    authenticatedClient: authenticatedClient
+                    authenticatedClient: authenticatedClient,
+                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 ) { _ in
                     Task { await viewModel.handleTemplateUpdated() }
                 }

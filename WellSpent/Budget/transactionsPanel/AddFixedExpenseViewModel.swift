@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import os
 import WellSpentAPI
+import WellSpentREST
 
 @MainActor
 @Observable
@@ -37,6 +38,7 @@ final class AddFixedExpenseViewModel {
     private let budgetProfileID: String
     private let currencyCode: String
     private let client: Wellspent_V1_BudgetServiceClient
+    private let restClient: WellSpentREST.Client
 
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
@@ -45,10 +47,11 @@ final class AddFixedExpenseViewModel {
             && !isSubmitting
     }
 
-    init(budgetProfileID: String, currencyCode: String, authenticatedClient: ProtocolClient) {
+    init(budgetProfileID: String, currencyCode: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+        self.restClient = restClient
     }
 
     func setStartDate(_ value: Date) {
@@ -105,13 +108,53 @@ final class AddFixedExpenseViewModel {
             $0.nanos = amount.nanos
             $0.currency = currencyCode
         }
+        let anchorTimestamp = Google_Protobuf_Timestamp(dateOnly: startDate)
+        let totalPayments = Int32(paymentsText) ?? 0
+        let fallback = "Couldn't create that fixed expense."
+        Self.logger.info("creating fixed expense name=\(self.name, privacy: .public) hasPaymentPlan=\(self.endDate != nil, privacy: .public) totalPayments=\(totalPayments, privacy: .public)")
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                let output = try await restClient.createFixedExpense(.init(
+                    path: .init(id: budgetProfileID),
+                    body: .json(.init(
+                        name: name.trimmingCharacters(in: .whitespaces),
+                        plannedAmount: BudgetRESTMapping.restMoney(from: money),
+                        categoryId: categoryID,
+                        paymentMethodId: paymentMethodID,
+                        dayOfMonth: FixedExpenseScheduling.dayOfMonth(for: startDate),
+                        intervalMonths: Int32(intervalMonths),
+                        anchorDate: anchorTimestamp.restDateString,
+                        frequencyUnit: BudgetRESTMapping.restFrequencyUnit(from: frequencyUnit),
+                        intervalWeeks: Int32(intervalWeeks),
+                        dayOfWeek: FixedExpenseScheduling.dayOfWeek(for: startDate),
+                        endDate: endDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
+                        totalPayments: totalPayments
+                    ))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
+                    Self.logger.error("create fixed expense failed")
+                    return nil
+                }
+                let expense = BudgetRESTMapping.fixedExpense(from: body.fixedExpense)
+                let transaction = body.transaction.map(BudgetRESTMapping.transaction(from:)) ?? .init()
+                Self.logger.info("create fixed expense succeeded fixedExpenseID=\(expense.id, privacy: .public)")
+                return (expense, transaction)
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                Self.logger.error("create fixed expense failed error=\(String(describing: error), privacy: .public)")
+                return nil
+            }
+        }
+
         let request = Wellspent_V1_CreateFixedExpenseRequest.with {
             $0.budgetProfileID = budgetProfileID
             $0.name = name.trimmingCharacters(in: .whitespaces)
             $0.plannedAmount = money
             $0.categoryID = categoryID
             $0.paymentMethodID = paymentMethodID
-            $0.anchorDate = Google_Protobuf_Timestamp(dateOnly: startDate)
+            $0.anchorDate = anchorTimestamp
             $0.dayOfMonth = FixedExpenseScheduling.dayOfMonth(for: startDate)
             $0.dayOfWeek = FixedExpenseScheduling.dayOfWeek(for: startDate)
             $0.frequencyUnit = frequencyUnit
@@ -120,9 +163,8 @@ final class AddFixedExpenseViewModel {
             if let endDate {
                 $0.endDate = Google_Protobuf_Timestamp(dateOnly: endDate)
             }
-            $0.totalPayments = Int32(paymentsText) ?? 0
+            $0.totalPayments = totalPayments
         }
-        Self.logger.info("creating fixed expense name=\(self.name, privacy: .public) hasPaymentPlan=\(self.endDate != nil, privacy: .public) totalPayments=\(request.totalPayments, privacy: .public)")
         let response = await client.createFixedExpense(request: request)
 
         switch response.result {
@@ -130,7 +172,7 @@ final class AddFixedExpenseViewModel {
             Self.logger.info("create fixed expense succeeded fixedExpenseID=\(message.expense.id, privacy: .public)")
             return (message.expense, message.transaction)
         case .failure(let error):
-            errorMessage = error.message ?? "Couldn't create that fixed expense."
+            errorMessage = error.message ?? fallback
             Self.logger.error("create fixed expense failed error=\(String(describing: error), privacy: .public)")
             return nil
         }

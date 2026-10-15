@@ -66,14 +66,14 @@ final class FixedExpensesViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let fixedExpensesResponse = client.listFixedExpenses(request: .with { $0.budgetProfileID = budgetProfileID })
+        async let fixedExpensesResult = fetchFixedExpenses()
         async let categoriesResult = fetchCategories()
         async let paymentMethodsResult = fetchPaymentMethods()
         async let peopleResult = fetchPeople()
         async let profileResult = fetchProfile()
 
-        if case .success(let message) = await fixedExpensesResponse.result {
-            fixedExpenses = message.expenses
+        if let fetched = await fixedExpensesResult {
+            fixedExpenses = fetched
         }
         if let fetched = await categoriesResult {
             categories = fetched
@@ -188,6 +188,18 @@ final class FixedExpensesViewModel {
             return nil
         }
         return message.profile
+    }
+
+    private func fetchFixedExpenses() async -> [Wellspent_V1_FixedExpense]? {
+        if FeatureFlags.csharpBudgetEnabled {
+            guard let output = try? await restClient.listFixedExpenses(.init(path: .init(id: budgetProfileID))),
+                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.fixedExpenses.map(BudgetRESTMapping.fixedExpense(from:))
+        }
+        guard case .success(let message) = await client.listFixedExpenses(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
+            return nil
+        }
+        return message.expenses
     }
 
     /// Confirmed review matches for this Fixed transaction, rendered as
@@ -417,6 +429,27 @@ final class FixedExpensesViewModel {
     /// transaction-row caller can also drop its own row.
     private func deleteFixedExpense(id: String) async -> Bool {
         errorMessage = nil
+        let fallback = String(
+            localized: "Couldn't delete that fixed expense.",
+            bundle: AppLanguageStore.currentBundle,
+            locale: AppLanguageStore.currentLocale
+        )
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteFixedExpense(.init(path: .init(id: budgetProfileID, feId: id))) else {
+                    errorMessage = fallback
+                    Self.logger.error("delete fixed expense failed id=\(id, privacy: .public)")
+                    return false
+                }
+                fixedExpenses.removeAll { $0.id == id }
+                return true
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+                Self.logger.error("delete fixed expense failed id=\(id, privacy: .public) error=\(String(describing: error), privacy: .public)")
+                return false
+            }
+        }
 
         let request = Wellspent_V1_DeleteFixedExpenseRequest.with {
             $0.id = id
@@ -430,11 +463,7 @@ final class FixedExpensesViewModel {
             return true
         case .failure(let error):
             Self.logger.error("delete fixed expense failed id=\(id, privacy: .public) message=\(error.message ?? "none", privacy: .public)")
-            errorMessage = error.message ?? String(
-                localized: "Couldn't delete that fixed expense.",
-                bundle: AppLanguageStore.currentBundle,
-                locale: AppLanguageStore.currentLocale
-            )
+            errorMessage = error.message ?? fallback
             return false
         }
     }

@@ -231,6 +231,24 @@ final class TransactionsViewModel {
     /// isn't showing.
     func deleteInstallmentPlan(_ transaction: Wellspent_V1_Transaction) async {
         errorMessage = nil
+        let fallback = String(localized: "Couldn't undo the split.", locale: AppLanguageStore.currentLocale)
+
+        if FeatureFlags.csharpBudgetEnabled {
+            do {
+                guard case .ok = try await restClient.deleteInstallmentPlan(.init(
+                    path: .init(id: transaction.id),
+                    query: .init(budgetPeriodId: budgetPeriodID)
+                )) else {
+                    errorMessage = fallback
+                    return
+                }
+                await load()
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            }
+            return
+        }
+
         let response = await client.deleteInstallmentPlan(request: .with {
             $0.transactionID = transaction.id
             $0.budgetPeriodID = budgetPeriodID
@@ -240,10 +258,7 @@ final class TransactionsViewModel {
         case .success:
             await load()
         case .failure(let error):
-            errorMessage = error.message ?? String(
-                localized: "Couldn't undo the split.",
-                locale: AppLanguageStore.currentLocale
-            )
+            errorMessage = error.message ?? fallback
         }
     }
 

@@ -166,6 +166,7 @@ nonisolated enum BudgetRESTMapping {
 
     static func recurringType(from f: Components.Schemas.RecurringFrequency) -> Wellspent_V1_RecurringType {
         switch f {
+        case .unspecified: return .unspecified
         case .one_off: return .oneOff
         case .weekly: return .weekly
         case .bi_weekly: return .biWeekly
@@ -317,6 +318,7 @@ nonisolated enum BudgetRESTMapping {
     /// Weekly = 2, Bi-weekly = 3, Monthly = 4, Yearly = 5. Raw int32 FK on the proto wire.
     static func transactionFrequencyID(from f: Components.Schemas.RecurringFrequency) -> Int32 {
         switch f {
+        case .unspecified: return 0
         case .one_off: return 1
         case .weekly: return 2
         case .bi_weekly: return 3
@@ -327,11 +329,55 @@ nonisolated enum BudgetRESTMapping {
 
     static func restTransactionFrequency(from id: Int32) -> Components.Schemas.RecurringFrequency {
         switch id {
+        case 1: return .one_off
         case 2: return .weekly
         case 3: return .bi_weekly
         case 4: return .monthly
         case 5: return .yearly
-        default: return .one_off
+        default: return .unspecified
+        }
+    }
+
+    static func fixedExpense(from f: Components.Schemas.FixedExpense) -> Wellspent_V1_FixedExpense {
+        .with {
+            $0.id = f.id
+            $0.budgetProfileID = f.budgetProfileId
+            $0.name = f.name
+            $0.plannedAmount = money(from: f.plannedAmount)
+            $0.categoryID = f.categoryId
+            $0.paymentMethodID = f.paymentMethodId ?? ""
+            $0.dayOfMonth = f.dayOfMonth
+            $0.isActive = f.isActive
+            $0.intervalMonths = f.intervalMonths
+            if let nextDue = SwiftProtobuf.Google_Protobuf_Timestamp(restDate: f.nextDueDate) {
+                $0.nextDueDate = nextDue
+            }
+            if let anchor = f.anchorDate, let ts = SwiftProtobuf.Google_Protobuf_Timestamp(restDate: anchor) {
+                $0.anchorDate = ts
+            }
+            $0.frequencyUnit = frequencyUnit(from: f.frequencyUnit)
+            $0.intervalWeeks = f.intervalWeeks
+            $0.dayOfWeek = f.dayOfWeek
+            if let end = f.endDate, let ts = SwiftProtobuf.Google_Protobuf_Timestamp(restDate: end) {
+                $0.endDate = ts
+            }
+            $0.totalPayments = f.totalPayments
+            $0.isInstallmentPlan = f.isInstallmentPlan
+            $0.paymentsMade = f.paymentsMade
+        }
+    }
+
+    static func frequencyUnit(from u: Components.Schemas.FrequencyUnit) -> Wellspent_V1_FrequencyUnit {
+        switch u {
+        case .month: return .month
+        case .week: return .week
+        }
+    }
+
+    static func restFrequencyUnit(from u: Wellspent_V1_FrequencyUnit) -> Components.Schemas.FrequencyUnit {
+        switch u {
+        case .week: return .week
+        default: return .month
         }
     }
 
