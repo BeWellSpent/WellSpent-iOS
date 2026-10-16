@@ -116,7 +116,7 @@ struct RootView: View {
             if profileGateViewModel == nil {
                 profileGateViewModel = ProfileCompletionGateViewModel(
                     authenticatedClient: authenticatedClient,
-                    restClient: session.publicRESTClient,
+                    restClient: session.csharpPublicRESTClient,
                     csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
                 )
             }

@@ -178,7 +178,7 @@ struct BudgetMenuSheet: View {
                 NavigationLink {
                     SettingsView(
                         authenticatedClient: authenticatedClient,
-                        publicRESTClient: session.publicRESTClient,
+                        publicRESTClient: session.csharpPublicRESTClient,
                         restClient: FeatureFlags.csharpStatusChangelogEnabled
                             ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
                             : (session.authenticatedRESTClient ?? session.publicRESTClient),
