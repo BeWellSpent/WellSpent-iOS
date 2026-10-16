@@ -392,6 +392,33 @@ No auto-merge — this repo has no CI yet, so the PR is left for the user to mer
 - Per Apple's Xcode Cloud docs, `ci_scripts/` must sit at the same level as the `.xcodeproj` (or repo root) — both coincide here since `WellSpent.xcodeproj` already lives at this repo's root.
 - **The `buf generate` half is verified**: build 44 got past this script and failed later, during package-plugin validation, which is only reachable once codegen has already succeeded. The plugin-trust line above was added in response to that failure and has **not** itself been confirmed by a green run yet — check the next Xcode Cloud build before treating it as done.
 
+## Orphaned endpoint missed by the C# cutover — `ListCountries` (issue #87 follow-up)
+
+Reported live: after the Go backend's Cloud Run service was deleted, the app failed to open
+past launch with a 404 on some accounts. Root cause: `ListCountries` was never one of the 7
+domains tracked through the C2 cutover (it's conceptually part of the original 3
+global-and-cacheable REST endpoints — status banner, countries, changelog — but the cutover
+work only ever named "Status+Changelog"), so its one call site in each of 3 files
+(`ProfileCompletionGateViewModel.loadCountries`, `RegisterViewModel.loadCountries`,
+`SettingsViewModel.load`) kept calling `enabledCountries()` on a REST client built from
+`session.publicRESTClient` (the Go base URL) regardless of any feature flag — the only
+unflagged Go REST call site left in the app once every other endpoint had been migrated.
+Every other call site's `restClient`/`publicRESTClient` parameter had already been repointed
+at `session.csharpPublicRESTClient`; these three were the one place a caller still passed the
+Go client in. `ProfileCompletionGateView` is especially exposed: it's constructed
+unconditionally in `RootView`'s launch `.task` for every authenticated session and replaces
+the whole app outright while its gate is open, so an account with no country set (any
+Google/Apple sign-up, pending the "one more thing" screen) hit this on every single launch.
+Fixed by changing what's passed at the three call sites (`RootView.swift`, `LoginView.swift`,
+`BudgetMenuSheet.swift`) from `session.publicRESTClient` to `session.csharpPublicRESTClient` —
+no internal changes to any of the three view models were needed, since the parameter was
+already just "whichever REST client to use." Confirmed via a full grep sweep that no other
+call site anywhere in the app still references `session.publicRESTClient`/
+`session.authenticatedRESTClient`/`session.publicClient`/`session.authenticatedClient`
+outside of flag-guarded branches that are permanently dead code (every `FeatureFlags.csharp*`
+flag is `YES` on both configs) — this was the only live gap. `CURRENT_PROJECT_VERSION` bumped
+42 → 43.
+
 ## Roadmap
 
 "Phase 2 — core budget loop" was too large for one confirmed slice (same reasoning as Phase 0+1), so it's split further:
