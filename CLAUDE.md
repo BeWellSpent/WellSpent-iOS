@@ -419,6 +419,25 @@ outside of flag-guarded branches that are permanently dead code (every `FeatureF
 flag is `YES` on both configs) — this was the only live gap. `CURRENT_PROJECT_VERSION` bumped
 42 → 43.
 
+**Correction, same day: that grep sweep had a real blind spot and missed a second, more severe
+gap.** Reported live: login succeeded but the budget list never loaded, with **no
+corresponding request at all** in the C# backend's own logs — the tell that the call wasn't
+reaching it, not that it was reaching it and failing. Root cause: `BudgetHomeViewModel.load()`
+called `budgetClient.listBudgetProfiles(...)` — the raw Connect client, pointed at the deleted
+Go backend — **unconditionally**, with no `FeatureFlags.csharpBudgetEnabled` check at all. This
+is the home screen's own entry point, so it broke every single launch past login. The earlier
+sweep's grep pattern (`session.publicClient`/`session.authenticatedClient`) missed it because
+this file never reads those properties by name — it receives an already-dereferenced
+`ProtocolClient` as an `authenticatedClient` init parameter instead, same as most Budget-domain
+view models. A second, app-wide sweep for *any* file with a Connect-style RPC call and zero
+`FeatureFlags.csharp*` mentions anywhere in it (not just a literal `session.*Client` reference)
+found exactly one hit: this file. Every other Budget-domain view model already had the correct
+flag-gated dual path. Fixed by extracting the fetch into a private `fetchProfiles()` matching
+the shape every other Budget call site already uses (see `BudgetDetailViewModel.fetchPeriods()`
+for the reference), REST when the flag is on, Connect fallback otherwise — and logging both the
+unexpected-output and Connect-failure branches, which the original code did for neither.
+`CURRENT_PROJECT_VERSION` bumped 43 → 44.
+
 ## Roadmap
 
 "Phase 2 — core budget loop" was too large for one confirmed slice (same reasoning as Phase 0+1), so it's split further:
