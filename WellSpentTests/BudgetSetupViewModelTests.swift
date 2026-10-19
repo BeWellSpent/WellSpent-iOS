@@ -8,7 +8,6 @@ import WellSpentREST
 struct BudgetSetupViewModelTests {
     private func makeViewModel() -> BudgetSetupViewModel {
         BudgetSetupViewModel(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

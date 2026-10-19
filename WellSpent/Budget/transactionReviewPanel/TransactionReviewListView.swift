@@ -158,7 +158,6 @@ struct TransactionReviewListView: View {
         TransactionReviewListView(
             viewModel: TransactionReviewViewModel(
                 budgetProfileID: "preview-budget",
-                authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
                 restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
             ),
             currencyCode: "USD",

@@ -8,11 +8,10 @@ struct MatchTransactionsSheet: View {
     let budgetProfileID: String
     let currencyCode: String
     let localeIdentifier: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let onMatched: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(SessionStore.self) private var session
     @State private var viewModel: MatchTransactionsViewModel?
     @State private var filter = ""
 
@@ -36,8 +35,7 @@ struct MatchTransactionsSheet: View {
                     viewModel = MatchTransactionsViewModel(
                         budgetPeriodID: budgetPeriodID,
                         budgetProfileID: budgetProfileID,
-                        authenticatedClient: authenticatedClient,
-                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                        restClient: authenticatedRESTClient
                     )
                 }
                 await viewModel?.load()
@@ -152,8 +150,7 @@ struct MatchTransactionsSheet: View {
         budgetProfileID: "preview-budget",
         currencyCode: "USD",
         localeIdentifier: "en",
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         onMatched: {}
     )
-    .environment(SessionStore())
 }

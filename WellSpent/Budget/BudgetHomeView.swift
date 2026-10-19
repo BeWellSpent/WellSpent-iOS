@@ -48,10 +48,9 @@ struct BudgetHomeView: View {
                 .sheet(item: $activeSheet) { sheet in
                     switch sheet {
                     case .createBudget:
-                        if let authenticatedClient = session.authenticatedClient {
+                        if let authenticatedRESTClient = session.authenticatedRESTClient {
                             BudgetSetupFlow(
-                                authenticatedClient: authenticatedClient,
-                                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
+                                restClient: authenticatedRESTClient,
                                 currencyCode: viewModel?.currencyCode ?? "USD",
                                 localeIdentifier: viewModel?.localeIdentifier ?? "en",
                                 // The profile was handed over the moment it was
@@ -72,18 +71,11 @@ struct BudgetHomeView: View {
                     }
                 }
                 .task {
-                    guard viewModel == nil, let authenticatedClient = session.authenticatedClient else { return }
-                    let model = BudgetHomeViewModel(
-                        authenticatedClient: authenticatedClient,
-                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
-                    )
+                    guard viewModel == nil, let authenticatedRESTClient = session.authenticatedRESTClient else { return }
+                    let model = BudgetHomeViewModel(restClient: authenticatedRESTClient)
                     viewModel = model
                     await model.load()
-                    await announceWhatsNewIfNeeded(
-                        authenticatedClient: FeatureFlags.csharpStatusChangelogEnabled
-                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
-                            : (session.authenticatedRESTClient ?? session.publicRESTClient)
-                    )
+                    await announceWhatsNewIfNeeded(authenticatedClient: authenticatedRESTClient)
                 }
         }
     }
@@ -97,8 +89,7 @@ struct BudgetHomeView: View {
                 // one whose view models were never given a profile.
                 BudgetDetailView(
                     profile: profile,
-                    authenticatedClient: session.authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
+                    authenticatedRESTClient: session.authenticatedRESTClient,
                     currencyCode: viewModel.currencyCode,
                     localeIdentifier: viewModel.localeIdentifier,
                     onUpdated: { viewModel.replaceProfile($0) },

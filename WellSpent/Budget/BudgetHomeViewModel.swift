@@ -26,8 +26,6 @@ final class BudgetHomeViewModel {
     /// At most one owned profile per account.
     var profile: Wellspent_V1_BudgetProfile? { profiles.first }
 
-    let userClient: Wellspent_V1_UserServiceClient
-    let budgetClient: Wellspent_V1_BudgetServiceClient
     let restClient: WellSpentREST.Client
 
     /// ISO 4217 code. Falls back to "USD" when the profile hasn't loaded yet
@@ -43,9 +41,7 @@ final class BudgetHomeViewModel {
         return language.isEmpty ? "en" : language
     }
 
-    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
-        self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
-        self.budgetClient = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+    init(restClient: WellSpentREST.Client) {
         self.restClient = restClient
     }
 
@@ -54,7 +50,7 @@ final class BudgetHomeViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
+        async let user = UserRESTMapping.currentUser(restClient: restClient)
         async let fetchedProfiles = fetchProfiles()
 
         if let user = await user {
@@ -67,36 +63,17 @@ final class BudgetHomeViewModel {
         }
     }
 
-    /// This was the one Budget RPC still calling `budgetClient` (Connect)
-    /// unconditionally, missed by the rest of the domain's cutover — every
-    /// other Budget call site branches on `FeatureFlags.csharpBudgetEnabled`.
-    /// Confirmed live: Connect pointed at the deleted Go backend, so this
-    /// failed with no corresponding log on the C# backend at all, right
-    /// after a successful REST login — the two were silently using different
-    /// base URLs.
     private func fetchProfiles() async -> [Wellspent_V1_BudgetProfile]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.listBudgetProfiles(.init())
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    Self.logger.error("listBudgetProfiles unexpected output")
-                    errorMessage = "Couldn't load your budgets."
-                    return nil
-                }
-                return body.profiles.map(BudgetRESTMapping.profile(from:))
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load your budgets."
+        do {
+            let output = try await restClient.listBudgetProfiles(.init())
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                Self.logger.error("listBudgetProfiles unexpected output")
+                errorMessage = "Couldn't load your budgets."
                 return nil
             }
-        }
-
-        let response = await budgetClient.listBudgetProfiles(request: Wellspent_V1_ListBudgetProfilesRequest())
-        switch response.result {
-        case .success(let message):
-            return message.profiles
-        case .failure(let error):
-            Self.logger.error("listBudgetProfiles (Connect) failed: \(error.message ?? "unknown", privacy: .public)")
-            errorMessage = error.message ?? "Couldn't load your budgets."
+            return body.profiles.map(BudgetRESTMapping.profile(from:))
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load your budgets."
             return nil
         }
     }

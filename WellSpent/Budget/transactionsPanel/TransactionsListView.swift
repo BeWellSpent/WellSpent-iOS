@@ -12,7 +12,7 @@ struct TransactionsListView: View {
 
     let budgetPeriodID: String
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
     /// See `ExpensePlanView.selectedKind` — owned by `BudgetDetailView` so it
@@ -77,7 +77,7 @@ struct TransactionsListView: View {
                 FixedExpensesListView(
                     budgetPeriodID: budgetPeriodID,
                     budgetProfileID: budgetProfileID,
-                    authenticatedClient: authenticatedClient,
+                    authenticatedRESTClient: authenticatedRESTClient,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     isAddSheetPresented: $isAddFixedExpensePresented,
@@ -99,8 +99,7 @@ struct TransactionsListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -196,8 +195,7 @@ struct TransactionsListView: View {
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
-                authenticatedClient: authenticatedClient,
-                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                restClient: authenticatedRESTClient
             ) { transaction in
                 viewModel.addTransaction(transaction)
             }
@@ -214,8 +212,7 @@ struct TransactionsListView: View {
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
                     isArchivedPeriod: isArchivedPeriod,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 ) { updated in
                     viewModel.replaceTransaction(updated)
                 }
@@ -232,7 +229,7 @@ struct TransactionsListView: View {
                     budgetProfileID: budgetProfileID,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
-                    authenticatedClient: authenticatedClient
+                    authenticatedRESTClient: authenticatedRESTClient
                 ) {
                     Task { await reviewViewModel?.load() }
                 }
@@ -281,7 +278,7 @@ struct TransactionsListView: View {
                     budgetPeriodID: budgetPeriodID,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
-                    authenticatedClient: authenticatedClient
+                    authenticatedRESTClient: authenticatedRESTClient
                 ) {
                     Task { await viewModel.load() }
                 }
@@ -295,7 +292,7 @@ struct TransactionsListView: View {
                 CreateFixedFromTransactionSheet(
                     transaction: fixedFromTxTarget,
                     budgetPeriodID: budgetPeriodID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedRESTClient: authenticatedRESTClient
                 ) {
                     Task { await viewModel.load() }
                 }
@@ -425,7 +422,7 @@ struct TransactionsListView: View {
         TransactionsListView(
             budgetPeriodID: "preview-period",
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
             selectedKind: .constant(.variable),

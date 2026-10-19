@@ -51,13 +51,11 @@ final class BudgetDetailViewModel {
     /// since they're profile-level, not period-level.
     var isArchivedPeriod: Bool { currentPeriod?.isArchived ?? false }
 
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
-    init(profile: Wellspent_V1_BudgetProfile, overridePeriodID: String? = nil, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(profile: Wellspent_V1_BudgetProfile, overridePeriodID: String? = nil, restClient: WellSpentREST.Client) {
         self.profile = profile
         self.overridePeriodID = overridePeriodID
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
     }
 
@@ -72,26 +70,15 @@ final class BudgetDetailViewModel {
     }
 
     private func fetchPeriods() async -> [Wellspent_V1_BudgetPeriod]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.listBudgetPeriods(.init(path: .init(id: profile.id)))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = "Couldn't load this budget's period."
-                    return nil
-                }
-                return body.periods.map(BudgetRESTMapping.period(from:))
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load this budget's period."
+        do {
+            let output = try await restClient.listBudgetPeriods(.init(path: .init(id: profile.id)))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = "Couldn't load this budget's period."
                 return nil
             }
-        }
-        let request = Wellspent_V1_ListBudgetPeriodsRequest.with { $0.budgetProfileID = profile.id }
-        let response = await client.listBudgetPeriods(request: request)
-        switch response.result {
-        case .success(let message):
-            return message.periods
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load this budget's period."
+            return body.periods.map(BudgetRESTMapping.period(from:))
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load this budget's period."
             return nil
         }
     }
@@ -99,17 +86,9 @@ final class BudgetDetailViewModel {
     /// Reloaded after the user adds one from the gate's sheet, so the "+"
     /// starts working again without leaving the screen.
     func loadPaymentMethods() async {
-        if FeatureFlags.csharpBudgetEnabled {
-            if let output = try? await restClient.listPaymentMethods(.init(path: .init(id: profile.id))),
-               case .ok(let ok) = output, let body = try? ok.body.json {
-                paymentMethods = body.methods.map(BudgetRESTMapping.paymentMethod(from:))
-            }
-            isLoadingPaymentMethods = false
-            return
-        }
-        let response = await client.listPaymentMethods(request: .with { $0.budgetProfileID = profile.id })
-        if case .success(let message) = response.result {
-            paymentMethods = message.methods
+        if let output = try? await restClient.listPaymentMethods(.init(path: .init(id: profile.id))),
+           case .ok(let ok) = output, let body = try? ok.body.json {
+            paymentMethods = body.methods.map(BudgetRESTMapping.paymentMethod(from:))
         }
         isLoadingPaymentMethods = false
     }
@@ -136,42 +115,23 @@ final class BudgetDetailViewModel {
     }
 
     private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: profile.id))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return body.people.map(BudgetRESTMapping.person(from:))
-        }
-        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = profile.id }).result else {
-            return nil
-        }
-        return message.people
+        guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: profile.id))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return body.people.map(BudgetRESTMapping.person(from:))
     }
 
     func delete() async -> Bool {
         errorMessage = nil
         let fallback = "Couldn't delete that budget."
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                guard case .ok = try await restClient.deleteBudgetProfile(.init(path: .init(id: profile.id))) else {
-                    errorMessage = fallback
-                    return false
-                }
-                return true
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        do {
+            guard case .ok = try await restClient.deleteBudgetProfile(.init(path: .init(id: profile.id))) else {
+                errorMessage = fallback
                 return false
             }
-        }
-
-        let request = Wellspent_V1_DeleteBudgetProfileRequest.with { $0.id = profile.id }
-        let response = await client.deleteBudgetProfile(request: request)
-
-        switch response.result {
-        case .success:
             return true
-        case .failure(let error):
-            errorMessage = error.message ?? fallback
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
             return false
         }
     }

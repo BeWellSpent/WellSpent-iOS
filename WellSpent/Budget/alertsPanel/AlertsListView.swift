@@ -1,10 +1,10 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct AlertsListView: View {
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient
-    @Environment(SessionStore.self) private var session
+    let authenticatedRESTClient: WellSpentREST.Client
 
     @State private var viewModel: AlertsViewModel?
 
@@ -21,8 +21,7 @@ struct AlertsListView: View {
             if viewModel == nil {
                 viewModel = AlertsViewModel(
                     budgetProfileID: budgetProfileID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -152,7 +151,7 @@ private struct AlertRow: View {
     NavigationStack {
         AlertsListView(
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
     .environment(SessionStore())

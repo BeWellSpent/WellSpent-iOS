@@ -14,7 +14,6 @@ struct AddEditIncomeView: View {
         countryCode: String,
         currencyCode: String,
         people: [Wellspent_V1_BudgetPerson],
-        authenticatedClient: ProtocolClient,
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_IncomeSource) -> Void
     ) {
@@ -23,7 +22,6 @@ struct AddEditIncomeView: View {
             budgetProfileID: budgetProfileID,
             countryCode: countryCode,
             currencyCode: currencyCode,
-            authenticatedClient: authenticatedClient,
             restClient: restClient
         ))
         self.people = people
@@ -131,7 +129,6 @@ struct AddEditIncomeView: View {
         countryCode: "US",
         currencyCode: "USD",
         people: [.with { $0.id = 1; $0.userName = "Jane" }],
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }
@@ -150,7 +147,6 @@ struct AddEditIncomeView: View {
         countryCode: "US",
         currencyCode: "USD",
         people: [.with { $0.id = 1; $0.userName = "Jane" }],
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }

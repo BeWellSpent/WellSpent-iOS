@@ -13,7 +13,7 @@ struct ExpensePlanView: View {
 
     let budgetPeriodID: String
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
     /// Owned by `BudgetDetailView`, not locally — the visible nav bar belongs
@@ -66,7 +66,7 @@ struct ExpensePlanView: View {
                 ExpenseOverviewListView(
                     budgetPeriodID: budgetPeriodID,
                     budgetProfileID: budgetProfileID,
-                    authenticatedClient: authenticatedClient,
+                    authenticatedRESTClient: authenticatedRESTClient,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier
                 )
@@ -81,8 +81,7 @@ struct ExpensePlanView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -234,7 +233,7 @@ struct ExpensePlanView: View {
         ExpensePlanView(
             budgetPeriodID: "preview-period",
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
             selectedKind: .constant(.plan),

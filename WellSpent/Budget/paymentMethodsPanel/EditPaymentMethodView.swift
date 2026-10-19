@@ -9,11 +9,10 @@ struct EditPaymentMethodView: View {
 
     init(
         method: Wellspent_V1_PaymentMethod,
-        authenticatedClient: ProtocolClient,
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_PaymentMethod) -> Void
     ) {
-        _viewModel = Bindable(wrappedValue: EditPaymentMethodViewModel(method: method, authenticatedClient: authenticatedClient, restClient: restClient))
+        _viewModel = Bindable(wrappedValue: EditPaymentMethodViewModel(method: method, restClient: restClient))
         self.onDone = onDone
     }
 
@@ -75,7 +74,6 @@ struct EditPaymentMethodView: View {
             $0.alias = "Household Card"
             $0.color = PresetColors.all[2]
         },
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }

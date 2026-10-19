@@ -1,13 +1,12 @@
 import SwiftUI
-import WellSpentAPI
 import WellSpentREST
 
 struct RegisterView: View {
     @Environment(SessionStore.self) private var session
     @Bindable private var viewModel: RegisterViewModel
 
-    init(publicClient: ProtocolClient, publicRESTClient: WellSpentREST.Client) {
-        _viewModel = Bindable(wrappedValue: RegisterViewModel(publicClient: publicClient, publicRESTClient: publicRESTClient))
+    init(publicRESTClient: WellSpentREST.Client) {
+        _viewModel = Bindable(wrappedValue: RegisterViewModel(publicRESTClient: publicRESTClient))
     }
 
     var body: some View {
@@ -119,17 +118,14 @@ struct RegisterView: View {
             .disabled(!viewModel.canSubmit)
             .accessibilityIdentifier("registerButton")
 
-            SocialSignInButtons(publicClient: session.publicClient)
+            SocialSignInButtons()
         }
     }
 }
 
 #Preview {
     NavigationStack {
-        RegisterView(
-            publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-            publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
-        )
+        RegisterView(publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"))
     }
     .environment(SessionStore())
 }

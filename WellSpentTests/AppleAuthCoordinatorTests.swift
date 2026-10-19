@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import WellSpentAPI
 
 @testable import WellSpent
 
@@ -52,37 +51,24 @@ struct AppleAuthCoordinatorTests {
         #expect(AppleAuthCoordinator.string(from: data) == nil)
     }
 
-    // MARK: - errorMessage(for:)
+    // MARK: - errorMessage(forRESTCode:)
 
-    // The backend maps an unverifiable identity token to invalidArgument.
-    @Test("maps invalidArgument to a verification-specific message")
+    // The backend maps an unverifiable identity token to invalid_argument.
+    @Test("maps invalid_argument to a verification-specific message")
     func mapsInvalidArgument() {
-        let message = AppleAuthCoordinator.errorMessage(
-            for: ConnectError(code: .invalidArgument, message: "invalid Apple identity token")
-        )
+        let message = AppleAuthCoordinator.errorMessage(forRESTCode: "invalid_argument")
         #expect(message == "Apple sign-in couldn't be verified. Please try again.")
     }
 
-    @Test("maps permissionDenied to an account-state message")
-    func mapsPermissionDenied() {
-        let message = AppleAuthCoordinator.errorMessage(
-            for: ConnectError(code: .permissionDenied, message: "account is inactive")
-        )
+    @Test("maps forbidden to an account-state message")
+    func mapsForbidden() {
+        let message = AppleAuthCoordinator.errorMessage(forRESTCode: "forbidden")
         #expect(message == "This account can't sign in right now.")
-    }
-
-    @Test(
-        "maps unavailable/deadlineExceeded to a connectivity message",
-        arguments: [Code.unavailable, Code.deadlineExceeded]
-    )
-    func mapsConnectivityErrors(code: Code) {
-        let message = AppleAuthCoordinator.errorMessage(for: ConnectError(code: code, message: nil))
-        #expect(message == "Can't reach the server. Check your connection and try again.")
     }
 
     @Test("falls back to a generic message for unexpected codes")
     func mapsUnknownCode() {
-        let message = AppleAuthCoordinator.errorMessage(for: ConnectError(code: .internalError, message: nil))
+        let message = AppleAuthCoordinator.errorMessage(forRESTCode: "internal")
         #expect(message == AppleAuthCoordinator.genericErrorMessage())
     }
 }

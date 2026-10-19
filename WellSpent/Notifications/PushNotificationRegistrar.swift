@@ -1,6 +1,5 @@
 import UIKit
 import UserNotifications
-import WellSpentAPI
 import WellSpentREST
 
 /// Requests notification permission and registers the resulting APNs device
@@ -32,20 +31,11 @@ enum PushNotificationRegistrar {
         }
     }
 
-    static func register(deviceToken: Data, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) async {
+    static func register(deviceToken: Data, restClient: WellSpentREST.Client) async {
         let tokenString = hexString(from: deviceToken)
         guard !tokenString.isEmpty else { return }
 
-        if FeatureFlags.csharpNotificationEnabled {
-            _ = try? await restClient.registerDeviceToken(.init(body: .json(.init(token: tokenString, platform: .ios))))
-            return
-        }
-
-        let client = Wellspent_V1_NotificationServiceClient(client: authenticatedClient)
-        _ = await client.registerDeviceToken(request: .with {
-            $0.token = tokenString
-            $0.platform = "ios"
-        })
+        _ = try? await restClient.registerDeviceToken(.init(body: .json(.init(token: tokenString, platform: .ios))))
     }
 
     /// APNs delivers the device token as raw bytes; the backend (and every

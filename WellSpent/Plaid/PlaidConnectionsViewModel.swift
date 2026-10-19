@@ -50,9 +50,6 @@ final class PlaidConnectionsViewModel {
     private(set) var disconnectingConnectionID: String?
     private(set) var resyncingConnectionID: String?
 
-    private let plaidClient: Wellspent_V1_PlaidServiceClient
-    private let budgetClient: Wellspent_V1_BudgetServiceClient
-    private let userClient: Wellspent_V1_UserServiceClient
     private let restClient: WellSpentREST.Client
 
     /// The caller's plan. Supplied by Settings, which has already fetched it;
@@ -68,10 +65,7 @@ final class PlaidConnectionsViewModel {
 
     private static let logger = AppLogger.logger("Plaid")
 
-    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client, budgetProfileID: String? = nil, plan: Wellspent_V1_AccountPlan? = nil) {
-        self.plaidClient = Wellspent_V1_PlaidServiceClient(client: authenticatedClient)
-        self.budgetClient = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
-        self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+    init(restClient: WellSpentREST.Client, budgetProfileID: String? = nil, plan: Wellspent_V1_AccountPlan? = nil) {
         self.restClient = restClient
         self.budgetProfileID = budgetProfileID
         self.plan = plan ?? .unspecified
@@ -130,115 +124,72 @@ final class PlaidConnectionsViewModel {
         // Only the cross-budget list needs these — for row captions and the
         // connect-flow budget picker. A budget-scoped screen already knows
         // which budget it's on and captions rows by owner instead.
-        async let budgetsResponse = budgetProfileID == nil
-            ? budgetClient.listBudgetProfiles(request: Wellspent_V1_ListBudgetProfilesRequest())
-            : nil
+        async let fetchedBudgets = budgetProfileID == nil ? fetchBudgets() : nil
 
         if let fetched = await connectionsResult {
             connections = fetched.connections
             syncWarnings = fetched.warnings
         }
 
-        if case .success(let message)? = await budgetsResponse?.result {
-            budgets = message.profiles
+        if let fetched = await fetchedBudgets {
+            budgets = fetched
         }
 
-        if needsPlanFetch, let user = await UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled) {
+        if needsPlanFetch, let user = await UserRESTMapping.currentUser(restClient: restClient) {
             plan = user.plan
         }
     }
 
+    private func fetchBudgets() async -> [Wellspent_V1_BudgetProfile]? {
+        do {
+            let output = try await restClient.listBudgetProfiles(.init())
+            guard case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+            return body.profiles.map(BudgetRESTMapping.profile(from:))
+        } catch {
+            return nil
+        }
+    }
+
     private func fetchConnections() async -> (connections: [Wellspent_V1_PlaidConnection], warnings: [Wellspent_V1_BudgetSyncWarning])? {
-        if FeatureFlags.csharpPlaidEnabled {
-            do {
-                let output = try await restClient.getPlaidConnections(.init(query: .init(budgetProfileId: budgetProfileID)))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = "Couldn't load connected bank accounts."
-                    return nil
-                }
-                return (body.connections.map(PlaidRESTMapping.connection(from:)), body.warnings.map(PlaidRESTMapping.syncWarning(from:)))
-            } catch {
-                // A cancelled request isn't a real failure — see the Connect path's identical note below.
-                if let urlError = error as? URLError, urlError.code == .cancelled { return nil }
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load connected bank accounts."
+        do {
+            let output = try await restClient.getPlaidConnections(.init(query: .init(budgetProfileId: budgetProfileID)))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = "Couldn't load connected bank accounts."
                 return nil
             }
-        }
-
-        let response = await plaidClient.getPlaidConnections(request: .with {
-            if let budgetProfileID { $0.budgetProfileID = budgetProfileID }
-        })
-        switch response.result {
-        case .success(let message):
-            return (message.connections, message.warnings)
-        case .failure(let error):
+            return (body.connections.map(PlaidRESTMapping.connection(from:)), body.warnings.map(PlaidRESTMapping.syncWarning(from:)))
+        } catch {
             // A cancelled request isn't a real failure — SwiftUI can cancel
             // this view's `.task` mid-flight (e.g. during a navigation
             // transition) and restart it; surfacing that as a "cancelled"
             // error message to the user is just noise from a request that
             // never got to finish, not something the user did wrong.
-            if error.code != .canceled {
-                errorMessage = error.message ?? "Couldn't load connected bank accounts."
-            }
+            if let urlError = error as? URLError, urlError.code == .cancelled { return nil }
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load connected bank accounts."
             return nil
         }
     }
 
     func startConnect(budgetProfileID: String) async {
         errorMessage = nil
-
-        if FeatureFlags.csharpPlaidEnabled {
-            guard let linkToken = await createLinkTokenViaREST(budgetProfileID: budgetProfileID, connectionID: nil, fallback: "Couldn't start bank connection.") else { return }
-            activeLinkSession = .connect(budgetProfileID: budgetProfileID)
-            activeLinkToken = linkToken
-            return
-        }
-
-        let response = await plaidClient.createLinkToken(request: .with {
-            $0.budgetProfileID = budgetProfileID
-            $0.redirectUri = Self.redirectURI
-        })
-
-        switch response.result {
-        case .success(let message):
-            activeLinkSession = .connect(budgetProfileID: budgetProfileID)
-            activeLinkToken = message.linkToken
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't start bank connection."
-        }
+        guard let linkToken = await createLinkToken(budgetProfileID: budgetProfileID, connectionID: nil, fallback: "Couldn't start bank connection.") else { return }
+        activeLinkSession = .connect(budgetProfileID: budgetProfileID)
+        activeLinkToken = linkToken
     }
 
     func startManageAccounts(_ connection: Wellspent_V1_PlaidConnection) async {
         errorMessage = nil
         managingAccountsConnectionID = connection.id
 
-        if FeatureFlags.csharpPlaidEnabled {
-            guard let linkToken = await createLinkTokenViaREST(budgetProfileID: connection.budgetProfileID, connectionID: connection.id, fallback: "Couldn't start account management.") else {
-                managingAccountsConnectionID = nil
-                return
-            }
-            activeLinkSession = .update(connectionID: connection.id)
-            activeLinkToken = linkToken
+        guard let linkToken = await createLinkToken(budgetProfileID: connection.budgetProfileID, connectionID: connection.id, fallback: "Couldn't start account management.") else {
+            managingAccountsConnectionID = nil
             return
         }
-
-        let response = await plaidClient.createLinkToken(request: .with {
-            $0.budgetProfileID = connection.budgetProfileID
-            $0.connectionID = connection.id
-            $0.redirectUri = Self.redirectURI
-        })
-
-        switch response.result {
-        case .success(let message):
-            activeLinkSession = .update(connectionID: connection.id)
-            activeLinkToken = message.linkToken
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't start account management."
-            managingAccountsConnectionID = nil
-        }
+        activeLinkSession = .update(connectionID: connection.id)
+        activeLinkToken = linkToken
     }
 
-    private func createLinkTokenViaREST(budgetProfileID: String, connectionID: String?, fallback: String) async -> String? {
+    private func createLinkToken(budgetProfileID: String, connectionID: String?, fallback: String) async -> String? {
         do {
             let output = try await restClient.createLinkToken(.init(body: .json(.init(
                 budgetProfileId: budgetProfileID,
@@ -265,44 +216,24 @@ final class PlaidConnectionsViewModel {
         guard let session else { return }
         errorMessage = nil
 
-        if FeatureFlags.csharpPlaidEnabled {
-            switch session {
-            case .connect(let budgetProfileID):
-                do {
-                    guard case .ok = try await restClient.exchangePublicToken(.init(body: .json(.init(publicToken: publicToken, budgetProfileId: budgetProfileID)))) else {
-                        errorMessage = "Couldn't finish connecting that bank."
-                        return
-                    }
-                } catch {
-                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't finish connecting that bank."
-                }
-            case .update(let connectionID):
-                do {
-                    guard case .ok = try await restClient.refreshPlaidAccounts(.init(path: .init(id: connectionID))) else {
-                        errorMessage = "Couldn't refresh that connection's accounts."
-                        return
-                    }
-                } catch {
-                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't refresh that connection's accounts."
-                }
-            }
-            await load()
-            return
-        }
-
         switch session {
         case .connect(let budgetProfileID):
-            let response = await plaidClient.exchangePublicToken(request: .with {
-                $0.publicToken = publicToken
-                $0.budgetProfileID = budgetProfileID
-            })
-            if case .failure(let error) = response.result {
-                errorMessage = error.message ?? "Couldn't finish connecting that bank."
+            do {
+                guard case .ok = try await restClient.exchangePublicToken(.init(body: .json(.init(publicToken: publicToken, budgetProfileId: budgetProfileID)))) else {
+                    errorMessage = "Couldn't finish connecting that bank."
+                    return
+                }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't finish connecting that bank."
             }
         case .update(let connectionID):
-            let response = await plaidClient.refreshPlaidAccounts(request: .with { $0.connectionID = connectionID })
-            if case .failure(let error) = response.result {
-                errorMessage = error.message ?? "Couldn't refresh that connection's accounts."
+            do {
+                guard case .ok = try await restClient.refreshPlaidAccounts(.init(path: .init(id: connectionID))) else {
+                    errorMessage = "Couldn't refresh that connection's accounts."
+                    return
+                }
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't refresh that connection's accounts."
             }
         }
 
@@ -322,34 +253,21 @@ final class PlaidConnectionsViewModel {
         resyncingConnectionID = connection.id
         defer { resyncingConnectionID = nil }
 
-        if FeatureFlags.csharpPlaidEnabled {
-            let fallback = String(localized: "Couldn't re-sync that bank.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
-            do {
-                let output = try await restClient.resyncPlaidConnection(.init(path: .init(id: connection.id)))
-                switch output {
-                case .ok:
-                    Self.logger.info("plaid resync started id=\(connection.id, privacy: .public)")
-                    await load()
-                case .badRequest(let badRequest):
-                    errorMessage = (try? badRequest.body.json.message) ?? fallback
-                default:
-                    errorMessage = fallback
-                }
-            } catch {
-                Self.logger.error("plaid resync REST failed id=\(connection.id, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        let fallback = String(localized: "Couldn't re-sync that bank.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        do {
+            let output = try await restClient.resyncPlaidConnection(.init(path: .init(id: connection.id)))
+            switch output {
+            case .ok:
+                Self.logger.info("plaid resync started id=\(connection.id, privacy: .public)")
+                await load()
+            case .badRequest(let badRequest):
+                errorMessage = (try? badRequest.body.json.message) ?? fallback
+            default:
+                errorMessage = fallback
             }
-            return
-        }
-
-        let response = await plaidClient.resyncPlaidConnection(request: .with { $0.connectionID = connection.id })
-        switch response.result {
-        case .success:
-            Self.logger.info("plaid resync started id=\(connection.id, privacy: .public)")
-            await load()
-        case .failure(let error):
-            Self.logger.error("plaid resync failed id=\(connection.id, privacy: .public) code=\(String(describing: error.code), privacy: .public)")
-            errorMessage = error.message ?? String(localized: "Couldn't re-sync that bank.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        } catch {
+            Self.logger.error("plaid resync REST failed id=\(connection.id, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
     }
 
@@ -358,25 +276,14 @@ final class PlaidConnectionsViewModel {
         disconnectingConnectionID = connection.id
         defer { disconnectingConnectionID = nil }
 
-        if FeatureFlags.csharpPlaidEnabled {
-            do {
-                guard case .ok = try await restClient.disconnectPlaid(.init(path: .init(id: connection.id))) else {
-                    errorMessage = "Couldn't disconnect that bank."
-                    return
-                }
-                await load()
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't disconnect that bank."
+        do {
+            guard case .ok = try await restClient.disconnectPlaid(.init(path: .init(id: connection.id))) else {
+                errorMessage = "Couldn't disconnect that bank."
+                return
             }
-            return
-        }
-
-        let response = await plaidClient.disconnectPlaid(request: .with { $0.connectionID = connection.id })
-        switch response.result {
-        case .success:
             await load()
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't disconnect that bank."
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't disconnect that bank."
         }
     }
 }

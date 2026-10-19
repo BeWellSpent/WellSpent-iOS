@@ -8,7 +8,6 @@ import WellSpentREST
 struct PlaidConnectionsViewModelTests {
     private func makeViewModel() -> PlaidConnectionsViewModel {
         PlaidConnectionsViewModel(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
@@ -57,7 +56,6 @@ struct PlaidConnectionsViewModelTests {
 struct PlaidConnectionsViewModelBudgetScopeTests {
     private func makeViewModel(budgetProfileID: String?) -> PlaidConnectionsViewModel {
         PlaidConnectionsViewModel(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             budgetProfileID: budgetProfileID
         )

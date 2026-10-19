@@ -10,25 +10,23 @@ struct SettingsView: View {
     /// Same storage key as `WellSpentApp`'s `@AppStorage("themeMode")` — a
     /// pure local preference, no network round trip through `SettingsViewModel`.
     @AppStorage("themeMode") private var themeMode: ThemePreference = .system
-    private let authenticatedClient: ProtocolClient
+    private let csharpAuthenticatedRESTClient: WellSpentREST.Client
     /// The authenticated REST client, for the Help section's changelog browser — gated by the
     /// Status+Changelog flag at the call site, not the User one, so it's kept separate below.
     private let restClient: WellSpentREST.Client
     private let onUpdated: (Wellspent_V1_User) -> Void
 
     init(
-        authenticatedClient: ProtocolClient,
         publicRESTClient: WellSpentREST.Client,
         restClient: WellSpentREST.Client,
         csharpAuthenticatedRESTClient: WellSpentREST.Client,
         onUpdated: @escaping (Wellspent_V1_User) -> Void
     ) {
         _viewModel = State(initialValue: SettingsViewModel(
-            authenticatedClient: authenticatedClient,
             publicRESTClient: publicRESTClient,
             csharpAuthenticatedRESTClient: csharpAuthenticatedRESTClient
         ))
-        self.authenticatedClient = authenticatedClient
+        self.csharpAuthenticatedRESTClient = csharpAuthenticatedRESTClient
         self.restClient = restClient
         self.onUpdated = onUpdated
     }
@@ -191,7 +189,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var plaidSection: some View {
         Section("Connected Bank Accounts") {
-            PlaidConnectionsView(authenticatedClient: authenticatedClient, plan: viewModel.plan)
+            PlaidConnectionsView(authenticatedRESTClient: csharpAuthenticatedRESTClient, plan: viewModel.plan)
         }
     }
 
@@ -275,7 +273,6 @@ struct SettingsView: View {
 #Preview {
     NavigationStack {
         SettingsView(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")

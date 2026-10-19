@@ -11,15 +11,13 @@ final class CreateBudgetViewModel {
     private(set) var isSubmitting = false
     private(set) var errorMessage: String?
 
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSubmitting
     }
 
-    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+    init(restClient: WellSpentREST.Client) {
         self.restClient = restClient
     }
 
@@ -29,26 +27,6 @@ final class CreateBudgetViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
-        if FeatureFlags.csharpBudgetEnabled {
-            return await submitViaREST()
-        }
-
-        let request = Wellspent_V1_CreateBudgetProfileRequest.with {
-            $0.name = name.trimmingCharacters(in: .whitespaces)
-            $0.cycle = cycle
-        }
-        let response = await client.createBudgetProfile(request: request)
-
-        switch response.result {
-        case .success(let message):
-            return message.profile
-        case .failure(let error):
-            errorMessage = Self.errorMessage(for: error)
-            return nil
-        }
-    }
-
-    private func submitViaREST() async -> Wellspent_V1_BudgetProfile? {
         let fallback = "Couldn't create that budget."
         do {
             let output = try await restClient.createBudgetProfile(.init(body: .json(.init(
@@ -70,9 +48,5 @@ final class CreateBudgetViewModel {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
             return nil
         }
-    }
-
-    static func errorMessage(for error: ConnectError) -> String {
-        error.message ?? "Couldn't create that budget."
     }
 }

@@ -1,6 +1,7 @@
 import LinkKit
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// The Plaid connection list, used by both screens that show one.
 ///
@@ -44,8 +45,7 @@ struct PlaidConnectionsView: View {
         }
     }
 
-    let authenticatedClient: ProtocolClient
-    @SwiftUI.Environment(SessionStore.self) private var session
+    let authenticatedRESTClient: WellSpentREST.Client
     /// Supplied by Settings, which has already fetched it. Left nil elsewhere,
     /// in which case the view model resolves it.
     var plan: Wellspent_V1_AccountPlan?
@@ -72,8 +72,7 @@ struct PlaidConnectionsView: View {
         .task {
             if viewModel == nil {
                 viewModel = PlaidConnectionsViewModel(
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
+                    restClient: authenticatedRESTClient,
                     budgetProfileID: budgetProfileID,
                     plan: plan
                 )
@@ -237,21 +236,19 @@ struct PlaidConnectionsView: View {
     Form {
         Section("Connected Bank Accounts") {
             PlaidConnectionsView(
-                authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+                authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
                 plan: .free
             )
         }
     }
-    .environment(SessionStore())
 }
 
 #Preview("One budget") {
     Form {
         PlaidConnectionsView(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             plan: .lifetime,
             budgetProfileID: "budget-1"
         )
     }
-    .environment(SessionStore())
 }

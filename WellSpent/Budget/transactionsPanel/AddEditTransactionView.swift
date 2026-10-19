@@ -17,7 +17,6 @@ struct AddEditTransactionView: View {
         paymentMethods: [Wellspent_V1_PaymentMethod],
         isArchivedPeriod: Bool = false,
         forceLocked: Bool = false,
-        authenticatedClient: ProtocolClient,
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_Transaction) -> Void
     ) {
@@ -27,7 +26,6 @@ struct AddEditTransactionView: View {
             currencyCode: currencyCode,
             isArchivedPeriod: isArchivedPeriod,
             forceLocked: forceLocked,
-            authenticatedClient: authenticatedClient,
             restClient: restClient
         ))
         self.categories = categories
@@ -161,7 +159,6 @@ private let previewPaymentMethods: [Wellspent_V1_PaymentMethod] = [
         currencyCode: "USD",
         categories: previewCategories,
         paymentMethods: previewPaymentMethods,
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }
@@ -179,7 +176,6 @@ private let previewPaymentMethods: [Wellspent_V1_PaymentMethod] = [
         currencyCode: "USD",
         categories: previewCategories,
         paymentMethods: previewPaymentMethods,
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }

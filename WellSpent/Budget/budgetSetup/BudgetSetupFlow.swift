@@ -18,7 +18,6 @@ struct BudgetSetupFlow: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: BudgetSetupViewModel
     @State private var createViewModel: CreateBudgetViewModel
-    private let authenticatedClient: ProtocolClient
     private let restClient: WellSpentREST.Client
     private let currencyCode: String
     private let localeIdentifier: String
@@ -27,16 +26,14 @@ struct BudgetSetupFlow: View {
     @State private var isConfirmingCancel = false
 
     init(
-        authenticatedClient: ProtocolClient,
         restClient: WellSpentREST.Client,
         currencyCode: String,
         localeIdentifier: String,
         onCancelled: @escaping () -> Void = {},
         onCreated: @escaping (Wellspent_V1_BudgetProfile) -> Void
     ) {
-        _viewModel = State(initialValue: BudgetSetupViewModel(authenticatedClient: authenticatedClient, restClient: restClient))
-        _createViewModel = State(initialValue: CreateBudgetViewModel(authenticatedClient: authenticatedClient, restClient: restClient))
-        self.authenticatedClient = authenticatedClient
+        _viewModel = State(initialValue: BudgetSetupViewModel(restClient: restClient))
+        _createViewModel = State(initialValue: CreateBudgetViewModel(restClient: restClient))
         self.restClient = restClient
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
@@ -55,7 +52,6 @@ struct BudgetSetupFlow: View {
                 case .paymentMethods:
                     PaymentMethodsSetupStepView(
                         people: viewModel.people,
-                        authenticatedClient: authenticatedClient,
                         restClient: restClient,
                         onFinish: { viewModel.advance() }
                     )
@@ -65,7 +61,6 @@ struct BudgetSetupFlow: View {
                         countryCode: viewModel.profile?.countryCode ?? "",
                         currencyCode: currencyCode,
                         people: viewModel.people,
-                        authenticatedClient: authenticatedClient,
                         restClient: restClient,
                         onContinue: { viewModel.advance() }
                     )
@@ -74,7 +69,6 @@ struct BudgetSetupFlow: View {
                         budgetProfileID: viewModel.profile?.id ?? "",
                         currencyCode: currencyCode,
                         paymentMethods: viewModel.paymentMethods,
-                        authenticatedClient: authenticatedClient,
                         restClient: restClient,
                         onFinish: { dismiss() }
                     )
@@ -172,7 +166,6 @@ struct BudgetSetupFlow: View {
 
 #Preview {
     BudgetSetupFlow(
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         currencyCode: "USD",
         localeIdentifier: "en"

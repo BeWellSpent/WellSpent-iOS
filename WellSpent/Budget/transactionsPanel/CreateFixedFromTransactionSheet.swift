@@ -7,11 +7,10 @@ import WellSpentREST
 struct CreateFixedFromTransactionSheet: View {
     let transaction: Wellspent_V1_Transaction
     let budgetPeriodID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let onCreated: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(SessionStore.self) private var session
     @State private var viewModel: CreateFixedFromTransactionViewModel?
 
     var body: some View {
@@ -44,8 +43,7 @@ struct CreateFixedFromTransactionSheet: View {
                 viewModel = CreateFixedFromTransactionViewModel(
                     transaction: transaction,
                     budgetPeriodID: budgetPeriodID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
         }
@@ -107,7 +105,7 @@ struct CreateFixedFromTransactionSheet: View {
             $0.transactionTypeID = 2
         },
         budgetPeriodID: "preview-period",
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         onCreated: {}
     )
     .environment(SessionStore())

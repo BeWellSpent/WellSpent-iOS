@@ -5,7 +5,7 @@ import WellSpentREST
 struct SavingsListView: View {
     let budgetProfileID: String
     let periodStartDate: Date?
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
     let canEdit: Bool
@@ -43,8 +43,7 @@ struct SavingsListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -94,8 +93,7 @@ struct SavingsListView: View {
                 currencyCode: currencyCode,
                 periodStartDate: periodStartDate,
                 paymentMethods: viewModel.paymentMethods,
-                authenticatedClient: authenticatedClient,
-                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                restClient: authenticatedRESTClient
             ) { source in
                 viewModel.addSource(source)
             }
@@ -110,8 +108,7 @@ struct SavingsListView: View {
                     currencyCode: currencyCode,
                     periodStartDate: periodStartDate,
                     paymentMethods: viewModel.paymentMethods,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 ) { updated in
                     viewModel.replaceSource(updated)
                 }
@@ -221,7 +218,7 @@ struct SavingsListView: View {
         SavingsListView(
             budgetProfileID: "preview-budget",
             periodStartDate: nil,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
             canEdit: true

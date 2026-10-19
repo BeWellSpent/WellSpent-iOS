@@ -30,16 +30,14 @@ final class ExpenseOverviewViewModel {
     let localeIdentifier: String
     let currentUserID: String?
 
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
     }
 
@@ -208,77 +206,39 @@ final class ExpenseOverviewViewModel {
     }
 
     private func fetchSummary(focusedView: Bool) async -> Wellspent_V1_GetExpenseSummaryResponse? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return BudgetRESTMapping.expenseSummary(from: body)
-        }
-        guard case .success(let message) = await client.getExpenseSummary(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.focusedView = focusedView
-        }).result else { return nil }
-        return message
+        guard let output = try? await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return BudgetRESTMapping.expenseSummary(from: body)
     }
 
     private func fetchCategories() async -> [Wellspent_V1_Category]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.listCategories(.init(query: .init(budgetProfileId: budgetProfileID))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return body.categories.map(BudgetRESTMapping.category(from:))
-        }
-        guard case .success(let message) = await client.listCategories(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
-            return nil
-        }
-        return message.categories
+        guard let output = try? await restClient.listCategories(.init(query: .init(budgetProfileId: budgetProfileID))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return body.categories.map(BudgetRESTMapping.category(from:))
     }
 
     private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return body.people.map(BudgetRESTMapping.person(from:))
-        }
-        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
-            return nil
-        }
-        return message.people
+        guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return body.people.map(BudgetRESTMapping.person(from:))
     }
 
     private func fetchPaymentMethods() async -> [Wellspent_V1_PaymentMethod]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.listPaymentMethods(.init(path: .init(id: budgetProfileID))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return body.methods.map(BudgetRESTMapping.paymentMethod(from:))
-        }
-        guard case .success(let message) = await client.listPaymentMethods(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
-            return nil
-        }
-        return message.methods
+        guard let output = try? await restClient.listPaymentMethods(.init(path: .init(id: budgetProfileID))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return body.methods.map(BudgetRESTMapping.paymentMethod(from:))
     }
 
     private func fetchTransactions(focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.listTransactions(.init(query: .init(budgetPeriodId: budgetPeriodID, focusedView: focusedView)))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = "Couldn't load the expense overview."
-                    return nil
-                }
-                return body.transactions.map(BudgetRESTMapping.transaction(from:))
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load the expense overview."
+        do {
+            let output = try await restClient.listTransactions(.init(query: .init(budgetPeriodId: budgetPeriodID, focusedView: focusedView)))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = "Couldn't load the expense overview."
                 return nil
             }
-        }
-        let response = await client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.focusedView = focusedView
-        })
-        switch response.result {
-        case .success(let message):
-            return message.transactions
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load the expense overview."
+            return body.transactions.map(BudgetRESTMapping.transaction(from:))
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load the expense overview."
             return nil
         }
     }

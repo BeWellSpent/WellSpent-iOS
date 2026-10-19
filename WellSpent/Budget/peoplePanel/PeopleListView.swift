@@ -1,12 +1,12 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct PeopleListView: View {
     let budgetProfileID: String
     let budgetOwnerUserID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let canManageUsers: Bool
-    @Environment(SessionStore.self) private var session
 
     @State private var viewModel: PeopleViewModel?
     @State private var editingPerson: Wellspent_V1_BudgetPerson?
@@ -26,8 +26,7 @@ struct PeopleListView: View {
                 viewModel = PeopleViewModel(
                     budgetProfileID: budgetProfileID,
                     budgetOwnerUserID: budgetOwnerUserID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -168,7 +167,7 @@ struct PeopleListView: View {
         PeopleListView(
             budgetProfileID: "preview-budget",
             budgetOwnerUserID: "preview-owner",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             canManageUsers: true
         )
     }

@@ -26,7 +26,7 @@ struct BudgetMenuSheet: View {
     @Environment(SessionStore.self) private var session
 
     let viewModel: BudgetDetailViewModel
-    let authenticatedClient: ProtocolClient?
+    let authenticatedRESTClient: WellSpentREST.Client?
     let currencyCode: String
     let localeIdentifier: String
     let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
@@ -70,13 +70,12 @@ struct BudgetMenuSheet: View {
                 }
             }
             .task {
-                guard let authenticatedClient else { return }
+                guard let authenticatedRESTClient else { return }
                 if preferencesViewModel == nil {
                     preferencesViewModel = PreferencesViewModel(
                         budgetProfileID: viewModel.profile.id,
                         currentUserID: session.userID,
-                        authenticatedClient: authenticatedClient,
-                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                        restClient: authenticatedRESTClient
                     )
                 }
                 await preferencesViewModel?.load()
@@ -157,11 +156,11 @@ struct BudgetMenuSheet: View {
     @ViewBuilder
     private var destinationsSection: some View {
         Section {
-            if let authenticatedClient {
+            if let authenticatedRESTClient {
                 NavigationLink {
                     BudgetManageView(
                         viewModel: viewModel,
-                        authenticatedClient: authenticatedClient,
+                        authenticatedRESTClient: authenticatedRESTClient,
                         currencyCode: currencyCode,
                         localeIdentifier: localeIdentifier,
                         onUpdated: onUpdated,
@@ -177,12 +176,9 @@ struct BudgetMenuSheet: View {
 
                 NavigationLink {
                     SettingsView(
-                        authenticatedClient: authenticatedClient,
-                        publicRESTClient: session.csharpPublicRESTClient,
-                        restClient: FeatureFlags.csharpStatusChangelogEnabled
-                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
-                            : (session.authenticatedRESTClient ?? session.publicRESTClient),
-                        csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
+                        publicRESTClient: session.publicRESTClient,
+                        restClient: authenticatedRESTClient,
+                        csharpAuthenticatedRESTClient: authenticatedRESTClient,
                         onUpdated: onUserUpdated
                     )
                 } label: {
@@ -195,9 +191,7 @@ struct BudgetMenuSheet: View {
                 // from this menu directly.
                 NavigationLink {
                     ChangelogView(
-                        authenticatedClient: FeatureFlags.csharpStatusChangelogEnabled
-                            ? (session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient)
-                            : (session.authenticatedRESTClient ?? session.publicRESTClient),
+                        authenticatedClient: authenticatedRESTClient,
                         localeIdentifier: localeIdentifier
                     )
                 } label: {
@@ -234,7 +228,7 @@ struct BudgetMenuSheet: View {
 }
 
 #Preview {
-    let client = APIClient.makePublicClient(baseURL: "http://localhost:1")
+    let restClient = RESTClient.makePublicClient(baseURL: "http://localhost:1")
     return BudgetMenuSheet(
         viewModel: BudgetDetailViewModel(
             profile: .with {
@@ -243,10 +237,9 @@ struct BudgetMenuSheet: View {
                 $0.cycle = .monthly
                 $0.countryCode = "US"
             },
-            authenticatedClient: client,
-            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+            restClient: restClient
         ),
-        authenticatedClient: client,
+        authenticatedRESTClient: restClient,
         currencyCode: "USD",
         localeIdentifier: "en",
         onUpdated: { _ in },

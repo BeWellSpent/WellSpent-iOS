@@ -34,7 +34,6 @@ final class EditFixedExpenseViewModel {
     private let expenseID: String
     private let budgetProfileID: String
     private let currencyCode: String
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
     /// Whether the template already had an explicit `anchor_date` when this
@@ -70,11 +69,10 @@ final class EditFixedExpenseViewModel {
         hadAnchorDate || startDate != initialStartDate
     }
 
-    init(expense: Wellspent_V1_FixedExpense, currencyCode: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(expense: Wellspent_V1_FixedExpense, currencyCode: String, restClient: WellSpentREST.Client) {
         self.expenseID = expense.id
         self.budgetProfileID = expense.budgetProfileID
         self.currencyCode = currencyCode
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
 
         name = expense.name
@@ -170,72 +168,33 @@ final class EditFixedExpenseViewModel {
         let fallback = "Couldn't update that fixed expense."
         Self.logger.info("updating fixed expense fixedExpenseID=\(self.expenseID, privacy: .public) hasPaymentPlan=\(self.endDate != nil, privacy: .public) totalPayments=\(totalPayments, privacy: .public)")
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.updateFixedExpense(.init(
-                    path: .init(id: budgetProfileID, feId: expenseID),
-                    body: .json(.init(
-                        name: name.trimmingCharacters(in: .whitespaces),
-                        plannedAmount: BudgetRESTMapping.restMoney(from: money),
-                        categoryId: categoryID,
-                        paymentMethodId: paymentMethodID,
-                        dayOfMonth: FixedExpenseScheduling.dayOfMonth(for: startDate),
-                        intervalMonths: Int32(intervalMonths),
-                        anchorDate: shouldSendAnchorDate ? Google_Protobuf_Timestamp(dateOnly: startDate).restDateString : nil,
-                        frequencyUnit: BudgetRESTMapping.restFrequencyUnit(from: frequencyUnit),
-                        intervalWeeks: Int32(intervalWeeks),
-                        dayOfWeek: FixedExpenseScheduling.dayOfWeek(for: startDate),
-                        endDate: endDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
-                        totalPayments: totalPayments
-                    ))
+        do {
+            let output = try await restClient.updateFixedExpense(.init(
+                path: .init(id: budgetProfileID, feId: expenseID),
+                body: .json(.init(
+                    name: name.trimmingCharacters(in: .whitespaces),
+                    plannedAmount: BudgetRESTMapping.restMoney(from: money),
+                    categoryId: categoryID,
+                    paymentMethodId: paymentMethodID,
+                    dayOfMonth: FixedExpenseScheduling.dayOfMonth(for: startDate),
+                    intervalMonths: Int32(intervalMonths),
+                    anchorDate: shouldSendAnchorDate ? Google_Protobuf_Timestamp(dateOnly: startDate).restDateString : nil,
+                    frequencyUnit: BudgetRESTMapping.restFrequencyUnit(from: frequencyUnit),
+                    intervalWeeks: Int32(intervalWeeks),
+                    dayOfWeek: FixedExpenseScheduling.dayOfWeek(for: startDate),
+                    endDate: endDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
+                    totalPayments: totalPayments
                 ))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = fallback
-                    Self.logger.error("update fixed expense failed fixedExpenseID=\(self.expenseID, privacy: .public)")
-                    return nil
-                }
-                Self.logger.info("update fixed expense succeeded fixedExpenseID=\(self.expenseID, privacy: .public)")
-                return BudgetRESTMapping.fixedExpense(from: body.fixedExpense)
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
-                Self.logger.error("update fixed expense failed fixedExpenseID=\(self.expenseID, privacy: .public) error=\(String(describing: error), privacy: .public)")
+            ))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = fallback
+                Self.logger.error("update fixed expense failed fixedExpenseID=\(self.expenseID, privacy: .public)")
                 return nil
             }
-        }
-
-        var request = Wellspent_V1_UpdateFixedExpenseRequest.with {
-            $0.id = expenseID
-            $0.budgetProfileID = budgetProfileID
-            $0.name = name.trimmingCharacters(in: .whitespaces)
-            $0.plannedAmount = money
-            $0.categoryID = categoryID
-            $0.paymentMethodID = paymentMethodID
-            $0.dayOfMonth = FixedExpenseScheduling.dayOfMonth(for: startDate)
-            $0.dayOfWeek = FixedExpenseScheduling.dayOfWeek(for: startDate)
-            $0.frequencyUnit = frequencyUnit
-            $0.intervalMonths = Int32(intervalMonths)
-            $0.intervalWeeks = Int32(intervalWeeks)
-            // Leaving endDate unset (rather than setting it to a zero
-            // value) is what tells the backend to clear it — see
-            // `UpdateFixedExpenseRequest.end_date`'s proto comment ("null =
-            // clear it") and `internal/handler/budget_handler.go`'s
-            // `if req.Msg.EndDate != nil` check.
-            if let endDate {
-                $0.endDate = Google_Protobuf_Timestamp(dateOnly: endDate)
-            }
-            $0.totalPayments = totalPayments
-        }
-        if shouldSendAnchorDate {
-            request.anchorDate = Google_Protobuf_Timestamp(dateOnly: startDate)
-        }
-        let response = await client.updateFixedExpense(request: request)
-
-        switch response.result {
-        case .success(let message):
             Self.logger.info("update fixed expense succeeded fixedExpenseID=\(self.expenseID, privacy: .public)")
-            return message.expense
-        case .failure(let error):
-            errorMessage = error.message ?? fallback
+            return BudgetRESTMapping.fixedExpense(from: body.fixedExpense)
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
             Self.logger.error("update fixed expense failed fixedExpenseID=\(self.expenseID, privacy: .public) error=\(String(describing: error), privacy: .public)")
             return nil
         }

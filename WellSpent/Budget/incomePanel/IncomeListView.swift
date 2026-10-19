@@ -5,7 +5,7 @@ import WellSpentREST
 struct IncomeListView: View {
     let budgetProfileID: String
     let budgetCountryCode: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
     let canEdit: Bool
@@ -42,8 +42,7 @@ struct IncomeListView: View {
                 viewModel = IncomeViewModel(
                     budgetProfileID: budgetProfileID,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -95,8 +94,7 @@ struct IncomeListView: View {
                 countryCode: budgetCountryCode,
                 currencyCode: currencyCode,
                 people: viewModel.people,
-                authenticatedClient: authenticatedClient,
-                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                restClient: authenticatedRESTClient
             ) { source in
                 viewModel.addSource(source)
             }
@@ -112,8 +110,7 @@ struct IncomeListView: View {
                     countryCode: budgetCountryCode,
                     currencyCode: currencyCode,
                     people: viewModel.people,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 ) { updated in
                     viewModel.replaceSource(updated)
                 }
@@ -164,7 +161,7 @@ struct IncomeListView: View {
         IncomeListView(
             budgetProfileID: "preview-budget",
             budgetCountryCode: "US",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
             canEdit: true

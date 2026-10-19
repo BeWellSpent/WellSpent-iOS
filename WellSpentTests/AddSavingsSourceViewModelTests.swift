@@ -12,7 +12,6 @@ struct AddSavingsSourceViewModelTests {
             budgetProfileID: "profile-1",
             currencyCode: "USD",
             periodStartDate: nil,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
@@ -58,7 +57,6 @@ struct AddSavingsSourceViewModelTests {
             budgetProfileID: "profile-1",
             currencyCode: "USD",
             periodStartDate: date,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
         #expect(viewModel.daysInMonth == 28)

@@ -1,6 +1,5 @@
 import Foundation
 import Observation
-import WellSpentAPI
 import WellSpentREST
 
 @MainActor
@@ -12,14 +11,8 @@ final class LoginViewModel {
     private(set) var isSubmitting = false
     private(set) var errorMessage: String?
 
-    private let client: Wellspent_V1_AuthServiceClient
-
     var canSubmit: Bool {
         LoginViewModel.isValidEmail(email) && !password.isEmpty && !isSubmitting
-    }
-
-    init(publicClient: ProtocolClient) {
-        self.client = Wellspent_V1_AuthServiceClient(client: publicClient)
     }
 
     func submit(session: SessionStore) async {
@@ -28,29 +21,8 @@ final class LoginViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
-        if FeatureFlags.csharpAuthEnabled {
-            await submitViaREST(session: session)
-            return
-        }
-
-        let request = Wellspent_V1_LoginRequest.with {
-            $0.email = email
-            $0.password = password
-            $0.rememberMe = rememberMe
-        }
-        let response = await client.login(request: request)
-
-        switch response.result {
-        case .success(let message):
-            session.startSession(token: message.accessToken)
-        case .failure(let error):
-            errorMessage = LoginViewModel.errorMessage(for: error)
-        }
-    }
-
-    private func submitViaREST(session: SessionStore) async {
         do {
-            let output = try await session.csharpPublicRESTClient.login(.init(body: .json(.init(
+            let output = try await session.publicRESTClient.login(.init(body: .json(.init(
                 email: email,
                 password: password,
                 rememberMe: rememberMe
@@ -76,22 +48,5 @@ final class LoginViewModel {
     static func isValidEmail(_ email: String) -> Bool {
         let pattern = #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#
         return email.range(of: pattern, options: .regularExpression) != nil
-    }
-
-    /// Maps backend error codes (see `WellSpent-backend/internal/handler/errors.go`)
-    /// to user-facing copy. `.invalidArgument` covers both "wrong email/password"
-    /// and validation failures — the backend intentionally returns the same
-    /// generic message for both on login to avoid leaking which part was wrong.
-    static func errorMessage(for error: ConnectError) -> String {
-        switch error.code {
-        case .invalidArgument:
-            return "Incorrect email or password."
-        case .permissionDenied:
-            return error.message ?? "This account can't sign in right now."
-        case .unavailable, .deadlineExceeded:
-            return "Can't reach the server. Check your connection and try again."
-        default:
-            return "Something went wrong. Please try again."
-        }
     }
 }

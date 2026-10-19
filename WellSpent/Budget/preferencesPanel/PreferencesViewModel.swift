@@ -18,15 +18,11 @@ final class PreferencesViewModel {
 
     private let budgetProfileID: String
     private let currentUserID: String?
-    private let client: Wellspent_V1_BudgetServiceClient
-    private let userClient: Wellspent_V1_UserServiceClient
     private let restClient: WellSpentREST.Client
 
-    init(budgetProfileID: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(budgetProfileID: String, currentUserID: String?, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.currentUserID = currentUserID
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
-        self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
         self.restClient = restClient
     }
 
@@ -35,7 +31,7 @@ final class PreferencesViewModel {
         defer { isLoading = false }
 
         async let peopleResult = fetchPeople()
-        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: restClient, useREST: FeatureFlags.csharpUserEnabled)
+        async let user = UserRESTMapping.currentUser(restClient: restClient)
 
         if let user = await user {
             isFree = user.plan == .free
@@ -56,15 +52,9 @@ final class PreferencesViewModel {
     }
 
     private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return body.people.map(BudgetRESTMapping.person(from:))
-        }
-        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
-            return nil
-        }
-        return message.people
+        guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return body.people.map(BudgetRESTMapping.person(from:))
     }
 
     private var savePreferencesFallback: String {
@@ -87,38 +77,23 @@ final class PreferencesViewModel {
         defer { isSaving = false }
         errorMessage = nil
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                guard case .ok = try await restClient.updateMyBudgetPreferences(.init(
-                    path: .init(id: budgetProfileID),
-                    body: .json(.init(
-                        planChartType: BudgetRESTMapping.restChartType(from: ChartPreference.stored(for: plan)),
-                        overviewChartType: BudgetRESTMapping.restChartType(from: ChartPreference.stored(for: overview))
-                    ))
-                )) else {
-                    planChart = previousPlan
-                    overviewChart = previousOverview
-                    errorMessage = savePreferencesFallback
-                    return
-                }
-            } catch {
+        do {
+            guard case .ok = try await restClient.updateMyBudgetPreferences(.init(
+                path: .init(id: budgetProfileID),
+                body: .json(.init(
+                    planChartType: BudgetRESTMapping.restChartType(from: ChartPreference.stored(for: plan)),
+                    overviewChartType: BudgetRESTMapping.restChartType(from: ChartPreference.stored(for: overview))
+                ))
+            )) else {
                 planChart = previousPlan
                 overviewChart = previousOverview
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? savePreferencesFallback
+                errorMessage = savePreferencesFallback
+                return
             }
-            return
-        }
-
-        let response = await client.updateMyBudgetPreferences(request: .with {
-            $0.budgetProfileID = budgetProfileID
-            $0.planChartType = ChartPreference.stored(for: plan)
-            $0.overviewChartType = ChartPreference.stored(for: overview)
-        })
-
-        if case .failure(let error) = response.result {
+        } catch {
             planChart = previousPlan
             overviewChart = previousOverview
-            errorMessage = error.message ?? savePreferencesFallback
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? savePreferencesFallback
         }
     }
 
@@ -130,31 +105,18 @@ final class PreferencesViewModel {
         defer { isSaving = false }
         errorMessage = nil
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                guard case .ok = try await restClient.updateMyManualMatchReviewPreference(.init(
-                    path: .init(id: budgetProfileID),
-                    body: .json(.init(enabled: enabled))
-                )) else {
-                    manualMatchReview = previous
-                    errorMessage = savePreferencesFallback
-                    return
-                }
-            } catch {
+        do {
+            guard case .ok = try await restClient.updateMyManualMatchReviewPreference(.init(
+                path: .init(id: budgetProfileID),
+                body: .json(.init(enabled: enabled))
+            )) else {
                 manualMatchReview = previous
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? savePreferencesFallback
+                errorMessage = savePreferencesFallback
+                return
             }
-            return
-        }
-
-        let response = await client.updateMyManualMatchReviewPreference(request: .with {
-            $0.budgetProfileID = budgetProfileID
-            $0.enabled = enabled
-        })
-
-        if case .failure(let error) = response.result {
+        } catch {
             manualMatchReview = previous
-            errorMessage = error.message ?? savePreferencesFallback
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? savePreferencesFallback
         }
     }
 
@@ -166,31 +128,18 @@ final class PreferencesViewModel {
         defer { isSaving = false }
         errorMessage = nil
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                guard case .ok = try await restClient.updateMyFocusedViewPreference(.init(
-                    path: .init(id: budgetProfileID),
-                    body: .json(.init(enabled: enabled))
-                )) else {
-                    focusedView = previous
-                    errorMessage = savePreferencesFallback
-                    return
-                }
-            } catch {
+        do {
+            guard case .ok = try await restClient.updateMyFocusedViewPreference(.init(
+                path: .init(id: budgetProfileID),
+                body: .json(.init(enabled: enabled))
+            )) else {
                 focusedView = previous
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? savePreferencesFallback
+                errorMessage = savePreferencesFallback
+                return
             }
-            return
-        }
-
-        let response = await client.updateMyFocusedViewPreference(request: .with {
-            $0.budgetProfileID = budgetProfileID
-            $0.enabled = enabled
-        })
-
-        if case .failure(let error) = response.result {
+        } catch {
             focusedView = previous
-            errorMessage = error.message ?? savePreferencesFallback
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? savePreferencesFallback
         }
     }
 }

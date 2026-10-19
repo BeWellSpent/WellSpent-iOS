@@ -1,12 +1,12 @@
 import SwiftUI
-import WellSpentAPI
+import WellSpentREST
 
 /// Per-person settings for one budget. Deliberately not role-gated: these are
 /// the caller's own view preferences, so a Viewer changes theirs like anyone
 /// else. The RPC takes no person id, so nothing here can edit someone else's.
 struct PreferencesView: View {
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient?
+    let authenticatedRESTClient: WellSpentREST.Client?
 
     @Environment(SessionStore.self) private var session
     @State private var viewModel: PreferencesViewModel?
@@ -71,7 +71,7 @@ struct PreferencesView: View {
                 // Budget-wide, Admin only — unlike the per-person settings above.
                 BudgetSettingsSections(
                     budgetProfileID: budgetProfileID,
-                    authenticatedClient: authenticatedClient
+                    authenticatedRESTClient: authenticatedRESTClient
                 )
             } else {
                 ProgressView()
@@ -79,13 +79,12 @@ struct PreferencesView: View {
         }
         .navigationTitle("Preferences")
         .task {
-            guard let authenticatedClient else { return }
+            guard let authenticatedRESTClient else { return }
             if viewModel == nil {
                 viewModel = PreferencesViewModel(
                     budgetProfileID: budgetProfileID,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()

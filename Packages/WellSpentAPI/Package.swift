@@ -9,7 +9,6 @@ let package = Package(
         .library(name: "WellSpentREST", targets: ["WellSpentREST"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/connectrpc/connect-swift", from: "1.2.3"),
         .package(url: "https://github.com/apple/swift-protobuf", from: "1.28.0"),
         // The REST half of the API. Apple's own generator, run as a build
         // plugin so there is no checked-in generated code and no extra step in
@@ -30,7 +29,6 @@ let package = Package(
         .target(
             name: "WellSpentAPI",
             dependencies: [
-                .product(name: "Connect", package: "connect-swift"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
             ]
         ),

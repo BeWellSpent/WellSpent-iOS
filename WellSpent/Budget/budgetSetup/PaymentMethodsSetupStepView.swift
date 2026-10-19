@@ -9,19 +9,17 @@ import WellSpentREST
 /// when there's more than one person to choose from, also matching web.
 struct PaymentMethodsSetupStepView: View {
     let people: [Wellspent_V1_BudgetPerson]
-    let authenticatedClient: ProtocolClient
     let restClient: WellSpentREST.Client
     let onFinish: () -> Void
 
     @State private var viewModel: AddPaymentMethodViewModel
     @State private var addedMethods: [Wellspent_V1_PaymentMethod] = []
 
-    init(people: [Wellspent_V1_BudgetPerson], authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client, onFinish: @escaping () -> Void) {
+    init(people: [Wellspent_V1_BudgetPerson], restClient: WellSpentREST.Client, onFinish: @escaping () -> Void) {
         self.people = people
-        self.authenticatedClient = authenticatedClient
         self.restClient = restClient
         self.onFinish = onFinish
-        let initial = AddPaymentMethodViewModel(authenticatedClient: authenticatedClient, restClient: restClient)
+        let initial = AddPaymentMethodViewModel(restClient: restClient)
         initial.personID = people.first?.id ?? 0
         _viewModel = State(initialValue: initial)
     }
@@ -59,7 +57,7 @@ struct PaymentMethodsSetupStepView: View {
                     Task {
                         if let method = await viewModel.submit() {
                             addedMethods.append(method)
-                            let fresh = AddPaymentMethodViewModel(authenticatedClient: authenticatedClient, restClient: restClient)
+                            let fresh = AddPaymentMethodViewModel(restClient: restClient)
                             fresh.personID = people.first?.id ?? 0
                             viewModel = fresh
                         }
@@ -93,7 +91,6 @@ struct PaymentMethodsSetupStepView: View {
     NavigationStack {
         PaymentMethodsSetupStepView(
             people: [.with { $0.id = 1; $0.userName = "Jane" }],
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         ) {}
     }

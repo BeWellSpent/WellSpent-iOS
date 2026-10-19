@@ -1,11 +1,12 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 struct InvitesListView: View {
     @Environment(SessionStore.self) private var session
     let budgetProfileID: String
     let budgetOwnerUserID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
 
     @State private var viewModel: InvitesViewModel?
 
@@ -24,8 +25,7 @@ struct InvitesListView: View {
                     budgetProfileID: budgetProfileID,
                     budgetOwnerUserID: budgetOwnerUserID,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -156,7 +156,7 @@ struct InvitesListView: View {
         InvitesListView(
             budgetProfileID: "preview-budget",
             budgetOwnerUserID: "preview-owner",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1")
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
     .environment(SessionStore())

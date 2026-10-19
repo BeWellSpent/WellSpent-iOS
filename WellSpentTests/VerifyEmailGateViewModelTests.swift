@@ -7,12 +7,9 @@ import WellSpentREST
 @MainActor
 struct VerifyEmailGateViewModelTests {
     private func makeViewModel() -> VerifyEmailGateViewModel {
-        let client = APIClient.makePublicClient(baseURL: "http://localhost:1")
-        return VerifyEmailGateViewModel(
-            authenticatedClient: client,
-            publicClient: client,
-            csharpPublicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
-            csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+        VerifyEmailGateViewModel(
+            publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 

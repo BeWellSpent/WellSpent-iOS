@@ -13,7 +13,6 @@ struct AddSavingsSourceView: View {
         currencyCode: String,
         periodStartDate: Date?,
         paymentMethods: [Wellspent_V1_PaymentMethod],
-        authenticatedClient: ProtocolClient,
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_SavingsSource) -> Void
     ) {
@@ -21,7 +20,6 @@ struct AddSavingsSourceView: View {
             budgetProfileID: budgetProfileID,
             currencyCode: currencyCode,
             periodStartDate: periodStartDate,
-            authenticatedClient: authenticatedClient,
             restClient: restClient
         ))
         self.paymentMethods = paymentMethods
@@ -92,7 +90,6 @@ struct AddSavingsSourceView: View {
         currencyCode: "USD",
         periodStartDate: nil,
         paymentMethods: [.with { $0.id = "pm-1"; $0.name = "Chase Checking" }],
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }

@@ -12,7 +12,6 @@ struct AddEditTransactionViewModelTests {
             budgetPeriodID: "period-1",
             currencyCode: "USD",
             isArchivedPeriod: isArchivedPeriod,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

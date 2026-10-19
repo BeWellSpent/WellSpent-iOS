@@ -1,7 +1,6 @@
 import AuthenticationServices
 import Observation
 import UIKit
-import WellSpentAPI
 import WellSpentREST
 
 /// Drives native Google Sign-In via `ASWebAuthenticationSession`. Mirrors
@@ -53,14 +52,9 @@ final class GoogleAuthCoordinator: NSObject {
     private(set) var isSigningIn = false
     private(set) var errorMessage: String?
 
-    private let client: Wellspent_V1_AuthServiceClient
     /// Held so it isn't deallocated mid-flow — `ASWebAuthenticationSession`
     /// doesn't retain itself.
     private var activeSession: ASWebAuthenticationSession?
-
-    init(publicClient: ProtocolClient) {
-        self.client = Wellspent_V1_AuthServiceClient(client: publicClient)
-    }
 
     func signIn(session sessionStore: SessionStore) async {
         guard !isSigningIn else { return }
@@ -69,20 +63,7 @@ final class GoogleAuthCoordinator: NSObject {
         defer { isSigningIn = false }
 
         let state = UUID().uuidString
-        let urlString: String
-        if FeatureFlags.csharpAuthEnabled {
-            guard let fetched = await fetchGoogleAuthURLViaREST(session: sessionStore, state: state) else { return }
-            urlString = fetched
-        } else {
-            let urlResponse = await client.getGoogleAuthURL(request: .with { $0.state = state })
-            guard case .success(let urlMessage) = urlResponse.result else {
-                if case .failure(let error) = urlResponse.result {
-                    errorMessage = error.message ?? "Couldn't start Google sign-in."
-                }
-                return
-            }
-            urlString = urlMessage.url
-        }
+        guard let urlString = await fetchGoogleAuthURL(session: sessionStore, state: state) else { return }
         guard let authURL = URL(string: urlString) else {
             errorMessage = "Couldn't start Google sign-in."
             return
@@ -111,29 +92,13 @@ final class GoogleAuthCoordinator: NSObject {
             return
         }
 
-        if FeatureFlags.csharpAuthEnabled {
-            await exchangeCodeViaREST(code: code, session: sessionStore)
-            return
-        }
-
-        let exchangeResponse = await client.exchangeGoogleCode(request: .with {
-            $0.code = code
-            $0.state = state
-            $0.redirectUri = Self.redirectURI
-        })
-
-        switch exchangeResponse.result {
-        case .success(let message):
-            sessionStore.startSession(token: message.accessToken)
-        case .failure(let error):
-            errorMessage = error.message ?? "Google sign-in failed."
-        }
+        await exchangeCode(code: code, session: sessionStore)
     }
 
     /// `state` has no counterpart in `GoogleExchangeRequest` — the CSRF check already happened client-side.
-    private func fetchGoogleAuthURLViaREST(session: SessionStore, state: String) async -> String? {
+    private func fetchGoogleAuthURL(session: SessionStore, state: String) async -> String? {
         do {
-            let output = try await session.csharpPublicRESTClient.getGoogleAuthUrl(.init(query: .init(state: state)))
+            let output = try await session.publicRESTClient.getGoogleAuthUrl(.init(query: .init(state: state)))
             switch output {
             case .ok(let ok):
                 return try ok.body.json.url
@@ -147,9 +112,9 @@ final class GoogleAuthCoordinator: NSObject {
         }
     }
 
-    private func exchangeCodeViaREST(code: String, session: SessionStore) async {
+    private func exchangeCode(code: String, session: SessionStore) async {
         do {
-            let output = try await session.csharpPublicRESTClient.exchangeGoogleCode(.init(body: .json(.init(
+            let output = try await session.publicRESTClient.exchangeGoogleCode(.init(body: .json(.init(
                 code: code,
                 redirectUri: Self.redirectURI,
                 language: "",

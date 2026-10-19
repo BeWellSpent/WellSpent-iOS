@@ -1,16 +1,10 @@
 import Foundation
 
-/// Backend base URL for the current build configuration. Debug defaults to the
-/// local dev server (`WellSpent-backend`'s `make run`, port 8080). Release
-/// points at the real production backend (`API_BASE_URL` build setting in
-/// `project.pbxproj`, Cloud Run — same instance web's production build uses).
+/// Backend base URL for the current build configuration. Debug defaults to
+/// the local dev server (port 5021). Release points at the real production
+/// backend (`CSharpAPIBaseURL` build setting in `project.pbxproj`, Cloud Run).
 nonisolated enum APIEnvironment {
     static var baseURL: String {
-        (Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String) ?? "http://localhost:8080"
-    }
-
-    /// The C# rewrite's base URL (issue #78) — same localhost on both configs until it's deployed.
-    static var csharpBaseURL: String {
         (Bundle.main.object(forInfoDictionaryKey: "CSharpAPIBaseURL") as? String) ?? "http://localhost:5021"
     }
 }

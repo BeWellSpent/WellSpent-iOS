@@ -15,13 +15,11 @@ final class MatchTransactionsViewModel {
     let budgetPeriodID: String
     let budgetProfileID: String
 
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
-    init(budgetPeriodID: String, budgetProfileID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(budgetPeriodID: String, budgetProfileID: String, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
     }
 
@@ -45,32 +43,18 @@ final class MatchTransactionsViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.listTransactions(.init(query: .init(
-                    budgetPeriodId: budgetPeriodID,
-                    transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID)
-                )))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = "Couldn't load transactions."
-                    return
-                }
-                variableTransactions = body.transactions.map(BudgetRESTMapping.transaction(from:))
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load transactions."
+        do {
+            let output = try await restClient.listTransactions(.init(query: .init(
+                budgetPeriodId: budgetPeriodID,
+                transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID)
+            )))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = "Couldn't load transactions."
+                return
             }
-            return
-        }
-
-        let response = await client.listTransactions(request: .with {
-            $0.budgetPeriodID = budgetPeriodID
-            $0.transactionTypeID = TransactionsViewModel.variableTypeID
-        })
-        switch response.result {
-        case .success(let message):
-            variableTransactions = message.transactions
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load transactions."
+            variableTransactions = body.transactions.map(BudgetRESTMapping.transaction(from:))
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load transactions."
         }
     }
 
@@ -86,29 +70,16 @@ final class MatchTransactionsViewModel {
 
         for transactionID in selectedIDs {
             let fallback = "Couldn't match that transaction."
-            if FeatureFlags.csharpBudgetEnabled {
-                do {
-                    guard case .ok = try await restClient.markTransactionForReview(.init(
-                        path: .init(id: transactionID),
-                        body: .json(.init(matchedTransactionId: matchedTransaction.id, budgetProfileId: budgetProfileID))
-                    )) else {
-                        errorMessage = fallback
-                        return false
-                    }
-                } catch {
-                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            do {
+                guard case .ok = try await restClient.markTransactionForReview(.init(
+                    path: .init(id: transactionID),
+                    body: .json(.init(matchedTransactionId: matchedTransaction.id, budgetProfileId: budgetProfileID))
+                )) else {
+                    errorMessage = fallback
                     return false
                 }
-                continue
-            }
-
-            let response = await client.markTransactionForReview(request: .with {
-                $0.transactionID = transactionID
-                $0.matchedTransactionID = matchedTransaction.id
-                $0.budgetProfileID = budgetProfileID
-            })
-            if case .failure(let error) = response.result {
-                errorMessage = error.message ?? fallback
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
                 return false
             }
         }

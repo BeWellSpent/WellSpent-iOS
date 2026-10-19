@@ -1,6 +1,5 @@
 import Foundation
 import Observation
-import WellSpentAPI
 import WellSpentREST
 
 @MainActor
@@ -19,10 +18,7 @@ final class RegisterViewModel {
     private(set) var errorMessage: String?
     private(set) var didRegister = false
 
-    private let authClient: Wellspent_V1_AuthServiceClient
-    private let userClient: Wellspent_V1_UserServiceClient
-
-    /// The country list moved to the REST transport, where it is cacheable —
+    /// The country list lives on the REST transport, where it is cacheable —
     /// it is the same three rows for every caller on earth and changes roughly
     /// never. Deliberately the *public* REST client even here, on an
     /// authenticated screen: sending a token would make the response look
@@ -39,9 +35,7 @@ final class RegisterViewModel {
             && !isSubmitting
     }
 
-    init(publicClient: ProtocolClient, publicRESTClient: WellSpentREST.Client) {
-        self.authClient = Wellspent_V1_AuthServiceClient(client: publicClient)
-        self.userClient = Wellspent_V1_UserServiceClient(client: publicClient)
+    init(publicRESTClient: WellSpentREST.Client) {
         self.restClient = publicRESTClient
     }
 
@@ -55,40 +49,15 @@ final class RegisterViewModel {
         }
     }
 
+    /// Empty language/currency/captchaToken — required-present but let the backend default; no Turnstile on iOS.
     func submit(session: SessionStore) async {
         guard canSubmit else { return }
         isSubmitting = true
         errorMessage = nil
         defer { isSubmitting = false }
 
-        if FeatureFlags.csharpAuthEnabled {
-            await submitViaREST(session: session)
-            return
-        }
-
-        let request = Wellspent_V1_RegisterRequest.with {
-            $0.email = email
-            $0.password = password
-            $0.firstName = firstName
-            $0.lastName = lastName
-            $0.countryCode = countryCode
-            $0.stateCode = isUnitedStates ? stateCode : ""
-        }
-        let response = await authClient.register(request: request)
-
-        switch response.result {
-        case .success(let message):
-            session.startSession(token: message.accessToken)
-            didRegister = true
-        case .failure(let error):
-            errorMessage = RegisterViewModel.errorMessage(for: error)
-        }
-    }
-
-    /// Empty language/currency/captchaToken — required-present but let the backend default; no Turnstile on iOS.
-    private func submitViaREST(session: SessionStore) async {
         do {
-            let output = try await session.csharpPublicRESTClient.registerUser(.init(body: .json(.init(
+            let output = try await session.publicRESTClient.registerUser(.init(body: .json(.init(
                 email: email,
                 password: password,
                 firstName: firstName,
@@ -115,9 +84,8 @@ final class RegisterViewModel {
         }
     }
 
-    /// Mirrors the backend's `validatePassword` exactly (see
-    /// `WellSpent-backend/internal/service/auth_service.go`): ≥8 characters,
-    /// at least one uppercase, lowercase, digit, and punctuation/symbol
+    /// Mirrors the backend's password validation exactly: ≥8 characters, at
+    /// least one uppercase, lowercase, digit, and punctuation/symbol
     /// character. Returns a user-facing message, or `nil` if valid.
     static func passwordError(for password: String) -> String? {
         guard password.count >= 8 else {
@@ -134,18 +102,5 @@ final class RegisterViewModel {
             return "Password must contain an uppercase letter, lowercase letter, digit, and special character."
         }
         return nil
-    }
-
-    static func errorMessage(for error: ConnectError) -> String {
-        switch error.code {
-        case .alreadyExists:
-            return "An account with that email already exists."
-        case .invalidArgument:
-            return error.message ?? "Please check your details and try again."
-        case .unavailable, .deadlineExceeded:
-            return "Can't reach the server. Check your connection and try again."
-        default:
-            return "Something went wrong. Please try again."
-        }
     }
 }
