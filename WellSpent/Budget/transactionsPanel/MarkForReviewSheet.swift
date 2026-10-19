@@ -8,11 +8,10 @@ struct MarkForReviewSheet: View {
     let budgetProfileID: String
     let currencyCode: String
     let localeIdentifier: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let onMarked: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(SessionStore.self) private var session
     @State private var viewModel: MarkForReviewViewModel?
     @State private var selectedID: String?
     @State private var filter = ""
@@ -50,8 +49,7 @@ struct MarkForReviewSheet: View {
                     viewModel = MarkForReviewViewModel(
                         budgetPeriodID: budgetPeriodID,
                         budgetProfileID: budgetProfileID,
-                        authenticatedClient: authenticatedClient,
-                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                        restClient: authenticatedRESTClient
                     )
                 }
                 await viewModel?.load()
@@ -196,8 +194,7 @@ struct MarkForReviewSheet: View {
         budgetProfileID: "preview-budget",
         currencyCode: "USD",
         localeIdentifier: "en",
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         onMarked: {}
     )
-    .environment(SessionStore())
 }

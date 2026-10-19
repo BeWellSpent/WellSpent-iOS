@@ -3,7 +3,6 @@ import Foundation
 import Observation
 import os
 import UIKit
-import WellSpentAPI
 import WellSpentREST
 
 /// Drives native Sign in with Apple.
@@ -22,16 +21,11 @@ final class AppleAuthCoordinator: NSObject {
     private(set) var isSigningIn = false
     private(set) var errorMessage: String?
 
-    private let client: Wellspent_V1_AuthServiceClient
     /// Held so neither is deallocated mid-flow — `ASAuthorizationController`
     /// doesn't retain itself, same caveat as `ASWebAuthenticationSession` in
     /// `GoogleAuthCoordinator`.
     private var activeController: ASAuthorizationController?
     private var continuation: CheckedContinuation<ASAuthorizationAppleIDCredential, Error>?
-
-    init(publicClient: ProtocolClient) {
-        self.client = Wellspent_V1_AuthServiceClient(client: publicClient)
-    }
 
     /// Presents the system Sign in with Apple sheet and, on success, exchanges
     /// the resulting credential for a session.
@@ -98,35 +92,8 @@ final class AppleAuthCoordinator: NSObject {
         let name = Self.nameComponents(from: credential.fullName)
         let authorizationCode = Self.string(from: credential.authorizationCode) ?? ""
 
-        if FeatureFlags.csharpAuthEnabled {
-            await submitViaREST(identityToken: identityToken, authorizationCode: authorizationCode, name: name, session: session)
-            return
-        }
-
-        let response = await client.signInWithApple(request: .with {
-            $0.identityToken = identityToken
-            $0.authorizationCode = authorizationCode
-            $0.firstName = name.first
-            $0.lastName = name.last
-        })
-
-        switch response.result {
-        case .success(let message):
-            session.startSession(token: message.accessToken)
-        case .failure(let error):
-            Self.logger.error("signInWithApple RPC failed code=\(String(describing: error.code), privacy: .public)")
-            errorMessage = Self.errorMessage(for: error)
-        }
-    }
-
-    private func submitViaREST(
-        identityToken: String,
-        authorizationCode: String,
-        name: (first: String, last: String),
-        session: SessionStore
-    ) async {
         do {
-            let output = try await session.csharpPublicRESTClient.signInWithApple(.init(body: .json(.init(
+            let output = try await session.publicRESTClient.signInWithApple(.init(body: .json(.init(
                 identityToken: identityToken,
                 authorizationCode: authorizationCode,
                 firstName: name.first,
@@ -166,40 +133,15 @@ final class AppleAuthCoordinator: NSObject {
         return value.isEmpty ? nil : value
     }
 
-    /// Maps backend error codes (see `WellSpent-backend/internal/handler/errors.go`)
-    /// to user-facing copy, mirroring `LoginViewModel.errorMessage(for:)`.
-    ///
-    /// Unlike `GoogleAuthCoordinator` — whose messages are plain literals and
-    /// therefore ship English-only regardless of the user's chosen language —
-    /// these go through `String(localized:bundle:locale:)`,
-    /// which is required outside a SwiftUI view body.
-    nonisolated static func errorMessage(for error: ConnectError) -> String {
-        switch error.code {
-        case .invalidArgument:
-            return String(
-                localized: "Apple sign-in couldn't be verified. Please try again.",
-                locale: AppLanguageStore.currentLocale
-            )
-        case .permissionDenied:
-            return String(
-                localized: "This account can't sign in right now.",
-                locale: AppLanguageStore.currentLocale
-            )
-        case .unavailable, .deadlineExceeded:
-            return String(
-                localized: "Can't reach the server. Check your connection and try again.",
-                locale: AppLanguageStore.currentLocale
-            )
-        default:
-            return genericErrorMessage()
-        }
-    }
-
     nonisolated static func genericErrorMessage() -> String {
         String(localized: "Apple sign-in failed. Please try again.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
-    /// Same mapping as `errorMessage(for: ConnectError)`, keyed on the REST `_Error.code` string instead.
+    /// Maps backend REST error codes (see
+    /// `WellSpent-backend/src/WellSpent.Api/Errors/ErrorHandlingMiddleware.cs`)
+    /// to user-facing copy, mirroring `LoginViewModel`'s REST error mapping.
+    /// Goes through `String(localized:bundle:locale:)` since this runs
+    /// outside a SwiftUI view body.
     nonisolated static func errorMessage(forRESTCode code: String) -> String {
         switch code {
         case "invalid_argument":

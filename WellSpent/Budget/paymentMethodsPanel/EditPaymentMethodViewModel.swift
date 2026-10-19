@@ -16,7 +16,6 @@ final class EditPaymentMethodViewModel {
     private(set) var isSubmitting = false
     private(set) var errorMessage: String?
 
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
     private let methodID: String
 
@@ -24,12 +23,11 @@ final class EditPaymentMethodViewModel {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSubmitting
     }
 
-    init(method: Wellspent_V1_PaymentMethod, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(method: Wellspent_V1_PaymentMethod, restClient: WellSpentREST.Client) {
         self.name = method.name
         self.alias = method.alias
         self.color = method.color
         self.methodID = method.id
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
     }
 
@@ -42,36 +40,18 @@ final class EditPaymentMethodViewModel {
         let trimmedAlias = alias.trimmingCharacters(in: .whitespaces)
         let fallback = "Couldn't update that payment method."
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.updatePaymentMethod(.init(
-                    path: .init(id: methodID),
-                    body: .json(.init(name: trimmedName, color: color, alias: trimmedAlias))
-                ))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = fallback
-                    return nil
-                }
-                return BudgetRESTMapping.paymentMethod(from: body.method)
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        do {
+            let output = try await restClient.updatePaymentMethod(.init(
+                path: .init(id: methodID),
+                body: .json(.init(name: trimmedName, color: color, alias: trimmedAlias))
+            ))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = fallback
                 return nil
             }
-        }
-
-        let request = Wellspent_V1_UpdatePaymentMethodRequest.with {
-            $0.id = methodID
-            $0.name = trimmedName
-            $0.color = color
-            $0.alias = trimmedAlias
-        }
-        let response = await client.updatePaymentMethod(request: request)
-
-        switch response.result {
-        case .success(let message):
-            return message.method
-        case .failure(let error):
-            errorMessage = error.message ?? fallback
+            return BudgetRESTMapping.paymentMethod(from: body.method)
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
             return nil
         }
     }

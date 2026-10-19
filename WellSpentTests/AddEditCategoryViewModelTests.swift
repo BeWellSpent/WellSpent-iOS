@@ -9,7 +9,6 @@ struct AddEditCategoryViewModelTests {
     private func makeViewModel(mode: AddEditCategoryViewModel.Mode = .add) -> AddEditCategoryViewModel {
         AddEditCategoryViewModel(
             mode: mode,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

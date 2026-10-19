@@ -9,7 +9,6 @@ struct AlertsViewModelTests {
     private func makeViewModel() -> AlertsViewModel {
         AlertsViewModel(
             budgetProfileID: "profile-1",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

@@ -62,9 +62,7 @@ struct RootView: View {
             // authenticated/unauthenticated swap below — the banner is the one
             // thing on screen that shouldn't reset when you log in or out.
             if statusBannerViewModel == nil {
-                statusBannerViewModel = StatusBannerViewModel(
-                    publicClient: FeatureFlags.csharpStatusChangelogEnabled ? session.csharpPublicRESTClient : session.publicRESTClient
-                )
+                statusBannerViewModel = StatusBannerViewModel(publicClient: session.publicRESTClient)
             }
             await statusBannerViewModel?.load()
         }
@@ -92,7 +90,7 @@ struct RootView: View {
                 }
             } else {
                 NavigationStack {
-                    LoginView(publicClient: session.publicClient)
+                    LoginView()
                 }
             }
         }
@@ -100,24 +98,21 @@ struct RootView: View {
             // The verification link opens in a browser, so the answer changes
             // outside the app entirely — check on every login, and again on
             // every foreground below.
-            guard session.isAuthenticated, let authenticatedClient = session.authenticatedClient else {
+            guard session.isAuthenticated, let authenticatedRESTClient = session.authenticatedRESTClient else {
                 verifyGateViewModel = nil
                 profileGateViewModel = nil
                 return
             }
             if verifyGateViewModel == nil {
                 verifyGateViewModel = VerifyEmailGateViewModel(
-                    authenticatedClient: authenticatedClient,
-                    publicClient: session.publicClient,
-                    csharpPublicRESTClient: session.csharpPublicRESTClient,
-                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    publicRESTClient: session.publicRESTClient,
+                    authenticatedRESTClient: authenticatedRESTClient
                 )
             }
             if profileGateViewModel == nil {
                 profileGateViewModel = ProfileCompletionGateViewModel(
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpPublicRESTClient,
-                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    publicRESTClient: session.publicRESTClient,
+                    authenticatedRESTClient: authenticatedRESTClient
                 )
             }
             await verifyGateViewModel?.refresh()
@@ -182,10 +177,8 @@ struct RootView: View {
             if let pendingInviteToken {
                 AcceptInviteView(
                     token: pendingInviteToken,
-                    publicClient: session.publicClient,
-                    authenticatedClient: session.authenticatedClient,
-                    publicRESTClient: session.csharpPublicRESTClient,
-                    csharpAuthenticatedRESTClient: session.csharpAuthenticatedRESTClient,
+                    publicRESTClient: session.publicRESTClient,
+                    authenticatedRESTClient: session.authenticatedRESTClient,
                     onAccepted: {
                         self.pendingInviteToken = nil
                         isInvitePreviewPresented = false

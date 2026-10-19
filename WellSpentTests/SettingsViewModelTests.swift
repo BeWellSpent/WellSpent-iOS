@@ -8,7 +8,6 @@ import WellSpentREST
 struct SettingsViewModelTests {
     private func makeViewModel() -> SettingsViewModel {
         SettingsViewModel(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
@@ -108,15 +107,4 @@ struct SettingsViewModelTests {
         #expect(!viewModel.canSubmitPassword)
     }
 
-    @Test("maps invalidArgument to the server's message when present")
-    func mapsInvalidArgument() {
-        let message = SettingsViewModel.passwordChangeErrorMessage(for: ConnectError(code: .invalidArgument, message: "current password is incorrect"))
-        #expect(message == "current password is incorrect")
-    }
-
-    @Test("maps connectivity errors to a generic connectivity message")
-    func mapsConnectivityErrors() {
-        let message = SettingsViewModel.passwordChangeErrorMessage(for: ConnectError(code: .unavailable, message: nil))
-        #expect(message.contains("connection"))
-    }
 }

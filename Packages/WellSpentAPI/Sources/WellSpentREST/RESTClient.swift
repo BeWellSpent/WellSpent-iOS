@@ -27,20 +27,28 @@ public enum RESTClient {
         Client(serverURL: url(baseURL), configuration: configuration, transport: URLSessionTransport())
     }
 
-    /// Client that attaches `Authorization: Bearer <token>` to every request.
+    /// Client that attaches `Authorization: Bearer <token>` to every request,
+    /// and reports back when the server rejects one as unauthenticated so the
+    /// caller can clear the session.
     ///
     /// `tokenProvider` is read per request rather than captured once, so a
-    /// refreshed token is picked up without rebuilding the client — same
-    /// contract as `AuthInterceptor` on the Connect side.
+    /// refreshed token is picked up without rebuilding the client.
+    /// `onUnauthenticated` is the REST equivalent of the Connect-era
+    /// `AuthInterceptor`'s 401 detection — this is now the only transport, so
+    /// it's the only place session expiry can be caught.
     public static func makeAuthenticatedClient(
         baseURL: String,
-        tokenProvider: @escaping @Sendable () -> String?
+        tokenProvider: @escaping @Sendable () -> String?,
+        onUnauthenticated: @escaping @Sendable () -> Void
     ) -> Client {
         Client(
             serverURL: url(baseURL),
             configuration: configuration,
             transport: URLSessionTransport(),
-            middlewares: [BearerTokenMiddleware(tokenProvider: tokenProvider)]
+            middlewares: [
+                BearerTokenMiddleware(tokenProvider: tokenProvider),
+                UnauthenticatedMiddleware(onUnauthenticated: onUnauthenticated)
+            ]
         )
     }
 
@@ -92,6 +100,26 @@ struct BearerTokenMiddleware: ClientMiddleware {
             request.headerFields[.authorization] = "Bearer \(token)"
         }
         return try await next(request, body, baseURL)
+    }
+}
+
+/// Calls `onUnauthenticated` when the server rejects a request with 401 —
+/// the REST analog of `AuthInterceptor.handleUnaryResponse`'s `.unauthenticated` check.
+struct UnauthenticatedMiddleware: ClientMiddleware {
+    let onUnauthenticated: @Sendable () -> Void
+
+    func intercept(
+        _ request: HTTPRequest,
+        body: HTTPBody?,
+        baseURL: URL,
+        operationID: String,
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+    ) async throws -> (HTTPResponse, HTTPBody?) {
+        let (response, body) = try await next(request, body, baseURL)
+        if response.status == .unauthorized {
+            onUnauthenticated()
+        }
+        return (response, body)
     }
 }
 

@@ -11,7 +11,6 @@ struct AddFixedExpenseViewModelTests {
         AddFixedExpenseViewModel(
             budgetProfileID: "profile-1",
             currencyCode: "USD",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

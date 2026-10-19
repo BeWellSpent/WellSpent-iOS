@@ -16,7 +16,6 @@ final class TransactionReviewViewModel {
     let budgetProfileID: String
     let currentUserID: String?
 
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
     /// `ListTransactionReviews` doesn't filter by status server-side —
@@ -44,10 +43,9 @@ final class TransactionReviewViewModel {
         group.reviews.contains { spansOutsideMyView($0) }
     }
 
-    init(budgetProfileID: String, currentUserID: String? = nil, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(budgetProfileID: String, currentUserID: String? = nil, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.currentUserID = currentUserID
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
     }
 
@@ -88,51 +86,33 @@ final class TransactionReviewViewModel {
     }
 
     private func fetchReviews() async -> [Wellspent_V1_TransactionReview]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.listTransactionReviews(.init(path: .init(id: budgetProfileID)))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = "Couldn't load transaction reviews."
-                    Self.logger.error("list transaction reviews failed budgetProfileID=\(self.budgetProfileID, privacy: .public) output=\(String(describing: output), privacy: .public)")
-                    return nil
-                }
-                return body.reviews.map(BudgetRESTMapping.transactionReview(from:))
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load transaction reviews."
-                Self.logger.error("list transaction reviews failed budgetProfileID=\(self.budgetProfileID, privacy: .public) error=\(String(describing: error), privacy: .public)")
+        do {
+            let output = try await restClient.listTransactionReviews(.init(path: .init(id: budgetProfileID)))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = "Couldn't load transaction reviews."
+                Self.logger.error("list transaction reviews failed budgetProfileID=\(self.budgetProfileID, privacy: .public) output=\(String(describing: output), privacy: .public)")
                 return nil
             }
-        }
-        let response = await client.listTransactionReviews(request: .with { $0.budgetProfileID = budgetProfileID })
-        switch response.result {
-        case .success(let message):
-            return message.reviews
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load transaction reviews."
-            Self.logger.error("list transaction reviews failed budgetProfileID=\(self.budgetProfileID, privacy: .public) message=\(error.message ?? "none", privacy: .public)")
+            return body.reviews.map(BudgetRESTMapping.transactionReview(from:))
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load transaction reviews."
+            Self.logger.error("list transaction reviews failed budgetProfileID=\(self.budgetProfileID, privacy: .public) error=\(String(describing: error), privacy: .public)")
             return nil
         }
     }
 
     private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID)))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    Self.logger.error("list budget people failed budgetProfileID=\(self.budgetProfileID, privacy: .public) output=\(String(describing: output), privacy: .public)")
-                    return nil
-                }
-                return body.people.map(BudgetRESTMapping.person(from:))
-            } catch {
-                Self.logger.error("list budget people failed budgetProfileID=\(self.budgetProfileID, privacy: .public) error=\(String(describing: error), privacy: .public)")
+        do {
+            let output = try await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID)))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                Self.logger.error("list budget people failed budgetProfileID=\(self.budgetProfileID, privacy: .public) output=\(String(describing: output), privacy: .public)")
                 return nil
             }
-        }
-        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
-            Self.logger.error("list budget people failed budgetProfileID=\(self.budgetProfileID, privacy: .public)")
+            return body.people.map(BudgetRESTMapping.person(from:))
+        } catch {
+            Self.logger.error("list budget people failed budgetProfileID=\(self.budgetProfileID, privacy: .public) error=\(String(describing: error), privacy: .public)")
             return nil
         }
-        return message.people
     }
 
     /// Confirming links the import to the matched fixed-type transaction and
@@ -145,78 +125,39 @@ final class TransactionReviewViewModel {
     func confirm(_ review: Wellspent_V1_TransactionReview) async {
         errorMessage = nil
         let fallback = "Couldn't confirm that match."
-
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                guard case .ok = try await restClient.confirmTransactionReview(.init(path: .init(id: review.id))) else {
-                    errorMessage = fallback
-                    Self.logger.error("confirm transaction review failed reviewID=\(review.id, privacy: .public)")
-                    return
-                }
-                // Same reasoning as the Connect path below: synthesize the status
-                // locally rather than removing the row, so `TransactionReviewMatching`
-                // sees the confirmed state immediately instead of waiting for the next poll.
-                if let index = reviews.firstIndex(where: { $0.id == review.id }) {
-                    reviews[index].status = "confirmed"
-                }
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
-                Self.logger.error("confirm transaction review failed reviewID=\(review.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
+        do {
+            guard case .ok = try await restClient.confirmTransactionReview(.init(path: .init(id: review.id))) else {
+                errorMessage = fallback
+                Self.logger.error("confirm transaction review failed reviewID=\(review.id, privacy: .public)")
+                return
             }
-            return
-        }
-
-        let response = await client.confirmTransactionReview(request: .with {
-            $0.reviewID = review.id
-            $0.budgetProfileID = budgetProfileID
-        })
-        switch response.result {
-        case .success:
-            // `ConfirmTransactionReviewResponse` carries no body, so the
-            // updated review is synthesized locally rather than removed.
-            // `TransactionReviewMatching.confirmedTransactionIDs`/
-            // `linkedReviews` (consumed by the Transactions tab, sharing
-            // this same view model instance) key off a *present* review
-            // with `status == "confirmed"` — removing the row outright (as
-            // this used to do) meant the Variable row only disappeared and
-            // the Fixed sub-row only appeared once the next `pollPendingCount()`
-            // tick refetched from the server, up to 30s later, instead of
-            // immediately.
+            // Synthesize the status locally rather than removing the row, so
+            // `TransactionReviewMatching` (consumed by the Transactions tab,
+            // sharing this same view model instance) sees the confirmed state
+            // immediately instead of waiting for the next `pollPendingCount()`
+            // tick, up to 30s later.
             if let index = reviews.firstIndex(where: { $0.id == review.id }) {
                 reviews[index].status = "confirmed"
             }
-        case .failure(let error):
-            errorMessage = error.message ?? fallback
-            Self.logger.error("confirm transaction review failed reviewID=\(review.id, privacy: .public) message=\(error.message ?? "none", privacy: .public)")
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            Self.logger.error("confirm transaction review failed reviewID=\(review.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
         }
     }
 
     func dismiss(_ review: Wellspent_V1_TransactionReview) async {
         errorMessage = nil
         let fallback = "Couldn't dismiss that match."
-
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                guard case .ok = try await restClient.dismissTransactionReview(.init(path: .init(id: review.id))) else {
-                    errorMessage = fallback
-                    Self.logger.error("dismiss transaction review failed reviewID=\(review.id, privacy: .public)")
-                    return
-                }
-                reviews.removeAll { $0.id == review.id }
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
-                Self.logger.error("dismiss transaction review failed reviewID=\(review.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
+        do {
+            guard case .ok = try await restClient.dismissTransactionReview(.init(path: .init(id: review.id))) else {
+                errorMessage = fallback
+                Self.logger.error("dismiss transaction review failed reviewID=\(review.id, privacy: .public)")
+                return
             }
-            return
-        }
-
-        let response = await client.dismissTransactionReview(request: .with { $0.reviewID = review.id })
-        switch response.result {
-        case .success:
             reviews.removeAll { $0.id == review.id }
-        case .failure(let error):
-            errorMessage = error.message ?? fallback
-            Self.logger.error("dismiss transaction review failed reviewID=\(review.id, privacy: .public) message=\(error.message ?? "none", privacy: .public)")
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            Self.logger.error("dismiss transaction review failed reviewID=\(review.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
         }
     }
 

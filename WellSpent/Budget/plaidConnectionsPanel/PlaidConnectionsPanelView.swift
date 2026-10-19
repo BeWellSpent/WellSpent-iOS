@@ -1,5 +1,6 @@
 import SwiftUI
 import WellSpentAPI
+import WellSpentREST
 
 /// The budget-scoped Plaid screen, pushed from `BudgetManageView`.
 ///
@@ -7,14 +8,14 @@ import WellSpentAPI
 /// the screen chrome and the explanation of why other people's banks are
 /// listed here at all.
 struct PlaidConnectionsPanelView: View {
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let budgetProfileID: String
 
     var body: some View {
         Form {
             Section {
                 PlaidConnectionsView(
-                    authenticatedClient: authenticatedClient,
+                    authenticatedRESTClient: authenticatedRESTClient,
                     budgetProfileID: budgetProfileID
                 )
             } footer: {
@@ -30,7 +31,7 @@ struct PlaidConnectionsPanelView: View {
 #Preview {
     NavigationStack {
         PlaidConnectionsPanelView(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             budgetProfileID: "budget-1"
         )
     }

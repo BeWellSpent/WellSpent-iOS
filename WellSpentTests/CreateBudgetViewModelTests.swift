@@ -1,5 +1,4 @@
 import Testing
-import WellSpentAPI
 import WellSpentREST
 @testable import WellSpent
 
@@ -8,7 +7,6 @@ import WellSpentREST
 struct CreateBudgetViewModelTests {
     private func makeViewModel() -> CreateBudgetViewModel {
         CreateBudgetViewModel(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
@@ -23,17 +21,5 @@ struct CreateBudgetViewModelTests {
 
         viewModel.name = "Household Budget"
         #expect(viewModel.canSubmit)
-    }
-
-    @Test("passes a message-bearing error through unchanged")
-    func mapsErrorWithMessage() {
-        let message = CreateBudgetViewModel.errorMessage(for: ConnectError(code: .invalidArgument, message: "name too long"))
-        #expect(message == "name too long")
-    }
-
-    @Test("falls back to a generic message when the error has none")
-    func mapsErrorWithoutMessage() {
-        let message = CreateBudgetViewModel.errorMessage(for: ConnectError(code: .internalError, message: nil))
-        #expect(message == "Couldn't create that budget.")
     }
 }

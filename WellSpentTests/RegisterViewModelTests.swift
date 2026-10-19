@@ -1,5 +1,4 @@
 import Testing
-import WellSpentAPI
 import WellSpentREST
 @testable import WellSpent
 
@@ -8,7 +7,6 @@ import WellSpentREST
 struct RegisterViewModelTests {
     private func makeViewModel() -> RegisterViewModel {
         RegisterViewModel(
-            publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
@@ -74,19 +72,5 @@ struct RegisterViewModelTests {
 
         viewModel.countryCode = "AR"
         #expect(!viewModel.isUnitedStates)
-    }
-
-    // MARK: error mapping
-
-    @Test("maps alreadyExists to a duplicate-account message")
-    func mapsAlreadyExists() {
-        let message = RegisterViewModel.errorMessage(for: ConnectError(code: .alreadyExists, message: nil))
-        #expect(message == "An account with that email already exists.")
-    }
-
-    @Test("maps invalidArgument to the server's validation message when present")
-    func mapsInvalidArgument() {
-        let message = RegisterViewModel.errorMessage(for: ConnectError(code: .invalidArgument, message: "password must be at least 8 characters"))
-        #expect(message == "password must be at least 8 characters")
     }
 }

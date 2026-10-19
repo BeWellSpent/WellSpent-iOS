@@ -438,6 +438,54 @@ for the reference), REST when the flag is on, Connect fallback otherwise — and
 unexpected-output and Connect-failure branches, which the original code did for neither.
 `CURRENT_PROJECT_VERSION` bumped 43 → 44.
 
+## Go/ConnectRPC client fully removed (issue #87 follow-up)
+
+The two orphaned-Connect-call bugs above (`ListCountries`, then `BudgetHomeViewModel.load()`)
+were both the same root cause in different files: the Connect client was left wired in,
+unflagged, as the silent fallback path, pointed at a Go backend that no longer exists. Per the
+user's explicit "let's be safe and remove the go classes and everything go related from iOS" —
+scoped to *client/transport* code only, keeping the generated `Wellspent_V1_*` message types as
+the app's domain model (see the follow-up note below for why those stay for now).
+
+**Removed:**
+- `Packages/WellSpentAPI/Sources/WellSpentAPI/Client/{APIClient,AuthInterceptor,TokenProvider}.swift`
+  and their test coverage (`AuthInterceptorTests.swift`) — the hand-written Connect wrapper.
+- The `connectrpc/swift` buf plugin from `buf.gen.yaml` (the `apple/swift` plugin, message types
+  only, stays) and every stale `*.connect.swift` file it had generated — `buf generate` does not
+  delete outputs from a plugin once removed; those had to be `rm`'d by hand.
+- The `connect-swift` SPM dependency, end to end: `Packages/WellSpentAPI/Package.swift`, and
+  every trace from `WellSpent.xcodeproj/project.pbxproj` (the `XCRemoteSwiftPackageReference`,
+  both `XCSwiftPackageProductDependency "Connect"` entries — app target and test target each had
+  their own — the matching `PBXBuildFile`/Frameworks-phase/`packageProductDependencies` rows, and
+  the `packageReferences` entry). Hand-edited since there's no CLI for a targeted dependency
+  removal; verified after with `plutil -lint` and a brace-balance check before trusting it.
+- Every dual-path `if FeatureFlags.csharp*Enabled { <REST> } <Connect fallback>` branch across
+  the Budget domain, Auth, Plaid, and Settings — down to just the REST body, unflagged. All 7
+  `FeatureFlags.csharp*Enabled` flags and `SessionStore`'s `csharpPublicRESTClient`/
+  `csharpAuthenticatedRESTClient` naming are gone with them — there is exactly one REST transport
+  now, so `SessionStore.publicRESTClient`/`.authenticatedRESTClient` is it, unconditionally.
+
+**A third orphaned-Connect-call bug was caught mid-sweep, not reported live**:
+`BudgetSetupViewModel.addPerson()` called `client.addBudgetPeople(request:)` unconditionally,
+with no flag check and no REST branch at all, unlike every other method in that file. Fixed
+before it could reach a user — the pattern (grep every file for `FeatureFlags.csharp` mentions,
+flag any zero-hit file that still makes a network call) is the reusable diagnostic going
+forward for this exact bug shape, not just a one-off fix.
+
+**Follow-up, explicitly requested and not yet started**: replace `Wellspent_V1_*` protobuf
+message types — still the app's domain model everywhere, used far beyond the deleted RPC calls
+(every view/view model's properties, every `#Preview`, every test fixture) — with the
+OpenAPI-generated `Components.Schemas.*` types the REST transport already produces natively.
+Today every REST response is hand-mapped into a `Wellspent_V1_*` message
+(`BudgetRESTMapping.swift`, `UserRESTMapping.swift`, `NotificationRESTMapping.swift`,
+`InviteRESTMapping.swift`, `PlaidRESTMapping.swift` — one file per domain) specifically so the
+rest of the app doesn't have to change; that mapping layer is the tell that the domain model and
+the wire format have drifted apart; the tracked `SwiftProtobuf` dependency only exists for the
+message types now, with no RPC client left to justify it. This is a second, separate,
+not-yet-scoped pass — swapping the domain model is a much larger blast radius than removing a
+transport (it touches every file in the app, not just network call sites) and deserves its own
+plan before it starts.
+
 ## Roadmap
 
 "Phase 2 — core budget loop" was too large for one confirmed slice (same reasoning as Phase 0+1), so it's split further:

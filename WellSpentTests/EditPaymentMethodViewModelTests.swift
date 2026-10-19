@@ -18,7 +18,6 @@ struct EditPaymentMethodViewModelTests {
         }
         let viewModel = EditPaymentMethodViewModel(
             method: method,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
 
@@ -35,7 +34,6 @@ struct EditPaymentMethodViewModelTests {
         }
         let viewModel = EditPaymentMethodViewModel(
             method: method,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
         #expect(viewModel.canSubmit)

@@ -8,7 +8,6 @@ import WellSpentREST
 struct AddPaymentMethodViewModelTests {
     private func makeViewModel() -> AddPaymentMethodViewModel {
         AddPaymentMethodViewModel(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

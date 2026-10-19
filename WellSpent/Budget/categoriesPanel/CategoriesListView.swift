@@ -4,10 +4,9 @@ import WellSpentREST
 
 struct CategoriesListView: View {
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let canEdit: Bool
 
-    @Environment(SessionStore.self) private var session
     @State private var viewModel: CategoriesViewModel?
     @State private var isAddSheetPresented = false
     @State private var editingCategory: Wellspent_V1_Category?
@@ -40,8 +39,7 @@ struct CategoriesListView: View {
             if viewModel == nil {
                 viewModel = CategoriesViewModel(
                     budgetProfileID: budgetProfileID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -106,8 +104,7 @@ struct CategoriesListView: View {
         .sheet(isPresented: $isAddSheetPresented) {
             AddEditCategoryView(
                 mode: .add,
-                authenticatedClient: authenticatedClient,
-                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                restClient: authenticatedRESTClient
             ) { category in
                 viewModel.addCategory(category)
             }
@@ -119,8 +116,7 @@ struct CategoriesListView: View {
             if let editingCategory {
                 AddEditCategoryView(
                     mode: .edit(editingCategory),
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 ) { updated in
                     viewModel.replaceCategory(updated)
                 }
@@ -198,7 +194,7 @@ struct CategoriesListView: View {
     NavigationStack {
         CategoriesListView(
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             canEdit: true
         )
     }

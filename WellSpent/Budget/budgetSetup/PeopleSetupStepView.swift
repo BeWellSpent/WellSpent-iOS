@@ -112,7 +112,6 @@ struct PeopleSetupStepView: View {
 #Preview {
     NavigationStack {
         PeopleSetupStepView(viewModel: BudgetSetupViewModel(
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         ))
     }

@@ -2,11 +2,11 @@ version: v2
 inputs:
   - module: buf.build/bewellspent/wellspent
 plugins:
+  # Message types only — the WellSpent_V1_* structs are kept as the app's
+  # domain model for now (see CLAUDE.md's "Go/ConnectRPC client fully
+  # removed" entry for why, and its follow-up note on replacing them with
+  # OpenAPI types later). The connectrpc/swift plugin (RPC client stubs) was
+  # removed along with the Connect client itself; everything talks REST now.
   - remote: buf.build/apple/swift
     out: Packages/WellSpentAPI/Sources/WellSpentAPI/Gen
     opt: Visibility=Public
-  - remote: buf.build/connectrpc/swift
-    out: Packages/WellSpentAPI/Sources/WellSpentAPI/Gen
-    opt:
-      - GenerateAsyncMethods=true
-      - Visibility=Public

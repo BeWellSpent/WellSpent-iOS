@@ -20,8 +20,6 @@ final class InvitesViewModel {
     let budgetOwnerUserID: String
     let currentUserID: String?
 
-    private let client: Wellspent_V1_InviteServiceClient
-    private let budgetClient: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
     var isAdmin: Bool {
@@ -44,12 +42,10 @@ final class InvitesViewModel {
         !draftEmail.trimmingCharacters(in: .whitespaces).isEmpty && !isSending
     }
 
-    init(budgetProfileID: String, budgetOwnerUserID: String, currentUserID: String?, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(budgetProfileID: String, budgetOwnerUserID: String, currentUserID: String?, restClient: WellSpentREST.Client) {
         self.budgetProfileID = budgetProfileID
         self.budgetOwnerUserID = budgetOwnerUserID
         self.currentUserID = currentUserID
-        self.client = Wellspent_V1_InviteServiceClient(client: authenticatedClient)
-        self.budgetClient = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
     }
 
@@ -77,37 +73,21 @@ final class InvitesViewModel {
     }
 
     private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return body.people.map(BudgetRESTMapping.person(from:))
-        }
-        guard case .success(let message) = await budgetClient.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
-            return nil
-        }
-        return message.people
+        guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return body.people.map(BudgetRESTMapping.person(from:))
     }
 
     private func fetchInvites() async -> [Wellspent_V1_BudgetInvite]? {
-        if FeatureFlags.csharpInviteEnabled {
-            do {
-                let output = try await restClient.listBudgetInvites(.init(query: .init(budgetProfileId: budgetProfileID)))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = "Couldn't load invites."
-                    return nil
-                }
-                return body.invites.map(InviteRESTMapping.invite(from:))
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load invites."
+        do {
+            let output = try await restClient.listBudgetInvites(.init(query: .init(budgetProfileId: budgetProfileID)))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = "Couldn't load invites."
                 return nil
             }
-        }
-        let response = await client.listBudgetInvites(request: .with { $0.budgetProfileID = budgetProfileID })
-        switch response.result {
-        case .success(let message):
-            return message.invites
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't load invites."
+            return body.invites.map(InviteRESTMapping.invite(from:))
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load invites."
             return nil
         }
     }
@@ -118,34 +98,14 @@ final class InvitesViewModel {
         errorMessage = nil
         defer { isSending = false }
 
-        if FeatureFlags.csharpInviteEnabled {
-            guard let invite = await sendInviteViaREST(email: draftEmail.trimmingCharacters(in: .whitespaces), role: draftRole, budgetPersonID: draftBudgetPersonID, fallback: "Couldn't send that invite.") else { return }
-            invites.append(invite)
-            draftEmail = ""
-            draftRole = .collaborator
-            draftBudgetPersonID = 0
-            return
-        }
-
-        let response = await client.sendBudgetInvite(request: .with {
-            $0.budgetProfileID = budgetProfileID
-            $0.email = draftEmail.trimmingCharacters(in: .whitespaces)
-            $0.role = draftRole
-            $0.budgetPersonID = draftBudgetPersonID
-        })
-
-        switch response.result {
-        case .success(let message):
-            invites.append(message.invite)
-            draftEmail = ""
-            draftRole = .collaborator
-            draftBudgetPersonID = 0
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't send that invite."
-        }
+        guard let invite = await sendInvite(email: draftEmail.trimmingCharacters(in: .whitespaces), role: draftRole, budgetPersonID: draftBudgetPersonID, fallback: "Couldn't send that invite.") else { return }
+        invites.append(invite)
+        draftEmail = ""
+        draftRole = .collaborator
+        draftBudgetPersonID = 0
     }
 
-    private func sendInviteViaREST(email: String, role: Wellspent_V1_BudgetRole, budgetPersonID: Int64, fallback: String) async -> Wellspent_V1_BudgetInvite? {
+    private func sendInvite(email: String, role: Wellspent_V1_BudgetRole, budgetPersonID: Int64, fallback: String) async -> Wellspent_V1_BudgetInvite? {
         do {
             let output = try await restClient.sendBudgetInvite(.init(body: .json(.init(
                 budgetProfileId: budgetProfileID,
@@ -164,7 +124,7 @@ final class InvitesViewModel {
         }
     }
 
-    private func cancelInviteViaREST(id: String, fallback: String) async -> Bool {
+    private func cancelInvite(id: String, fallback: String) async -> Bool {
         do {
             guard case .ok = try await restClient.cancelBudgetInvite(.init(path: .init(id: id))) else {
                 errorMessage = fallback
@@ -179,24 +139,8 @@ final class InvitesViewModel {
 
     func cancel(id: String) async {
         errorMessage = nil
-
-        if FeatureFlags.csharpInviteEnabled {
-            if await cancelInviteViaREST(id: id, fallback: "Couldn't cancel that invite.") {
-                await load()
-            }
-            return
-        }
-
-        let response = await client.cancelBudgetInvite(request: .with {
-            $0.id = id
-            $0.budgetProfileID = budgetProfileID
-        })
-
-        switch response.result {
-        case .success:
+        if await cancelInvite(id: id, fallback: "Couldn't cancel that invite.") {
             await load()
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't cancel that invite."
         }
     }
 
@@ -206,38 +150,10 @@ final class InvitesViewModel {
     func resend(_ invite: Wellspent_V1_BudgetInvite) async {
         errorMessage = nil
 
-        if FeatureFlags.csharpInviteEnabled {
-            if invite.status == .pending {
-                guard await cancelInviteViaREST(id: invite.id, fallback: "Couldn't resend that invite.") else { return }
-            }
-            guard await sendInviteViaREST(email: invite.email, role: invite.role, budgetPersonID: invite.budgetPersonID, fallback: "Couldn't resend that invite.") != nil else { return }
-            await load()
-            return
-        }
-
         if invite.status == .pending {
-            let cancelResponse = await client.cancelBudgetInvite(request: .with {
-                $0.id = invite.id
-                $0.budgetProfileID = budgetProfileID
-            })
-            if case .failure(let error) = cancelResponse.result {
-                errorMessage = error.message ?? "Couldn't resend that invite."
-                return
-            }
+            guard await cancelInvite(id: invite.id, fallback: "Couldn't resend that invite.") else { return }
         }
-
-        let response = await client.sendBudgetInvite(request: .with {
-            $0.budgetProfileID = budgetProfileID
-            $0.email = invite.email
-            $0.role = invite.role
-            $0.budgetPersonID = invite.budgetPersonID
-        })
-
-        switch response.result {
-        case .success:
-            await load()
-        case .failure(let error):
-            errorMessage = error.message ?? "Couldn't resend that invite."
-        }
+        guard await sendInvite(email: invite.email, role: invite.role, budgetPersonID: invite.budgetPersonID, fallback: "Couldn't resend that invite.") != nil else { return }
+        await load()
     }
 }

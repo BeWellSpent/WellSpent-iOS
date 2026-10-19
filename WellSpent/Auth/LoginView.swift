@@ -1,13 +1,8 @@
 import SwiftUI
-import WellSpentAPI
 
 struct LoginView: View {
     @Environment(SessionStore.self) private var session
-    @Bindable private var viewModel: LoginViewModel
-
-    init(publicClient: ProtocolClient) {
-        _viewModel = Bindable(wrappedValue: LoginViewModel(publicClient: publicClient))
-    }
+    @State private var viewModel = LoginViewModel()
 
     var body: some View {
         Form {
@@ -71,7 +66,7 @@ struct LoginView: View {
             .disabled(!viewModel.canSubmit)
             .accessibilityIdentifier("loginButton")
 
-            SocialSignInButtons(publicClient: session.publicClient)
+            SocialSignInButtons()
         }
     }
 
@@ -79,7 +74,7 @@ struct LoginView: View {
     private var registerLinkSection: some View {
         Section {
             NavigationLink("Don't have an account? Register") {
-                RegisterView(publicClient: session.publicClient, publicRESTClient: session.csharpPublicRESTClient)
+                RegisterView(publicRESTClient: session.publicRESTClient)
             }
             .accessibilityIdentifier("goToRegisterLink")
         }
@@ -88,7 +83,7 @@ struct LoginView: View {
 
 #Preview {
     NavigationStack {
-        LoginView(publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        LoginView()
     }
     .environment(SessionStore())
 }

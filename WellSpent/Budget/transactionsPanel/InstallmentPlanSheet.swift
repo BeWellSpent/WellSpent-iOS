@@ -11,11 +11,10 @@ struct InstallmentPlanSheet: View {
     let budgetPeriodID: String
     let currencyCode: String
     let localeIdentifier: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let onCreated: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(SessionStore.self) private var session
     @State private var viewModel: InstallmentPlanViewModel?
 
     var body: some View {
@@ -48,8 +47,7 @@ struct InstallmentPlanSheet: View {
                 viewModel = InstallmentPlanViewModel(
                     transaction: transaction,
                     budgetPeriodID: budgetPeriodID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
         }
@@ -127,8 +125,7 @@ struct InstallmentPlanSheet: View {
         budgetPeriodID: "preview-period",
         currencyCode: "USD",
         localeIdentifier: "en",
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+        authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         onCreated: {}
     )
-    .environment(SessionStore())
 }

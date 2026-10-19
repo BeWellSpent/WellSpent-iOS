@@ -7,8 +7,8 @@ struct EditBudgetSheet: View {
     @Bindable private var viewModel: EditBudgetViewModel
     private let onSaved: (Wellspent_V1_BudgetProfile) -> Void
 
-    init(profile: Wellspent_V1_BudgetProfile, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client, onSaved: @escaping (Wellspent_V1_BudgetProfile) -> Void) {
-        _viewModel = Bindable(wrappedValue: EditBudgetViewModel(profile: profile, authenticatedClient: authenticatedClient, restClient: restClient))
+    init(profile: Wellspent_V1_BudgetProfile, restClient: WellSpentREST.Client, onSaved: @escaping (Wellspent_V1_BudgetProfile) -> Void) {
+        _viewModel = Bindable(wrappedValue: EditBudgetViewModel(profile: profile, restClient: restClient))
         self.onSaved = onSaved
     }
 
@@ -67,7 +67,6 @@ struct EditBudgetSheet: View {
             $0.name = "Household Budget"
             $0.cycle = .monthly
         },
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }

@@ -27,7 +27,7 @@ struct FixedExpensesListView: View {
 
     let budgetPeriodID: String
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
     /// See `ExpensePlanView.isAddCategoryPresented` / `.isActive` — owned by
@@ -101,8 +101,7 @@ struct FixedExpensesListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -244,8 +243,7 @@ struct FixedExpensesListView: View {
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
-                authenticatedClient: authenticatedClient,
-                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                restClient: authenticatedRESTClient
             ) { expense, transaction in
                 viewModel.addFromCreate(expense: expense, transaction: transaction)
             }
@@ -265,8 +263,7 @@ struct FixedExpensesListView: View {
                         currencyCode: currencyCode,
                         categories: viewModel.categories,
                         paymentMethods: viewModel.paymentMethods,
-                        authenticatedClient: authenticatedClient,
-                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                        restClient: authenticatedRESTClient
                     ) { _ in
                         Task { await viewModel.handleTemplateUpdated() }
                     }
@@ -279,8 +276,7 @@ struct FixedExpensesListView: View {
                         paymentMethods: viewModel.paymentMethods,
                         isArchivedPeriod: isArchivedPeriod,
                         forceLocked: true,
-                        authenticatedClient: authenticatedClient,
-                        restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                        restClient: authenticatedRESTClient
                     ) { _ in
                         Task { await viewModel.load() }
                     }
@@ -294,8 +290,7 @@ struct FixedExpensesListView: View {
                     currencyCode: currencyCode,
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 ) { _ in
                     Task { await viewModel.handleTemplateUpdated() }
                 }
@@ -312,7 +307,7 @@ struct FixedExpensesListView: View {
                     budgetProfileID: budgetProfileID,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
-                    authenticatedClient: authenticatedClient
+                    authenticatedRESTClient: authenticatedRESTClient
                 ) {
                     Task { await reviewViewModel?.load() }
                 }
@@ -693,7 +688,7 @@ private struct UpcomingFixedExpenseRow: View {
         FixedExpensesListView(
             budgetPeriodID: "preview-period",
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
             isAddSheetPresented: .constant(false),

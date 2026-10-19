@@ -5,7 +5,7 @@ import WellSpentREST
 struct ExpenseOverviewListView: View {
     let budgetPeriodID: String
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
 
@@ -35,8 +35,7 @@ struct ExpenseOverviewListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -314,7 +313,7 @@ struct ExpenseOverviewListView: View {
         ExpenseOverviewListView(
             budgetPeriodID: "preview-period",
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en"
         )

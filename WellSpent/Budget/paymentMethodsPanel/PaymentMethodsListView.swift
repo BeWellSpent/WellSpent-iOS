@@ -4,10 +4,9 @@ import WellSpentREST
 
 struct PaymentMethodsListView: View {
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient
+    let authenticatedRESTClient: WellSpentREST.Client
     let canEdit: Bool
 
-    @Environment(SessionStore.self) private var session
     @State private var viewModel: PaymentMethodsViewModel?
     @State private var isAddSheetPresented = false
     @State private var editingMethod: Wellspent_V1_PaymentMethod?
@@ -38,8 +37,7 @@ struct PaymentMethodsListView: View {
             if viewModel == nil {
                 viewModel = PaymentMethodsViewModel(
                     budgetProfileID: budgetProfileID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await viewModel?.load()
@@ -72,8 +70,7 @@ struct PaymentMethodsListView: View {
         .sheet(isPresented: $isAddSheetPresented) {
             AddPaymentMethodView(
                 people: viewModel.people,
-                authenticatedClient: authenticatedClient,
-                restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                restClient: authenticatedRESTClient
             ) { method in
                 viewModel.addMethod(method)
             }
@@ -85,8 +82,7 @@ struct PaymentMethodsListView: View {
             if let editingMethod {
                 EditPaymentMethodView(
                     method: editingMethod,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 ) { updated in
                     viewModel.replaceMethod(updated)
                 }
@@ -152,7 +148,7 @@ struct PaymentMethodsListView: View {
     NavigationStack {
         PaymentMethodsListView(
             budgetProfileID: "preview-budget",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             canEdit: true
         )
     }

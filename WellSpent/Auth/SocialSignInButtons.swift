@@ -1,5 +1,4 @@
 import SwiftUI
-import WellSpentAPI
 
 /// The third-party sign-in options, side by side, shown on both Login and
 /// Register.
@@ -14,7 +13,6 @@ import WellSpentAPI
 /// Apple HIG permits where space is constrained.
 struct SocialSignInButtons: View {
     @Environment(SessionStore.self) private var session
-    let publicClient: ProtocolClient
 
     @State private var apple: AppleAuthCoordinator?
     @State private var google: GoogleAuthCoordinator?
@@ -33,7 +31,7 @@ struct SocialSignInButtons: View {
                 ) {
                     Task {
                         if apple == nil {
-                            apple = AppleAuthCoordinator(publicClient: publicClient)
+                            apple = AppleAuthCoordinator()
                         }
                         await apple?.signIn(session: session)
                     }
@@ -48,7 +46,7 @@ struct SocialSignInButtons: View {
                 ) {
                     Task {
                         if google == nil {
-                            google = GoogleAuthCoordinator(publicClient: publicClient)
+                            google = GoogleAuthCoordinator()
                         }
                         await google?.signIn(session: session)
                     }
@@ -72,7 +70,7 @@ struct SocialSignInButtons: View {
 }
 
 #Preview {
-    SocialSignInButtons(publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+    SocialSignInButtons()
         .padding()
         .environment(SessionStore())
 }

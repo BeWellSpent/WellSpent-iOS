@@ -14,15 +14,13 @@ final class AddPaymentMethodViewModel {
     private(set) var isSubmitting = false
     private(set) var errorMessage: String?
 
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && personID != 0 && !isSubmitting
     }
 
-    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
+    init(restClient: WellSpentREST.Client) {
         self.restClient = restClient
     }
 
@@ -34,38 +32,20 @@ final class AddPaymentMethodViewModel {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let fallback = "Couldn't create that payment method."
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.createPaymentMethod(.init(body: .json(.init(
-                    name: trimmedName,
-                    _type: BudgetRESTMapping.restPaymentType(from: type),
-                    budgetPersonId: personID,
-                    color: color
-                ))))
-                guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                    errorMessage = fallback
-                    return nil
-                }
-                return BudgetRESTMapping.paymentMethod(from: body.method)
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        do {
+            let output = try await restClient.createPaymentMethod(.init(body: .json(.init(
+                name: trimmedName,
+                _type: BudgetRESTMapping.restPaymentType(from: type),
+                budgetPersonId: personID,
+                color: color
+            ))))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = fallback
                 return nil
             }
-        }
-
-        let request = Wellspent_V1_CreatePaymentMethodRequest.with {
-            $0.name = trimmedName
-            $0.type = type
-            $0.budgetPersonID = personID
-            $0.color = color
-        }
-        let response = await client.createPaymentMethod(request: request)
-
-        switch response.result {
-        case .success(let message):
-            return message.method
-        case .failure(let error):
-            errorMessage = error.message ?? fallback
+            return BudgetRESTMapping.paymentMethod(from: body.method)
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
             return nil
         }
     }

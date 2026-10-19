@@ -17,13 +17,11 @@ final class InstallmentPlanViewModel {
 
     let transaction: Wellspent_V1_Transaction
     let budgetPeriodID: String
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
-    init(transaction: Wellspent_V1_Transaction, budgetPeriodID: String, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(transaction: Wellspent_V1_Transaction, budgetPeriodID: String, restClient: WellSpentREST.Client) {
         self.transaction = transaction
         self.budgetPeriodID = budgetPeriodID
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
         // dateOnly, not .date: `date` is a DATE-only field encoded at midnight
         // UTC, so reading it raw lands a day early anywhere behind UTC.
@@ -70,46 +68,26 @@ final class InstallmentPlanViewModel {
         defer { isSubmitting = false }
         let fallback = String(localized: "Couldn't create the installment plan.", locale: AppLanguageStore.currentLocale)
 
-        if FeatureFlags.csharpBudgetEnabled {
-            do {
-                let output = try await restClient.createInstallmentPlan(.init(
-                    path: .init(id: transaction.id),
-                    query: .init(budgetPeriodId: budgetPeriodID),
-                    body: .json(.init(
-                        firstPaymentDate: Google_Protobuf_Timestamp(dateOnly: firstPayment).restDateString,
-                        totalPayments: payments,
-                        endDate: Google_Protobuf_Timestamp(dateOnly: endDate).restDateString
-                    ))
+        do {
+            let output = try await restClient.createInstallmentPlan(.init(
+                path: .init(id: transaction.id),
+                query: .init(budgetPeriodId: budgetPeriodID),
+                body: .json(.init(
+                    firstPaymentDate: Google_Protobuf_Timestamp(dateOnly: firstPayment).restDateString,
+                    totalPayments: payments,
+                    endDate: Google_Protobuf_Timestamp(dateOnly: endDate).restDateString
                 ))
-                guard case .ok = output else {
-                    errorMessage = fallback
-                    Self.logger.error("installment plan failed transaction=\(self.transaction.id, privacy: .public)")
-                    return false
-                }
-                Self.logger.info("created installment plan transaction=\(self.transaction.id, privacy: .public) payments=\(self.payments, privacy: .public)")
-                return true
-            } catch {
-                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
-                Self.logger.error("installment plan failed transaction=\(self.transaction.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
+            ))
+            guard case .ok = output else {
+                errorMessage = fallback
+                Self.logger.error("installment plan failed transaction=\(self.transaction.id, privacy: .public)")
                 return false
             }
-        }
-
-        let response = await client.createInstallmentPlan(request: .with {
-            $0.transactionID = transaction.id
-            $0.budgetPeriodID = budgetPeriodID
-            $0.firstPaymentDate = Google_Protobuf_Timestamp(dateOnly: firstPayment)
-            $0.totalPayments = payments
-            $0.endDate = Google_Protobuf_Timestamp(dateOnly: endDate)
-        })
-
-        switch response.result {
-        case .success:
             Self.logger.info("created installment plan transaction=\(self.transaction.id, privacy: .public) payments=\(self.payments, privacy: .public)")
             return true
-        case .failure(let error):
-            Self.logger.error("installment plan failed transaction=\(self.transaction.id, privacy: .public) message=\(error.message ?? "", privacy: .public)")
-            errorMessage = error.message ?? fallback
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            Self.logger.error("installment plan failed transaction=\(self.transaction.id, privacy: .public) error=\(String(describing: error), privacy: .public)")
             return false
         }
     }

@@ -10,7 +10,6 @@ struct MatchTransactionsViewModelTests {
         MatchTransactionsViewModel(
             budgetPeriodID: "period-1",
             budgetProfileID: "profile-1",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

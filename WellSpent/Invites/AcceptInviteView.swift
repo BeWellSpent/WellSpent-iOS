@@ -18,22 +18,18 @@ struct AcceptInviteView: View {
 
     init(
         token: String,
-        publicClient: ProtocolClient,
-        authenticatedClient: ProtocolClient?,
         publicRESTClient: WellSpentREST.Client,
-        csharpAuthenticatedRESTClient: WellSpentREST.Client?,
+        authenticatedRESTClient: WellSpentREST.Client?,
         onAccepted: @escaping () -> Void,
         onDismiss: @escaping () -> Void,
         onRequestAuth: @escaping () -> Void
     ) {
         _viewModel = State(initialValue: AcceptInviteViewModel(
             token: token,
-            publicClient: publicClient,
-            authenticatedClient: authenticatedClient,
             publicRESTClient: publicRESTClient,
-            csharpAuthenticatedRESTClient: csharpAuthenticatedRESTClient
+            authenticatedRESTClient: authenticatedRESTClient
         ))
-        self.isAuthenticated = authenticatedClient != nil
+        self.isAuthenticated = authenticatedRESTClient != nil
         self.onAccepted = onAccepted
         self.onDismiss = onDismiss
         self.onRequestAuth = onRequestAuth
@@ -130,10 +126,8 @@ struct AcceptInviteView: View {
 #Preview {
     AcceptInviteView(
         token: "preview-token",
-        publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
-        csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+        authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         onAccepted: {},
         onDismiss: {},
         onRequestAuth: {}

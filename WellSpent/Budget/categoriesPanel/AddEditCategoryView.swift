@@ -9,11 +9,10 @@ struct AddEditCategoryView: View {
 
     init(
         mode: AddEditCategoryViewModel.Mode,
-        authenticatedClient: ProtocolClient,
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_Category) -> Void
     ) {
-        _viewModel = Bindable(wrappedValue: AddEditCategoryViewModel(mode: mode, authenticatedClient: authenticatedClient, restClient: restClient))
+        _viewModel = Bindable(wrappedValue: AddEditCategoryViewModel(mode: mode, restClient: restClient))
         self.onDone = onDone
     }
 
@@ -71,7 +70,6 @@ struct AddEditCategoryView: View {
 #Preview("Add") {
     AddEditCategoryView(
         mode: .add,
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }
@@ -83,7 +81,6 @@ struct AddEditCategoryView: View {
             $0.name = "Groceries"
             $0.color = PresetColors.all[4]
         }),
-        authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
     ) { _ in }
 }

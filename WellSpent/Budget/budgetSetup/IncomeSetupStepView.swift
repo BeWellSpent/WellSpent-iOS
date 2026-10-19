@@ -14,7 +14,6 @@ struct IncomeSetupStepView: View {
     let countryCode: String
     let currencyCode: String
     let people: [Wellspent_V1_BudgetPerson]
-    let authenticatedClient: ProtocolClient
     let restClient: WellSpentREST.Client
     let onContinue: () -> Void
 
@@ -26,7 +25,6 @@ struct IncomeSetupStepView: View {
         countryCode: String,
         currencyCode: String,
         people: [Wellspent_V1_BudgetPerson],
-        authenticatedClient: ProtocolClient,
         restClient: WellSpentREST.Client,
         onContinue: @escaping () -> Void
     ) {
@@ -34,7 +32,6 @@ struct IncomeSetupStepView: View {
         self.countryCode = countryCode
         self.currencyCode = currencyCode
         self.people = people
-        self.authenticatedClient = authenticatedClient
         self.restClient = restClient
         self.onContinue = onContinue
         _viewModel = State(initialValue: AddEditIncomeViewModel(
@@ -42,7 +39,6 @@ struct IncomeSetupStepView: View {
             budgetProfileID: budgetProfileID,
             countryCode: countryCode,
             currencyCode: currencyCode,
-            authenticatedClient: authenticatedClient,
             restClient: restClient
         ))
     }
@@ -89,7 +85,6 @@ struct IncomeSetupStepView: View {
                                 budgetProfileID: budgetProfileID,
                                 countryCode: countryCode,
                                 currencyCode: currencyCode,
-                                authenticatedClient: authenticatedClient,
                                 restClient: restClient
                             )
                         }
@@ -126,7 +121,6 @@ struct IncomeSetupStepView: View {
             countryCode: "US",
             currencyCode: "USD",
             people: [.with { $0.id = 1; $0.userName = "Jane" }],
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         ) {}
     }

@@ -10,7 +10,6 @@ struct TransactionReviewViewModelTests {
         TransactionReviewViewModel(
             budgetProfileID: "profile-1",
             currentUserID: currentUserID,
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

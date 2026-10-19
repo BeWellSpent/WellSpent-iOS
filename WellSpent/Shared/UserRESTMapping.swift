@@ -32,15 +32,10 @@ nonisolated enum UserRESTMapping {
         }
     }
 
-    /// GetMe via either transport, normalized to the same proto message — nil on any failure, matching every call site's existing optional-success pattern.
-    static func currentUser(connectClient: Wellspent_V1_UserServiceClient, restClient: WellSpentREST.Client, useREST: Bool) async -> Wellspent_V1_User? {
-        if useREST {
-            guard let output = try? await restClient.getMe(.init()) else { return nil }
-            guard case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return proto(from: body.user)
-        }
-        let response = await connectClient.getMe(request: Wellspent_V1_GetMeRequest())
-        if case .success(let message) = response.result { return message.user }
-        return nil
+    /// GetMe, normalized to the same proto message — nil on any failure, matching every call site's existing optional-success pattern.
+    static func currentUser(restClient: WellSpentREST.Client) async -> Wellspent_V1_User? {
+        guard let output = try? await restClient.getMe(.init()) else { return nil }
+        guard case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return proto(from: body.user)
     }
 }

@@ -26,10 +26,8 @@ final class VerifyEmailGateViewModel {
     private(set) var isSavingEmail = false
     private(set) var changeEmailErrorMessage: String?
 
-    private let userClient: Wellspent_V1_UserServiceClient
-    private let authClient: Wellspent_V1_AuthServiceClient
-    private let csharpPublicRESTClient: WellSpentREST.Client
-    private let csharpAuthenticatedRESTClient: WellSpentREST.Client
+    private let publicRESTClient: WellSpentREST.Client
+    private let authenticatedRESTClient: WellSpentREST.Client
 
     private static let logger = AppLogger.logger("VerifyEmailGate")
 
@@ -57,16 +55,9 @@ final class VerifyEmailGateViewModel {
             && !isSavingEmail
     }
 
-    init(
-        authenticatedClient: ProtocolClient,
-        publicClient: ProtocolClient,
-        csharpPublicRESTClient: WellSpentREST.Client,
-        csharpAuthenticatedRESTClient: WellSpentREST.Client
-    ) {
-        self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
-        self.authClient = Wellspent_V1_AuthServiceClient(client: publicClient)
-        self.csharpPublicRESTClient = csharpPublicRESTClient
-        self.csharpAuthenticatedRESTClient = csharpAuthenticatedRESTClient
+    init(publicRESTClient: WellSpentREST.Client, authenticatedRESTClient: WellSpentREST.Client) {
+        self.publicRESTClient = publicRESTClient
+        self.authenticatedRESTClient = authenticatedRESTClient
     }
 
     /// Re-reads verification status. Called on appear and every time the app
@@ -76,7 +67,7 @@ final class VerifyEmailGateViewModel {
         // Deliberately leaves `state` alone on failure either way. A failed
         // check must not promote an unverified account to verified, and must
         // not lock a verified one out over a dropped connection.
-        guard let user = await UserRESTMapping.currentUser(connectClient: userClient, restClient: csharpAuthenticatedRESTClient, useREST: FeatureFlags.csharpUserEnabled) else {
+        guard let user = await UserRESTMapping.currentUser(restClient: authenticatedRESTClient) else {
             Self.logger.error("verifyGate.getMe failed")
             return
         }
@@ -95,30 +86,9 @@ final class VerifyEmailGateViewModel {
         errorMessage = nil
         defer { isResending = false }
 
-        if FeatureFlags.csharpAuthEnabled {
-            await resendViaREST()
-            return
-        }
-
-        let request = Wellspent_V1_ResendVerificationEmailRequest.with { $0.email = email }
-        let response = await authClient.resendVerificationEmail(request: request)
-
-        switch response.result {
-        case .success:
-            cooldownEndsAt = Date().addingTimeInterval(Self.resendCooldown)
-        case .failure(let error):
-            Self.logger.error("verifyGate.resend failed: \(error.message ?? "unknown", privacy: .public)")
-            errorMessage = error.message ?? String(
-                localized: "Couldn't resend the email. Try again in a moment.",
-                locale: AppLanguageStore.currentLocale
-            )
-        }
-    }
-
-    private func resendViaREST() async {
         let fallback = String(localized: "Couldn't resend the email. Try again in a moment.", locale: AppLanguageStore.currentLocale)
         do {
-            let output = try await csharpPublicRESTClient.resendVerificationEmail(.init(body: .json(.init(email: email))))
+            let output = try await publicRESTClient.resendVerificationEmail(.init(body: .json(.init(email: email))))
             switch output {
             case .ok:
                 cooldownEndsAt = Date().addingTimeInterval(Self.resendCooldown)
@@ -157,36 +127,9 @@ final class VerifyEmailGateViewModel {
         changeEmailErrorMessage = nil
         defer { isSavingEmail = false }
 
-        if FeatureFlags.csharpUserEnabled {
-            await changeEmailViaREST()
-            return
-        }
-
-        let request = Wellspent_V1_ChangeEmailRequest.with { $0.newEmail = newEmail }
-        let response = await userClient.changeEmail(request: request)
-
-        switch response.result {
-        case .success(let message):
-            // The backend has already sent a fresh link to the new address,
-            // so the cooldown restarts from here rather than from whatever
-            // the previous resend left behind.
-            apply(message.user)
-            cooldownEndsAt = Date().addingTimeInterval(Self.resendCooldown)
-            isChangingEmail = false
-            newEmail = ""
-        case .failure(let error):
-            Self.logger.error("verifyGate.changeEmail failed: \(error.message ?? "unknown", privacy: .public)")
-            changeEmailErrorMessage = error.message ?? String(
-                localized: "Couldn't change your email address. Try again.",
-                locale: AppLanguageStore.currentLocale
-            )
-        }
-    }
-
-    private func changeEmailViaREST() async {
         let fallback = String(localized: "Couldn't change your email address. Try again.", locale: AppLanguageStore.currentLocale)
         do {
-            let output = try await csharpAuthenticatedRESTClient.changeEmail(.init(body: .json(.init(newEmail: newEmail))))
+            let output = try await authenticatedRESTClient.changeEmail(.init(body: .json(.init(newEmail: newEmail))))
             switch output {
             case .ok(let ok):
                 guard let body = try? ok.body.json else { changeEmailErrorMessage = fallback; return }
@@ -334,10 +277,8 @@ struct VerifyEmailGateView: View {
     VerifyEmailGateView(
         viewModel: {
             let viewModel = VerifyEmailGateViewModel(
-                authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-                publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-                csharpPublicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
-                csharpAuthenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+                publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+                authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
             )
             viewModel.apply(.with {
                 $0.email = "typo@exmaple.com"

@@ -1,5 +1,5 @@
 import SwiftUI
-import WellSpentAPI
+import WellSpentREST
 
 /// "Coming soon" placeholder — matches web's `ReportsPlaceholder.tsx`.
 /// Reachable via `NavigationLink` inside `BudgetManageView` rather than a
@@ -7,8 +7,7 @@ import WellSpentAPI
 /// `docs/features/tiered-subscriptions.md`); promoting it to a full
 /// `BudgetSection` tab is a one-line change once Reports is a real feature.
 struct ReportsPlaceholderView: View {
-    let authenticatedClient: ProtocolClient
-    @Environment(SessionStore.self) private var session
+    let authenticatedRESTClient: WellSpentREST.Client
 
     @State private var viewModel: ReportsPlaceholderViewModel?
 
@@ -42,10 +41,7 @@ struct ReportsPlaceholderView: View {
         .navigationTitle("Reports")
         .task {
             if viewModel == nil {
-                viewModel = ReportsPlaceholderViewModel(
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
-                )
+                viewModel = ReportsPlaceholderViewModel(restClient: authenticatedRESTClient)
             }
             await viewModel?.load()
         }
@@ -54,7 +50,7 @@ struct ReportsPlaceholderView: View {
 
 #Preview {
     NavigationStack {
-        ReportsPlaceholderView(authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"))
+        ReportsPlaceholderView(authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"))
     }
     .environment(SessionStore())
 }

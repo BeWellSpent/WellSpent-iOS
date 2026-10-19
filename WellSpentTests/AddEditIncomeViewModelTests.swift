@@ -15,7 +15,6 @@ struct AddEditIncomeViewModelTests {
             budgetProfileID: "profile-1",
             countryCode: countryCode,
             currencyCode: "USD",
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }

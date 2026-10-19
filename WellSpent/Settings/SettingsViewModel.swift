@@ -38,13 +38,13 @@ final class SettingsViewModel {
     private(set) var passwordErrorMessage: String?
     private(set) var passwordChangeSucceeded = false
 
-    private let userClient: Wellspent_V1_UserServiceClient
-    /// The country list moved to the REST transport, where it is cacheable —
-    /// it is the same three rows for every caller on earth and changes roughly
-    /// never. Deliberately the *public* REST client even here, on an
-    /// authenticated screen: sending a token would make the response look
-    /// user-specific to a cache that cannot know otherwise. Always Go — the
-    /// C# backend has no countries endpoint at all, same as web's `useCountries.ts`.
+    /// The country list is served on the REST transport, where it is
+    /// cacheable — it is the same three rows for every caller on earth and
+    /// changes roughly never. Deliberately the *public* REST client even
+    /// here, on an authenticated screen: sending a token would make the
+    /// response look user-specific to a cache that cannot know otherwise.
+    /// Always Go — the C# backend has no countries endpoint at all, same as
+    /// web's `useCountries.ts`.
     private let restClient: WellSpentREST.Client
     /// The C# backend's authenticated client, for GetMe/UpdateMe/ChangePassword/DeleteMe.
     private let csharpAuthenticatedRESTClient: WellSpentREST.Client
@@ -55,8 +55,7 @@ final class SettingsViewModel {
         !currentPassword.isEmpty && RegisterViewModel.passwordError(for: newPassword) == nil && !isChangingPassword
     }
 
-    init(authenticatedClient: ProtocolClient, publicRESTClient: WellSpentREST.Client, csharpAuthenticatedRESTClient: WellSpentREST.Client) {
-        self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
+    init(publicRESTClient: WellSpentREST.Client, csharpAuthenticatedRESTClient: WellSpentREST.Client) {
         self.restClient = publicRESTClient
         self.csharpAuthenticatedRESTClient = csharpAuthenticatedRESTClient
     }
@@ -65,7 +64,7 @@ final class SettingsViewModel {
         isLoading = true
         defer { isLoading = false }
 
-        async let user = UserRESTMapping.currentUser(connectClient: userClient, restClient: csharpAuthenticatedRESTClient, useREST: FeatureFlags.csharpUserEnabled)
+        async let user = UserRESTMapping.currentUser(restClient: csharpAuthenticatedRESTClient)
         async let countriesResult = try? restClient.enabledCountries()
 
         if let user = await user {
@@ -100,33 +99,6 @@ final class SettingsViewModel {
         profileErrorMessage = nil
         defer { isSavingProfile = false }
 
-        if FeatureFlags.csharpUserEnabled {
-            return await saveProfileViaREST()
-        }
-
-        let request = Wellspent_V1_UpdateMeRequest.with {
-            $0.firstName = firstName
-            $0.lastName = lastName
-            $0.countryCode = countryCode
-            $0.stateCode = isUnitedStates ? stateCode : ""
-            $0.filingStatus = isUnitedStates ? filingStatus : .unspecified
-            $0.taxPaymentFrequency = isUnitedStates ? taxPaymentFrequency : .unspecified
-            $0.language = language
-            $0.currency = currency
-        }
-        let response = await userClient.updateMe(request: request)
-
-        switch response.result {
-        case .success(let message):
-            apply(message.user)
-            return message.user
-        case .failure(let error):
-            profileErrorMessage = error.message ?? "Couldn't save your profile."
-            return nil
-        }
-    }
-
-    private func saveProfileViaREST() async -> Wellspent_V1_User? {
         do {
             let output = try await csharpAuthenticatedRESTClient.updateMe(.init(body: .json(.init(
                 firstName: firstName,
@@ -158,28 +130,6 @@ final class SettingsViewModel {
         passwordChangeSucceeded = false
         defer { isChangingPassword = false }
 
-        if FeatureFlags.csharpUserEnabled {
-            await changePasswordViaREST()
-            return
-        }
-
-        let request = Wellspent_V1_ChangePasswordRequest.with {
-            $0.currentPassword = currentPassword
-            $0.newPassword = newPassword
-        }
-        let response = await userClient.changePassword(request: request)
-
-        switch response.result {
-        case .success:
-            currentPassword = ""
-            newPassword = ""
-            passwordChangeSucceeded = true
-        case .failure(let error):
-            passwordErrorMessage = SettingsViewModel.passwordChangeErrorMessage(for: error)
-        }
-    }
-
-    private func changePasswordViaREST() async {
         do {
             let output = try await csharpAuthenticatedRESTClient.changePassword(.init(body: .json(.init(
                 currentPassword: currentPassword,
@@ -205,21 +155,6 @@ final class SettingsViewModel {
         profileErrorMessage = nil
         defer { isDeleting = false }
 
-        if FeatureFlags.csharpUserEnabled {
-            return await deleteAccountViaREST()
-        }
-
-        let response = await userClient.deleteMe(request: Wellspent_V1_DeleteMeRequest())
-        switch response.result {
-        case .success:
-            return true
-        case .failure(let error):
-            profileErrorMessage = error.message ?? "Couldn't delete your account."
-            return false
-        }
-    }
-
-    private func deleteAccountViaREST() async -> Bool {
         do {
             guard case .ok = try await csharpAuthenticatedRESTClient.deleteMe(.init()) else {
                 profileErrorMessage = "Couldn't delete your account."
@@ -229,17 +164,6 @@ final class SettingsViewModel {
         } catch {
             profileErrorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't delete your account."
             return false
-        }
-    }
-
-    static func passwordChangeErrorMessage(for error: ConnectError) -> String {
-        switch error.code {
-        case .invalidArgument:
-            return error.message ?? "Please check your current password and try again."
-        case .unavailable, .deadlineExceeded:
-            return "Can't reach the server. Check your connection and try again."
-        default:
-            return "Something went wrong. Please try again."
         }
     }
 }

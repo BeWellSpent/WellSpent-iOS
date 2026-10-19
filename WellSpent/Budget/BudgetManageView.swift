@@ -15,14 +15,13 @@ import WellSpentREST
 /// is gone and the state is local again.
 struct BudgetManageView: View {
     let viewModel: BudgetDetailViewModel
-    let authenticatedClient: ProtocolClient?
+    let authenticatedRESTClient: WellSpentREST.Client?
     let currencyCode: String
     let localeIdentifier: String
     let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
     /// Called after a successful delete, so the presenting sheet can close
     /// and the home view underneath can fall back to its empty state.
     let dismissParent: () -> Void
-    @Environment(SessionStore.self) private var session
 
     @State private var isEditSheetPresented = false
     @State private var isDeleteConfirmationPresented = false
@@ -39,12 +38,12 @@ struct BudgetManageView: View {
             }
 
             Section {
-                if let authenticatedClient {
+                if let authenticatedRESTClient {
                     NavigationLink("People") {
                         PeopleListView(
                             budgetProfileID: viewModel.profile.id,
                             budgetOwnerUserID: viewModel.profile.userID,
-                            authenticatedClient: authenticatedClient,
+                            authenticatedRESTClient: authenticatedRESTClient,
                             canManageUsers: viewModel.canManageUsers
                         )
                     }
@@ -54,7 +53,7 @@ struct BudgetManageView: View {
                         IncomeListView(
                             budgetProfileID: viewModel.profile.id,
                             budgetCountryCode: viewModel.profile.countryCode,
-                            authenticatedClient: authenticatedClient,
+                            authenticatedRESTClient: authenticatedRESTClient,
                             currencyCode: currencyCode,
                             localeIdentifier: localeIdentifier,
                             canEdit: viewModel.canEdit
@@ -66,7 +65,7 @@ struct BudgetManageView: View {
                         SavingsListView(
                             budgetProfileID: viewModel.profile.id,
                             periodStartDate: viewModel.currentPeriod?.startDate.dateOnly,
-                            authenticatedClient: authenticatedClient,
+                            authenticatedRESTClient: authenticatedRESTClient,
                             currencyCode: currencyCode,
                             localeIdentifier: localeIdentifier,
                             canEdit: viewModel.canEdit
@@ -77,7 +76,7 @@ struct BudgetManageView: View {
                     NavigationLink("Categories") {
                         CategoriesListView(
                             budgetProfileID: viewModel.profile.id,
-                            authenticatedClient: authenticatedClient,
+                            authenticatedRESTClient: authenticatedRESTClient,
                             canEdit: viewModel.canEdit
                         )
                     }
@@ -86,7 +85,7 @@ struct BudgetManageView: View {
                     NavigationLink("Payment Methods") {
                         PaymentMethodsListView(
                             budgetProfileID: viewModel.profile.id,
-                            authenticatedClient: authenticatedClient,
+                            authenticatedRESTClient: authenticatedRESTClient,
                             canEdit: viewModel.canEdit
                         )
                     }
@@ -97,7 +96,7 @@ struct BudgetManageView: View {
                             InvitesListView(
                                 budgetProfileID: viewModel.profile.id,
                                 budgetOwnerUserID: viewModel.profile.userID,
-                                authenticatedClient: authenticatedClient
+                                authenticatedRESTClient: authenticatedRESTClient
                             )
                         }
                         .accessibilityIdentifier("invitationsNavLink")
@@ -106,7 +105,7 @@ struct BudgetManageView: View {
                     NavigationLink("Alert Settings") {
                         AlertsListView(
                             budgetProfileID: viewModel.profile.id,
-                            authenticatedClient: authenticatedClient
+                            authenticatedRESTClient: authenticatedRESTClient
                         )
                     }
                     .accessibilityIdentifier("alertSettingsNavLink")
@@ -117,7 +116,7 @@ struct BudgetManageView: View {
                     if viewModel.profile.countryCode == "US" {
                         NavigationLink("Bank Connections") {
                             PlaidConnectionsPanelView(
-                                authenticatedClient: authenticatedClient,
+                                authenticatedRESTClient: authenticatedRESTClient,
                                 budgetProfileID: viewModel.profile.id
                             )
                         }
@@ -126,14 +125,14 @@ struct BudgetManageView: View {
                 }
             }
 
-            if let authenticatedClient {
+            if let authenticatedRESTClient {
                 // Not role-gated — these are the caller's own view settings,
                 // so a Viewer gets them too.
                 Section("Preferences") {
                     NavigationLink("Preferences") {
                         PreferencesView(
                             budgetProfileID: viewModel.profile.id,
-                            authenticatedClient: authenticatedClient
+                            authenticatedRESTClient: authenticatedRESTClient
                         )
                     }
                     .accessibilityIdentifier("preferencesNavLink")
@@ -162,11 +161,10 @@ struct BudgetManageView: View {
             }
         }
         .sheet(isPresented: $isEditSheetPresented) {
-            if let authenticatedClient {
+            if let authenticatedRESTClient {
                 EditBudgetSheet(
                     profile: viewModel.profile,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 ) { updated in
                     viewModel.applyUpdatedProfile(updated)
                     onUpdated(updated)
@@ -192,7 +190,7 @@ struct BudgetManageView: View {
 }
 
 #Preview {
-    let client = APIClient.makePublicClient(baseURL: "http://localhost:1")
+    let restClient = RESTClient.makePublicClient(baseURL: "http://localhost:1")
     return NavigationStack {
         BudgetManageView(
             viewModel: BudgetDetailViewModel(
@@ -202,15 +200,13 @@ struct BudgetManageView: View {
                     $0.cycle = .monthly
                     $0.countryCode = "US"
                 },
-                authenticatedClient: client,
-                restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+                restClient: restClient
             ),
-            authenticatedClient: client,
+            authenticatedRESTClient: restClient,
             currencyCode: "USD",
             localeIdentifier: "en",
             onUpdated: { _ in },
             dismissParent: {}
         )
     }
-    .environment(SessionStore())
 }

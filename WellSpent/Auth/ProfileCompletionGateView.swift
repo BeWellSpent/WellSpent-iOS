@@ -53,18 +53,16 @@ final class ProfileCompletionGateViewModel {
     var isUnitedStates: Bool { countryCode == "US" }
     var canSubmit: Bool { !countryCode.isEmpty && !isSubmitting }
 
-    private let userClient: Wellspent_V1_UserServiceClient
-    private let restClient: WellSpentREST.Client
-    private let csharpAuthenticatedRESTClient: WellSpentREST.Client
+    private let publicRESTClient: WellSpentREST.Client
+    private let authenticatedRESTClient: WellSpentREST.Client
 
-    init(authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client, csharpAuthenticatedRESTClient: WellSpentREST.Client) {
-        self.userClient = Wellspent_V1_UserServiceClient(client: authenticatedClient)
-        self.restClient = restClient
-        self.csharpAuthenticatedRESTClient = csharpAuthenticatedRESTClient
+    init(publicRESTClient: WellSpentREST.Client, authenticatedRESTClient: WellSpentREST.Client) {
+        self.publicRESTClient = publicRESTClient
+        self.authenticatedRESTClient = authenticatedRESTClient
     }
 
     func refresh() async {
-        guard let user = await UserRESTMapping.currentUser(connectClient: userClient, restClient: csharpAuthenticatedRESTClient, useREST: FeatureFlags.csharpUserEnabled) else { return }
+        guard let user = await UserRESTMapping.currentUser(restClient: authenticatedRESTClient) else { return }
         firstName = user.firstName
         lastName = user.lastName
         language = user.language
@@ -80,7 +78,7 @@ final class ProfileCompletionGateViewModel {
     /// user-specific to a cache that cannot know otherwise.
     private func loadCountries() async {
         do {
-            countries = try await restClient.enabledCountries()
+            countries = try await publicRESTClient.enabledCountries()
         } catch {
             errorMessage = String(localized: "Couldn't load the country list. Check your connection and try again.",
                                   bundle: AppLanguageStore.currentBundle,
@@ -94,35 +92,9 @@ final class ProfileCompletionGateViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
-        if FeatureFlags.csharpUserEnabled {
-            await submitViaREST()
-            return
-        }
-
-        let request = Wellspent_V1_UpdateMeRequest.with {
-            $0.firstName = firstName
-            $0.lastName = lastName
-            $0.countryCode = countryCode
-            $0.stateCode = isUnitedStates ? stateCode : ""
-            $0.filingStatus = isUnitedStates ? filingStatus : .unspecified
-            $0.language = language
-            $0.currency = currency
-        }
-        let response = await userClient.updateMe(request: request)
-        switch response.result {
-        case .success:
-            state = .complete
-        case .failure(let error):
-            errorMessage = error.message ?? String(localized: "Couldn't save that. Please try again.",
-                                                   bundle: AppLanguageStore.currentBundle,
-                                                   locale: AppLanguageStore.currentLocale)
-        }
-    }
-
-    private func submitViaREST() async {
         let fallback = String(localized: "Couldn't save that. Please try again.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
         do {
-            let output = try await csharpAuthenticatedRESTClient.updateMe(.init(body: .json(.init(
+            let output = try await authenticatedRESTClient.updateMe(.init(body: .json(.init(
                 firstName: firstName,
                 lastName: lastName,
                 countryCode: countryCode,

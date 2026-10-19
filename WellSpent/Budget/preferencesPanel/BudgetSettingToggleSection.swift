@@ -11,7 +11,7 @@ import WellSpentREST
 /// the budget gets.
 struct BudgetSettingToggleSection: View {
     let budgetProfileID: String
-    let authenticatedClient: ProtocolClient?
+    let authenticatedRESTClient: WellSpentREST.Client?
     let header: LocalizedStringKey
     let title: LocalizedStringKey
     let footer: LocalizedStringKey
@@ -62,13 +62,12 @@ struct BudgetSettingToggleSection: View {
             Text(footer)
         }
         .task {
-            guard let authenticatedClient else { return }
+            guard let authenticatedRESTClient else { return }
             if viewModel == nil {
                 viewModel = BudgetSettingToggleViewModel(
                     budgetProfileID: budgetProfileID,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient,
+                    restClient: authenticatedRESTClient,
                     read: read,
                     write: write
                 )

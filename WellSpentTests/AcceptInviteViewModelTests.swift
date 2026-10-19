@@ -10,10 +10,8 @@ struct AcceptInviteViewModelTests {
     func acceptGuardsWhenUnauthenticated() async {
         let viewModel = AcceptInviteViewModel(
             token: "preview-token",
-            publicClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-            authenticatedClient: nil,
             publicRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
-            csharpAuthenticatedRESTClient: nil
+            authenticatedRESTClient: nil
         )
 
         await viewModel.accept()

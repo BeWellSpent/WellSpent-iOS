@@ -17,26 +17,23 @@ final class BudgetSettingToggleViewModel {
 
     private let budgetProfileID: String
     private let currentUserID: String?
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
     private let read: (Wellspent_V1_BudgetProfile) -> Bool
     /// Deliberately takes no client — each setting's write closure is
-    /// self-contained and branches its own transport, decoupled from
-    /// whichever client type this view model happens to use for its own
-    /// reads (mirrors web's identical `BudgetSettingToggle.tsx` decoupling).
+    /// self-contained, decoupled from whichever client this view model
+    /// happens to use for its own reads (mirrors web's identical
+    /// `BudgetSettingToggle.tsx` decoupling).
     private let write: (String, Bool) async -> String?
 
     init(
         budgetProfileID: String,
         currentUserID: String?,
-        authenticatedClient: ProtocolClient,
         restClient: WellSpentREST.Client,
         read: @escaping (Wellspent_V1_BudgetProfile) -> Bool,
         write: @escaping (String, Bool) async -> String?
     ) {
         self.budgetProfileID = budgetProfileID
         self.currentUserID = currentUserID
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
         self.read = read
         self.write = write
@@ -60,26 +57,15 @@ final class BudgetSettingToggleViewModel {
     }
 
     private func fetchProfile() async -> Wellspent_V1_BudgetProfile? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.getBudgetProfile(.init(path: .init(id: budgetProfileID))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return BudgetRESTMapping.profile(from: body.profile)
-        }
-        let response = await client.getBudgetProfile(request: .with { $0.id = budgetProfileID })
-        guard case .success(let message) = response.result else { return nil }
-        return message.profile
+        guard let output = try? await restClient.getBudgetProfile(.init(path: .init(id: budgetProfileID))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return BudgetRESTMapping.profile(from: body.profile)
     }
 
     private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
-        if FeatureFlags.csharpBudgetEnabled {
-            guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
-                  case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-            return body.people.map(BudgetRESTMapping.person(from:))
-        }
-        guard case .success(let message) = await client.listBudgetPeople(request: .with { $0.budgetProfileID = budgetProfileID }).result else {
-            return nil
-        }
-        return message.people
+        guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return body.people.map(BudgetRESTMapping.person(from:))
     }
 
     func update(enabled: Bool) async {

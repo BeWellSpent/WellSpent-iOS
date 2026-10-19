@@ -19,16 +19,14 @@ final class AddEditCategoryViewModel {
 
     let mode: Mode
 
-    private let client: Wellspent_V1_BudgetServiceClient
     private let restClient: WellSpentREST.Client
 
     var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSubmitting
     }
 
-    init(mode: Mode, authenticatedClient: ProtocolClient, restClient: WellSpentREST.Client) {
+    init(mode: Mode, restClient: WellSpentREST.Client) {
         self.mode = mode
-        self.client = Wellspent_V1_BudgetServiceClient(client: authenticatedClient)
         self.restClient = restClient
 
         switch mode {
@@ -51,62 +49,31 @@ final class AddEditCategoryViewModel {
         switch mode {
         case .add:
             let fallback = "Couldn't create that category."
-            if FeatureFlags.csharpBudgetEnabled {
-                do {
-                    let output = try await restClient.createCategory(.init(body: .json(.init(name: trimmedName, color: color))))
-                    guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                        errorMessage = fallback
-                        return nil
-                    }
-                    return BudgetRESTMapping.category(from: body.category)
-                } catch {
-                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            do {
+                let output = try await restClient.createCategory(.init(body: .json(.init(name: trimmedName, color: color))))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
                     return nil
                 }
-            }
-
-            let request = Wellspent_V1_CreateCategoryRequest.with {
-                $0.name = trimmedName
-                $0.color = color
-            }
-            let response = await client.createCategory(request: request)
-            switch response.result {
-            case .success(let message):
-                return message.category
-            case .failure(let error):
-                errorMessage = error.message ?? fallback
+                return BudgetRESTMapping.category(from: body.category)
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
                 return nil
             }
         case .edit(let existing):
             let fallback = "Couldn't update that category."
-            if FeatureFlags.csharpBudgetEnabled {
-                do {
-                    let output = try await restClient.updateCategory(.init(
-                        path: .init(id: existing.id),
-                        body: .json(.init(name: trimmedName, color: color))
-                    ))
-                    guard case .ok(let ok) = output, let body = try? ok.body.json else {
-                        errorMessage = fallback
-                        return nil
-                    }
-                    return BudgetRESTMapping.category(from: body.category)
-                } catch {
-                    errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            do {
+                let output = try await restClient.updateCategory(.init(
+                    path: .init(id: existing.id),
+                    body: .json(.init(name: trimmedName, color: color))
+                ))
+                guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                    errorMessage = fallback
                     return nil
                 }
-            }
-
-            let request = Wellspent_V1_UpdateCategoryRequest.with {
-                $0.id = existing.id
-                $0.name = trimmedName
-                $0.color = color
-            }
-            let response = await client.updateCategory(request: request)
-            switch response.result {
-            case .success(let message):
-                return message.category
-            case .failure(let error):
-                errorMessage = error.message ?? fallback
+                return BudgetRESTMapping.category(from: body.category)
+            } catch {
+                errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
                 return nil
             }
         }

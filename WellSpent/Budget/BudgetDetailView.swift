@@ -25,7 +25,7 @@ import WellSpentREST
 struct BudgetDetailView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(SessionStore.self) private var session
-    private let authenticatedClient: ProtocolClient?
+    private let authenticatedRESTClient: WellSpentREST.Client?
     private let currencyCode: String
     private let localeIdentifier: String
     private let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
@@ -55,28 +55,24 @@ struct BudgetDetailView: View {
     @State private var isPaymentMethodRequiredPresented = false
     @State private var isPaymentMethodsPresented = false
 
-    private let restClient: WellSpentREST.Client
-
     init(
         profile: Wellspent_V1_BudgetProfile,
         periodID: String? = nil,
-        authenticatedClient: ProtocolClient?,
-        restClient: WellSpentREST.Client,
+        authenticatedRESTClient: WellSpentREST.Client?,
         currencyCode: String,
         localeIdentifier: String,
         onUpdated: @escaping (Wellspent_V1_BudgetProfile) -> Void,
         onUserUpdated: @escaping (Wellspent_V1_User) -> Void,
         onDeleted: @escaping () -> Void
     ) {
-        self.authenticatedClient = authenticatedClient
-        self.restClient = restClient
+        self.authenticatedRESTClient = authenticatedRESTClient
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.onUpdated = onUpdated
         self.onUserUpdated = onUserUpdated
         self.onDeleted = onDeleted
-        _viewModel = State(initialValue: authenticatedClient.map {
-            BudgetDetailViewModel(profile: profile, overridePeriodID: periodID, authenticatedClient: $0, restClient: restClient)
+        _viewModel = State(initialValue: authenticatedRESTClient.map {
+            BudgetDetailViewModel(profile: profile, overridePeriodID: periodID, restClient: $0)
         })
     }
 
@@ -145,7 +141,7 @@ struct BudgetDetailView: View {
             if let viewModel {
                 BudgetMenuSheet(
                     viewModel: viewModel,
-                    authenticatedClient: authenticatedClient,
+                    authenticatedRESTClient: authenticatedRESTClient,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     onUpdated: onUpdated,
@@ -165,11 +161,11 @@ struct BudgetDetailView: View {
             // Presented here rather than switching to the Manage tab and
             // pushing: dismissing lands the user back on Transactions, ready
             // to add the thing they came for.
-            if let authenticatedClient, let viewModel {
+            if let authenticatedRESTClient, let viewModel {
                 NavigationStack {
                     PaymentMethodsListView(
                         budgetProfileID: viewModel.profile.id,
-                        authenticatedClient: authenticatedClient,
+                        authenticatedRESTClient: authenticatedRESTClient,
                         canEdit: viewModel.canEdit
                     )
                 }
@@ -184,12 +180,11 @@ struct BudgetDetailView: View {
             // Created once and polled for the lifetime of this screen (not
             // per-toolbar-appearance) — every tab's bell shares this same
             // instance, so switching tabs never restarts the 30s poll loop.
-            guard let authenticatedClient, let viewModel else { return }
+            guard let authenticatedRESTClient, let viewModel else { return }
             if notificationViewModel == nil {
                 notificationViewModel = NotificationBellViewModel(
                     budgetProfileID: viewModel.profile.id,
-                    authenticatedClient: authenticatedClient,
-                    restClient: session.csharpAuthenticatedRESTClient ?? session.csharpPublicRESTClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await notificationViewModel?.pollUnreadCount()
@@ -200,13 +195,12 @@ struct BudgetDetailView: View {
             // as `notificationViewModel`. Polled (not a one-shot load) so the
             // badge — visible from every tab — updates without the user
             // having to enter the Review tab first.
-            guard let authenticatedClient, let viewModel else { return }
+            guard let authenticatedRESTClient, let viewModel else { return }
             if reviewViewModel == nil {
                 reviewViewModel = TransactionReviewViewModel(
                     budgetProfileID: viewModel.profile.id,
                     currentUserID: session.userID,
-                    authenticatedClient: authenticatedClient,
-                    restClient: restClient
+                    restClient: authenticatedRESTClient
                 )
             }
             await reviewViewModel?.pollPendingCount()
@@ -402,11 +396,11 @@ struct BudgetDetailView: View {
 
     @ViewBuilder
     private func planContent(viewModel: BudgetDetailViewModel) -> some View {
-        if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+        if let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
             ExpensePlanView(
                 budgetPeriodID: period.id,
                 budgetProfileID: viewModel.profile.id,
-                authenticatedClient: authenticatedClient,
+                authenticatedRESTClient: authenticatedRESTClient,
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
                 selectedKind: $planSelectedKind,
@@ -468,11 +462,11 @@ struct BudgetDetailView: View {
             .padding(.horizontal)
             .padding(.top, 8)
 
-            if let authenticatedClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+            if let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
                 TransactionsListView(
                     budgetPeriodID: period.id,
                     budgetProfileID: viewModel.profile.id,
-                    authenticatedClient: authenticatedClient,
+                    authenticatedRESTClient: authenticatedRESTClient,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     selectedKind: $transactionsSelectedKind,
@@ -505,8 +499,8 @@ struct BudgetDetailView: View {
 
     @ViewBuilder
     private var reportsContent: some View {
-        if let authenticatedClient {
-            ReportsPlaceholderView(authenticatedClient: authenticatedClient)
+        if let authenticatedRESTClient {
+            ReportsPlaceholderView(authenticatedRESTClient: authenticatedRESTClient)
         } else {
             ProgressView()
         }
@@ -522,8 +516,7 @@ struct BudgetDetailView: View {
                 $0.cycle = .monthly
                 $0.countryCode = "US"
             },
-            authenticatedClient: APIClient.makePublicClient(baseURL: "http://localhost:1"),
-            restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
             onUpdated: { _ in },
