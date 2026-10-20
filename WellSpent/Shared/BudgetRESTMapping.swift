@@ -296,6 +296,12 @@ nonisolated enum BudgetRESTMapping {
         }
     }
 
+    /// `fixedExpensePaidOffEarly` has no proto equivalent (REST-only, pay-in-full
+    /// feature) — carried alongside the mapped `Transaction` rather than on it.
+    static func isFixedExpensePaidOffEarly(from t: Components.Schemas.Transaction) -> Bool {
+        t.fixedExpensePaidOffEarly
+    }
+
     /// `transaction_type` lookup table seed order (migration 000001): Fixed = 1, Variable = 2.
     /// Raw int32 FK on the proto wire, unlike REST's real `ExpenseType` string enum.
     static func expenseTypeID(from t: Components.Schemas.ExpenseType) -> Int32 {
@@ -439,6 +445,21 @@ nonisolated enum BudgetRESTMapping {
             $0.isInstallmentPlan = f.isInstallmentPlan
             $0.paymentsMade = f.paymentsMade
         }
+    }
+
+    /// `remainingBalance`/`paidOffDate` have no proto equivalent (REST-only,
+    /// pay-in-full feature) — carried alongside the mapped `FixedExpense`
+    /// rather than added to the generated type.
+    struct FixedExpensePayoffInfo {
+        let remainingBalance: Wellspent_V1_Money
+        let paidOffDate: Date?
+    }
+
+    static func fixedExpensePayoffInfo(from f: Components.Schemas.FixedExpense) -> FixedExpensePayoffInfo {
+        FixedExpensePayoffInfo(
+            remainingBalance: money(from: f.remainingBalance),
+            paidOffDate: f.paidOffDate.flatMap { SwiftProtobuf.Google_Protobuf_Timestamp(restDate: $0)?.dateOnly }
+        )
     }
 
     static func frequencyUnit(from u: Components.Schemas.FrequencyUnit) -> Wellspent_V1_FrequencyUnit {
