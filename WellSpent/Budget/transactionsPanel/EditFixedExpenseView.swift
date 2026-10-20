@@ -8,12 +8,24 @@ struct EditFixedExpenseView: View {
     private let categories: [Wellspent_V1_Category]
     private let paymentMethods: [Wellspent_V1_PaymentMethod]
     private let onDone: (Wellspent_V1_FixedExpense) -> Void
+    /// Only this fixed expense's own id/budget/remaining balance are needed
+    /// to open the "Pay in full" sheet — threaded separately from `expense`
+    /// since `remainingBalance` has no proto equivalent (see
+    /// `BudgetRESTMapping.FixedExpensePayoffInfo`).
+    private let fixedExpenseID: String
+    private let budgetProfileID: String
+    private let currencyCode: String
+    private let remainingBalance: Wellspent_V1_Money
+    private let hasPaymentPlan: Bool
+    private let restClient: WellSpentREST.Client
+    @State private var isPayInFullPresented = false
 
     init(
         expense: Wellspent_V1_FixedExpense,
         currencyCode: String,
         categories: [Wellspent_V1_Category],
         paymentMethods: [Wellspent_V1_PaymentMethod],
+        remainingBalance: Wellspent_V1_Money = Wellspent_V1_Money(),
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_FixedExpense) -> Void
     ) {
@@ -25,6 +37,12 @@ struct EditFixedExpenseView: View {
         self.categories = categories
         self.paymentMethods = paymentMethods
         self.onDone = onDone
+        self.fixedExpenseID = expense.id
+        self.budgetProfileID = expense.budgetProfileID
+        self.currencyCode = currencyCode
+        self.remainingBalance = remainingBalance
+        self.hasPaymentPlan = expense.totalPayments > 0
+        self.restClient = restClient
     }
 
     var body: some View {
@@ -33,6 +51,7 @@ struct EditFixedExpenseView: View {
                 detailsSection
                 scheduleSection
                 paymentPlanSection
+                payInFullSection
                 attributionSection
                 errorSection
             }
@@ -56,6 +75,32 @@ struct EditFixedExpenseView: View {
                     .disabled(!viewModel.canSubmit)
                     .accessibilityIdentifier("saveEditedFixedExpenseButton")
                 }
+            }
+        }
+        .sheet(isPresented: $isPayInFullPresented) {
+            PayFixedExpenseInFullView(
+                budgetProfileID: budgetProfileID,
+                fixedExpenseID: fixedExpenseID,
+                currencyCode: currencyCode,
+                remainingBalance: remainingBalance,
+                restClient: restClient
+            ) { _, fixedExpense in
+                onDone(fixedExpense)
+                dismiss()
+            }
+        }
+    }
+
+    /// Settles the plan's remaining balance in one payment — any fixed
+    /// expense with a payment plan, not only installment plans.
+    @ViewBuilder
+    private var payInFullSection: some View {
+        if hasPaymentPlan {
+            Section {
+                Button("Pay in Full") {
+                    isPayInFullPresented = true
+                }
+                .accessibilityIdentifier("payInFullButton")
             }
         }
     }

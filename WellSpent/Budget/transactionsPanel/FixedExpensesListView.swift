@@ -263,6 +263,7 @@ struct FixedExpensesListView: View {
                         currencyCode: currencyCode,
                         categories: viewModel.categories,
                         paymentMethods: viewModel.paymentMethods,
+                        remainingBalance: viewModel.remainingBalance(for: template.id),
                         restClient: authenticatedRESTClient
                     ) { _ in
                         Task { await viewModel.handleTemplateUpdated() }
@@ -290,6 +291,7 @@ struct FixedExpensesListView: View {
                     currencyCode: currencyCode,
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
+                    remainingBalance: viewModel.remainingBalance(for: expense.id),
                     restClient: authenticatedRESTClient
                 ) { _ in
                     Task { await viewModel.handleTemplateUpdated() }
@@ -592,8 +594,19 @@ private struct FixedExpenseRow: View {
 
     private var fixedExpenseNameContent: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(transaction.name)
-                .foregroundStyle(.primary)
+            HStack(spacing: 4) {
+                Text(transaction.name)
+                    .foregroundStyle(.primary)
+                // The payment that settled the plan's remaining balance
+                // early — the template deactivates and disappears from
+                // `listFixedExpenses`, so this is its only lasting record.
+                if viewModel.isPaidOffEarly(transaction) {
+                    Text("(paid off early)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("paidOffEarlyBadge_\(transaction.name)")
+                }
+            }
             HStack(spacing: 4) {
                 if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
                     ColorDotView(hex: viewModel.categoryColor(for: transaction.categoryID), diameter: 8)

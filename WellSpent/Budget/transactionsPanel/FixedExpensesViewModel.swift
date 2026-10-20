@@ -28,6 +28,12 @@ final class FixedExpensesViewModel {
     /// Period totals, computed server-side — see `totalText`.
     private(set) var summary: Wellspent_V1_GetExpenseSummaryResponse?
     private(set) var errorMessage: String?
+    /// `remainingBalance`/`paidOffDate` have no proto equivalent, keyed by
+    /// fixed expense id — see `BudgetRESTMapping.FixedExpensePayoffInfo`.
+    private(set) var payoffByFixedExpenseID: [String: BudgetRESTMapping.FixedExpensePayoffInfo] = [:]
+    /// Transactions whose payment brought their plan's balance to zero early —
+    /// see `BudgetRESTMapping.isFixedExpensePaidOffEarly`.
+    private(set) var paidOffEarlyTransactionIDs: Set<String> = []
 
     let budgetPeriodID: String
     let budgetProfileID: String
@@ -123,6 +129,7 @@ final class FixedExpensesViewModel {
                 errorMessage = "Couldn't load fixed expenses."
                 return nil
             }
+            paidOffEarlyTransactionIDs = Set(body.transactions.filter(BudgetRESTMapping.isFixedExpensePaidOffEarly(from:)).map(\.id))
             return body.transactions.map(BudgetRESTMapping.transaction(from:))
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load fixed expenses."
@@ -159,7 +166,18 @@ final class FixedExpensesViewModel {
             path: .init(id: budgetProfileID),
             query: .init(focusedView: focusedView)
         )), case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        payoffByFixedExpenseID = Dictionary(uniqueKeysWithValues: body.fixedExpenses.map { ($0.id, BudgetRESTMapping.fixedExpensePayoffInfo(from: $0)) })
         return body.fixedExpenses.map(BudgetRESTMapping.fixedExpense(from:))
+    }
+
+    /// Prefill for the "Pay in full" sheet — zero when the template has no
+    /// payoff data loaded yet (e.g. a freshly created template).
+    func remainingBalance(for fixedExpenseID: String) -> Wellspent_V1_Money {
+        payoffByFixedExpenseID[fixedExpenseID]?.remainingBalance ?? Wellspent_V1_Money()
+    }
+
+    func isPaidOffEarly(_ transaction: Wellspent_V1_Transaction) -> Bool {
+        paidOffEarlyTransactionIDs.contains(transaction.id)
     }
 
     /// Confirmed review matches for this Fixed transaction, rendered as
@@ -268,6 +286,7 @@ final class FixedExpensesViewModel {
                 errorMessage = fallback
                 return
             }
+            setPaidOffEarly(BudgetRESTMapping.isFixedExpensePaidOffEarly(from: body.transaction), for: body.transaction.id)
             replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
@@ -286,6 +305,7 @@ final class FixedExpensesViewModel {
                 errorMessage = fallback
                 return
             }
+            setPaidOffEarly(BudgetRESTMapping.isFixedExpensePaidOffEarly(from: body.transaction), for: body.transaction.id)
             replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
@@ -366,5 +386,13 @@ final class FixedExpensesViewModel {
     private func replaceTransaction(_ transaction: Wellspent_V1_Transaction) {
         guard let index = transactions.firstIndex(where: { $0.id == transaction.id }) else { return }
         transactions[index] = transaction
+    }
+
+    private func setPaidOffEarly(_ paidOffEarly: Bool, for transactionID: String) {
+        if paidOffEarly {
+            paidOffEarlyTransactionIDs.insert(transactionID)
+        } else {
+            paidOffEarlyTransactionIDs.remove(transactionID)
+        }
     }
 }
