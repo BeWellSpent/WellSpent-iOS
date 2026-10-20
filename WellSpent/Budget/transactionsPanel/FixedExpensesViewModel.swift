@@ -64,15 +64,11 @@ final class FixedExpensesViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let fixedExpensesResult = fetchFixedExpenses()
         async let categoriesResult = fetchCategories()
         async let paymentMethodsResult = fetchPaymentMethods()
         async let peopleResult = fetchPeople()
         async let profileResult = fetchProfile()
 
-        if let fetched = await fixedExpensesResult {
-            fixedExpenses = fetched
-        }
         if let fetched = await categoriesResult {
             categories = fetched
         }
@@ -88,8 +84,13 @@ final class FixedExpensesViewModel {
 
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
+        async let fixedExpensesResult = fetchFixedExpenses(focusedView: focusedView)
         async let transactionsResult = fetchTransactions(focusedView: focusedView)
         async let summaryResult = fetchSummary(focusedView: focusedView)
+
+        if let fetched = await fixedExpensesResult {
+            fixedExpenses = fetched
+        }
 
         if let fetched = await transactionsResult {
             // Oldest first: the Fixed list is a schedule, so the month should
@@ -153,9 +154,11 @@ final class FixedExpensesViewModel {
         return BudgetRESTMapping.profile(from: body.profile)
     }
 
-    private func fetchFixedExpenses() async -> [Wellspent_V1_FixedExpense]? {
-        guard let output = try? await restClient.listFixedExpenses(.init(path: .init(id: budgetProfileID))),
-              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+    private func fetchFixedExpenses(focusedView: Bool) async -> [Wellspent_V1_FixedExpense]? {
+        guard let output = try? await restClient.listFixedExpenses(.init(
+            path: .init(id: budgetProfileID),
+            query: .init(focusedView: focusedView)
+        )), case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
         return body.fixedExpenses.map(BudgetRESTMapping.fixedExpense(from:))
     }
 

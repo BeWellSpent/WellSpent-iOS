@@ -294,7 +294,9 @@ struct BudgetDetailView: View {
                 }
             }
         case .transactions:
-            if canAddTransaction && transactionsSelectedKind == .variable {
+            // Payments gets the same Variable-style add sheet, not the
+            // Fixed-expense form — manual add is allowed there too (issue #76).
+            if canAddTransaction && transactionsSelectedKind != .fixed {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         startAddingTransaction { isAddTransactionPresented = true }

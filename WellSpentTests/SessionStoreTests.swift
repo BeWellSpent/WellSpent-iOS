@@ -14,7 +14,7 @@ struct SessionStoreTests {
         let session = SessionStore(baseURL: "http://localhost:1", tokenStore: makeTokenStore())
         #expect(!session.isAuthenticated)
         #expect(session.userID == nil)
-        #expect(session.authenticatedClient == nil)
+        #expect(session.authenticatedRESTClient == nil)
     }
 
     @Test("restores an authenticated session from a valid, unexpired token already in the Keychain")
@@ -26,7 +26,7 @@ struct SessionStoreTests {
 
         #expect(session.isAuthenticated)
         #expect(session.userID == "user-42")
-        #expect(session.authenticatedClient != nil)
+        #expect(session.authenticatedRESTClient != nil)
     }
 
     @Test("discards an expired token found in the Keychain at launch")
@@ -62,7 +62,7 @@ struct SessionStoreTests {
 
         #expect(!session.isAuthenticated)
         #expect(session.userID == nil)
-        #expect(session.authenticatedClient == nil)
+        #expect(session.authenticatedRESTClient == nil)
         #expect(tokenStore.readToken() == nil)
     }
 

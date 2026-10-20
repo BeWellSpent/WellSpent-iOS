@@ -140,12 +140,38 @@ final class TransactionsViewModel {
         return body.people.map(BudgetRESTMapping.person(from:))
     }
 
+    /// Card payments, as identified by the system "Payment" category — their
+    /// own tab now (issue #76), so they're carved out of the Variable list
+    /// below rather than shown there. Loan payments and transfers use
+    /// different system categories and stay in Variable.
+    private var paymentCategoryID: Int32 {
+        categories.first { $0.isSystem(.payment) }?.id ?? -1
+    }
+
     /// Excludes transactions whose review was confirmed — those are shown
     /// instead as a linked sub-row under the matched Fixed transaction (see
-    /// `TransactionReviewMatching`).
+    /// `TransactionReviewMatching`) — and card-payment rows, which now live
+    /// on their own tab (issue #76).
     func visibleTransactions(reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_Transaction] {
         let confirmedIDs = TransactionReviewMatching.confirmedTransactionIDs(reviews)
-        return transactions.filter { !confirmedIDs.contains($0.id) }
+        let paymentCategoryID = paymentCategoryID
+        return transactions.filter { !confirmedIDs.contains($0.id) && $0.categoryID != paymentCategoryID }
+    }
+
+    /// Card-payment rows, carved out of `visibleTransactions` above.
+    func paymentTransactions(reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_Transaction] {
+        let confirmedIDs = TransactionReviewMatching.confirmedTransactionIDs(reviews)
+        let paymentCategoryID = paymentCategoryID
+        return transactions.filter { !confirmedIDs.contains($0.id) && $0.categoryID == paymentCategoryID }
+    }
+
+    /// Plain client-side sum of the Payments tab's own rows — there's no
+    /// server analog; `variableActualTotal` already excludes these from its
+    /// own sum (Payment is category-excluded server-side, same as Income)
+    /// and is untouched by this.
+    func paymentsTotalText(reviews: [Wellspent_V1_TransactionReview]) -> String {
+        let amounts = paymentTransactions(reviews: reviews).map { TransactionAmountFormatting.tuple(from: $0.amount) }
+        return TransactionAmountFormatting.totalDisplayText(amounts: amounts, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 
     func pendingMatchName(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> String? {
@@ -233,6 +259,13 @@ final class TransactionsViewModel {
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
+    }
+
+    /// Seeds state without a network call, so the partition logic above is
+    /// testable. Mirrors `FixedExpensesViewModel.setStateForTesting`.
+    func setStateForTesting(transactions: [Wellspent_V1_Transaction], categories: [Wellspent_V1_Category] = []) {
+        self.transactions = transactions
+        self.categories = categories
     }
 
     func delete(id: String) async {

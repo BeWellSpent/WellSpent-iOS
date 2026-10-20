@@ -54,7 +54,7 @@ final class AddEditTransactionViewModel {
             && !paymentMethodID.isEmpty
     }
 
-    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, forceLocked: Bool = false, restClient: WellSpentREST.Client) {
+    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, forceLocked: Bool = false, defaultCategoryID: Int32 = 0, restClient: WellSpentREST.Client) {
         self.mode = mode
         self.budgetPeriodID = budgetPeriodID
         self.currencyCode = currencyCode
@@ -65,7 +65,7 @@ final class AddEditTransactionViewModel {
             name = ""
             amountText = ""
             isReceived = false
-            categoryID = 0
+            categoryID = defaultCategoryID
             paymentMethodID = ""
             recurring = false
             date = Date()
