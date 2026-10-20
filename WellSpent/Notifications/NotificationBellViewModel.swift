@@ -22,11 +22,14 @@ final class NotificationBellViewModel {
 
     /// Runs for the lifetime of the caller's `.task` (auto-cancelled when
     /// that view disappears) — meant to be started once from `BudgetDetailView`,
-    /// not per-toolbar-appearance, so tab switches don't restart the loop.
-    func pollUnreadCount() async {
-        while !Task.isCancelled {
+    /// not per-toolbar-appearance, so tab switches don't restart the subscription.
+    /// Refreshes on every push (the bell's count isn't alert-type-specific),
+    /// not on a timer — a denied/undelivered push means no automatic update
+    /// until the user pulls to refresh or re-enters the tab, a deliberate
+    /// tradeoff over polling.
+    func observePushEvents() async {
+        for await _ in PushEventCenter.shared.subscribe() {
             await refreshUnreadCount()
-            try? await Task.sleep(for: .seconds(30))
         }
     }
 

@@ -56,16 +56,23 @@ final class TransactionReviewViewModel {
         self.people = people
     }
 
+    /// Whether an incoming push should refresh this budget's review queue —
+    /// scoped to both the alert type and this view model's own budget, so a
+    /// `review_pending` push for a different budget doesn't trigger a reload.
+    /// Pure/testable on its own, separate from the subscription loop below.
+    func shouldReload(for event: PushEvent) -> Bool {
+        event.alertType == "review_pending" && event.budgetProfileID == budgetProfileID
+    }
+
     /// Started once from `BudgetDetailView`'s own `.task` (same shape as
-    /// `NotificationBellViewModel.pollUnreadCount()`) so the Review tab's
+    /// `NotificationBellViewModel.observePushEvents()`) so the Review tab's
     /// badge — visible from every tab — reflects new matches without the
-    /// user having to enter the tab first. Web gets this for free from React
-    /// Query's cache invalidation across mutations; there's no equivalent
-    /// shared-cache mechanism here, so polling is the direct substitute.
-    func pollPendingCount() async {
-        while !Task.isCancelled {
+    /// user having to enter the tab first. No time-based fallback: a push
+    /// that's denied or never delivered means no automatic update until the
+    /// user pulls to refresh or re-enters the tab.
+    func observePushEvents() async {
+        for await event in PushEventCenter.shared.subscribe() where shouldReload(for: event) {
             await load()
-            try? await Task.sleep(for: .seconds(30))
         }
     }
 
@@ -134,8 +141,7 @@ final class TransactionReviewViewModel {
             // Synthesize the status locally rather than removing the row, so
             // `TransactionReviewMatching` (consumed by the Transactions tab,
             // sharing this same view model instance) sees the confirmed state
-            // immediately instead of waiting for the next `pollPendingCount()`
-            // tick, up to 30s later.
+            // immediately rather than waiting on a matching push to arrive.
             if let index = reviews.firstIndex(where: { $0.id == review.id }) {
                 reviews[index].status = "confirmed"
             }
