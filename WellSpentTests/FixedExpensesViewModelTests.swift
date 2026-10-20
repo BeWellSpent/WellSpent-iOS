@@ -10,22 +10,23 @@ import WellSpentREST
 @MainActor
 @Suite("FixedExpensesViewModel")
 struct FixedExpensesViewModelTests {
-    private func makeViewModel() -> FixedExpensesViewModel {
+    private func makeViewModel(currentUserID: String? = nil) -> FixedExpensesViewModel {
         FixedExpensesViewModel(
             budgetPeriodID: "period-1",
             budgetProfileID: "budget-1",
             currencyCode: "USD",
             localeIdentifier: "en",
-            currentUserID: nil,
+            currentUserID: currentUserID,
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
 
-    private func expense(id: String) -> Wellspent_V1_FixedExpense {
+    private func expense(id: String, paymentMethodID: String = "") -> Wellspent_V1_FixedExpense {
         .with {
             $0.id = id
             $0.name = "Rent"
             $0.isActive = true
+            $0.paymentMethodID = paymentMethodID
         }
     }
 
@@ -71,5 +72,41 @@ struct FixedExpensesViewModelTests {
         #expect(viewModel.fixedExpenses.map(\.id) == ["fe-1"])
         #expect(viewModel.transactions.map(\.id) == ["tx-1"])
         #expect(viewModel.errorMessage == nil)
+    }
+
+    // issue #77: the Future section must only show the caller's own (or
+    // unattributed) upcoming bills when Focused View is on.
+    @Test("focused view hides another person's template, keeps unattributed, and keeps fixedExpenses unfiltered")
+    func visibleFixedExpensesScopesUnderFocusedView() {
+        let viewModel = makeViewModel(currentUserID: "me")
+        let methods: [Wellspent_V1_PaymentMethod] = [
+            .with { $0.id = "pm-mine"; $0.budgetPersonID = 1 },
+            .with { $0.id = "pm-other"; $0.budgetPersonID = 2 }
+        ]
+        let people: [Wellspent_V1_BudgetPerson] = [.with { $0.id = 1; $0.userID = "me" }]
+        viewModel.setStateForTesting(
+            fixedExpenses: [
+                expense(id: "mine", paymentMethodID: "pm-mine"),
+                expense(id: "other", paymentMethodID: "pm-other"),
+                expense(id: "unattributed", paymentMethodID: "")
+            ],
+            people: people,
+            paymentMethods: methods,
+            isFocusedView: true
+        )
+
+        #expect(Set(viewModel.visibleFixedExpenses.map(\.id)) == ["mine", "unattributed"])
+        #expect(Set(viewModel.fixedExpenses.map(\.id)) == ["mine", "other", "unattributed"])
+    }
+
+    @Test("focused view off returns every template unfiltered")
+    func visibleFixedExpensesUnfilteredWhenNotFocused() {
+        let viewModel = makeViewModel()
+        viewModel.setStateForTesting(
+            fixedExpenses: [expense(id: "mine", paymentMethodID: "pm-mine"), expense(id: "other", paymentMethodID: "pm-other")],
+            isFocusedView: false
+        )
+
+        #expect(Set(viewModel.visibleFixedExpenses.map(\.id)) == ["mine", "other"])
     }
 }

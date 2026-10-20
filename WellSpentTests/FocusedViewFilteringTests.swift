@@ -1,8 +1,29 @@
 import Testing
+import WellSpentAPI
 @testable import WellSpent
 
 @Suite("FocusedViewFiltering")
 struct FocusedViewFilteringTests {
+    private var methods: [Wellspent_V1_PaymentMethod] {
+        [.with { $0.id = "pm-mine"; $0.budgetPersonID = 1 },
+         .with { $0.id = "pm-orphan"; $0.budgetPersonID = 0 }]
+    }
+
+    @Test("empty payment method id resolves to no owner")
+    func emptyIDHasNoOwner() {
+        #expect(FocusedViewFiltering.ownerID(paymentMethodID: "", paymentMethods: methods) == nil)
+    }
+
+    @Test("an unattributed method resolves to no owner")
+    func unattributedMethodHasNoOwner() {
+        #expect(FocusedViewFiltering.ownerID(paymentMethodID: "pm-orphan", paymentMethods: methods) == nil)
+    }
+
+    @Test("an attributed method resolves to its person")
+    func attributedMethodResolvesOwner() {
+        #expect(FocusedViewFiltering.ownerID(paymentMethodID: "pm-mine", paymentMethods: methods) == 1)
+    }
+
     @Test("includes a row attributed to the caller")
     func includesMine() {
         #expect(FocusedViewFiltering.isMineOrUnattributed(1, myPersonID: 1))

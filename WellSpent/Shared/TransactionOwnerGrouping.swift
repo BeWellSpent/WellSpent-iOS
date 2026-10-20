@@ -26,10 +26,7 @@ nonisolated enum TransactionOwnerGrouping {
         of transaction: Wellspent_V1_Transaction,
         paymentMethods: [Wellspent_V1_PaymentMethod]
     ) -> Int64? {
-        guard !transaction.paymentMethodID.isEmpty,
-              let method = paymentMethods.first(where: { $0.id == transaction.paymentMethodID }),
-              method.budgetPersonID != 0 else { return nil }
-        return method.budgetPersonID
+        FocusedViewFiltering.ownerID(paymentMethodID: transaction.paymentMethodID, paymentMethods: paymentMethods)
     }
 
     /// Groups `transactions` by owner.
