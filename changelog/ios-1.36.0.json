@@ -136,6 +136,11 @@
       "changeType": "fixed",
       "summaryEn": "Focused View no longer lists another person's upcoming fixed expenses in the Future section.",
       "summaryEs": "La Vista Enfocada ya no muestra los gastos fijos próximos de otra persona en la sección Futuros."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Transactions now has a Payments tab, so card payments no longer clutter the Variable list. Loan payments and transfers stay where they were.",
+      "summaryEs": "Transacciones ahora tiene una pestaña de Pagos, para que los pagos de tarjeta ya no mezclen la lista de Variables. Los pagos de préstamos y las transferencias siguen donde estaban."
     }
   ]
 }

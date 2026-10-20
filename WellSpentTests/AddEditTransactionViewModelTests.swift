@@ -6,12 +6,13 @@ import WellSpentREST
 @Suite("AddEditTransactionViewModel")
 @MainActor
 struct AddEditTransactionViewModelTests {
-    private func makeViewModel(mode: AddEditTransactionViewModel.Mode = .add, isArchivedPeriod: Bool = false) -> AddEditTransactionViewModel {
+    private func makeViewModel(mode: AddEditTransactionViewModel.Mode = .add, isArchivedPeriod: Bool = false, defaultCategoryID: Int32 = 0) -> AddEditTransactionViewModel {
         AddEditTransactionViewModel(
             mode: mode,
             budgetPeriodID: "period-1",
             currencyCode: "USD",
             isArchivedPeriod: isArchivedPeriod,
+            defaultCategoryID: defaultCategoryID,
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
     }
@@ -101,6 +102,29 @@ struct AddEditTransactionViewModelTests {
         }
         let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: false)
         #expect(!viewModel.isLocked)
+    }
+
+    @Test("add mode starts categoryID at the given default (issue #76)")
+    func addModeStartsAtDefaultCategory() {
+        let viewModel = makeViewModel(mode: .add, defaultCategoryID: 7)
+        #expect(viewModel.categoryID == 7)
+    }
+
+    @Test("add mode defaults categoryID to 0 when no default is given")
+    func addModeDefaultsCategoryToZeroWhenUnspecified() {
+        let viewModel = makeViewModel(mode: .add)
+        #expect(viewModel.categoryID == 0)
+    }
+
+    @Test("edit mode ignores defaultCategoryID and prefills from the transaction")
+    func editModeIgnoresDefaultCategoryID() {
+        let transaction = Wellspent_V1_Transaction.with {
+            $0.id = "tx-1"
+            $0.categoryID = 3
+            $0.paymentMethodID = "pm-1"
+        }
+        let viewModel = makeViewModel(mode: .edit(transaction), defaultCategoryID: 7)
+        #expect(viewModel.categoryID == 3)
     }
 
     @Test("a locked transaction can always submit, even with a blank payment method")

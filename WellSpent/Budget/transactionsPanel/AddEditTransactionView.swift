@@ -17,6 +17,7 @@ struct AddEditTransactionView: View {
         paymentMethods: [Wellspent_V1_PaymentMethod],
         isArchivedPeriod: Bool = false,
         forceLocked: Bool = false,
+        defaultCategoryID: Int32 = 0,
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_Transaction) -> Void
     ) {
@@ -26,6 +27,7 @@ struct AddEditTransactionView: View {
             currencyCode: currencyCode,
             isArchivedPeriod: isArchivedPeriod,
             forceLocked: forceLocked,
+            defaultCategoryID: defaultCategoryID,
             restClient: restClient
         ))
         self.categories = categories

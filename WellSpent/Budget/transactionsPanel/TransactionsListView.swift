@@ -8,6 +8,11 @@ struct TransactionsListView: View {
     enum TransactionKind: Hashable {
         case variable
         case fixed
+        /// Card payments (system "Payment" category) — carved out of
+        /// Variable into their own tab so a transaction panel reader doesn't
+        /// have to mentally net them out (issue #76). Loan payments and
+        /// transfers use different system categories and stay in Variable.
+        case payments
     }
 
     let budgetPeriodID: String
@@ -59,6 +64,7 @@ struct TransactionsListView: View {
             Picker("Type", selection: $selectedKind) {
                 Text("Variable").tag(TransactionKind.variable)
                 Text("Fixed").tag(TransactionKind.fixed)
+                Text("Payments").tag(TransactionKind.payments)
             }
             .pickerStyle(.segmented)
             .padding([.horizontal, .top])
@@ -69,6 +75,14 @@ struct TransactionsListView: View {
                 Group {
                     if let viewModel {
                         content(viewModel: viewModel)
+                    } else {
+                        ProgressView()
+                    }
+                }
+            case .payments:
+                Group {
+                    if let viewModel {
+                        paymentsContent(viewModel: viewModel)
                     } else {
                         ProgressView()
                     }
@@ -296,6 +310,172 @@ struct TransactionsListView: View {
                 ) {
                     Task { await viewModel.load() }
                 }
+            }
+        }
+    }
+
+    /// Mirrors `content(viewModel:)`'s shape at the Fixed tab's level of
+    /// behavior: search + day-grouping + `excludedOnly` (spentOnly/
+    /// exceededOnly aren't meaningful here, and `BudgetDetailView`'s filter
+    /// menu never offers them on this tab). No flag-for-review, installment
+    /// split, or create-fixed-from-transaction — those are Variable-spend-
+    /// specific. See docs for issue #76.
+    @ViewBuilder
+    private func paymentsContent(viewModel: TransactionsViewModel) -> some View {
+        let reviews = reviewViewModel?.reviews ?? []
+        let paymentCategoryID = viewModel.categories.first { $0.isSystem(.payment) }?.id ?? 0
+        let visibleTransactions = TransactionFiltering.apply(
+            viewModel.paymentTransactions(reviews: reviews),
+            filter: filter,
+            searchQuery: searchQuery,
+            incomeCategoryID: viewModel.categories.first { $0.isSystem(.income) }?.id,
+            overBudgetTransactionIDs: [],
+            categoryName: viewModel.categoryName,
+            ownerName: viewModel.ownerName
+        )
+        let dayGroups = TransactionDayGrouping.group(visibleTransactions)
+
+        List {
+            Section {
+                LabeledContent("Total", value: viewModel.paymentsTotalText(reviews: reviews))
+                    .accessibilityIdentifier("paymentsTotal")
+            }
+
+            if viewModel.transactions.isEmpty && viewModel.isLoading {
+                ProgressView()
+            } else if visibleTransactions.isEmpty {
+                Text("No transactions yet.")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(dayGroups) { group in
+                    Section {
+                        ForEach(group.transactions, id: \.id) { transaction in
+                            paymentsRow(transaction, viewModel: viewModel)
+                                .swipeActions(edge: .leading) {
+                                    if canEdit {
+                                        Button {
+                                            editingTransaction = transaction
+                                        } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
+                                        .tint(.blue)
+                                        .accessibilityIdentifier("editTransaction_\(transaction.name)")
+                                    }
+                                }
+                                .swipeActions(edge: .trailing) {
+                                    if canMutate && !transaction.isPlaidImported {
+                                        Button("Delete", role: .destructive) {
+                                            deletingTransaction = transaction
+                                        }
+                                    }
+                                }
+                        }
+                    } header: {
+                        Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
+                    }
+                }
+            }
+
+            if let errorMessage = viewModel.errorMessage {
+                Section {
+                    Text(errorMessage).foregroundStyle(.red)
+                }
+            }
+        }
+        .listStyle(.plain)
+        .sheet(isPresented: $isAddTransactionPresented) {
+            AddEditTransactionView(
+                mode: .add,
+                budgetPeriodID: budgetPeriodID,
+                currencyCode: currencyCode,
+                categories: viewModel.categories,
+                paymentMethods: viewModel.paymentMethods,
+                defaultCategoryID: paymentCategoryID,
+                restClient: authenticatedRESTClient
+            ) { transaction in
+                viewModel.addTransaction(transaction)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { editingTransaction != nil },
+            set: { if !$0 { editingTransaction = nil } }
+        )) {
+            if let editingTransaction {
+                AddEditTransactionView(
+                    mode: .edit(editingTransaction),
+                    budgetPeriodID: budgetPeriodID,
+                    currencyCode: currencyCode,
+                    categories: viewModel.categories,
+                    paymentMethods: viewModel.paymentMethods,
+                    isArchivedPeriod: isArchivedPeriod,
+                    restClient: authenticatedRESTClient
+                ) { updated in
+                    viewModel.replaceTransaction(updated)
+                }
+            }
+        }
+        .confirmationDialog(
+            "Delete this transaction?",
+            isPresented: Binding(
+                get: { deletingTransaction != nil },
+                set: { if !$0 { deletingTransaction = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let deletingTransaction {
+                    Task { await viewModel.delete(id: deletingTransaction.id) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This can't be undone.")
+        }
+    }
+
+    private func paymentsRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
+        let isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
+
+        let nameContent = VStack(alignment: .leading, spacing: 2) {
+            Text(transaction.name)
+                .foregroundStyle(.primary)
+            HStack(spacing: 4) {
+                if let categoryName = viewModel.categoryName(for: transaction.categoryID) {
+                    ColorDotView(hex: viewModel.categoryColor(for: transaction.categoryID), diameter: 8)
+                    Text(categoryName)
+                }
+                if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
+                    Text("·")
+                    ColorDotView(hex: viewModel.paymentMethodColor(for: transaction.paymentMethodID), diameter: 8)
+                    Text(methodName)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+
+        return HStack {
+            nameContent
+                .accessibilityIdentifier("paymentRow_\(transaction.name)")
+
+            Spacer()
+
+            Text(TransactionAmountFormatting.displayText(
+                units: transaction.amount.units,
+                nanos: transaction.amount.nanos,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier
+            ))
+            .foregroundStyle(isReceived ? .green : .red)
+
+            if canMutate {
+                Button {
+                    Task { await viewModel.toggleExcluded(transaction) }
+                } label: {
+                    Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
             }
         }
     }
