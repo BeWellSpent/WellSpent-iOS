@@ -19,10 +19,6 @@ final class FixedExpensesViewModel {
     /// profile loads. Fetched here rather than threaded down — same
     /// per-view-model precedent as AlertsViewModel's own GetMe call.
     private(set) var autoUpdatePlannedAmount = true
-    /// Whether the caller has Focused View on — scopes `visibleFixedExpenses`
-    /// to their own (or unattributed) templates. `fixedExpenses` itself stays
-    /// unfiltered; see `visibleFixedExpenses`.
-    private(set) var isFocusedView = false
     private(set) var isLoading = false
     private(set) var transactions: [Wellspent_V1_Transaction] = []
     private(set) var fixedExpenses: [Wellspent_V1_FixedExpense] = []
@@ -68,15 +64,11 @@ final class FixedExpensesViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        async let fixedExpensesResult = fetchFixedExpenses()
         async let categoriesResult = fetchCategories()
         async let paymentMethodsResult = fetchPaymentMethods()
         async let peopleResult = fetchPeople()
         async let profileResult = fetchProfile()
 
-        if let fetched = await fixedExpensesResult {
-            fixedExpenses = fetched
-        }
         if let fetched = await categoriesResult {
             categories = fetched
         }
@@ -92,9 +84,13 @@ final class FixedExpensesViewModel {
 
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        isFocusedView = focusedView
+        async let fixedExpensesResult = fetchFixedExpenses(focusedView: focusedView)
         async let transactionsResult = fetchTransactions(focusedView: focusedView)
         async let summaryResult = fetchSummary(focusedView: focusedView)
+
+        if let fetched = await fixedExpensesResult {
+            fixedExpenses = fetched
+        }
 
         if let fetched = await transactionsResult {
             // Oldest first: the Fixed list is a schedule, so the month should
@@ -158,9 +154,11 @@ final class FixedExpensesViewModel {
         return BudgetRESTMapping.profile(from: body.profile)
     }
 
-    private func fetchFixedExpenses() async -> [Wellspent_V1_FixedExpense]? {
-        guard let output = try? await restClient.listFixedExpenses(.init(path: .init(id: budgetProfileID))),
-              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+    private func fetchFixedExpenses(focusedView: Bool) async -> [Wellspent_V1_FixedExpense]? {
+        guard let output = try? await restClient.listFixedExpenses(.init(
+            path: .init(id: budgetProfileID),
+            query: .init(focusedView: focusedView)
+        )), case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
         return body.fixedExpenses.map(BudgetRESTMapping.fixedExpense(from:))
     }
 
@@ -215,20 +213,6 @@ final class FixedExpensesViewModel {
         guard !paymentMethodID.isEmpty else { return nil }
         guard let method = paymentMethods.first(where: { $0.id == paymentMethodID }), method.budgetPersonID != 0 else { return nil }
         return people.first(where: { $0.id == method.budgetPersonID })?.userName
-    }
-
-    /// Fixed-expense templates visible for the Future section — scoped to
-    /// the caller's own (or unattributed) bills when Focused View is on.
-    /// `fixedExpenses` itself stays unfiltered: `template(for:)` resolves an
-    /// already-scoped transaction's template by id and must not fail to
-    /// find it on a payment-method-mismatch edge case.
-    var visibleFixedExpenses: [Wellspent_V1_FixedExpense] {
-        guard isFocusedView else { return fixedExpenses }
-        let myPersonID = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.id
-        return fixedExpenses.filter {
-            let ownerID = FocusedViewFiltering.ownerID(paymentMethodID: $0.paymentMethodID, paymentMethods: paymentMethods)
-            return FocusedViewFiltering.isMineOrUnattributed(ownerID ?? 0, myPersonID: myPersonID)
-        }
     }
 
     /// The template a spawned transaction row came from, for the Edit flow.
@@ -373,16 +357,10 @@ final class FixedExpensesViewModel {
     /// above is testable. Mirrors `AlertsViewModel.setStateForTesting`.
     func setStateForTesting(
         fixedExpenses: [Wellspent_V1_FixedExpense],
-        transactions: [Wellspent_V1_Transaction] = [],
-        people: [Wellspent_V1_BudgetPerson] = [],
-        paymentMethods: [Wellspent_V1_PaymentMethod] = [],
-        isFocusedView: Bool = false
+        transactions: [Wellspent_V1_Transaction] = []
     ) {
         self.fixedExpenses = fixedExpenses
         self.transactions = transactions
-        self.people = people
-        self.paymentMethods = paymentMethods
-        self.isFocusedView = isFocusedView
     }
 
     private func replaceTransaction(_ transaction: Wellspent_V1_Transaction) {

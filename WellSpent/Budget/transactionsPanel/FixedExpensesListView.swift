@@ -146,7 +146,7 @@ struct FixedExpensesListView: View {
         // date instead. Search/filters don't apply either, since those operate
         // on transaction fields these rows don't have.
         let upcomingExpenses = UpcomingFixedExpenses.notDue(
-            expenses: viewModel.visibleFixedExpenses,
+            expenses: viewModel.fixedExpenses,
             transactions: viewModel.transactions,
             isArchivedPeriod: isArchivedPeriod
         )
