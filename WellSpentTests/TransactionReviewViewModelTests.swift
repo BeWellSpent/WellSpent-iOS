@@ -99,4 +99,22 @@ struct TransactionReviewViewModelTests {
         let group = ReviewGroup(matchedTransactionID: "fe-1", matchedTransactionName: "Rent", matchedTransactionPersonID: 0, reviews: reviews)
         #expect(viewModel.spansOutsideMyView(group))
     }
+
+    @Test("reloads on a matching review_pending push for this budget")
+    func reloadsOnMatchingPush() {
+        let viewModel = makeViewModel()
+        #expect(viewModel.shouldReload(for: PushEvent(alertType: "review_pending", budgetProfileID: "profile-1")))
+    }
+
+    @Test("ignores a push for a different budget")
+    func ignoresPushForDifferentBudget() {
+        let viewModel = makeViewModel()
+        #expect(!viewModel.shouldReload(for: PushEvent(alertType: "review_pending", budgetProfileID: "profile-2")))
+    }
+
+    @Test("ignores a push with a non-matching alert type")
+    func ignoresNonReviewAlertType() {
+        let viewModel = makeViewModel()
+        #expect(!viewModel.shouldReload(for: PushEvent(alertType: "new_transaction", budgetProfileID: "profile-1")))
+    }
 }

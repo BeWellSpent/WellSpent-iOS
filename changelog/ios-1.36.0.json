@@ -141,6 +141,11 @@
       "changeType": "added",
       "summaryEn": "Transactions now has a Payments tab, so card payments no longer clutter the Variable list. Loan payments and transfers stay where they were.",
       "summaryEs": "Transacciones ahora tiene una pestaña de Pagos, para que los pagos de tarjeta ya no mezclen la lista de Variables. Los pagos de préstamos y las transferencias siguen donde estaban."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The notification bell and the Review tab's badge now update instantly when a push notification arrives, instead of checking every 30 seconds. If you've turned off notifications, or one doesn't arrive, pull to refresh or leave and come back to the tab to update it.",
+      "summaryEs": "La campana de notificaciones y el indicador de la pestaña Revisión ahora se actualizan al instante cuando llega una notificación push, en vez de revisar cada 30 segundos. Si desactivaste las notificaciones, o una no llega, desliza para actualizar o sal y vuelve a entrar a la pestaña para actualizarla."
     }
   ]
 }

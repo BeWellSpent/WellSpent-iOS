@@ -177,9 +177,10 @@ struct BudgetDetailView: View {
             }
         }
         .task {
-            // Created once and polled for the lifetime of this screen (not
-            // per-toolbar-appearance) — every tab's bell shares this same
-            // instance, so switching tabs never restarts the 30s poll loop.
+            // Created once and subscribed for the lifetime of this screen
+            // (not per-toolbar-appearance) — every tab's bell shares this
+            // same instance, so switching tabs never restarts the
+            // subscription. Refreshes on push, not a timer — no polling.
             guard let authenticatedRESTClient, let viewModel else { return }
             if notificationViewModel == nil {
                 notificationViewModel = NotificationBellViewModel(
@@ -187,14 +188,14 @@ struct BudgetDetailView: View {
                     restClient: authenticatedRESTClient
                 )
             }
-            await notificationViewModel?.pollUnreadCount()
+            await notificationViewModel?.observePushEvents()
         }
         .task {
             // Created once here (not inside `TransactionReviewListView`) so
             // the pending count backs the Review tab's badge — same reasoning
-            // as `notificationViewModel`. Polled (not a one-shot load) so the
-            // badge — visible from every tab — updates without the user
-            // having to enter the Review tab first.
+            // as `notificationViewModel`. Subscribed (not polled) so the
+            // badge — visible from every tab — updates on a matching push
+            // without the user having to enter the Review tab first.
             guard let authenticatedRESTClient, let viewModel else { return }
             if reviewViewModel == nil {
                 reviewViewModel = TransactionReviewViewModel(
@@ -203,7 +204,7 @@ struct BudgetDetailView: View {
                     restClient: authenticatedRESTClient
                 )
             }
-            await reviewViewModel?.pollPendingCount()
+            await reviewViewModel?.observePushEvents()
         }
     }
 
