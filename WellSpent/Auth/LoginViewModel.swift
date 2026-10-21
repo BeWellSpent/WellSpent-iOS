@@ -25,11 +25,13 @@ final class LoginViewModel {
             let output = try await session.publicRESTClient.login(.init(body: .json(.init(
                 email: email,
                 password: password,
-                rememberMe: rememberMe
+                rememberMe: rememberMe,
+                deviceId: session.deviceID
             ))))
             switch output {
             case .ok(let ok):
-                session.startSession(token: try ok.body.json.accessToken)
+                let body = try ok.body.json
+                session.startSession(accessToken: body.accessToken, refreshToken: body.refreshToken)
             case .badRequest:
                 errorMessage = "Incorrect email or password."
             case .forbidden(let forbidden):

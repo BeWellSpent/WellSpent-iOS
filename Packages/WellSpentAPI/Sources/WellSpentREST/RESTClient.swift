@@ -28,17 +28,19 @@ public enum RESTClient {
     }
 
     /// Client that attaches `Authorization: Bearer <token>` to every request,
-    /// and reports back when the server rejects one as unauthenticated so the
-    /// caller can clear the session.
+    /// retries once on a 401 after a silent token refresh, and reports back
+    /// when that retry also fails so the caller can clear the session.
     ///
     /// `tokenProvider` is read per request rather than captured once, so a
     /// refreshed token is picked up without rebuilding the client.
-    /// `onUnauthenticated` is the REST equivalent of the Connect-era
-    /// `AuthInterceptor`'s 401 detection — this is now the only transport, so
-    /// it's the only place session expiry can be caught.
+    /// `refreshAccessToken` returns the new access token on success, or `nil`
+    /// if the refresh itself failed (expired/revoked refresh token, no
+    /// network, ...) — in which case `onUnauthenticated` fires instead of
+    /// retrying.
     public static func makeAuthenticatedClient(
         baseURL: String,
         tokenProvider: @escaping @Sendable () -> String?,
+        refreshAccessToken: @escaping @Sendable () async -> String?,
         onUnauthenticated: @escaping @Sendable () -> Void
     ) -> Client {
         Client(
@@ -47,7 +49,7 @@ public enum RESTClient {
             transport: URLSessionTransport(),
             middlewares: [
                 BearerTokenMiddleware(tokenProvider: tokenProvider),
-                UnauthenticatedMiddleware(onUnauthenticated: onUnauthenticated)
+                UnauthenticatedMiddleware(refreshAccessToken: refreshAccessToken, onUnauthenticated: onUnauthenticated)
             ]
         )
     }
@@ -103,9 +105,12 @@ struct BearerTokenMiddleware: ClientMiddleware {
     }
 }
 
-/// Calls `onUnauthenticated` when the server rejects a request with 401 —
-/// the REST analog of `AuthInterceptor.handleUnaryResponse`'s `.unauthenticated` check.
+/// On a 401, tries a silent refresh and retries the original request exactly
+/// once with the new access token. Falls through to `onUnauthenticated` if
+/// the refresh fails or the retry itself still 401s — never a second retry,
+/// so a server that keeps rejecting can't loop this forever.
 struct UnauthenticatedMiddleware: ClientMiddleware {
+    let refreshAccessToken: @Sendable () async -> String?
     let onUnauthenticated: @Sendable () -> Void
 
     func intercept(
@@ -115,11 +120,21 @@ struct UnauthenticatedMiddleware: ClientMiddleware {
         operationID: String,
         next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
     ) async throws -> (HTTPResponse, HTTPBody?) {
-        let (response, body) = try await next(request, body, baseURL)
-        if response.status == .unauthorized {
+        let (response, responseBody) = try await next(request, body, baseURL)
+        guard response.status == .unauthorized else { return (response, responseBody) }
+
+        guard let newAccessToken = await refreshAccessToken() else {
+            onUnauthenticated()
+            return (response, responseBody)
+        }
+
+        var retryRequest = request
+        retryRequest.headerFields[.authorization] = "Bearer \(newAccessToken)"
+        let (retryResponse, retryBody) = try await next(retryRequest, body, baseURL)
+        if retryResponse.status == .unauthorized {
             onUnauthenticated()
         }
-        return (response, body)
+        return (retryResponse, retryBody)
     }
 }
 
