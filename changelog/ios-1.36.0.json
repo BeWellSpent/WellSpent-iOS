@@ -149,8 +149,8 @@
     },
     {
       "changeType": "added",
-      "summaryEn": "Any fixed expense with a payment plan — a loan, an installment purchase — can now be paid off in full from its edit screen, settling the remaining balance in one payment without moving its end date.",
-      "summaryEs": "Cualquier gasto fijo con un plan de pagos —un préstamo, una compra en cuotas— ahora se puede pagar por completo desde su pantalla de edición, liquidando el saldo restante en un solo pago sin mover su fecha de finalización."
+      "summaryEn": "Signing in now uses Face ID or Touch ID to resume your session after relaunching the app, instead of logging you out every 15 minutes.",
+      "summaryEs": "Iniciar sesión ahora usa Face ID o Touch ID para reanudar tu sesión al volver a abrir la app, en lugar de cerrarla cada 15 minutos."
     }
   ]
 }

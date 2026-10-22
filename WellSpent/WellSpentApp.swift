@@ -23,13 +23,15 @@ struct WellSpentApp: App {
         GADMobileAds.sharedInstance().start(completionHandler: nil)
 
         let tokenStore = KeychainTokenStore()
+        let refreshTokenStore = KeychainRefreshTokenStore()
         // UI tests launch with this argument so each test starts from a
         // known logged-out state instead of inheriting whatever the
         // Simulator's Keychain happens to have from a previous run.
         if ProcessInfo.processInfo.arguments.contains("-uiTestResetSession") {
             tokenStore.deleteToken()
+            refreshTokenStore.clear()
         }
-        let sessionStore = SessionStore(tokenStore: tokenStore)
+        let sessionStore = SessionStore(tokenStore: tokenStore, refreshTokenStore: refreshTokenStore)
         _session = State(initialValue: sessionStore)
 
         // Set once at startup rather than held on an AppDelegate instance

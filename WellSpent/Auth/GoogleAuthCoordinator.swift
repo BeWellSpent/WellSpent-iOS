@@ -118,11 +118,13 @@ final class GoogleAuthCoordinator: NSObject {
                 code: code,
                 redirectUri: Self.redirectURI,
                 language: "",
-                currency: ""
+                currency: "",
+                deviceId: session.deviceID
             ))))
             switch output {
             case .ok(let ok):
-                session.startSession(token: try ok.body.json.accessToken)
+                let body = try ok.body.json
+                session.startSession(accessToken: body.accessToken, refreshToken: body.refreshToken)
             default:
                 errorMessage = "Google sign-in failed."
             }

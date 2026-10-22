@@ -70,7 +70,11 @@ struct RootView: View {
 
     private var content: some View {
         Group {
-            if session.isAuthenticated {
+            if session.isResolvingSession {
+                // Cold-start resume in progress (reading the Keychain-gated
+                // refresh token) — avoids flashing the login screen first.
+                ProgressView()
+            } else if session.isAuthenticated {
                 if let verifyGateViewModel, isEmailUnverified {
                     // Replaces the app outright instead of covering it: a
                     // sheet or fullScreenCover can be swiped away, and this
@@ -120,7 +124,6 @@ struct RootView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                session.refreshAuthenticationState()
                 // Coming back from the browser after tapping the link is
                 // exactly the moment verification status may have changed.
                 Task { await verifyGateViewModel?.refresh() }

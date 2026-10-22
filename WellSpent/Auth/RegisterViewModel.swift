@@ -66,11 +66,13 @@ final class RegisterViewModel {
                 stateCode: isUnitedStates ? stateCode : "",
                 language: "",
                 currency: "",
-                captchaToken: ""
+                captchaToken: "",
+                deviceId: session.deviceID
             ))))
             switch output {
             case .ok(let ok):
-                session.startSession(token: try ok.body.json.accessToken)
+                let body = try ok.body.json
+                session.startSession(accessToken: body.accessToken, refreshToken: body.refreshToken)
                 didRegister = true
             case .conflict:
                 errorMessage = "An account with that email already exists."

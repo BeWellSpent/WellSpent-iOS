@@ -99,11 +99,13 @@ final class AppleAuthCoordinator: NSObject {
                 firstName: name.first,
                 lastName: name.last,
                 language: "",
-                currency: ""
+                currency: "",
+                deviceId: session.deviceID
             ))))
             switch output {
             case .ok(let ok):
-                session.startSession(token: try ok.body.json.accessToken)
+                let body = try ok.body.json
+                session.startSession(accessToken: body.accessToken, refreshToken: body.refreshToken)
             case .badRequest:
                 errorMessage = Self.errorMessage(forRESTCode: "invalid_argument")
             case .forbidden:
