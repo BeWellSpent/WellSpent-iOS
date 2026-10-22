@@ -40,6 +40,7 @@ struct SettingsView: View {
             }
             subscriptionSection
             passwordSection
+            signInPreferencesSection
             helpSection
             accountManagementSection
         }
@@ -256,6 +257,18 @@ struct SettingsView: View {
             }
             .disabled(!viewModel.canSubmitPassword)
             .accessibilityIdentifier("changePasswordButton")
+        }
+    }
+
+    @ViewBuilder
+    private var signInPreferencesSection: some View {
+        Section {
+            NavigationLink {
+                SignInPreferencesView()
+            } label: {
+                Label("Sign-In Preferences", systemImage: "faceid")
+            }
+            .accessibilityIdentifier("signInPreferencesLink")
         }
     }
 

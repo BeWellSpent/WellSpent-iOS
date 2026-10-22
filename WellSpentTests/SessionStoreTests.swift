@@ -9,12 +9,22 @@ import Testing
 private final class FakeRefreshTokenStore: RefreshTokenStoring, @unchecked Sendable {
     var stored: String?
     var failRead = false
+    /// Which flag set the most recent `save` was asked for, and how many
+    /// times `save` has been called — lets a test assert both the mapping
+    /// and that a re-key actually happened (clear + save), without touching
+    /// real Keychain/LocalAuthentication APIs.
+    private(set) var lastAccessControl: RefreshTokenAccessControl?
+    private(set) var saveCount = 0
 
     init(initial: String? = nil) { stored = initial }
 
     func exists() -> Bool { stored != nil }
     func read() async -> String? { failRead ? nil : stored }
-    func save(token: String) { stored = token }
+    func save(token: String, accessControl: RefreshTokenAccessControl) {
+        stored = token
+        lastAccessControl = accessControl
+        saveCount += 1
+    }
     func clear() { stored = nil }
 }
 
@@ -27,6 +37,10 @@ struct SessionStoreTests {
 
     private func makeDeviceIDStore() -> AuthDeviceIDStore {
         AuthDeviceIDStore(service: "com.bewellspent.WellSpent.tests.session.deviceID.\(UUID().uuidString)")
+    }
+
+    private func makeBiometricDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "com.bewellspent.WellSpent.tests.session.biometric.\(UUID().uuidString)")!
     }
 
     /// Polls until `isResolvingSession` settles, so tests don't race the
@@ -128,5 +142,54 @@ struct SessionStoreTests {
         #expect(session.authenticatedRESTClient == nil)
         #expect(tokenStore.readToken() == nil)
         #expect(!refreshStore.exists())
+    }
+
+    @Test("startSession writes the refresh token under userPresence when the biometric-only preference is off")
+    func startSessionUsesUserPresenceByDefault() {
+        let refreshStore = FakeRefreshTokenStore()
+        let session = SessionStore(baseURL: "http://localhost:1", tokenStore: makeTokenStore(), refreshTokenStore: refreshStore, deviceIDStore: makeDeviceIDStore(), biometricPreferenceDefaults: makeBiometricDefaults())
+
+        session.startSession(accessToken: makeJWT(subject: "user-1", expiresAt: Date().addingTimeInterval(900)), refreshToken: "a-refresh-token")
+
+        #expect(refreshStore.lastAccessControl == .userPresence)
+    }
+
+    @Test("startSession writes the refresh token under biometryCurrentSet when the biometric-only preference is on")
+    func startSessionUsesBiometryCurrentSetWhenPreferenceOn() {
+        let refreshStore = FakeRefreshTokenStore()
+        let biometricDefaults = makeBiometricDefaults()
+        BiometricPreference.setEnabled(true, in: biometricDefaults)
+        let session = SessionStore(baseURL: "http://localhost:1", tokenStore: makeTokenStore(), refreshTokenStore: refreshStore, deviceIDStore: makeDeviceIDStore(), biometricPreferenceDefaults: biometricDefaults)
+
+        session.startSession(accessToken: makeJWT(subject: "user-2", expiresAt: Date().addingTimeInterval(900)), refreshToken: "a-refresh-token")
+
+        #expect(refreshStore.lastAccessControl == .biometryCurrentSet)
+    }
+
+    @Test("applyBiometricPreferenceChange re-keys the stored refresh token immediately when a session is active")
+    func applyBiometricPreferenceChangeRekeysActiveSession() {
+        let refreshStore = FakeRefreshTokenStore()
+        let biometricDefaults = makeBiometricDefaults()
+        let session = SessionStore(baseURL: "http://localhost:1", tokenStore: makeTokenStore(), refreshTokenStore: refreshStore, deviceIDStore: makeDeviceIDStore(), biometricPreferenceDefaults: biometricDefaults)
+        session.startSession(accessToken: makeJWT(subject: "user-3", expiresAt: Date().addingTimeInterval(900)), refreshToken: "a-refresh-token")
+        #expect(refreshStore.lastAccessControl == .userPresence)
+        let saveCountAfterStart = refreshStore.saveCount
+
+        BiometricPreference.setEnabled(true, in: biometricDefaults)
+        session.applyBiometricPreferenceChange()
+
+        #expect(refreshStore.saveCount == saveCountAfterStart + 1)
+        #expect(refreshStore.lastAccessControl == .biometryCurrentSet)
+        #expect(refreshStore.stored == "a-refresh-token") // same token, re-keyed not replaced
+    }
+
+    @Test("applyBiometricPreferenceChange is a no-op when no session is active")
+    func applyBiometricPreferenceChangeNoSessionIsNoOp() {
+        let refreshStore = FakeRefreshTokenStore()
+        let session = SessionStore(baseURL: "http://localhost:1", tokenStore: makeTokenStore(), refreshTokenStore: refreshStore, deviceIDStore: makeDeviceIDStore(), biometricPreferenceDefaults: makeBiometricDefaults())
+
+        session.applyBiometricPreferenceChange()
+
+        #expect(refreshStore.saveCount == 0)
     }
 }

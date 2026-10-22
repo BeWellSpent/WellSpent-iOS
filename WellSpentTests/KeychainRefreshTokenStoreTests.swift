@@ -20,22 +20,38 @@ struct KeychainRefreshTokenStoreTests {
     @Test("save makes exists true, with no read of the secret involved")
     func existsTrueAfterSaveWithNoPromptingRead() {
         let store = makeStore()
-        store.save(token: "refresh-one")
+        store.save(token: "refresh-one", accessControl: .userPresence)
+        #expect(store.exists())
+    }
+
+    @Test("save with biometryCurrentSet also succeeds, with no read of the secret involved")
+    func existsTrueAfterSaveWithBiometryCurrentSet() {
+        let store = makeStore()
+        store.save(token: "refresh-biometric", accessControl: .biometryCurrentSet)
         #expect(store.exists())
     }
 
     @Test("saving again overwrites rather than failing, still with no read")
     func savingTwiceOverwrites() {
         let store = makeStore()
-        store.save(token: "first")
-        store.save(token: "second")
+        store.save(token: "first", accessControl: .userPresence)
+        store.save(token: "second", accessControl: .userPresence)
+        #expect(store.exists())
+    }
+
+    @Test("clearing then saving under a different access control re-creates the item")
+    func clearThenSaveWithDifferentAccessControlRecreatesItem() {
+        let store = makeStore()
+        store.save(token: "first", accessControl: .userPresence)
+        store.clear()
+        store.save(token: "second", accessControl: .biometryCurrentSet)
         #expect(store.exists())
     }
 
     @Test("clear removes the item")
     func clearRemovesItem() {
         let store = makeStore()
-        store.save(token: "to-clear")
+        store.save(token: "to-clear", accessControl: .userPresence)
         store.clear()
         #expect(!store.exists())
     }

@@ -29,6 +29,9 @@ final class SessionStore {
     private let refreshTokenStore: any RefreshTokenStoring
     private let deviceIDStore: AuthDeviceIDStore
     private let baseURL: String
+    /// Where `BiometricPreference` is read from — injectable so tests don't
+    /// share `UserDefaults.standard`'s global state with each other or the app.
+    private let biometricPreferenceDefaults: UserDefaults
 
     /// Overrides the real `/auth/refresh-token` network call in tests, so the
     /// refresh paths are exercisable without hitting a live backend.
@@ -48,12 +51,14 @@ final class SessionStore {
         tokenStore: KeychainTokenStore = KeychainTokenStore(),
         refreshTokenStore: any RefreshTokenStoring = KeychainRefreshTokenStore(),
         deviceIDStore: AuthDeviceIDStore = AuthDeviceIDStore(),
+        biometricPreferenceDefaults: UserDefaults = .standard,
         refreshCallOverride: (@Sendable (String, String) async -> (accessToken: String, refreshToken: String)?)? = nil
     ) {
         self.baseURL = baseURL
         self.tokenStore = tokenStore
         self.refreshTokenStore = refreshTokenStore
         self.deviceIDStore = deviceIDStore
+        self.biometricPreferenceDefaults = biometricPreferenceDefaults
         self.refreshCallOverride = refreshCallOverride
         self.publicRESTClient = RESTClient.makePublicClient(baseURL: baseURL)
 
@@ -171,8 +176,24 @@ final class SessionStore {
 
     private func persist(accessToken: String, refreshToken: String) {
         tokenStore.save(token: accessToken)
-        refreshTokenStore.save(token: refreshToken)
+        refreshTokenStore.save(token: refreshToken, accessControl: BiometricPreference.accessControl(in: biometricPreferenceDefaults))
         self.refreshToken = refreshToken
+    }
+
+    /// Re-keys the already-stored refresh token under the current
+    /// `BiometricPreference` right away, rather than waiting for the next
+    /// natural rotation — called from Settings the moment the toggle changes,
+    /// so the setting doesn't sit silently not-yet-in-effect. A no-op when no
+    /// session is active, since there's nothing stored to re-key yet.
+    func applyBiometricPreferenceChange() {
+        guard let refreshToken else {
+            Self.logger.info("biometric preference changed with no active session — nothing to re-key")
+            return
+        }
+        let accessControl = BiometricPreference.accessControl(in: biometricPreferenceDefaults)
+        refreshTokenStore.clear()
+        refreshTokenStore.save(token: refreshToken, accessControl: accessControl)
+        Self.logger.info("refresh token re-keyed accessControl=\(String(describing: accessControl), privacy: .public)")
     }
 
     private func clearLocalSession() {
