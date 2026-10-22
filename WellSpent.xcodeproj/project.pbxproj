@@ -437,7 +437,7 @@
 				CODE_SIGN_ENTITLEMENTS = WellSpent/WellSpent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CSHARP_API_BASE_URL = "http://localhost:5021";
-				CURRENT_PROJECT_VERSION = 51;
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = 76FQ7V92H5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -492,8 +492,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = WellSpent/WellSpent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CSHARP_API_BASE_URL = "https://wellspent-csharp-backend-1065664306856.us-central1.run.app";
-				CURRENT_PROJECT_VERSION = 51;
+				CSHARP_API_BASE_URL = "https://wellspent-csharp-backend.thankfulmoss-7ef9dc1d.eastus2.azurecontainerapps.io";
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = 76FQ7V92H5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
