@@ -97,8 +97,8 @@ struct ReleaseNotesList: View {
                 version: "1.36.0",
                 releasedAt: .now,
                 items: [
-                    ChangelogItem(changeType: .added, summaryEn: "Release notes now appear when you open a new version.", summaryEs: ""),
-                    ChangelogItem(changeType: .fixed, summaryEn: "Payment progress no longer counts a bill before it is due.", summaryEs: "")
+                    ChangelogItem(changeType: .added, summary: ["en": "Release notes now appear when you open a new version."]),
+                    ChangelogItem(changeType: .fixed, summary: ["en": "Payment progress no longer counts a bill before it is due."])
                 ],
                 createdAt: .now
             )

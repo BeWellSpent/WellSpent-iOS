@@ -64,19 +64,35 @@ struct ChangelogAnnouncementTests {
 
     @Test("a Spanish reader gets the Spanish summary")
     func localizedSummaryPrefersSpanish() {
-        let item = ChangelogItem(changeType: .added, summaryEn: "Added a thing", summaryEs: "Agregamos algo")
+        let item = ChangelogItem(changeType: .added, summary: ["en": "Added a thing", "es": "Agregamos algo"])
         #expect(ChangelogAnnouncement.localizedSummary(item, localeIdentifier: "es") == "Agregamos algo")
         #expect(ChangelogAnnouncement.localizedSummary(item, localeIdentifier: "en") == "Added a thing")
     }
 
-    // Spanish is optional on the row — an untranslated note must still read,
+    // Spanish is optional in the map — an untranslated note must still read,
     // rather than rendering blank.
     @Test("falls back to English when there is no translation")
     func localizedSummaryFallsBack() {
-        let blank = ChangelogItem(changeType: .added, summaryEn: "Added a thing", summaryEs: "")
-        let spaces = ChangelogItem(changeType: .added, summaryEn: "Added a thing", summaryEs: "   ")
-        #expect(ChangelogAnnouncement.localizedSummary(blank, localeIdentifier: "es") == "Added a thing")
+        let missing = ChangelogItem(changeType: .added, summary: ["en": "Added a thing"])
+        let spaces = ChangelogItem(changeType: .added, summary: ["en": "Added a thing", "es": "   "])
+        #expect(ChangelogAnnouncement.localizedSummary(missing, localeIdentifier: "es") == "Added a thing")
         #expect(ChangelogAnnouncement.localizedSummary(spaces, localeIdentifier: "es") == "Added a thing")
+    }
+
+    @Test("a third locale, not just en/es, resolves with no code change")
+    func localizedSummaryResolvesThirdLocale() {
+        let item = ChangelogItem(changeType: .added, summary: [
+            "en": "Added a thing",
+            "es": "Agregamos algo",
+            "fr": "Nous avons ajouté une chose"
+        ])
+        #expect(ChangelogAnnouncement.localizedSummary(item, localeIdentifier: "fr") == "Nous avons ajouté une chose")
+    }
+
+    @Test("a locale with no entry at all falls back to English")
+    func localizedSummaryUnknownLocaleFallsBack() {
+        let item = ChangelogItem(changeType: .added, summary: ["en": "Added a thing", "es": "Agregamos algo"])
+        #expect(ChangelogAnnouncement.localizedSummary(item, localeIdentifier: "de") == "Added a thing")
     }
 }
 

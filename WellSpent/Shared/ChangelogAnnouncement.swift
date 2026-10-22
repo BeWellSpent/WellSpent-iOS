@@ -51,11 +51,12 @@ nonisolated enum ChangelogAnnouncement {
     }
 
     /// The reader's language, falling back to English when there is no
-    /// translation — `summary_es` is optional on the row.
+    /// translation — `summary` is a locale-keyed map, `en` always present.
     static func localizedSummary(_ item: ChangelogItem, localeIdentifier: String) -> String {
-        if localeIdentifier.hasPrefix("es"), !item.summaryEs.trimmingCharacters(in: .whitespaces).isEmpty {
-            return item.summaryEs
+        let subtag = AppLanguageStore.primarySubtag(of: localeIdentifier)
+        if let text = item.summary.additionalProperties[subtag]?.trimmingCharacters(in: .whitespaces), !text.isEmpty {
+            return text
         }
-        return item.summaryEn
+        return item.summary.additionalProperties["en"]?.trimmingCharacters(in: .whitespaces) ?? ""
     }
 }

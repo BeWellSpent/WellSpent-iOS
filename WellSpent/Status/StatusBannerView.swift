@@ -78,7 +78,7 @@ struct StatusBannerView: View {
 
 #Preview {
     let viewModel = StatusBannerViewModel(publicClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"))
-    return VStack(spacing: 0) {
+    VStack(spacing: 0) {
         StatusBannerView(viewModel: viewModel)
         Spacer()
     }
@@ -86,8 +86,7 @@ struct StatusBannerView: View {
         viewModel.setStateForTesting(banner: StatusBanner(
             id: "preview",
             severity: .warning,
-            messageEn: "Bank syncing is delayed while we work with our provider on a fix.",
-            messageEs: "",
+            message: ["en": "Bank syncing is delayed while we work with our provider on a fix."],
             startsAt: .now,
             endsAt: .now.addingTimeInterval(3600),
             createdAt: .now
