@@ -151,6 +151,15 @@ public typealias ChangelogRelease = Components.Schemas.ChangelogRelease
 public typealias ChangelogResponse = Components.Schemas.ChangelogResponse
 public typealias ChangelogComponent = Components.Schemas.ChangelogComponent
 public typealias ChangeType = Components.Schemas.ChangeType
+public typealias LocalizedText = Components.Schemas.LocalizedText
+
+/// Lets call sites write `message: ["en": "..."]` instead of
+/// `LocalizedText(additionalProperties: ["en": "..."])`.
+extension Components.Schemas.LocalizedText: ExpressibleByDictionaryLiteral {
+    public init(dictionaryLiteral elements: (String, String)...) {
+        self.init(additionalProperties: .init(elements, uniquingKeysWith: { _, new in new }))
+    }
+}
 
 /// Flattens the generated `Input`/`Output` ceremony down to what callers
 /// actually want.

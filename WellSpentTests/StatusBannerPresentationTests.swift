@@ -7,14 +7,15 @@ import WellSpentREST
 @Suite("StatusBannerPresentation")
 struct StatusBannerPresentationTests {
     private func banner(
-        messageEn: String = "Bank syncing is delayed.",
-        messageEs: String = "La sincronización bancaria está retrasada."
+        message: LocalizedText = [
+            "en": "Bank syncing is delayed.",
+            "es": "La sincronización bancaria está retrasada."
+        ]
     ) -> StatusBanner {
         StatusBanner(
             id: "b1",
             severity: .warning,
-            messageEn: messageEn,
-            messageEs: messageEs,
+            message: message,
             startsAt: .now,
             endsAt: .now.addingTimeInterval(3600),
             createdAt: .now
@@ -78,17 +79,39 @@ struct StatusBannerPresentationTests {
         #expect(text == "La sincronización bancaria está retrasada.")
     }
 
-    @Test("Empty Spanish falls back to English rather than a blank bar")
+    @Test("Missing Spanish falls back to English rather than a blank bar")
     func fallsBackWhenSpanishMissing() {
-        // message_es is optional server-side: an operator posting mid-incident
-        // shouldn't be blocked on writing Spanish.
-        let text = StatusBannerPresentation.message(for: banner(messageEs: ""), languageCode: "es")
+        // `es` is optional in the message map: an operator posting
+        // mid-incident shouldn't be blocked on writing Spanish.
+        let text = StatusBannerPresentation.message(for: banner(message: ["en": "Bank syncing is delayed."]), languageCode: "es")
         #expect(text == "Bank syncing is delayed.")
     }
 
     @Test("Whitespace-only Spanish counts as empty")
     func whitespaceSpanishFallsBack() {
-        let text = StatusBannerPresentation.message(for: banner(messageEs: "   "), languageCode: "es")
+        let text = StatusBannerPresentation.message(
+            for: banner(message: ["en": "Bank syncing is delayed.", "es": "   "]),
+            languageCode: "es"
+        )
+        #expect(text == "Bank syncing is delayed.")
+    }
+
+    @Test("A third locale, not just en/es, resolves with no code change")
+    func thirdLocaleResolves() {
+        let text = StatusBannerPresentation.message(
+            for: banner(message: [
+                "en": "Bank syncing is delayed.",
+                "es": "La sincronización bancaria está retrasada.",
+                "fr": "La synchronisation bancaire est retardée."
+            ]),
+            languageCode: "fr"
+        )
+        #expect(text == "La synchronisation bancaire est retardée.")
+    }
+
+    @Test("A locale with no entry at all falls back to English")
+    func unknownLocaleFallsBackToEnglish() {
+        let text = StatusBannerPresentation.message(for: banner(), languageCode: "de")
         #expect(text == "Bank syncing is delayed.")
     }
 }

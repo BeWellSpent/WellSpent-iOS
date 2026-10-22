@@ -63,7 +63,7 @@ struct WhatsNewSheet: View {
             version: version,
             releasedAt: .now,
             items: items.map { type, summary in
-                ChangelogItem(changeType: type, summaryEn: summary, summaryEs: "")
+                ChangelogItem(changeType: type, summary: ["en": summary])
             },
             createdAt: .now
         )

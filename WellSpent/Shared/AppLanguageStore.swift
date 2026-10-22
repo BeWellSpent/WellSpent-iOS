@@ -66,4 +66,11 @@ nonisolated enum AppLanguageStore {
     static func clear(in defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: key)
     }
+
+    /// The BCP 47 primary language subtag (e.g. "es" from "es-MX") — the key
+    /// a `LocalizedText` map is indexed by. Same extraction `bundle(in:)` above
+    /// already does inline for `.lproj` lookup.
+    static func primarySubtag(of languageCode: String) -> String {
+        Locale(identifier: languageCode).language.languageCode?.identifier ?? languageCode
+    }
 }

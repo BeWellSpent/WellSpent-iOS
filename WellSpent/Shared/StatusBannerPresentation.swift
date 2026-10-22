@@ -55,17 +55,17 @@ nonisolated enum StatusBannerPresentation {
 
     /// Picks the text for the reader's language, falling back to English.
     ///
-    /// `message_es` is optional on the server: an operator posting mid-incident
-    /// shouldn't be blocked on writing Spanish, and English text beats a blank
-    /// bar.
+    /// `message` is a locale-keyed map; any language missing an entry (or
+    /// writing one that trims to empty) falls back to `en`, which the
+    /// contract guarantees is always present.
     static func message(
         for banner: StatusBanner,
         languageCode: String = AppLanguageStore.currentLocale.identifier
     ) -> String {
-        let spanish = banner.messageEs.trimmingCharacters(in: .whitespacesAndNewlines)
-        if languageCode.hasPrefix("es"), !spanish.isEmpty {
-            return banner.messageEs
+        let subtag = AppLanguageStore.primarySubtag(of: languageCode)
+        if let text = banner.message.additionalProperties[subtag]?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            return text
         }
-        return banner.messageEn
+        return banner.message.additionalProperties["en"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }
