@@ -8,8 +8,26 @@ import Security
 protocol RefreshTokenStoring: Sendable {
     func exists() -> Bool
     func read() async -> String?
-    func save(token: String)
+    func save(token: String, accessControl: RefreshTokenAccessControl)
     func clear()
+}
+
+/// Which Keychain access-control flag set guards the refresh token.
+/// `.userPresence` accepts Face ID/Touch ID **or** the device passcode;
+/// `.biometryCurrentSet` accepts only the currently-enrolled biometric data,
+/// invalidating the item if that enrollment changes (e.g. Face ID
+/// re-enrollment) — the conservative choice for a security-motivated
+/// biometric-only setting. See `BiometricPreference` for the user-facing toggle.
+enum RefreshTokenAccessControl: Sendable, Equatable {
+    case userPresence
+    case biometryCurrentSet
+
+    var secFlags: SecAccessControlCreateFlags {
+        switch self {
+        case .userPresence: .userPresence
+        case .biometryCurrentSet: .biometryCurrentSet
+        }
+    }
 }
 
 /// Stores the refresh token behind a biometric (Face ID/Touch ID, device
@@ -56,19 +74,22 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
     }
 
     /// A new/rotated token never requires authentication to write — only a read does.
-    func save(token: String) {
+    /// `accessControl` only takes effect for a freshly-added item: updating an
+    /// already-present one leaves its existing access control untouched, so a
+    /// caller that wants to actually change the flag set must `clear()` first.
+    func save(token: String, accessControl: RefreshTokenAccessControl) {
         let data = Data(token.utf8)
         let query = baseQuery()
 
         if SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess {
             SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
         } else {
-            guard let accessControl = SecAccessControlCreateWithFlags(
-                nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly, .userPresence, nil
+            guard let secAccessControl = SecAccessControlCreateWithFlags(
+                nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly, accessControl.secFlags, nil
             ) else { return }
             var attributes = query
             attributes[kSecValueData as String] = data
-            attributes[kSecAttrAccessControl as String] = accessControl
+            attributes[kSecAttrAccessControl as String] = secAccessControl
             SecItemAdd(attributes as CFDictionary, nil)
         }
     }
