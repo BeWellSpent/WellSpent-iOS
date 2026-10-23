@@ -55,27 +55,45 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
     }
 
     /// Triggers the biometric/passcode prompt — call off the main actor.
+    ///
+    /// Evaluates the policy explicitly first and reuses this *already
+    /// authenticated* context for the Keychain query below, instead of
+    /// handing `SecItemCopyMatching` a bare, unevaluated `LAContext` via
+    /// `kSecUseAuthenticationContext`. The latter lets the Keychain run its
+    /// own internal re-authentication, which real-device logs showed
+    /// re-presenting the Face ID sheet multiple times for a single call
+    /// (Simulator never reproduced it) — a context that already passed
+    /// evaluation shouldn't trigger that second pass.
     func read() async -> String? {
         let callID = UUID().uuidString.prefix(8)
         Self.logger.info("read() called instanceId=\(self.instanceID, privacy: .public) callId=\(callID, privacy: .public)")
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let context = LAContext()
-                context.localizedReason = "Unlock WellSpent to resume your session"
+                let reason = "Unlock WellSpent to resume your session"
+                context.localizedReason = reason
 
-                var query = self.baseQuery()
-                query[kSecReturnData as String] = true
-                query[kSecMatchLimit as String] = kSecMatchLimitOne
-                query[kSecUseAuthenticationContext as String] = context
+                context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, error in
+                    Self.logger.info("read() policy evaluation instanceId=\(self.instanceID, privacy: .public) callId=\(callID, privacy: .public) success=\(success, privacy: .public) error=\(String(describing: error), privacy: .public)")
+                    guard success else {
+                        continuation.resume(returning: nil)
+                        return
+                    }
 
-                var result: AnyObject?
-                let status = SecItemCopyMatching(query as CFDictionary, &result)
-                Self.logger.info("read() finished instanceId=\(self.instanceID, privacy: .public) callId=\(callID, privacy: .public) status=\(status, privacy: .public)")
-                guard status == errSecSuccess, let data = result as? Data else {
-                    continuation.resume(returning: nil)
-                    return
+                    var query = self.baseQuery()
+                    query[kSecReturnData as String] = true
+                    query[kSecMatchLimit as String] = kSecMatchLimitOne
+                    query[kSecUseAuthenticationContext as String] = context
+
+                    var result: AnyObject?
+                    let status = SecItemCopyMatching(query as CFDictionary, &result)
+                    Self.logger.info("read() finished instanceId=\(self.instanceID, privacy: .public) callId=\(callID, privacy: .public) status=\(status, privacy: .public)")
+                    guard status == errSecSuccess, let data = result as? Data else {
+                        continuation.resume(returning: nil)
+                        return
+                    }
+                    continuation.resume(returning: String(data: data, encoding: .utf8))
                 }
-                continuation.resume(returning: String(data: data, encoding: .utf8))
             }
         }
     }
