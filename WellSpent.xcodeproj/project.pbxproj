@@ -453,6 +453,7 @@
 				FEATURE_GOOGLE_AUTH = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "WellSpent Dev";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID is used to securely resume your saved session.";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "This identifier is used to show you more relevant ads.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -468,7 +469,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.35.3;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bewellspent.WellSpent;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bewellspent.WellSpent.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
