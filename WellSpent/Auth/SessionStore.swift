@@ -42,6 +42,7 @@ final class SessionStore {
     private var refreshToken: String?
 
     private static let logger = AppLogger.logger("SessionStore")
+    private let instanceID = UUID().uuidString.prefix(8)
 
     /// Scopes every auth call this store makes to one stable device.
     var deviceID: String { deviceIDStore.deviceID() }
@@ -65,6 +66,8 @@ final class SessionStore {
         isAuthenticated = false
         userID = nil
         authenticatedRESTClient = nil
+
+        Self.logger.info("SessionStore.init called id=\(self.instanceID, privacy: .public)")
 
         if refreshTokenStore.exists() {
             isResolvingSession = true
@@ -115,6 +118,7 @@ final class SessionStore {
     /// rejected refresh call — falls back to the login screen.
     private func resumeSession() async {
         defer { isResolvingSession = false }
+        Self.logger.info("resumeSession() entered id=\(self.instanceID, privacy: .public)")
 
         guard let storedRefreshToken = await refreshTokenStore.read() else {
             Self.logger.error("cold-start resume: refresh token unreadable (declined prompt or missing item)")

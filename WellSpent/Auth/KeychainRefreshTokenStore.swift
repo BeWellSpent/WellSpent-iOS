@@ -1,5 +1,6 @@
 import Foundation
 import LocalAuthentication
+import os
 import Security
 
 /// Lets `SessionStore` depend on something other than the real Keychain in
@@ -40,9 +41,12 @@ enum RefreshTokenAccessControl: Sendable, Equatable {
 ///   `SessionStore.init` to decide whether resuming is worth attempting at all.
 nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable {
     private let service: String
+    private let instanceID = UUID().uuidString.prefix(8)
+    private static let logger = AppLogger.logger("KeychainRefreshTokenStore")
 
     init(service: String = "com.bewellspent.WellSpent.refreshToken") {
         self.service = service
+        Self.logger.info("instance created id=\(self.instanceID, privacy: .public)")
     }
 
     /// No-prompt check for whether a refresh token is stored at all.
@@ -52,7 +56,9 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
 
     /// Triggers the biometric/passcode prompt — call off the main actor.
     func read() async -> String? {
-        await withCheckedContinuation { continuation in
+        let callID = UUID().uuidString.prefix(8)
+        Self.logger.info("read() called instanceId=\(self.instanceID, privacy: .public) callId=\(callID, privacy: .public)")
+        return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let context = LAContext()
                 context.localizedReason = "Unlock WellSpent to resume your session"
@@ -64,6 +70,7 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
 
                 var result: AnyObject?
                 let status = SecItemCopyMatching(query as CFDictionary, &result)
+                Self.logger.info("read() finished instanceId=\(self.instanceID, privacy: .public) callId=\(callID, privacy: .public) status=\(status, privacy: .public)")
                 guard status == errSecSuccess, let data = result as? Data else {
                     continuation.resume(returning: nil)
                     return
