@@ -148,15 +148,11 @@ final class ExpenseOverviewViewModel {
         )
     }
 
-    /// Chart data for the actual-spend chart — colored red for overspent
-    /// categories, category color otherwise. Mirrors web's chart-data
-    /// construction in `ExpenseOverviewPanel.tsx`.
+    /// Chart data for the actual-spend chart — always the category's own
+    /// color, even when overspent (issue #91); overspend is conveyed by the
+    /// row's red number/chip instead, via `isOver(for:)`.
     var chartData: [ExpenseChartCalculations.Datum] {
-        ExpenseChartCalculations.data(
-            categories: visibleCategories,
-            amount: { [self] in actualTotal(for: $0) },
-            colorOverride: { [self] in isOver(for: $0) ? "#ef4444" : nil }
-        )
+        ExpenseChartCalculations.data(categories: visibleCategories, amount: { [self] in actualTotal(for: $0) })
     }
 
     func isOver(for category: Wellspent_V1_Category) -> Bool {
