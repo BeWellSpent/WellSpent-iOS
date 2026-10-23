@@ -161,6 +161,11 @@
       "changeType": "fixed",
       "summaryEn": "A paid fixed expense linked to a matched bank transaction now shows its expand arrow again, and the notification bell shows your real unread count on launch instead of starting at zero.",
       "summaryEs": "Un gasto fijo pagado y vinculado a una transacción bancaria coincidente ahora vuelve a mostrar su flecha de expansión, y la campana de notificaciones muestra tu conteo real de no leídas al abrir la app en lugar de empezar en cero."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Reopening the app after your session expired could ask for Face ID several times in a row, once per screen that needed to reload. It now only asks once.",
+      "summaryEs": "Reabrir la app después de que tu sesión expiró podía pedir Face ID varias veces seguidas, una por cada pantalla que necesitaba recargar. Ahora solo lo pide una vez."
     }
   ]
 }

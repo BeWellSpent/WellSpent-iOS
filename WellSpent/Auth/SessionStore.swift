@@ -8,13 +8,11 @@ import WellSpentREST
 /// (Register/Login/RefreshToken/...) and `authenticatedRESTClient`, rebuilt on
 /// login/logout, for everything else.
 ///
-/// The access token is short-lived (15 minutes) and refreshed reactively on a
-/// 401 using the in-memory refresh token — no Keychain read, no biometric
-/// prompt, while the app is actively running. The refresh token itself lives
-/// behind a Face ID/Touch ID (or passcode) gate that only fires once per
-/// cold start: `init` resumes a session asynchronously if one might exist,
-/// tracked via `isResolvingSession` so `RootView` can wait for it instead of
-/// flashing the login screen.
+/// The access token (15 min) refreshes reactively on a 401, rotating the
+/// Keychain-gated refresh token too — every refresh re-prompts Face ID, not
+/// just cold start. Concurrent 401s share one in-flight refresh. `init`
+/// resumes a session asynchronously, tracked via `isResolvingSession` so
+/// `RootView` can wait instead of flashing the login screen.
 @MainActor
 @Observable
 final class SessionStore {
@@ -140,14 +138,25 @@ final class SessionStore {
         Self.logger.info("cold-start resume succeeded")
     }
 
-    /// In-session refresh triggered by a 401 from any authenticated call —
-    /// uses the in-memory refresh token only, no Keychain read, no prompt.
+    /// Shares one in-flight refresh across concurrent 401s — the backend
+    /// rotates the refresh token per use and treats reuse as theft, so
+    /// racing calls must not each refresh independently.
+    private var inFlightRefresh: Task<String?, Never>?
+
+    /// In-session refresh triggered by a 401 from any authenticated call.
     private func refreshAccessTokenInSession() async -> String? {
+        if let inFlightRefresh {
+            return await inFlightRefresh.value
+        }
         guard let refreshToken else {
             Self.logger.error("in-session refresh attempted with no refresh token in memory")
             return nil
         }
-        return await performRefresh(refreshToken: refreshToken)
+        let task = Task { await self.performRefresh(refreshToken: refreshToken) }
+        inFlightRefresh = task
+        let result = await task.value
+        inFlightRefresh = nil
+        return result
     }
 
     /// Shared by both refresh paths: exchanges a refresh token, persists and
