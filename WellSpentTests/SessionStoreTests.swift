@@ -51,9 +51,11 @@ struct SessionStoreTests {
         }
     }
 
-    @Test("starts logged out, already resolved, when no refresh token exists")
+    @Test("starts logged out once resolved, when no refresh token exists")
     func startsLoggedOutWithNoRefreshToken() async {
+        // isResolvingSession is briefly true even with nothing stored now.
         let session = SessionStore(baseURL: "http://localhost:1", tokenStore: makeTokenStore(), refreshTokenStore: FakeRefreshTokenStore(), deviceIDStore: makeDeviceIDStore())
+        await waitForResolution(session)
         #expect(!session.isResolvingSession)
         #expect(!session.isAuthenticated)
         #expect(session.userID == nil)

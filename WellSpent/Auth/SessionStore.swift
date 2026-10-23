@@ -69,14 +69,12 @@ final class SessionStore {
 
         Self.logger.info("SessionStore.init called id=\(self.instanceID, privacy: .public)")
 
-        if refreshTokenStore.exists() {
-            isResolvingSession = true
-            Task { @MainActor [weak self] in
-                await self?.resumeSession()
-            }
-        } else {
-            isResolvingSession = false
-            tokenStore.deleteToken()
+        // No separate exists() pre-check — read()'s own result already
+        // distinguishes "nothing stored" from "declined", both handled by
+        // resumeSession()'s clearLocalSession() path.
+        isResolvingSession = true
+        Task { @MainActor [weak self] in
+            await self?.resumeSession()
         }
     }
 
