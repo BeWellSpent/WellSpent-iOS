@@ -39,17 +39,6 @@ struct ExpenseChartCalculationsTests {
         #expect(data.map(\.name) == ["Positive"])
     }
 
-    @Test("colorOverride takes priority over the category's own color")
-    func colorOverrideWins() {
-        let categories = [category(id: 1, name: "Overspent", color: "#00FF00")]
-        let data = ExpenseChartCalculations.data(
-            categories: categories,
-            amount: { _ in (100, 0) },
-            colorOverride: { _ in "#FF0000" }
-        )
-        #expect(data.first?.colorHex == "#FF0000")
-    }
-
     @Test("amountValue combines units and nanos into a decimal")
     func amountValueCombinesUnitsAndNanos() {
         #expect(ExpenseChartCalculations.amountValue(units: 10, nanos: 500_000_000) == 10.5)

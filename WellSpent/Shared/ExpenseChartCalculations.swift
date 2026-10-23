@@ -45,20 +45,20 @@ nonisolated enum ExpenseChartCalculations {
         return value / total * 100
     }
 
-    /// Builds chart data from categories + an amount lookup + an optional
-    /// per-category color override (Overview uses this to flag overspent
-    /// categories red, matching web's `isOver ? '#ef4444' : ...`). Filters
-    /// out non-positive amounts, matching web's `.filter((d) => d.value > 0)`.
+    /// Builds chart data from categories + an amount lookup. Filters out
+    /// non-positive amounts, matching web's `.filter((d) => d.value > 0)`.
+    /// Always uses the category's own color (falling back to the rotating
+    /// palette when unset) — never recolored for overspend, so the chart
+    /// matches the category elsewhere on screen (issue #91).
     static func data(
         categories: [Wellspent_V1_Category],
-        amount: (Wellspent_V1_Category) -> (units: Int64, nanos: Int32),
-        colorOverride: (Wellspent_V1_Category) -> String? = { _ in nil }
+        amount: (Wellspent_V1_Category) -> (units: Int64, nanos: Int32)
     ) -> [Datum] {
         categories.enumerated().compactMap { index, category in
             let a = amount(category)
             let value = amountValue(units: a.units, nanos: a.nanos)
             guard value > 0 else { return nil }
-            let color = colorOverride(category) ?? (category.color.isEmpty ? fallbackPalette[index % fallbackPalette.count] : category.color)
+            let color = category.color.isEmpty ? fallbackPalette[index % fallbackPalette.count] : category.color
             return Datum(id: category.id, name: category.displayName, value: value, colorHex: color)
         }
     }
