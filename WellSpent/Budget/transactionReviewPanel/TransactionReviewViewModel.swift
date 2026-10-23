@@ -65,12 +65,11 @@ final class TransactionReviewViewModel {
     }
 
     /// Started once from `BudgetDetailView`'s own `.task` (same shape as
-    /// `NotificationBellViewModel.observePushEvents()`) so the Review tab's
-    /// badge — visible from every tab — reflects new matches without the
-    /// user having to enter the tab first. No time-based fallback: a push
-    /// that's denied or never delivered means no automatic update until the
-    /// user pulls to refresh or re-enters the tab.
+    /// `NotificationBellViewModel.observePushEvents()`). Loads immediately,
+    /// then again on each matching push — without the immediate load this
+    /// stayed empty all session until the first push arrived.
     func observePushEvents() async {
+        await load()
         for await event in PushEventCenter.shared.subscribe() where shouldReload(for: event) {
             await load()
         }

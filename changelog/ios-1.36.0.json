@@ -156,6 +156,11 @@
       "changeType": "fixed",
       "summaryEn": "Expense charts no longer turn a category's slice/bar red when it goes over its plan; the category's own color is always shown there, matching the Plan tab.",
       "summaryEs": "Los gráficos de gastos ya no vuelven roja la porción o barra de una categoría cuando supera su plan; ahí siempre se muestra el color propio de la categoría, igual que en la pestaña de Plan."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "A paid fixed expense linked to a matched bank transaction now shows its expand arrow again, and the notification bell shows your real unread count on launch instead of starting at zero.",
+      "summaryEs": "Un gasto fijo pagado y vinculado a una transacción bancaria coincidente ahora vuelve a mostrar su flecha de expansión, y la campana de notificaciones muestra tu conteo real de no leídas al abrir la app en lugar de empezar en cero."
     }
   ]
 }
