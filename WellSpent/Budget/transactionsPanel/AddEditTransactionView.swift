@@ -43,12 +43,17 @@ struct AddEditTransactionView: View {
     var body: some View {
         NavigationStack {
             Form {
+                amountSection
                 detailsSection
-                attributionSection
                 errorSection
             }
             .sheetChrome(isEditing ? Text("Edit Transaction") : Text("Add Transaction")) { dismiss() }
             .toolbar {
+                // A full-width in-body button (as the mockup shows) would be a
+                // one-off departure from every other Add/Edit sheet in this
+                // app, all of which save via this same .confirmationAction
+                // toolbar button — the established convention `SheetChrome`
+                // itself was built around. Kept for consistency, not inertia.
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {
@@ -71,8 +76,11 @@ struct AddEditTransactionView: View {
         }
     }
 
+    /// Direction + amount read as their own zone, matching the mockup: a
+    /// money-direction control immediately above the hero amount, both
+    /// visually distinct from the attribute list below.
     @ViewBuilder
-    private var detailsSection: some View {
+    private var amountSection: some View {
         Section {
             if viewModel.isLocked {
                 Text("Only the category can be changed for this transaction.")
@@ -80,17 +88,6 @@ struct AddEditTransactionView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("transactionLockedNotice")
             }
-
-            AmountHeroField(
-                text: $viewModel.amountText,
-                autoFocus: !isEditing,
-                disabled: viewModel.isLocked,
-                accessibilityIdentifier: "transactionAmountField"
-            )
-
-            TextField("Name", text: $viewModel.name)
-                .disabled(viewModel.isLocked)
-                .accessibilityIdentifier("transactionNameField")
 
             Picker("Flow", selection: $viewModel.isReceived) {
                 Text("Spent").tag(false)
@@ -100,19 +97,26 @@ struct AddEditTransactionView: View {
             .disabled(viewModel.isLocked)
             .accessibilityIdentifier("transactionFlowPicker")
 
-            DatePicker("Date", selection: $viewModel.date, displayedComponents: .date)
-                .disabled(viewModel.isLocked)
-                .accessibilityIdentifier("transactionDatePicker")
-
-            Toggle("Recurring", isOn: $viewModel.recurring)
-                .disabled(viewModel.isLocked)
-                .accessibilityIdentifier("transactionRecurringToggle")
+            AmountHeroField(
+                text: $viewModel.amountText,
+                autoFocus: !isEditing,
+                disabled: viewModel.isLocked,
+                accessibilityIdentifier: "transactionAmountField"
+            )
         }
     }
 
+    /// One merged section — name, category, payment method, date, recurring —
+    /// reading as a single cohesive list instead of the two separately-gapped
+    /// `Form` sections this used to be, closer to the mockup's one continuous
+    /// card of rows.
     @ViewBuilder
-    private var attributionSection: some View {
+    private var detailsSection: some View {
         Section {
+            TextField("Name", text: $viewModel.name)
+                .disabled(viewModel.isLocked)
+                .accessibilityIdentifier("transactionNameField")
+
             ColorDotPickerField(
                 title: "Category",
                 selection: $viewModel.categoryID,
@@ -131,6 +135,14 @@ struct AddEditTransactionView: View {
                 accessibilityIdentifier: "transactionPaymentMethodPicker"
             )
             .disabled(viewModel.isLocked)
+
+            DatePicker("Date", selection: $viewModel.date, displayedComponents: .date)
+                .disabled(viewModel.isLocked)
+                .accessibilityIdentifier("transactionDatePicker")
+
+            Toggle("Recurring", isOn: $viewModel.recurring)
+                .disabled(viewModel.isLocked)
+                .accessibilityIdentifier("transactionRecurringToggle")
         }
     }
 

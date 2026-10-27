@@ -52,11 +52,13 @@ struct EditFixedExpenseView: View {
                 scheduleSection
                 paymentPlanSection
                 payInFullSection
-                attributionSection
                 errorSection
             }
             .sheetChrome(Text("Edit Fixed Expense")) { dismiss() }
             .toolbar {
+                // Full-width in-body button would be a one-off departure from
+                // every other Add/Edit sheet in this app — see the identical
+                // note on AddEditTransactionView.
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {
@@ -105,6 +107,8 @@ struct EditFixedExpenseView: View {
         }
     }
 
+    /// Merges the old `detailsSection`/`attributionSection` split into one
+    /// cohesive block — same reasoning as `AddFixedExpenseView`.
     @ViewBuilder
     private var detailsSection: some View {
         Section {
@@ -115,6 +119,24 @@ struct EditFixedExpenseView: View {
 
             TextField("Name", text: $viewModel.name)
                 .accessibilityIdentifier("editFixedExpenseNameField")
+
+            ColorDotPickerField(
+                title: "Category",
+                selection: $viewModel.categoryID,
+                options: categories.map { ColorDotOption(id: $0.id, name: $0.name, hex: $0.color) },
+                noneOption: (id: Int32(0), label: "None"),
+                accessibilityIdentifier: "editFixedExpenseCategoryPicker"
+            )
+
+            ColorDotPickerField(
+                title: "Payment Method",
+                selection: $viewModel.paymentMethodID,
+                options: paymentMethods.map {
+                    ColorDotOption(id: $0.id, name: $0.alias.isEmpty ? $0.name : $0.alias, hex: $0.color)
+                },
+                noneOption: (id: "", label: "None"),
+                accessibilityIdentifier: "editFixedExpensePaymentMethodPicker"
+            )
         }
     }
 
@@ -171,29 +193,6 @@ struct EditFixedExpenseView: View {
             } else {
                 Text("Leave blank for an expense that repeats indefinitely.")
             }
-        }
-    }
-
-    @ViewBuilder
-    private var attributionSection: some View {
-        Section {
-            ColorDotPickerField(
-                title: "Category",
-                selection: $viewModel.categoryID,
-                options: categories.map { ColorDotOption(id: $0.id, name: $0.name, hex: $0.color) },
-                noneOption: (id: Int32(0), label: "None"),
-                accessibilityIdentifier: "editFixedExpenseCategoryPicker"
-            )
-
-            ColorDotPickerField(
-                title: "Payment Method",
-                selection: $viewModel.paymentMethodID,
-                options: paymentMethods.map {
-                    ColorDotOption(id: $0.id, name: $0.alias.isEmpty ? $0.name : $0.alias, hex: $0.color)
-                },
-                noneOption: (id: "", label: "None"),
-                accessibilityIdentifier: "editFixedExpensePaymentMethodPicker"
-            )
         }
     }
 

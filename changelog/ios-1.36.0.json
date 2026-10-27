@@ -221,6 +221,11 @@
       "changeType": "changed",
       "summaryEn": "Switching periods now happens from the Transactions screen itself — tap the period name to see this year's periods or browse every past one. It's no longer in the More menu.",
       "summaryEs": "Cambiar de período ahora se hace desde la propia pantalla de Transacciones: toca el nombre del período para ver los de este año o explorar todos los anteriores. Ya no está en el menú Más."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Add/Edit Transaction and Add/Edit Fixed Expense forms now read as fewer, more cohesive groups — the money direction and amount at the top, then one continuous list for name, category, payment method, date and schedule.",
+      "summaryEs": "Los formularios de Agregar/Editar transacción y Agregar/Editar gasto fijo ahora se ven como grupos más cohesivos: la dirección del dinero y el monto arriba, y luego una sola lista continua para nombre, categoría, método de pago, fecha y frecuencia."
     }
   ]
 }
