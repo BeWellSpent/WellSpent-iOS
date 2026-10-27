@@ -206,6 +206,21 @@
       "changeType": "fixed",
       "summaryEn": "The Variable, Fixed, and Payments summary cards no longer show a minus sign in front of the total.",
       "summaryEs": "Las tarjetas de resumen de Variables, Fijos y Pagos ya no muestran un signo menos delante del total."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Removed a leftover filter button from the top of the Fixed and Payments tabs — all three Transactions tabs now share the same header.",
+      "summaryEs": "Se eliminó un botón de filtro que había quedado en la parte superior de las pestañas de Fijos y Pagos; las tres pestañas de Transacciones ahora comparten el mismo encabezado."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Transactions screen has a new header: the period you're viewing, a search icon, and a single Add button shared by Variable, Fixed, and Payments, above a big \"Transactions\" title. Search now opens from that icon instead of always being on screen.",
+      "summaryEs": "La pantalla de Transacciones tiene un nuevo encabezado: el período que estás viendo, un ícono de búsqueda y un único botón Agregar compartido por Variables, Fijos y Pagos, sobre un título grande de \"Transacciones\". La búsqueda ahora se abre desde ese ícono en lugar de estar siempre visible."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Switching periods now happens from the Transactions screen itself — tap the period name to see this year's periods or browse every past one. It's no longer in the More menu.",
+      "summaryEs": "Cambiar de período ahora se hace desde la propia pantalla de Transacciones: toca el nombre del período para ver los de este año o explorar todos los anteriores. Ya no está en el menú Más."
     }
   ]
 }

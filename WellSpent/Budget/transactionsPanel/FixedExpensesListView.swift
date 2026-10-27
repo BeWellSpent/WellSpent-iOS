@@ -48,7 +48,6 @@ struct FixedExpensesListView: View {
     /// mode — see the edit sheet below.
     var isArchivedPeriod: Bool = false
     let searchQuery: String
-    let filter: TransactionFilterOption
 
     private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
@@ -126,10 +125,7 @@ struct FixedExpensesListView: View {
     private func content(viewModel: FixedExpensesViewModel) -> some View {
         let visibleTransactions = TransactionFiltering.apply(
             viewModel.transactions,
-            filter: filter,
             searchQuery: searchQuery,
-            incomeCategoryID: viewModel.categories.first { $0.isSystem(.income) }?.id,
-            overBudgetTransactionIDs: [],
             categoryName: viewModel.categoryName,
             ownerName: viewModel.ownerName
         )
@@ -812,8 +808,7 @@ private struct UpcomingFixedExpenseRow: View {
             isAddSheetPresented: .constant(false),
             isActive: true,
             canEdit: true,
-            searchQuery: "",
-            filter: .none
+            searchQuery: ""
         )
     }
 }

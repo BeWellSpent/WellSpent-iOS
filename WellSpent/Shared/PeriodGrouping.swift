@@ -44,6 +44,15 @@ nonisolated enum PeriodGrouping {
         return periods.first { $0.id == overrideID } ?? resolveActivePeriod(periods)
     }
 
+    /// Periods sharing a calendar year with `period`, including archived
+    /// ones — backs the Transactions screen's period switcher
+    /// (`TransactionsPeriodControl`), relocated from the former ☰ menu's
+    /// period section (issue #92 follow-up).
+    static func periodsInSameYear(as period: Wellspent_V1_BudgetPeriod, from periods: [Wellspent_V1_BudgetPeriod]) -> [Wellspent_V1_BudgetPeriod] {
+        let year = Calendar.current.component(.year, from: period.startDate.dateOnly)
+        return periods.filter { Calendar.current.component(.year, from: $0.startDate.dateOnly) == year }
+    }
+
     /// A localized "July 2026"-style label for a period row — mirrors
     /// `TransactionDayGrouping.headerText`'s locale-aware formatting.
     static func label(for period: Wellspent_V1_BudgetPeriod, localeIdentifier: String) -> String {

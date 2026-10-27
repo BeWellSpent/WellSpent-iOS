@@ -83,4 +83,13 @@ struct PeriodGroupingTests {
         #expect(label.contains("2026"))
     }
 
+    @Test("periodsInSameYear includes archived periods sharing the reference period's year")
+    func periodsInSameYearIncludesArchived() {
+        let jan = makePeriod(id: "jan", year: 2026, month: 1, day: 1, isArchived: true)
+        let jul = makePeriod(id: "jul", year: 2026, month: 7, day: 1)
+        let prevDec = makePeriod(id: "dec25", year: 2025, month: 12, day: 1, isArchived: true)
+        let result = PeriodGrouping.periodsInSameYear(as: jul, from: [jan, jul, prevDec])
+        #expect(Set(result.map(\.id)) == ["jan", "jul"])
+    }
+
 }

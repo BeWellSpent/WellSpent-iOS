@@ -76,13 +76,6 @@ struct TransactionsListView: View {
     /// backend, which doesn't restrict it).
     var isArchivedPeriod: Bool = false
     let searchQuery: String
-    let filter: TransactionFilterOption
-    /// Gated add-transaction trigger (payment-method-required check lives in
-    /// `BudgetDetailView.startAddingTransaction`) — called from the Variable
-    /// tab's own in-content "+" button (issue #92), which replaces
-    /// `BudgetDetailView`'s shared toolbar "+" for that tab specifically.
-    /// Fixed/Payments are unaffected — they still use the toolbar button.
-    let onRequestAddTransaction: () -> Void
 
     private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
@@ -155,8 +148,7 @@ struct TransactionsListView: View {
                     reviewViewModel: reviewViewModel,
                     canEdit: canEdit,
                     isArchivedPeriod: isArchivedPeriod,
-                    searchQuery: searchQuery,
-                    filter: filter
+                    searchQuery: searchQuery
                 )
             }
         }
@@ -348,23 +340,14 @@ struct TransactionsListView: View {
     /// "Spent this period" card above the quick-filter chips (issue #92) —
     /// reuses the server-computed totals `TransactionsViewModel` already
     /// carries (`totalText`/`spentProgress`/`remainingSummaryText`); no new
-    /// arithmetic lives in this view.
+    /// arithmetic lives in this view. Its own "+" was folded into the shared
+    /// header add button in `BudgetDetailView.transactionsHeader`, which now
+    /// covers all three tabs (issue #92 follow-up).
     private func summaryCard(viewModel: TransactionsViewModel) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Spent this period")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if canMutate {
-                    Button {
-                        onRequestAddTransaction()
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                    }
-                    .accessibilityIdentifier("variableAddTransactionButton")
-                }
-            }
+            Text("Spent this period")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Text(viewModel.totalText)
                 .font(.title2.bold())
                 .accessibilityIdentifier("transactionsTotal")
@@ -567,21 +550,17 @@ struct TransactionsListView: View {
     }
 
     /// Mirrors `content(viewModel:)`'s shape at the Fixed tab's level of
-    /// behavior: search + day-grouping + `excludedOnly` (spentOnly/
-    /// exceededOnly aren't meaningful here, and `BudgetDetailView`'s filter
-    /// menu never offers them on this tab). No flag-for-review, installment
-    /// split, or create-fixed-from-transaction — those are Variable-spend-
-    /// specific. See docs for issue #76.
+    /// behavior: search + day-grouping only, now that the legacy filter menu
+    /// is gone. No flag-for-review, installment split, or
+    /// create-fixed-from-transaction — those are Variable-spend-specific.
+    /// See docs for issue #76.
     @ViewBuilder
     private func paymentsContent(viewModel: TransactionsViewModel) -> some View {
         let reviews = reviewViewModel?.reviews ?? []
         let paymentCategoryID = viewModel.categories.first { $0.isSystem(.payment) }?.id ?? 0
         let visibleTransactions = TransactionFiltering.apply(
             viewModel.paymentTransactions(reviews: reviews),
-            filter: filter,
             searchQuery: searchQuery,
-            incomeCategoryID: viewModel.categories.first { $0.isSystem(.income) }?.id,
-            overBudgetTransactionIDs: [],
             categoryName: viewModel.categoryName,
             ownerName: viewModel.ownerName
         )
@@ -875,9 +854,7 @@ struct TransactionsListView: View {
             isAddFixedExpensePresented: .constant(false),
             isActive: true,
             canEdit: true,
-            searchQuery: "",
-            filter: .none,
-            onRequestAddTransaction: {}
+            searchQuery: ""
         )
     }
 }

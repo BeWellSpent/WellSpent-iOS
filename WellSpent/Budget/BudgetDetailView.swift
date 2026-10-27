@@ -40,7 +40,10 @@ struct BudgetDetailView: View {
     @State private var planSelectedKind: ExpensePlanView.PlanKind = .overview
     @State private var transactionsSelectedKind: TransactionsListView.TransactionKind = .variable
     @State private var transactionsSearchQuery = ""
-    @State private var transactionsFilter: TransactionFilterOption = .none
+    /// Search starts hidden (issue #92 follow-up) — revealed by the toolbar's
+    /// search icon (see `toolbarContent`'s `.transactions` case) rather than
+    /// always shown above the list.
+    @State private var isTransactionsSearchVisible = false
     @State private var isAddCategoryPresented = false
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
@@ -116,11 +119,6 @@ struct BudgetDetailView: View {
                     ProgressView()
                 }
             }
-        }
-        .onChange(of: transactionsSelectedKind) { _, _ in
-            // Switching Variable <-> Fixed resets the filter rather than
-            // silently carrying over an option the other tab doesn't offer.
-            transactionsFilter = .none
         }
         .task {
             // Hoisted up from BudgetManageView so the Transactions tab has
@@ -276,15 +274,9 @@ struct BudgetDetailView: View {
     /// bottom bar's "More" item.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        let canEdit = viewModel?.canEdit ?? true
-        // Creating a new transaction is fully blocked on an archived period
-        // (see docs/features/budget-list-view-rework.md) — Plan additions
-        // (expense allocations) are profile-level, not period-level, so
-        // they're unaffected and stay gated by role alone.
-        let canAddTransaction = canEdit && viewModel?.isArchivedPeriod != true
         switch selectedSection {
         case .plan:
-            if canEdit && planSelectedKind == .plan {
+            if viewModel?.canEdit == true && planSelectedKind == .plan {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isAddCategoryPresented = true
@@ -295,49 +287,34 @@ struct BudgetDetailView: View {
                 }
             }
         case .transactions:
-            // Variable has its own in-content "+" and filter sheet now
-            // (issue #92) — this toolbar no longer offers either for that
-            // tab. Payments still gets the same Variable-style add sheet
-            // here, not the Fixed-expense form — manual add is allowed there
-            // too (issue #76).
-            if canAddTransaction && transactionsSelectedKind == .payments {
-                ToolbarItem(placement: .primaryAction) {
+            if let viewModel {
+                ToolbarItem(placement: .principal) {
+                    TransactionsPeriodControl(
+                        currentPeriod: viewModel.currentPeriod,
+                        periods: viewModel.periods,
+                        profile: viewModel.profile,
+                        localeIdentifier: localeIdentifier,
+                        onSelect: { viewModel.selectPeriod(id: $0) }
+                    )
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isTransactionsSearchVisible.toggle()
+                    if !isTransactionsSearchVisible { transactionsSearchQuery = "" }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityIdentifier("transactionsSearchToggleButton")
+            }
+            if viewModel?.canEdit == true && viewModel?.isArchivedPeriod != true {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        startAddingTransaction { isAddTransactionPresented = true }
+                        startAddingTransactionForCurrentTab()
                     } label: {
                         Image(systemName: "plus")
                     }
                     .accessibilityIdentifier("addTransactionButton")
-                }
-            } else if canAddTransaction && transactionsSelectedKind == .fixed {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        startAddingTransaction { isAddFixedExpensePresented = true }
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityIdentifier("addFixedExpenseButton")
-                }
-            }
-            if transactionsSelectedKind != .variable {
-                ToolbarItem(placement: .topBarTrailing) {
-                    // `Menu` + inline `Picker`, not `.pickerStyle(.menu)`: a
-                    // menu-style `Picker` ignores this `Image` label and renders
-                    // the selected title instead ("Todas las transacciones"),
-                    // which pushed the + and bell into an empty overflow menu.
-                    // Inline `Picker` still draws the selection checkmark.
-                    Menu {
-                        Picker(selection: $transactionsFilter) {
-                            Text(TransactionFilterOption.none.label).tag(TransactionFilterOption.none)
-                            Text(TransactionFilterOption.excludedOnly.label).tag(TransactionFilterOption.excludedOnly)
-                        } label: {
-                            EmptyView()
-                        }
-                        .pickerStyle(.inline)
-                    } label: {
-                        Image(systemName: transactionsFilter == .none ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
-                    }
-                    .accessibilityIdentifier("transactionsFilterMenu")
                 }
             }
         case .review, .reports, .more:
@@ -430,41 +407,9 @@ struct BudgetDetailView: View {
     @ViewBuilder
     private func transactionsContent(viewModel: BudgetDetailViewModel) -> some View {
         VStack(spacing: 0) {
-            // A plain in-content field, not SwiftUI's native `.searchable`
-            // (tried first, both at this outer level and on the tab's own
-            // inner NavigationStack — confirmed dead both times via a live
-            // UI test with a full accessibility-hierarchy dump: no search
-            // bar element ever installs at all, in either position, on this
-            // screen's doubly-nested NavigationStack architecture — an
-            // already-pushed destination that itself hosts a TabView whose
-            // tabs each wrap their own NavigationStack, per the type-level
-            // doc comment's "only one nav bar actually renders" finding).
-            // A regular `TextField` sidesteps the whole question of which
-            // NavigationStack should host the search chrome, and matches
-            // what web's `TransactionsPanel.tsx` actually does — a plain
-            // always-visible field, not native OS search UI.
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search by name, category, or owner", text: $transactionsSearchQuery)
-                    .textFieldStyle(.plain)
-                    .accessibilityIdentifier("transactionsSearchField")
-                if !transactionsSearchQuery.isEmpty {
-                    Button {
-                        transactionsSearchQuery = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("clearTransactionsSearchButton")
-                }
+            if isTransactionsSearchVisible {
+                transactionsSearchField
             }
-            .padding(8)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .padding(.horizontal)
-            .padding(.top, 8)
 
             if let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
                 TransactionsListView(
@@ -480,17 +425,58 @@ struct BudgetDetailView: View {
                     reviewViewModel: reviewViewModel,
                     canEdit: viewModel.canEdit,
                     isArchivedPeriod: viewModel.isArchivedPeriod,
-                    searchQuery: transactionsSearchQuery,
-                    filter: transactionsFilter,
-                    onRequestAddTransaction: {
-                        startAddingTransaction { isAddTransactionPresented = true }
-                    }
+                    searchQuery: transactionsSearchQuery
                 )
                 // Same reason as planContent's — see there.
                 .id("\(period.id)|\(focusedViewToken)")
             } else {
                 ProgressView()
             }
+        }
+    }
+
+    /// Same plain `TextField` this screen has always used for search — see
+    /// the history in docs/features (v1.27.1): SwiftUI's native `.searchable`
+    /// never installs a search bar at all on this doubly-nested
+    /// NavigationStack architecture. Now gated behind the toolbar's search
+    /// icon (see `toolbarContent`'s `.transactions` case) instead of always
+    /// shown.
+    private var transactionsSearchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search by name, category, or owner", text: $transactionsSearchQuery)
+                .textFieldStyle(.plain)
+                .accessibilityIdentifier("transactionsSearchField")
+            if !transactionsSearchQuery.isEmpty {
+                Button {
+                    transactionsSearchQuery = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("clearTransactionsSearchButton")
+            }
+        }
+        .padding(8)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal)
+        .padding(.top, 8)
+    }
+
+    /// One shared add entry point for all three tabs (issue #92 follow-up) —
+    /// replaces the three separate triggers this screen used to have
+    /// (Variable's own summary-card "+", and the outer toolbar's "+" for
+    /// Fixed/Payments). Dispatches to whichever sheet the current tab needs;
+    /// the payment-method-required gate is unchanged.
+    private func startAddingTransactionForCurrentTab() {
+        switch transactionsSelectedKind {
+        case .fixed:
+            startAddingTransaction { isAddFixedExpensePresented = true }
+        case .variable, .payments:
+            startAddingTransaction { isAddTransactionPresented = true }
         }
     }
 

@@ -2,11 +2,11 @@ import Foundation
 import WellSpentAPI
 
 /// Quick-filter chips for the Variable tab (issue #92) — distinct from
-/// `TransactionFilterOption`, which still backs the Fixed/Payments tabs'
-/// shared toolbar filter menu unchanged. `exceededOnly`/`excludedOnly` are
-/// real, server-backed filters applied as their own independent toggle
-/// chips in the same row (not part of this enum's radio group) — see
-/// `TransactionsListView.quickFilterToggleChip`.
+/// `TransactionFilterOption`, which the Fixed/Payments tabs no longer use at
+/// all (their legacy toolbar filter menu was removed). `exceededOnly`/
+/// `excludedOnly` are real, server-backed filters applied as their own
+/// independent toggle chips in the same row (not part of this enum's radio
+/// group) — see `TransactionsListView.quickFilterToggleChip`.
 nonisolated enum VariableQuickFilter: String, CaseIterable, Identifiable {
     case all
     case moneyOut
