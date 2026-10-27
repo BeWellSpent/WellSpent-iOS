@@ -82,6 +82,6 @@ struct TransactionsViewModelTests {
             ],
             categories: [paymentCategory, groceriesCategory]
         )
-        #expect(viewModel.paymentsTotalText(reviews: []) == "-$50.00")
+        #expect(viewModel.paymentsTotalText(reviews: []) == "$50.00")
     }
 }

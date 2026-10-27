@@ -49,7 +49,7 @@ final class TransactionsViewModel {
     /// instead would put a second spelling of the number next to the totals
     /// the Plan and Overview tabs print.
     var totalText: String {
-        TransactionAmountFormatting.totalDisplayText(
+        TransactionAmountFormatting.magnitudeDisplayText(
             amounts: [TransactionAmountFormatting.tuple(from: summary?.variableActualTotal)],
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
@@ -195,7 +195,7 @@ final class TransactionsViewModel {
     /// and is untouched by this.
     func paymentsTotalText(reviews: [Wellspent_V1_TransactionReview]) -> String {
         let amounts = paymentTransactions(reviews: reviews).map { TransactionAmountFormatting.tuple(from: $0.amount) }
-        return TransactionAmountFormatting.totalDisplayText(amounts: amounts, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        return TransactionAmountFormatting.magnitudeDisplayText(amounts: amounts, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 
     func pendingMatchName(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> String? {
