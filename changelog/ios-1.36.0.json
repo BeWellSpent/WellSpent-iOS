@@ -201,6 +201,11 @@
       "changeType": "changed",
       "summaryEn": "The Payments tab has a new summary card, and excluding or deleting a row now lives behind a swipe with a brief \"Undo\", instead of an always-visible button or a confirmation prompt.",
       "summaryEs": "La pestaña de Pagos tiene una nueva tarjeta de resumen, y excluir o eliminar una fila ahora se desliza con un breve \"Deshacer\", en lugar de un botón siempre visible o un mensaje de confirmación."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "The Variable, Fixed, and Payments summary cards no longer show a minus sign in front of the total.",
+      "summaryEs": "Las tarjetas de resumen de Variables, Fijos y Pagos ya no muestran un signo menos delante del total."
     }
   ]
 }
