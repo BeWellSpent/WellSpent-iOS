@@ -1,8 +1,11 @@
 import SwiftUI
 import WellSpentAPI
 import WellSpentREST
+import os
 
 struct TransactionsListView: View {
+    private static let logger = AppLogger.logger("Transactions")
+
     /// Local to this file, not a `Shared/` enum like `BudgetSection` — this
     /// is UI-local tab state, not a reusable domain concept.
     enum TransactionKind: Hashable {
@@ -15,15 +18,18 @@ struct TransactionsListView: View {
         case payments
     }
 
-    /// Every locally-triggered sheet on the Variable tab, so only one
-    /// presentation modifier drives them. Stacking separate
-    /// `.sheet(isPresented:)` modifiers on one view is what let the Filter
-    /// sheet pop up unrequested right after the Add sheet dismissed — the
-    /// same class of bug as the v1.25.0 Plaid double-tap fix and
-    /// `FixedExpensesListView.ActiveSheet`. The add sheet stays its own
-    /// modifier (see `content(viewModel:)`) — its binding is owned by
-    /// `BudgetDetailView`'s toolbar/in-content "+", and mirroring it in here
-    /// would reintroduce the cross-wiring this avoids.
+    /// Every locally-triggered sheet on the Variable **and** Payments tabs
+    /// (Payments' own Edit case reuses `.editTransaction` — same view, same
+    /// completion — rather than a second, parallel `editingTransaction`
+    /// `.sheet(isPresented:)`), so only one presentation modifier drives each
+    /// tab's sheets. Stacking separate `.sheet(isPresented:)` modifiers on
+    /// one view is what let the Filter sheet pop up unrequested right after
+    /// the Add sheet dismissed — the same class of bug as the v1.25.0 Plaid
+    /// double-tap fix and `FixedExpensesListView.ActiveSheet`. The add sheet
+    /// stays its own modifier (see `content(viewModel:)`) — its binding is
+    /// owned by `BudgetDetailView`'s toolbar/in-content "+", and mirroring it
+    /// in here would reintroduce the cross-wiring this avoids. Built via
+    /// `sheetContent(for:viewModel:)`, shared by both tabs' `.sheet(item:)`.
     private enum ActiveSheet: Identifiable {
         case editTransaction(Wellspent_V1_Transaction)
         case markReview(Wellspent_V1_Transaction)
@@ -82,19 +88,14 @@ struct TransactionsListView: View {
 
     @Environment(SessionStore.self) private var session
     @State private var viewModel: TransactionsViewModel?
-    /// Used by the Payments tab only — see `paymentsContent(viewModel:)`'s
-    /// own edit sheet. The Variable tab's edit flow goes through
-    /// `activeSheet` below instead.
-    @State private var editingTransaction: Wellspent_V1_Transaction?
     @State private var unsplitTarget: Wellspent_V1_Transaction?
-    /// Staged by the swipe-to-delete button below, then confirmed via
-    /// `.confirmationDialog` — same shape as `unsplitTarget`, so a swipe
-    /// can't delete a transaction outright with no way back. Used by the
-    /// Payments tab only (issue #92 scoped Variable's delete to a toast+Undo
-    /// instead — see `pendingDeleteIDs`/`toastState` below).
-    @State private var deletingTransaction: Wellspent_V1_Transaction?
 
-    // MARK: Variable tab only (issue #92)
+    // MARK: Swipe-action toasts (issue #92) — shared by Variable and
+    // Payments. Safe to share one instance: the two tabs' transaction ID
+    // sets never overlap (Payments is exactly the card-payment rows Variable
+    // excludes — see `TransactionsViewModel.paymentCategoryID`), and only one
+    // of the two tabs is actually mounted at a time (a `switch` on
+    // `selectedKind`, not a `TabView`, which would keep both alive).
 
     @State private var toastState = ToastState()
     /// Optimistically hidden while a swipe-delete's undo window is open —
@@ -283,55 +284,64 @@ struct TransactionsListView: View {
             Text("The plan and its remaining payments will be deleted, and this purchase will count toward its period again.")
         }
         .sheet(item: $activeSheet) { sheet in
-            switch sheet {
-            case .editTransaction(let transaction):
-                AddEditTransactionView(
-                    mode: .edit(transaction),
-                    budgetPeriodID: budgetPeriodID,
-                    currencyCode: currencyCode,
-                    categories: viewModel.categories,
-                    paymentMethods: viewModel.paymentMethods,
-                    isArchivedPeriod: isArchivedPeriod,
-                    restClient: authenticatedRESTClient
-                ) { updated in
-                    viewModel.replaceTransaction(updated)
-                }
+            sheetContent(for: sheet, viewModel: viewModel)
+        }
+    }
 
-            case .markReview(let transaction):
-                MarkForReviewSheet(
-                    transaction: transaction,
-                    budgetPeriodID: budgetPeriodID,
-                    budgetProfileID: budgetProfileID,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier,
-                    authenticatedRESTClient: authenticatedRESTClient
-                ) {
-                    Task { await reviewViewModel?.load() }
-                }
-
-            case .installmentPlan(let transaction):
-                InstallmentPlanSheet(
-                    transaction: transaction,
-                    budgetPeriodID: budgetPeriodID,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier,
-                    authenticatedRESTClient: authenticatedRESTClient
-                ) {
-                    Task { await viewModel.load() }
-                }
-
-            case .createFixedFromTransaction(let transaction):
-                CreateFixedFromTransactionSheet(
-                    transaction: transaction,
-                    budgetPeriodID: budgetPeriodID,
-                    authenticatedRESTClient: authenticatedRESTClient
-                ) {
-                    Task { await viewModel.load() }
-                }
-
-            case .recategorize(let transaction):
-                recategorizeSheet(for: transaction, viewModel: viewModel)
+    /// Shared by both tabs' `.sheet(item: $activeSheet)` — Payments only ever
+    /// produces `.editTransaction`, but the switch has to stay exhaustive, and
+    /// duplicating all 5 cases into a second copy for one tab's single case
+    /// would be the kind of pattern this file's own doc comments warn against.
+    @ViewBuilder
+    private func sheetContent(for sheet: ActiveSheet, viewModel: TransactionsViewModel) -> some View {
+        switch sheet {
+        case .editTransaction(let transaction):
+            AddEditTransactionView(
+                mode: .edit(transaction),
+                budgetPeriodID: budgetPeriodID,
+                currencyCode: currencyCode,
+                categories: viewModel.categories,
+                paymentMethods: viewModel.paymentMethods,
+                isArchivedPeriod: isArchivedPeriod,
+                restClient: authenticatedRESTClient
+            ) { updated in
+                viewModel.replaceTransaction(updated)
             }
+
+        case .markReview(let transaction):
+            MarkForReviewSheet(
+                transaction: transaction,
+                budgetPeriodID: budgetPeriodID,
+                budgetProfileID: budgetProfileID,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                authenticatedRESTClient: authenticatedRESTClient
+            ) {
+                Task { await reviewViewModel?.load() }
+            }
+
+        case .installmentPlan(let transaction):
+            InstallmentPlanSheet(
+                transaction: transaction,
+                budgetPeriodID: budgetPeriodID,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                authenticatedRESTClient: authenticatedRESTClient
+            ) {
+                Task { await viewModel.load() }
+            }
+
+        case .createFixedFromTransaction(let transaction):
+            CreateFixedFromTransactionSheet(
+                transaction: transaction,
+                budgetPeriodID: budgetPeriodID,
+                authenticatedRESTClient: authenticatedRESTClient
+            ) {
+                Task { await viewModel.load() }
+            }
+
+        case .recategorize(let transaction):
+            recategorizeSheet(for: transaction, viewModel: viewModel)
         }
     }
 
@@ -513,9 +523,12 @@ struct TransactionsListView: View {
 
     /// Toast+Undo instead of `.confirmationDialog` for Delete specifically
     /// (issue #92) — the row hides immediately; the real delete only fires
-    /// once the toast expires without an Undo tap.
+    /// once the toast expires without an Undo tap. Shared by both the
+    /// Variable and Payments tabs (both operate on the same
+    /// `TransactionsViewModel`), not duplicated.
     private func requestDelete(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) {
         pendingDeleteIDs.insert(transaction.id)
+        Self.logger.info("staged delete transactionID=\(transaction.id, privacy: .public)")
         let message = String(localized: "Transaction deleted", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
         let id = transaction.id
         toastState.show(
@@ -572,13 +585,18 @@ struct TransactionsListView: View {
             categoryName: viewModel.categoryName,
             ownerName: viewModel.ownerName
         )
+        // Optimistically hidden during a swipe-delete's undo window — see
+        // `pendingDeleteIDs`.
+        .filter { !pendingDeleteIDs.contains($0.id) }
         let dayGroups = TransactionDayGrouping.group(visibleTransactions)
 
         List {
             Section {
-                LabeledContent("Total", value: viewModel.paymentsTotalText(reviews: reviews))
-                    .accessibilityIdentifier("paymentsTotal")
+                paymentsSummaryCard(viewModel: viewModel, reviews: reviews)
             }
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
 
             if viewModel.transactions.isEmpty && viewModel.isLoading {
                 ProgressView()
@@ -590,10 +608,15 @@ struct TransactionsListView: View {
                     Section {
                         ForEach(group.transactions, id: \.id) { transaction in
                             paymentsRow(transaction, viewModel: viewModel)
+                                // Swipe-action consolidation (issue #92):
+                                // Edit stays leading; the inline Exclude
+                                // button and the confirmation-dialog-staged
+                                // Delete both move to trailing swipe actions,
+                                // matching the Fixed tab's redesign.
                                 .swipeActions(edge: .leading) {
                                     if canEdit {
                                         Button {
-                                            editingTransaction = transaction
+                                            activeSheet = .editTransaction(transaction)
                                         } label: {
                                             Label("Edit", systemImage: "pencil")
                                         }
@@ -602,10 +625,22 @@ struct TransactionsListView: View {
                                     }
                                 }
                                 .swipeActions(edge: .trailing) {
-                                    if canMutate && !transaction.isPlaidImported {
-                                        Button("Delete", role: .destructive) {
-                                            deletingTransaction = transaction
+                                    if canMutate {
+                                        Button {
+                                            requestToggleExcluded(transaction, viewModel: viewModel)
+                                        } label: {
+                                            Label(transaction.isExcluded ? "Include" : "Exclude", systemImage: transaction.isExcluded ? "eye" : "eye.slash")
                                         }
+                                        .tint(.gray)
+                                        .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
+                                    }
+                                    if canMutate && !transaction.isPlaidImported {
+                                        Button(role: .destructive) {
+                                            requestDelete(transaction, viewModel: viewModel)
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                        .accessibilityIdentifier("deleteTransaction_\(transaction.name)")
                                     }
                                 }
                         }
@@ -622,6 +657,7 @@ struct TransactionsListView: View {
             }
         }
         .listStyle(.plain)
+        .toastOverlay(toastState)
         .sheet(isPresented: $isAddTransactionPresented) {
             AddEditTransactionView(
                 mode: .add,
@@ -635,41 +671,30 @@ struct TransactionsListView: View {
                 viewModel.addTransaction(transaction)
             }
         }
-        .sheet(isPresented: Binding(
-            get: { editingTransaction != nil },
-            set: { if !$0 { editingTransaction = nil } }
-        )) {
-            if let editingTransaction {
-                AddEditTransactionView(
-                    mode: .edit(editingTransaction),
-                    budgetPeriodID: budgetPeriodID,
-                    currencyCode: currencyCode,
-                    categories: viewModel.categories,
-                    paymentMethods: viewModel.paymentMethods,
-                    isArchivedPeriod: isArchivedPeriod,
-                    restClient: authenticatedRESTClient
-                ) { updated in
-                    viewModel.replaceTransaction(updated)
-                }
-            }
+        .sheet(item: $activeSheet) { sheet in
+            sheetContent(for: sheet, viewModel: viewModel)
         }
-        .confirmationDialog(
-            "Delete this transaction?",
-            isPresented: Binding(
-                get: { deletingTransaction != nil },
-                set: { if !$0 { deletingTransaction = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                if let deletingTransaction {
-                    Task { await viewModel.delete(id: deletingTransaction.id) }
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This can't be undone.")
+    }
+
+    /// "Payments this period" card (issue #92) — reuses the already-computed
+    /// client-side sum `paymentsTotalText` backed; no server analog exists for
+    /// this tab (see that property's own doc comment), so there's no new
+    /// arithmetic here either.
+    private func paymentsSummaryCard(viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Payments this period")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(viewModel.paymentsTotalText(reviews: reviews))
+                .font(.title2.bold())
+                .accessibilityIdentifier("paymentsTotal")
         }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .accessibilityIdentifier("paymentsSummaryCard")
     }
 
     private func paymentsRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
@@ -706,16 +731,33 @@ struct TransactionsListView: View {
                 localeIdentifier: localeIdentifier
             ))
             .foregroundStyle(isReceived ? .green : .red)
+        }
+    }
 
-            if canMutate {
-                Button {
-                    Task { await viewModel.toggleExcluded(transaction) }
-                } label: {
-                    Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
+    /// Exclude/Include on the Payments tab gets toast+Undo (issue #92) — the
+    /// Variable tab's own exclude toggle (`trailingSwipeActions`, below)
+    /// deliberately stays a plain, un-toasted action, a "keep it simple" call
+    /// made when that tab shipped. `toggleExcluded` flips relative to
+    /// whatever `isExcluded` the passed transaction currently carries, so the
+    /// undo closure re-reads the now-updated row from `viewModel.transactions`
+    /// rather than reusing the stale snapshot, which would otherwise re-apply
+    /// the same flip instead of reversing it.
+    private func requestToggleExcluded(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) {
+        let id = transaction.id
+        Task {
+            await viewModel.toggleExcluded(transaction)
+            guard let updated = viewModel.transactions.first(where: { $0.id == id }) else { return }
+            Self.logger.info("toggled excluded transactionID=\(id, privacy: .public) isExcluded=\(updated.isExcluded, privacy: .public)")
+            let message = updated.isExcluded
+                ? String(localized: "Transaction excluded", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+                : String(localized: "Transaction included", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+            toastState.show(message, onUndo: {
+                Task {
+                    if let current = viewModel.transactions.first(where: { $0.id == id }) {
+                        await viewModel.toggleExcluded(current)
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
-            }
+            })
         }
     }
 

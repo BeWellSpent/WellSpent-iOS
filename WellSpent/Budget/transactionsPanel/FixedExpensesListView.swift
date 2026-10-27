@@ -63,12 +63,14 @@ struct FixedExpensesListView: View {
     /// Deleting an upcoming template stops a recurring bill for every future
     /// period, so it confirms first — unlike deleting a single transaction.
     @State private var deletingTemplate: Wellspent_V1_FixedExpense?
-    /// Staged by the spawned-transaction swipe-to-delete below, same
-    /// stage-then-confirm shape as `deletingTemplate` — `.onDelete`'s own
-    /// swipe button calls its closure immediately with no way to interpose a
-    /// dialog, so the closure only records the target and the actual delete
-    /// happens from the confirmation button.
-    @State private var deletingTransaction: Wellspent_V1_Transaction?
+    // MARK: Spawned-transaction swipe actions (issue #92)
+
+    @State private var toastState = ToastState()
+    /// Optimistically hidden while a swipe-delete's undo window is open — the
+    /// actual `viewModel.delete(_:)` call only fires once `toastState`'s
+    /// toast expires without being undone. Mirrors `TransactionsListView`'s
+    /// identically-named property for the Variable tab.
+    @State private var pendingDeleteIDs: Set<String> = []
     /// Paid rows are collapsed by default (docs/features/transactions.md) —
     /// no native collapsible `List` `Section` exists in SwiftUI, so this
     /// gates whether the paid day-groups render at all, same manual-toggle
@@ -131,6 +133,9 @@ struct FixedExpensesListView: View {
             categoryName: viewModel.categoryName,
             ownerName: viewModel.ownerName
         )
+        // Optimistically hidden during a swipe-delete's undo window — see
+        // `pendingDeleteIDs`.
+        .filter { !pendingDeleteIDs.contains($0.id) }
         // Unpaid (uncollapsed) / Paid (collapsed by default) split — see
         // docs/features/transactions.md. The split happens after filtering
         // so search/filters keep applying uniformly to both sections.
@@ -153,9 +158,11 @@ struct FixedExpensesListView: View {
 
         List {
             Section {
-                LabeledContent("Total", value: viewModel.totalText)
-                    .accessibilityIdentifier("fixedExpensesTotal")
+                summaryCard(viewModel: viewModel, unpaidCount: unpaidTransactions.count, paidCount: paidTransactions.count)
             }
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
 
             if viewModel.transactions.isEmpty && viewModel.isLoading {
                 ProgressView()
@@ -299,7 +306,17 @@ struct FixedExpensesListView: View {
 
             case .markPaid(let transaction):
                 MarkAsPaidView(transaction: transaction, currencyCode: currencyCode) { amount, date in
-                    Task { await viewModel.markPaid(transaction, paidAmount: amount, paidAt: date) }
+                    Task {
+                        await viewModel.markPaid(transaction, paidAmount: amount, paidAt: date)
+                        Self.logger.info("marked paid transactionID=\(transaction.id, privacy: .public)")
+                        let message = String(localized: "Marked as paid", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+                        toastState.show(message, onUndo: {
+                            Task {
+                                await viewModel.unmark(transaction)
+                                await reviewViewModel?.load()
+                            }
+                        })
+                    }
                 }
 
             case .matchTransactions(let transaction):
@@ -332,23 +349,30 @@ struct FixedExpensesListView: View {
         } message: {
             Text("It will stop appearing in future periods. Expenses already recorded in past periods are kept.")
         }
-        .confirmationDialog(
-            "Delete this transaction?",
-            isPresented: Binding(
-                get: { deletingTransaction != nil },
-                set: { if !$0 { deletingTransaction = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                if let deletingTransaction {
-                    Task { await viewModel.delete(deletingTransaction) }
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This can't be undone.")
+        .toastOverlay(toastState)
+    }
+
+    /// "Fixed expenses this period" card (issue #92) — reuses the
+    /// server-computed `totalText` already backing the old plain "Total"
+    /// row; the unpaid/paid counts are the already-computed section sizes.
+    private func summaryCard(viewModel: FixedExpensesViewModel, unpaidCount: Int, paidCount: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Fixed expenses this period")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(viewModel.totalText)
+                .font(.title2.bold())
+                .accessibilityIdentifier("fixedExpensesTotal")
+            Text("\(unpaidCount) unpaid · \(paidCount) paid")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .accessibilityIdentifier("fixedSummaryCard")
     }
 
     /// One tappable section header with a chevron, shared by Unpaid, Paid and
@@ -384,15 +408,12 @@ struct FixedExpensesListView: View {
     }
 
     /// Renders one day-group's header + rows — shared by both the Unpaid and
-    /// Paid sections so the row/delete logic isn't duplicated between them.
+    /// Paid sections so the row/swipe-action logic isn't duplicated between
+    /// them.
     @ViewBuilder
     private func dayGroupSection(_ group: TransactionDayGrouping.DayGroup, viewModel: FixedExpensesViewModel) -> some View {
         Section {
             ForEach(group.transactions, id: \.id) { transaction in
-                let onEdit = {
-                    Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
-                    activeSheet = .editTransaction(transaction)
-                }
                 FixedExpenseRow(
                     transaction: transaction,
                     viewModel: viewModel,
@@ -400,31 +421,136 @@ struct FixedExpensesListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     canMutate: canMutate,
-                    autoUpdatePlannedAmount: viewModel.autoUpdatePlannedAmount,
-                    onMarkPaid: { activeSheet = .markPaid(transaction) },
-                    onMatchTransactions: { activeSheet = .matchTransactions(transaction) },
-                    onUnmarked: { Task { await reviewViewModel?.load() } }
+                    autoUpdatePlannedAmount: viewModel.autoUpdatePlannedAmount
                 )
-                // Edit lives on a leading (swipe-right) action now, not a row
-                // tap — frees the row itself to toggle the linked-transactions
-                // chevron on tap instead of requiring a precise tap on the
-                // small chevron icon.
+                // Edit lives on a leading (swipe-right) action, same as the
+                // Variable tab's redesign (issue #92); mark-paid/unmark join
+                // it there too now, instead of a row-inline checkmark button.
                 .swipeActions(edge: .leading) {
-                    if canEdit {
-                        Button(action: onEdit) {
-                            Label("Edit", systemImage: "pencil")
-                        }
-                        .tint(.blue)
-                        .accessibilityIdentifier("editFixedExpense_\(transaction.name)")
-                    }
+                    leadingSwipeActions(for: transaction, viewModel: viewModel)
+                }
+                .swipeActions(edge: .trailing) {
+                    trailingSwipeActions(for: transaction, viewModel: viewModel)
                 }
             }
-            .onDelete(perform: canMutate ? { offsets in
-                guard let index = offsets.first else { return }
-                deletingTransaction = group.transactions[index]
-            } : nil)
         } header: {
             Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
+        }
+    }
+
+    @ViewBuilder
+    private func leadingSwipeActions(for transaction: Wellspent_V1_Transaction, viewModel: FixedExpensesViewModel) -> some View {
+        if canEdit {
+            Button {
+                Self.logger.info("edit tapped transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+                activeSheet = .editTransaction(transaction)
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(.blue)
+            .accessibilityIdentifier("editFixedExpense_\(transaction.name)")
+        }
+
+        if canMutate {
+            if transaction.isPaid {
+                // No mockup analog for an "unmark" action — this mirrors the
+                // row's own former checkmark-toggle behavior, now reached by
+                // swipe instead of a tap. Deliberately not toast+Undo'd: the
+                // only real "undo" of an unmark is re-entering the paid
+                // amount/date in `MarkAsPaidView`, which a toast button can't
+                // supply, so this stays the plain, immediate action it always
+                // was.
+                Button {
+                    Self.logger.info("unmark paid tapped transactionID=\(transaction.id, privacy: .public)")
+                    Task {
+                        await viewModel.unmark(transaction)
+                        await reviewViewModel?.load()
+                    }
+                } label: {
+                    Label("Unmark as Paid", systemImage: "xmark.circle")
+                }
+                .tint(.gray)
+                .accessibilityIdentifier("unmarkPaid_\(transaction.name)")
+            } else {
+                Button {
+                    activeSheet = .markPaid(transaction)
+                } label: {
+                    Label("Mark as Paid", systemImage: "checkmark.circle")
+                }
+                .tint(.green)
+                .accessibilityIdentifier("markPaid_\(transaction.name)")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func trailingSwipeActions(for transaction: Wellspent_V1_Transaction, viewModel: FixedExpensesViewModel) -> some View {
+        if canMutate && !transaction.isPaid {
+            Button {
+                activeSheet = .matchTransactions(transaction)
+            } label: {
+                Label("Match Transactions", systemImage: "link.badge.plus")
+            }
+            .tint(.indigo)
+            .accessibilityIdentifier("matchTransactions_\(transaction.name)")
+        }
+
+        if canMutate {
+            Button {
+                requestToggleExcluded(transaction, viewModel: viewModel)
+            } label: {
+                Label(transaction.isExcluded ? "Include" : "Exclude", systemImage: transaction.isExcluded ? "eye" : "eye.slash")
+            }
+            .tint(.gray)
+            .accessibilityIdentifier("excludeFixedExpense_\(transaction.name)")
+
+            Button(role: .destructive) {
+                requestDelete(transaction, viewModel: viewModel)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .accessibilityIdentifier("deleteTransaction_\(transaction.name)")
+        }
+    }
+
+    /// Toast+Undo instead of `.confirmationDialog` for deleting a spawned
+    /// transaction (issue #92) — the row hides immediately; the real delete
+    /// (which deactivates the whole template, per `viewModel.delete(_:)`)
+    /// only fires once the toast expires without an Undo tap. Mirrors
+    /// `TransactionsListView.requestDelete`.
+    private func requestDelete(_ transaction: Wellspent_V1_Transaction, viewModel: FixedExpensesViewModel) {
+        pendingDeleteIDs.insert(transaction.id)
+        Self.logger.info("staged delete transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+        let message = String(localized: "Transaction deleted", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        let id = transaction.id
+        toastState.show(
+            message,
+            onUndo: { pendingDeleteIDs.remove(id) },
+            onExpire: { Task { await viewModel.delete(transaction) } }
+        )
+    }
+
+    /// Toast+Undo for Exclude/Include (issue #92) — `viewModel.toggleExcluded`
+    /// flips relative to whatever `isExcluded` the passed transaction
+    /// currently carries, so the undo call re-reads the now-updated row from
+    /// `viewModel.transactions` rather than reusing the stale snapshot, which
+    /// would otherwise re-apply the same flip instead of reversing it.
+    private func requestToggleExcluded(_ transaction: Wellspent_V1_Transaction, viewModel: FixedExpensesViewModel) {
+        let id = transaction.id
+        Task {
+            await viewModel.toggleExcluded(transaction)
+            guard let updated = viewModel.transactions.first(where: { $0.id == id }) else { return }
+            Self.logger.info("toggled excluded transactionID=\(id, privacy: .public) isExcluded=\(updated.isExcluded, privacy: .public)")
+            let message = updated.isExcluded
+                ? String(localized: "Transaction excluded", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+                : String(localized: "Transaction included", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+            toastState.show(message, onUndo: {
+                Task {
+                    if let current = viewModel.transactions.first(where: { $0.id == id }) {
+                        await viewModel.toggleExcluded(current)
+                    }
+                }
+            })
         }
     }
 }
@@ -443,12 +569,18 @@ private struct FixedExpenseRow: View {
     let canMutate: Bool
     /// The budget's auto_update_planned_amount setting — drives the re-plan marker.
     let autoUpdatePlannedAmount: Bool
-    let onMarkPaid: () -> Void
-    let onMatchTransactions: () -> Void
-    let onUnmarked: () -> Void
     @State private var isRePlanNoticePresented = false
 
     @State private var isExpanded = false
+
+    /// Paid at a different amount than planned, with the setting on that
+    /// would carry the real amount into future periods — see
+    /// `rePlanMarker`'s doc comment for why this stays its own inline
+    /// affordance rather than a swipe action.
+    private var showsRePlanNotice: Bool {
+        transaction.isPaid && autoUpdatePlannedAmount && !transaction.fixedExpenseID.isEmpty
+            && MoneyFormatting.differs(transaction.amount, transaction.plannedAmount)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -484,6 +616,21 @@ private struct FixedExpenseRow: View {
 
                     Spacer()
 
+                    // Informational, not a mutation, so it stays its own
+                    // inline affordance rather than joining mark-paid/match/
+                    // exclude/delete on a swipe action (issue #92). This was
+                    // previously nested inside the mark-paid button's own
+                    // `action` closure — a plain `() -> Void` closure, not a
+                    // `ViewBuilder` — so constructing a `Button` there built
+                    // and immediately discarded a value that was never
+                    // actually part of the view hierarchy; the popover could
+                    // never have shown. Moving it here as a real sibling view
+                    // is what the "own small inline affordance" framing
+                    // calls for, and incidentally is what makes it render.
+                    if canMutate && showsRePlanNotice {
+                        rePlanMarker
+                    }
+
                     Text(MoneyFormatting.format(
                         units: transaction.amount.units,
                         nanos: transaction.amount.nanos,
@@ -503,68 +650,6 @@ private struct FixedExpenseRow: View {
                         isExpanded.toggle()
                     }
                 )
-
-                if canMutate {
-                    Button {
-                        if transaction.isPaid && autoUpdatePlannedAmount && !transaction.fixedExpenseID.isEmpty
-                            && MoneyFormatting.differs(transaction.amount, transaction.plannedAmount) {
-                            // No hover on iOS, so this is a tappable popover
-                            // rather than web's tooltip.
-                            Button {
-                                isRePlanNoticePresented = true
-                            } label: {
-                                Image(systemName: "exclamationmark.circle")
-                                    .foregroundStyle(.orange)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("rePlanMarker_\(transaction.name)")
-                            .popover(isPresented: $isRePlanNoticePresented) {
-                                Text("Paid at a different amount than planned. From the next period on, this bill will be planned at what you actually paid.")
-                                    .font(.footnote)
-                                    .padding()
-                                    .frame(maxWidth: 280)
-                                    .presentationCompactAdaptation(.popover)
-                            }
-                        }
-                        if transaction.isPaid {
-                            Task {
-                                await viewModel.unmark(transaction)
-                                // Unmarking resets any confirmed TransactionReview
-                                // matched to this transaction back to "pending"
-                                // server-side — reviewViewModel's own cached
-                                // `reviews` array doesn't know that happened, so
-                                // the chevron/linked-transactions display stays
-                                // stale (confirmed) until its next poll unless
-                                // told to refresh now.
-                                onUnmarked()
-                            }
-                        } else {
-                            onMarkPaid()
-                        }
-                    } label: {
-                        Image(systemName: transaction.isPaid ? "checkmark.circle.fill" : "checkmark.circle")
-                            .foregroundStyle(transaction.isPaid ? .green : .secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier(transaction.isPaid ? "unmarkPaid_\(transaction.name)" : "markPaid_\(transaction.name)")
-
-                    if !transaction.isPaid {
-                        Button(action: onMatchTransactions) {
-                            Image(systemName: "link.badge.plus")
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("matchTransactions_\(transaction.name)")
-                    }
-
-                    Button {
-                        Task { await viewModel.toggleExcluded(transaction) }
-                    } label: {
-                        Image(systemName: transaction.isExcluded ? "eye.slash" : "eye")
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("excludeFixedExpense_\(transaction.name)")
-                }
             }
 
             if isExpanded {
@@ -589,6 +674,26 @@ private struct FixedExpenseRow: View {
                 .padding(.top, 6)
                 .accessibilityIdentifier("linkedTransactions_\(transaction.name)")
             }
+        }
+    }
+
+    /// No hover on iOS, so this is a tappable popover rather than web's
+    /// tooltip.
+    private var rePlanMarker: some View {
+        Button {
+            isRePlanNoticePresented = true
+        } label: {
+            Image(systemName: "exclamationmark.circle")
+                .foregroundStyle(.orange)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("rePlanMarker_\(transaction.name)")
+        .popover(isPresented: $isRePlanNoticePresented) {
+            Text("Paid at a different amount than planned. From the next period on, this bill will be planned at what you actually paid.")
+                .font(.footnote)
+                .padding()
+                .frame(maxWidth: 280)
+                .presentationCompactAdaptation(.popover)
         }
     }
 

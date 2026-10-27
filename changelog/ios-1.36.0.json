@@ -191,6 +191,16 @@
       "changeType": "changed",
       "summaryEn": "\"Exceeded only\" and \"Excluded only\" are now quick-filter chips next to All/Money Out/Money In/Needs review, instead of a separate Filters sheet.",
       "summaryEs": "\"Solo excedidas\" y \"Solo excluidas\" ahora son filtros rápidos junto a Todas/Dinero gastado/Dinero recibido/Necesita revisión, en lugar de un panel de Filtros aparte."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Fixed expenses tab has a new summary card, and every row action — edit, mark paid, match transactions, exclude, delete — now lives behind a swipe instead of a row full of small buttons. Marking paid, excluding, and deleting now show a brief \"Undo\" instead of taking effect immediately.",
+      "summaryEs": "La pestaña de gastos fijos tiene una nueva tarjeta de resumen, y cada acción de la fila —editar, marcar como pagado, emparejar transacciones, excluir, eliminar— ahora se desliza en vez de mostrarse como una fila de botones pequeños. Marcar como pagado, excluir y eliminar ahora muestran un breve \"Deshacer\" en lugar de aplicarse de inmediato."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Payments tab has a new summary card, and excluding or deleting a row now lives behind a swipe with a brief \"Undo\", instead of an always-visible button or a confirmation prompt.",
+      "summaryEs": "La pestaña de Pagos tiene una nueva tarjeta de resumen, y excluir o eliminar una fila ahora se desliza con un breve \"Deshacer\", en lugar de un botón siempre visible o un mensaje de confirmación."
     }
   ]
 }
