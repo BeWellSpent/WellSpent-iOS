@@ -1,7 +1,7 @@
 import XCTest
 
-/// Verifies the Transactions tab's free-text search field actually renders
-/// once revealed. This field is a plain `TextField` in
+/// Verifies the Overview tab's Transactions sub-tab free-text search field
+/// actually renders once revealed. This field is a plain `TextField` in
 /// `BudgetDetailView.transactionsSearchField`, not SwiftUI's native
 /// `.searchable` — that was tried first (both at the outer content level and
 /// on the tab's own inner `NavigationStack`) and confirmed dead in both
@@ -11,6 +11,10 @@ import XCTest
 /// search icon (issue #92 follow-up) instead of always shown, so this test
 /// taps that icon before asserting the field exists. No seeded account
 /// needed — same fresh-email pattern as `RegisterSmokeTests`.
+///
+/// Updated for the Overview/Plan navigation rework
+/// (docs/features/overview-plan-navigation-rework.md): Transactions is no
+/// longer its own bottom tab — it's reached via Overview's sub-tab picker.
 final class TransactionsSearchSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -65,9 +69,16 @@ final class TransactionsSearchSmokeTests: XCTestCase {
 
         XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
 
-        let transactionsTab = app.tabBars.buttons["Transactions"]
-        XCTAssertTrue(transactionsTab.waitForExistence(timeout: 10))
-        transactionsTab.tap()
+        let overviewTab = app.tabBars.buttons["Overview"]
+        XCTAssertTrue(overviewTab.waitForExistence(timeout: 10))
+        overviewTab.tap()
+
+        // Overview lands on its own chart content first — the sub-tab
+        // picker's "Transactions" segment is what the Fixed/Variable list
+        // (and this field) actually lives behind now.
+        let transactionsSubTab = app.buttons["Transactions"]
+        XCTAssertTrue(transactionsSubTab.waitForExistence(timeout: 10))
+        transactionsSubTab.tap()
 
         let searchToggleButton = app.buttons["transactionsSearchToggleButton"]
         XCTAssertTrue(searchToggleButton.waitForExistence(timeout: 10))

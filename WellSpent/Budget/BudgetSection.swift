@@ -11,10 +11,15 @@ import Foundation
 /// `more` sits in the bottom bar rather than the navigation bar because the
 /// sheet rises from the bottom of the screen — that is where it should look
 /// like it comes from. See docs/features/main-view-rework.md.
+///
+/// `overview`/`plan` replaced the former `plan`/`transactions`/`review` split
+/// (docs/features/overview-plan-navigation-rework.md): Overview is the home
+/// for *what actually happened* (actual-breakdown chart, plus Transactions/
+/// Payments/Review sub-tabs), Plan for *what you intend to spend* (the
+/// per-category planned-amount editor).
 enum BudgetSection: CaseIterable, Hashable {
+    case overview
     case plan
-    case transactions
-    case review
     case reports
     /// Presents the menu sheet. Never becomes `selectedSection` — see
     /// `BudgetDetailView.tabSelection`.
@@ -25,9 +30,8 @@ enum BudgetSection: CaseIterable, Hashable {
     var title: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
+        case .overview: return String(localized: "Overview", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .plan: return String(localized: "Plan", bundle: AppLanguageStore.currentBundle, locale: locale)
-        case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
-        case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .reports: return String(localized: "Reports", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .more: return String(localized: "More", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
@@ -40,20 +44,22 @@ enum BudgetSection: CaseIterable, Hashable {
     var screenTitle: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
+        case .overview: return String(localized: "Expense Overview", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .plan: return String(localized: "Expense Plan", bundle: AppLanguageStore.currentBundle, locale: locale)
-        case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
-        case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .reports: return String(localized: "Reports", bundle: AppLanguageStore.currentBundle, locale: locale)
         // Never displayed — `more` is never the selected section.
         case .more: return String(localized: "More", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
 
+    /// `overview` deliberately avoids `.plan`'s `chart.pie` — both would
+    /// render identically in the tab bar otherwise. A bar chart reads as
+    /// "what actually happened" (the Overview tab's landing content mixes
+    /// pie *and* bar chart types already), distinct from Plan's pie.
     var systemImage: String {
         switch self {
+        case .overview: return "chart.bar.xaxis"
         case .plan: return "chart.pie"
-        case .transactions: return "list.bullet"
-        case .review: return "checkmark.circle"
         case .reports: return "chart.bar.doc.horizontal"
         case .more: return "ellipsis"
         }

@@ -3,27 +3,11 @@ import WellSpentAPI
 import WellSpentREST
 
 struct ExpensePlanView: View {
-    /// Local to this file, not a `Shared/` enum — mirrors `TransactionKind`
-    /// in `TransactionsListView.swift`, UI-local tab state rather than a
-    /// reusable domain concept.
-    enum PlanKind: Hashable {
-        case plan
-        case overview
-    }
-
     let budgetPeriodID: String
     let budgetProfileID: String
     let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
-    /// Owned by `BudgetDetailView`, not locally — the visible nav bar belongs
-    /// to the *outer* `NavigationStack` this view is nested two levels
-    /// inside (per-tab stack → pushed budget detail screen), and neither
-    /// `.toolbar` items nor this picker's selection reliably surface from
-    /// here on their own. `BudgetDetailView` needs `selectedKind` itself to
-    /// decide which toolbar button to show, so it owns the state and this
-    /// view just binds to it.
-    @Binding var selectedKind: PlanKind
     @Binding var isAddCategoryPresented: Bool
     /// True while the Plan tab is the selected `BudgetSection` in
     /// `BudgetDetailView`. `TabView` keeps every tab's content mounted, so
@@ -44,32 +28,11 @@ struct ExpensePlanView: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("View", selection: $selectedKind) {
-                Text("Overview").tag(PlanKind.overview)
-                Text("Plan").tag(PlanKind.plan)
-            }
-            .pickerStyle(.segmented)
-            .padding([.horizontal, .top])
-            .accessibilityIdentifier("planKindPicker")
-
-            switch selectedKind {
-            case .plan:
-                Group {
-                    if let viewModel {
-                        content(viewModel: viewModel)
-                    } else {
-                        ProgressView()
-                    }
-                }
-            case .overview:
-                ExpenseOverviewListView(
-                    budgetPeriodID: budgetPeriodID,
-                    budgetProfileID: budgetProfileID,
-                    authenticatedRESTClient: authenticatedRESTClient,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                )
+        Group {
+            if let viewModel {
+                content(viewModel: viewModel)
+            } else {
+                ProgressView()
             }
         }
         .navigationTitle("Expense Plan")
@@ -236,7 +199,6 @@ struct ExpensePlanView: View {
             authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
-            selectedKind: .constant(.plan),
             isAddCategoryPresented: .constant(false),
             isActive: true,
             canEdit: true

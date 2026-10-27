@@ -231,6 +231,11 @@
       "changeType": "changed",
       "summaryEn": "The Add/Edit Transaction form's direction toggle now says \"Money Out\"/\"Money In\", matching the wording used everywhere else on the Transactions screen.",
       "summaryEs": "El interruptor de dirección del formulario de Agregar/Editar transacción ahora dice \"Dinero gastado\"/\"Dinero recibido\", igual que en el resto de la pantalla de Transacciones."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The bottom bar is now Overview, Plan, Reports, More. Overview is the new home for what actually happened — the actual-spending chart plus Transactions, Payments and Review as tabs underneath it. Plan now holds only your planned amounts per category.",
+      "summaryEs": "La barra inferior ahora es Resumen, Plan, Informes y Más. Resumen es el nuevo lugar para ver lo que realmente pasó: el gráfico de gasto real junto con Transacciones, Pagos y Revisión como pestañas debajo. Plan ahora solo contiene tus montos planeados por categoría."
     }
   ]
 }

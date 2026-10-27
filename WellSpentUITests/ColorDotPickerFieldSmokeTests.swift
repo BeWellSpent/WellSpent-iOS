@@ -65,7 +65,10 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         // payment method).
         XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
 
-        app.tabBars.buttons["Transactions"].tap()
+        // Overview/Plan navigation rework: Transactions is no longer its own
+        // bottom tab — it's Overview's sub-tab picker.
+        app.tabBars.buttons["Overview"].tap()
+        app.buttons["Transactions"].tap()
 
         app.buttons["addTransactionButton"].tap()
 
