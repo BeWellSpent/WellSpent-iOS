@@ -39,11 +39,10 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
     private let instanceID = UUID().uuidString.prefix(8)
     private static let logger = AppLogger.logger("KeychainRefreshTokenStore")
 
-    /// The context `read()` last authenticated, so a `save()` moments later
-    /// in the same cold-start cycle can try reusing it instead of prompting
-    /// again — experimental; Apple doesn't document whether this is honored
-    /// across a read followed by a write. `save()` falls back to its normal
-    /// prompting path if reuse doesn't work, so this can't make things worse.
+    /// The context `read()` last authenticated, so `save()` moments later in
+    /// the same cold-start cycle can reuse it instead of prompting again —
+    /// confirmed live this cuts cold start from 2 Face ID prompts to 1.
+    /// `save()` falls back to its normal prompting path if reuse fails.
     private let lock = NSLock()
     private var recentContext: LAContext?
 
