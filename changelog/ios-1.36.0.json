@@ -166,6 +166,11 @@
       "changeType": "fixed",
       "summaryEn": "Reopening the app after your session expired could ask for Face ID several times in a row, once per screen that needed to reload. It now only asks once.",
       "summaryEs": "Reabrir la app después de que tu sesión expiró podía pedir Face ID varias veces seguidas, una por cada pantalla que necesitaba recargar. Ahora solo lo pide una vez."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Opening the app from a cold start asked for Face ID twice, a moment apart. It now only asks once.",
+      "summaryEs": "Abrir la app desde cero pedía Face ID dos veces, con un breve lapso entre ambas. Ahora solo lo pide una vez."
     }
   ]
 }

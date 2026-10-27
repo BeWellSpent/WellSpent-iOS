@@ -39,6 +39,13 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
     private let instanceID = UUID().uuidString.prefix(8)
     private static let logger = AppLogger.logger("KeychainRefreshTokenStore")
 
+    /// The context `read()` last authenticated, so `save()` moments later in
+    /// the same cold-start cycle can reuse it instead of prompting again —
+    /// confirmed live this cuts cold start from 2 Face ID prompts to 1.
+    /// `save()` falls back to its normal prompting path if reuse fails.
+    private let lock = NSLock()
+    private var recentContext: LAContext?
+
     init(service: String = "com.bewellspent.WellSpent.refreshToken") {
         self.service = service
         Self.logger.info("instance created id=\(self.instanceID, privacy: .public)")
@@ -59,6 +66,7 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
             DispatchQueue.global(qos: .userInitiated).async {
                 let context = LAContext()
                 context.localizedReason = "Unlock WellSpent to resume your session"
+                context.touchIDAuthenticationAllowableReuseDuration = LATouchIDAuthenticationMaximumAllowableReuseDuration
 
                 var query = self.baseQuery()
                 query[kSecReturnData as String] = true
@@ -72,6 +80,9 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
                     continuation.resume(returning: nil)
                     return
                 }
+                self.lock.lock()
+                self.recentContext = context
+                self.lock.unlock()
                 continuation.resume(returning: String(data: data, encoding: .utf8))
             }
         }
@@ -85,12 +96,26 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
         let data = Data(token.utf8)
         let query = baseQuery()
 
+        lock.lock()
+        let reused = recentContext
+        lock.unlock()
+
+        var updateStatus: OSStatus = errSecParam // placeholder — not yet attempted
+        if let reused {
+            var reusedQuery = query
+            reusedQuery[kSecUseAuthenticationContext as String] = reused
+            updateStatus = SecItemUpdate(reusedQuery as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+            Self.logger.info("save() update reused-context instanceId=\(self.instanceID, privacy: .public) status=\(updateStatus, privacy: .public)")
+        }
+
         // Try silently first; only fall back to letting this prompt if the
         // device actually requires it — never skip the write outright.
-        var silentQuery = query
-        silentQuery[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
-        var updateStatus = SecItemUpdate(silentQuery as CFDictionary, [kSecValueData as String: data] as CFDictionary)
-        Self.logger.info("save() update silent instanceId=\(self.instanceID, privacy: .public) status=\(updateStatus, privacy: .public)")
+        if updateStatus != errSecSuccess {
+            var silentQuery = query
+            silentQuery[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
+            updateStatus = SecItemUpdate(silentQuery as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+            Self.logger.info("save() update silent instanceId=\(self.instanceID, privacy: .public) status=\(updateStatus, privacy: .public)")
+        }
 
         if updateStatus == errSecInteractionNotAllowed {
             updateStatus = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
