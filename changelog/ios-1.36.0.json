@@ -214,8 +214,8 @@
     },
     {
       "changeType": "changed",
-      "summaryEn": "The Transactions screen has a new header: the period you're viewing, a search icon, and a single Add button shared by Variable, Fixed, and Payments, above a big \"Transactions\" title. Search now opens from that icon instead of always being on screen.",
-      "summaryEs": "La pantalla de Transacciones tiene un nuevo encabezado: el período que estás viendo, un ícono de búsqueda y un único botón Agregar compartido por Variables, Fijos y Pagos, sobre un título grande de \"Transacciones\". La búsqueda ahora se abre desde ese ícono en lugar de estar siempre visible."
+      "summaryEn": "The Transactions screen's toolbar now shows the period you're viewing, a search icon, and a single Add button shared by Variable, Fixed, and Payments. Search now opens from that icon instead of always being on screen.",
+      "summaryEs": "La barra de herramientas de la pantalla de Transacciones ahora muestra el período que estás viendo, un ícono de búsqueda y un único botón Agregar compartido por Variables, Fijos y Pagos. La búsqueda ahora se abre desde ese ícono en lugar de estar siempre visible."
     },
     {
       "changeType": "changed",
