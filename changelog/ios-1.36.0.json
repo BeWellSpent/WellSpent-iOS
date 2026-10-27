@@ -246,6 +246,11 @@
       "changeType": "changed",
       "summaryEn": "Overview's Transactions tab now shows Variable and Fixed together in one list, with unpaid fixed bills floating to the top so what's still owed this period is never buried below everything already spent.",
       "summaryEs": "La pestaña de Transacciones en Resumen ahora muestra las transacciones Variables y Fijas juntas en una sola lista, con las facturas fijas pendientes de pago destacadas arriba para que lo que aún se debe este período nunca quede oculto bajo lo ya gastado."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Plan now has a Fixed Expenses tab alongside Categories, so you can create, edit, and remove recurring bills right where you plan your spending — seeing what was actually paid against one stays in Overview.",
+      "summaryEs": "Plan ahora tiene una pestaña de Gastos fijos junto a Categorías, para que puedas crear, editar y eliminar facturas recurrentes justo donde planificas tus gastos; ver lo que realmente se pagó sigue estando en Resumen."
     }
   ]
 }

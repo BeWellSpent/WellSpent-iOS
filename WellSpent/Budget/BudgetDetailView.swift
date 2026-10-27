@@ -79,6 +79,16 @@ struct BudgetDetailView: View {
     @State private var isAddCategoryPresented = false
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
+    /// Plan's own Add Fixed Expense trigger — separate from
+    /// `isAddFixedExpensePresented` above, which belongs to Overview's
+    /// Transactions sub-tab "+" Menu. Different parent views, different sheet
+    /// contexts, even though both ultimately open `AddFixedExpenseView`.
+    @State private var isAddFixedExpenseTemplatePresented = false
+    /// Which of Plan's two sub-tabs is active — owned here, not `ExpensePlanView`
+    /// itself, so the toolbar "+" (which only renders at this level, see the
+    /// type-level doc comment) knows whether to dispatch to Add Category or
+    /// Add Fixed Expense.
+    @State private var planSelectedSubTab: PlanSubTab = .categories
     @State private var isMenuPresented = false
     /// Bumped whenever the Focused View toggle changes in `BudgetMenuSheet`,
     /// so Plan/Overview rebuild and refetch immediately instead of
@@ -361,16 +371,24 @@ struct BudgetDetailView: View {
             }
         case .plan:
             // No more Plan/Overview toggle to check here — Overview's own
-            // content moved to its own BudgetSection, so Plan is always just
-            // the category planned-amount editor now.
+            // content moved to its own BudgetSection. Plan itself now has two
+            // sub-tabs (Categories, Fixed Expenses, Stage 3) — unlike
+            // Overview's Transactions "+" (a Menu, since that merged list has
+            // no sub-picker of its own to express the choice), Plan's two
+            // sub-tabs are already unambiguous, so this dispatches directly
+            // to whichever add flow matches the active one.
             if viewModel?.canEdit == true {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        isAddCategoryPresented = true
+                        if planSelectedSubTab == .categories {
+                            isAddCategoryPresented = true
+                        } else {
+                            isAddFixedExpenseTemplatePresented = true
+                        }
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityIdentifier("addPlanCategoryButton")
+                    .accessibilityIdentifier(planSelectedSubTab == .categories ? "addPlanCategoryButton" : "addFixedExpenseTemplateButton")
                 }
             }
         case .reports, .more:
@@ -437,6 +455,8 @@ struct BudgetDetailView: View {
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
                 isAddCategoryPresented: $isAddCategoryPresented,
+                isAddFixedExpensePresented: $isAddFixedExpenseTemplatePresented,
+                selectedSubTab: $planSelectedSubTab,
                 isActive: selectedSection == .plan,
                 canEdit: viewModel.canEdit
             )

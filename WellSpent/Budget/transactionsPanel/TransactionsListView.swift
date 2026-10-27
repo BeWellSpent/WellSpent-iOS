@@ -18,10 +18,10 @@ import os
 /// Supersedes the former standalone `FixedExpensesListView` (deleted) — its
 /// Unpaid/Paid/Future sections and summary card don't apply once Fixed rows
 /// live here; its row views (`FixedExpenseRow`, `UpcomingFixedExpenseRow`)
-/// were extracted into their own files, the latter reserved for Stage 3's
-/// Plan-side Future section. `FixedExpensesViewModel` itself is untouched and
-/// currently has no caller — kept intact for Stage 3 to reuse once
-/// Fixed-template management moves to Plan.
+/// were extracted into their own files, the latter now used by Plan's Fixed
+/// Expenses sub-tab. `FixedExpensesViewModel` itself was deleted (Stage 3) —
+/// template management now lives in `FixedExpenseTemplatesViewModel`, Plan's
+/// own, smaller view model.
 struct TransactionsListView: View {
     private static let logger = AppLogger.logger("Transactions")
 
@@ -151,7 +151,7 @@ struct TransactionsListView: View {
         let confirmedFiltered = viewModel.visibleTransactions(reviews: reviews)
             .filter { !pendingDeleteIDs.contains($0.id) }
         let hasPendingMatch: (Wellspent_V1_Transaction) -> Bool = { viewModel.pendingMatchName(for: $0, reviews: reviews) != nil }
-        let fixedTypeID = FixedExpensesViewModel.fixedTypeID
+        let fixedTypeID = TransactionsViewModel.fixedTypeID
 
         // Unpaid Fixed floats to the top, always shown (search aside — see
         // below) regardless of the quick-filter chips: it's the thing a user
@@ -687,9 +687,8 @@ struct TransactionsListView: View {
     /// A Fixed row's occurrence-only actions: Mark Paid/Unmark (leading),
     /// Match Transactions/Exclude/Delete-this-occurrence (trailing). There is
     /// deliberately no "Edit" action here — editing the underlying recurring
-    /// template is Stage 3's job (moving to Plan alongside Fixed-template
-    /// management), not this merged list's. `FixedExpensesViewModel`/
-    /// `EditFixedExpenseView` stay intact, just unreachable from here.
+    /// template is reached only from Plan's Fixed Expenses sub-tab, not this
+    /// merged list.
     private func fixedRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
         FixedExpenseRow(
             transaction: transaction,

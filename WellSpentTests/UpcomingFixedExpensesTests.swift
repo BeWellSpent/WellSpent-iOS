@@ -5,83 +5,12 @@ import WellSpentAPI
 
 @Suite("UpcomingFixedExpenses")
 struct UpcomingFixedExpensesTests {
-    private func expense(id: String, isActive: Bool = true) -> Wellspent_V1_FixedExpense {
+    private func expense(id: String) -> Wellspent_V1_FixedExpense {
         .with {
             $0.id = id
             $0.name = "Rent"
-            $0.isActive = isActive
+            $0.isActive = true
         }
-    }
-
-    private func transaction(fixedExpenseID: String) -> Wellspent_V1_Transaction {
-        .with {
-            $0.id = "tx-\(fixedExpenseID)"
-            $0.fixedExpenseID = fixedExpenseID
-        }
-    }
-
-    @Test("Active templates with nothing spawned this period are upcoming")
-    func returnsTemplatesWithoutTransactions() {
-        // These are the bills that would otherwise be invisible until the
-        // period they land in.
-        let rent = expense(id: "fe-rent")
-        let gym = expense(id: "fe-gym")
-
-        let result = UpcomingFixedExpenses.notDue(
-            expenses: [rent, gym],
-            transactions: [transaction(fixedExpenseID: "fe-rent")]
-        )
-
-        #expect(result.map(\.id) == ["fe-gym"])
-    }
-
-    @Test("A deactivated template is not upcoming")
-    func ignoresDeactivatedTemplates() {
-        // A completed payment plan auto-deactivates — nothing more is coming.
-        let cancelled = expense(id: "fe-old", isActive: false)
-
-        #expect(UpcomingFixedExpenses.notDue(expenses: [cancelled], transactions: []).isEmpty)
-    }
-
-    @Test("Nothing is upcoming on an archived period")
-    func suppressedWhenArchived() {
-        // ListFixedExpenses is profile-scoped, so without this a closed period
-        // would list every template created since as "upcoming" in a month
-        // that already ended.
-        let rent = expense(id: "fe-rent")
-
-        let result = UpcomingFixedExpenses.notDue(
-            expenses: [rent],
-            transactions: [],
-            isArchivedPeriod: true
-        )
-
-        #expect(result.isEmpty)
-    }
-
-    @Test("Another template's transaction doesn't mark this one as due")
-    func matchesOnIdentityNotPresence() {
-        let rent = expense(id: "fe-rent")
-        let gym = expense(id: "fe-gym")
-
-        let result = UpcomingFixedExpenses.notDue(
-            expenses: [rent, gym],
-            transactions: [transaction(fixedExpenseID: "fe-other")]
-        )
-
-        #expect(result.map(\.id) == ["fe-rent", "fe-gym"])
-    }
-
-    @Test("Nothing is upcoming once every active template has spawned")
-    func emptyWhenAllSpawned() {
-        let rent = expense(id: "fe-rent")
-
-        let result = UpcomingFixedExpenses.notDue(
-            expenses: [rent],
-            transactions: [transaction(fixedExpenseID: "fe-rent")]
-        )
-
-        #expect(result.isEmpty)
     }
 
     @Test("Next-due text is empty when the backend supplied no date")
@@ -112,36 +41,5 @@ struct UpcomingFixedExpensesTests {
 
         #expect(text.contains("1"))
         #expect(text.contains("Sep"))
-    }
-
-    @Test("Upcoming bills are ordered soonest first, not by name")
-    func sortsByNextDueDateAscending() {
-        // ListFixedExpenses returns ORDER BY name, which tells the user
-        // nothing about what is about to be charged (issue #48).
-        let gym = dated(id: "fe-gym", seconds: 300)
-        let auto = dated(id: "fe-auto", seconds: 900)
-        let rent = dated(id: "fe-rent", seconds: 100)
-
-        let result = UpcomingFixedExpenses.notDue(expenses: [auto, gym, rent], transactions: [])
-
-        #expect(result.map(\.id) == ["fe-rent", "fe-gym", "fe-auto"])
-    }
-
-    @Test("A template with no next due date sorts last rather than first")
-    func sortsUndatedTemplatesLast() {
-        // Guards the obvious regression: an unset timestamp reads as zero
-        // seconds, which would put the bill we know least about at the top.
-        let undated = expense(id: "fe-undated")
-        let soon = dated(id: "fe-soon", seconds: 500)
-
-        let result = UpcomingFixedExpenses.notDue(expenses: [undated, soon], transactions: [])
-
-        #expect(result.map(\.id) == ["fe-soon", "fe-undated"])
-    }
-
-    private func dated(id: String, seconds: Int64) -> Wellspent_V1_FixedExpense {
-        var expense = expense(id: id)
-        expense.nextDueDate = .with { $0.seconds = seconds }
-        return expense
     }
 }

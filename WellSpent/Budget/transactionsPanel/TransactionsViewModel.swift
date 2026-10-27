@@ -10,6 +10,7 @@ final class TransactionsViewModel {
     /// WellSpent-backend/internal/db/migrations/000001_init_schema.sql):
     /// Fixed = 1, Variable = 2. Raw int32 on the wire, no proto enum.
     static let variableTypeID: Int32 = 2
+    static let fixedTypeID: Int32 = 1
 
     private(set) var isLoading = false
     /// Now both Variable and Fixed (Stage 2 of
@@ -20,12 +21,10 @@ final class TransactionsViewModel {
     private(set) var paymentMethods: [Wellspent_V1_PaymentMethod] = []
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
     /// Fixed-expense templates — needed by a Fixed row's payments-progress
-    /// caption now that the merged list renders Fixed rows directly. Mirrors
-    /// `FixedExpensesViewModel.fixedExpenses`, which stays intact,
-    /// unreferenced from here, for Stage 3's Plan-side template management.
+    /// caption now that the merged list renders Fixed rows directly.
     private(set) var fixedExpenses: [Wellspent_V1_FixedExpense] = []
     /// The budget's auto_update_planned_amount setting, for a Fixed row's
-    /// re-plan marker. See `FixedExpensesViewModel`'s identical property.
+    /// re-plan marker.
     private(set) var autoUpdatePlannedAmount = true
     /// `remainingBalance`/`paidOffDate` have no proto equivalent, keyed by
     /// fixed expense id — see `BudgetRESTMapping.FixedExpensePayoffInfo`.
@@ -283,10 +282,9 @@ final class TransactionsViewModel {
         return people.first(where: { $0.id == method.budgetPersonID })?.userName
     }
 
-    /// "N / M payments" progress text for a Fixed row's linked template —
-    /// mirrors `FixedExpensesViewModel.paymentsProgressText`'s identical doc
-    /// comment. Needed here too since the merged list (Stage 2) renders
-    /// Fixed rows directly now, instead of delegating to that view model.
+    /// "N / M payments" progress text for a Fixed row's linked template.
+    /// Needed here since the merged list (Stage 2) renders Fixed rows
+    /// directly rather than delegating to a separate view model.
     /// Deliberately silent (no `AppLogger` calls): runs on every row render.
     func paymentsProgressText(for transaction: Wellspent_V1_Transaction) -> String? {
         guard !transaction.fixedExpenseID.isEmpty,
@@ -311,8 +309,7 @@ final class TransactionsViewModel {
 
     /// `CreateFixedExpenseResponse` returns both the new template and the
     /// transaction it spawned in the current period — inserting both
-    /// directly avoids a full reload for the common case. Mirrors
-    /// `FixedExpensesViewModel.addFromCreate`.
+    /// directly avoids a full reload for the common case.
     func addFromCreate(expense: Wellspent_V1_FixedExpense, transaction: Wellspent_V1_Transaction) {
         fixedExpenses.append(expense)
         if !transaction.id.isEmpty {
@@ -392,7 +389,7 @@ final class TransactionsViewModel {
     }
 
     /// Seeds state without a network call, so the partition logic above is
-    /// testable. Mirrors `FixedExpensesViewModel.setStateForTesting`.
+    /// testable.
     func setStateForTesting(
         transactions: [Wellspent_V1_Transaction],
         categories: [Wellspent_V1_Category] = [],
@@ -421,10 +418,9 @@ final class TransactionsViewModel {
     //
     // Mark Paid/Unmark/Exclude/Delete-this-occurrence only — editing the
     // underlying recurring template is deliberately not reachable from this
-    // list (see `TransactionsListView`'s Fixed-row swipe actions). These
-    // mirror `FixedExpensesViewModel`'s identically-named methods, which stay
-    // intact there, unreferenced from here, for Stage 3 to reuse once
-    // template management moves to Plan.
+    // list (see `TransactionsListView`'s Fixed-row swipe actions). Template
+    // management itself lives in Plan's Fixed Expenses sub-tab
+    // (`FixedExpenseTemplatesViewModel`).
 
     func markPaid(_ transaction: Wellspent_V1_Transaction, paidAmount: Wellspent_V1_Money, paidAt: Date) async {
         errorMessage = nil
@@ -470,8 +466,7 @@ final class TransactionsViewModel {
 
     /// Deactivates the Fixed row's linked template (and removes this
     /// period's unpaid transaction, per the backend's delete semantics) —
-    /// same delete-means-deactivate framing `FixedExpensesViewModel.delete`
-    /// already established.
+    /// same delete-means-deactivate framing payment methods already use.
     func delete(_ transaction: Wellspent_V1_Transaction) async {
         guard !transaction.fixedExpenseID.isEmpty else { return }
         errorMessage = nil

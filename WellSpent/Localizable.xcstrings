@@ -212,6 +212,7 @@
       }
     },
     "%lld unpaid · %lld paid" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2601,6 +2602,7 @@
       }
     },
     "Delete this upcoming expense?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3407,6 +3409,7 @@
       }
     },
     "Fixed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3456,6 +3459,7 @@
       }
     },
     "Fixed expenses this period" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3875,6 +3879,7 @@
       }
     },
     "It will stop appearing in future periods. Expenses already recorded in past periods are kept." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7216,6 +7221,23 @@
         }
       }
     },
+    "Transaction" : {
+      "comment" : "Add-menu item: adds a Variable transaction, alongside \"Fixed expense\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transacción"
+          }
+        }
+      }
+    },
     "Transaction deleted" : {
       "localizations" : {
         "en" : {
@@ -7244,23 +7266,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Transacción excluida"
-          }
-        }
-      }
-    },
-    "Transaction" : {
-      "comment" : "Add-menu item: adds a Variable transaction, alongside \"Fixed expense\".",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transaction"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transacción"
           }
         }
       }
@@ -7630,6 +7635,7 @@
       }
     },
     "Variable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
