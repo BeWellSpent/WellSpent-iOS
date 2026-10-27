@@ -90,8 +90,8 @@ struct AddEditTransactionView: View {
             }
 
             Picker("Flow", selection: $viewModel.isReceived) {
-                Text("Spent").tag(false)
-                Text("Received").tag(true)
+                Text("Money Out").tag(false)
+                Text("Money In").tag(true)
             }
             .pickerStyle(.segmented)
             .disabled(viewModel.isLocked)

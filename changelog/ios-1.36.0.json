@@ -226,6 +226,11 @@
       "changeType": "changed",
       "summaryEn": "The Add/Edit Transaction and Add/Edit Fixed Expense forms now read as fewer, more cohesive groups — the money direction and amount at the top, then one continuous list for name, category, payment method, date and schedule.",
       "summaryEs": "Los formularios de Agregar/Editar transacción y Agregar/Editar gasto fijo ahora se ven como grupos más cohesivos: la dirección del dinero y el monto arriba, y luego una sola lista continua para nombre, categoría, método de pago, fecha y frecuencia."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Add/Edit Transaction form's direction toggle now says \"Money Out\"/\"Money In\", matching the wording used everywhere else on the Transactions screen.",
+      "summaryEs": "El interruptor de dirección del formulario de Agregar/Editar transacción ahora dice \"Dinero gastado\"/\"Dinero recibido\", igual que en el resto de la pantalla de Transacciones."
     }
   ]
 }
