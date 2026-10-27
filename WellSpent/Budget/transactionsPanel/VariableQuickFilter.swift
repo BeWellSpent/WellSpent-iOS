@@ -4,8 +4,9 @@ import WellSpentAPI
 /// Quick-filter chips for the Variable tab (issue #92) — distinct from
 /// `TransactionFilterOption`, which still backs the Fixed/Payments tabs'
 /// shared toolbar filter menu unchanged. `exceededOnly`/`excludedOnly` are
-/// real, server-backed filters that moved into the new Filter sheet instead
-/// of becoming chips here — see `TransactionsListView`'s filter sheet.
+/// real, server-backed filters applied as their own independent toggle
+/// chips in the same row (not part of this enum's radio group) — see
+/// `TransactionsListView.quickFilterToggleChip`.
 nonisolated enum VariableQuickFilter: String, CaseIterable, Identifiable {
     case all
     case moneyOut
@@ -56,7 +57,7 @@ nonisolated enum VariableQuickFiltering {
         }
     }
 
-    /// Applies the quick filter plus the two filter-sheet toggles
+    /// Applies the quick filter plus the two independent toggle chips
     /// (`exceededOnly`/`excludedOnly`, carried forward from
     /// `TransactionFilterOption`) plus search — the Variable tab's full
     /// predicate chain.

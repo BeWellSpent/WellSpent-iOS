@@ -15,6 +15,33 @@ struct TransactionsListView: View {
         case payments
     }
 
+    /// Every locally-triggered sheet on the Variable tab, so only one
+    /// presentation modifier drives them. Stacking separate
+    /// `.sheet(isPresented:)` modifiers on one view is what let the Filter
+    /// sheet pop up unrequested right after the Add sheet dismissed — the
+    /// same class of bug as the v1.25.0 Plaid double-tap fix and
+    /// `FixedExpensesListView.ActiveSheet`. The add sheet stays its own
+    /// modifier (see `content(viewModel:)`) — its binding is owned by
+    /// `BudgetDetailView`'s toolbar/in-content "+", and mirroring it in here
+    /// would reintroduce the cross-wiring this avoids.
+    private enum ActiveSheet: Identifiable {
+        case editTransaction(Wellspent_V1_Transaction)
+        case markReview(Wellspent_V1_Transaction)
+        case installmentPlan(Wellspent_V1_Transaction)
+        case createFixedFromTransaction(Wellspent_V1_Transaction)
+        case recategorize(Wellspent_V1_Transaction)
+
+        var id: String {
+            switch self {
+            case .editTransaction(let transaction): return "editTransaction-\(transaction.id)"
+            case .markReview(let transaction): return "markReview-\(transaction.id)"
+            case .installmentPlan(let transaction): return "installmentPlan-\(transaction.id)"
+            case .createFixedFromTransaction(let transaction): return "createFixedFromTransaction-\(transaction.id)"
+            case .recategorize(let transaction): return "recategorize-\(transaction.id)"
+            }
+        }
+    }
+
     let budgetPeriodID: String
     let budgetProfileID: String
     let authenticatedRESTClient: WellSpentREST.Client
@@ -55,16 +82,16 @@ struct TransactionsListView: View {
 
     @Environment(SessionStore.self) private var session
     @State private var viewModel: TransactionsViewModel?
+    /// Used by the Payments tab only — see `paymentsContent(viewModel:)`'s
+    /// own edit sheet. The Variable tab's edit flow goes through
+    /// `activeSheet` below instead.
     @State private var editingTransaction: Wellspent_V1_Transaction?
-    @State private var markReviewTarget: Wellspent_V1_Transaction?
-    @State private var installmentTarget: Wellspent_V1_Transaction?
-    @State private var fixedFromTxTarget: Wellspent_V1_Transaction?
     @State private var unsplitTarget: Wellspent_V1_Transaction?
     /// Staged by the swipe-to-delete button below, then confirmed via
-    /// `.confirmationDialog` — same shape as `unsplitTarget`/`installmentTarget`,
-    /// so a swipe can't delete a transaction outright with no way back. Still
-    /// used by the Payments tab only (issue #92 scoped Variable's delete to a
-    /// toast+Undo instead — see `pendingDeleteIDs`/`toastState` below).
+    /// `.confirmationDialog` — same shape as `unsplitTarget`, so a swipe
+    /// can't delete a transaction outright with no way back. Used by the
+    /// Payments tab only (issue #92 scoped Variable's delete to a toast+Undo
+    /// instead — see `pendingDeleteIDs`/`toastState` below).
     @State private var deletingTransaction: Wellspent_V1_Transaction?
 
     // MARK: Variable tab only (issue #92)
@@ -75,13 +102,17 @@ struct TransactionsListView: View {
     /// toast expires without being undone.
     @State private var pendingDeleteIDs: Set<String> = []
     @State private var variableQuickFilter: VariableQuickFilter = .all
-    @State private var isVariableFilterSheetPresented = false
-    /// Carried forward from the old shared toolbar filter menu — real,
-    /// server-backed filters (`docs/features/transactions-filter-for-spent.md`),
-    /// now living in the new Filter sheet instead of a quick-filter chip.
+    /// Real, server-backed filters (`docs/features/transactions-filter-for-spent.md`)
+    /// — independent toggle chips in the quick-filter row (issue #92
+    /// follow-up), not part of the `VariableQuickFilter` radio group, so a
+    /// user can combine e.g. Money Out with Exceeded only at once. The
+    /// standalone Filter sheet they used to live in is gone — it had nothing
+    /// else in it. Reuses `TransactionFilterOption`'s existing
+    /// `.exceededOnly`/`.excludedOnly` labels rather than duplicating the
+    /// catalog keys.
     @State private var variableExceededOnly = false
     @State private var variableExcludedOnly = false
-    @State private var recategorizingTransaction: Wellspent_V1_Transaction?
+    @State private var activeSheet: ActiveSheet?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -235,41 +266,6 @@ struct TransactionsListView: View {
                 viewModel.addTransaction(transaction)
             }
         }
-        .sheet(isPresented: Binding(
-            get: { editingTransaction != nil },
-            set: { if !$0 { editingTransaction = nil } }
-        )) {
-            if let editingTransaction {
-                AddEditTransactionView(
-                    mode: .edit(editingTransaction),
-                    budgetPeriodID: budgetPeriodID,
-                    currencyCode: currencyCode,
-                    categories: viewModel.categories,
-                    paymentMethods: viewModel.paymentMethods,
-                    isArchivedPeriod: isArchivedPeriod,
-                    restClient: authenticatedRESTClient
-                ) { updated in
-                    viewModel.replaceTransaction(updated)
-                }
-            }
-        }
-        .sheet(isPresented: Binding(
-            get: { markReviewTarget != nil },
-            set: { if !$0 { markReviewTarget = nil } }
-        )) {
-            if let markReviewTarget {
-                MarkForReviewSheet(
-                    transaction: markReviewTarget,
-                    budgetPeriodID: budgetPeriodID,
-                    budgetProfileID: budgetProfileID,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier,
-                    authenticatedRESTClient: authenticatedRESTClient
-                ) {
-                    Task { await reviewViewModel?.load() }
-                }
-            }
-        }
         .confirmationDialog(
             "Undo installment split",
             isPresented: Binding(
@@ -286,13 +282,36 @@ struct TransactionsListView: View {
         } message: {
             Text("The plan and its remaining payments will be deleted, and this purchase will count toward its period again.")
         }
-        .sheet(isPresented: Binding(
-            get: { installmentTarget != nil },
-            set: { if !$0 { installmentTarget = nil } }
-        )) {
-            if let installmentTarget {
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .editTransaction(let transaction):
+                AddEditTransactionView(
+                    mode: .edit(transaction),
+                    budgetPeriodID: budgetPeriodID,
+                    currencyCode: currencyCode,
+                    categories: viewModel.categories,
+                    paymentMethods: viewModel.paymentMethods,
+                    isArchivedPeriod: isArchivedPeriod,
+                    restClient: authenticatedRESTClient
+                ) { updated in
+                    viewModel.replaceTransaction(updated)
+                }
+
+            case .markReview(let transaction):
+                MarkForReviewSheet(
+                    transaction: transaction,
+                    budgetPeriodID: budgetPeriodID,
+                    budgetProfileID: budgetProfileID,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    authenticatedRESTClient: authenticatedRESTClient
+                ) {
+                    Task { await reviewViewModel?.load() }
+                }
+
+            case .installmentPlan(let transaction):
                 InstallmentPlanSheet(
-                    transaction: installmentTarget,
+                    transaction: transaction,
                     budgetPeriodID: budgetPeriodID,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
@@ -300,31 +319,18 @@ struct TransactionsListView: View {
                 ) {
                     Task { await viewModel.load() }
                 }
-            }
-        }
-        .sheet(isPresented: Binding(
-            get: { fixedFromTxTarget != nil },
-            set: { if !$0 { fixedFromTxTarget = nil } }
-        )) {
-            if let fixedFromTxTarget {
+
+            case .createFixedFromTransaction(let transaction):
                 CreateFixedFromTransactionSheet(
-                    transaction: fixedFromTxTarget,
+                    transaction: transaction,
                     budgetPeriodID: budgetPeriodID,
                     authenticatedRESTClient: authenticatedRESTClient
                 ) {
                     Task { await viewModel.load() }
                 }
-            }
-        }
-        .sheet(isPresented: $isVariableFilterSheetPresented) {
-            variableFilterSheet
-        }
-        .sheet(isPresented: Binding(
-            get: { recategorizingTransaction != nil },
-            set: { if !$0 { recategorizingTransaction = nil } }
-        )) {
-            if let recategorizingTransaction {
-                recategorizeSheet(for: recategorizingTransaction, viewModel: viewModel)
+
+            case .recategorize(let transaction):
+                recategorizeSheet(for: transaction, viewModel: viewModel)
             }
         }
     }
@@ -348,12 +354,6 @@ struct TransactionsListView: View {
                     }
                     .accessibilityIdentifier("variableAddTransactionButton")
                 }
-                Button {
-                    isVariableFilterSheetPresented = true
-                } label: {
-                    Image(systemName: (variableExceededOnly || variableExcludedOnly) ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                }
-                .accessibilityIdentifier("variableFilterButton")
             }
             Text(viewModel.totalText)
                 .font(.title2.bold())
@@ -398,17 +398,48 @@ struct TransactionsListView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("variableQuickFilter_\(option.rawValue)")
                 }
+
+                quickFilterToggleChip(
+                    label: TransactionFilterOption.exceededOnly.label,
+                    isOn: $variableExceededOnly,
+                    identifier: "variableExceededOnlyChip"
+                )
+                quickFilterToggleChip(
+                    label: TransactionFilterOption.excludedOnly.label,
+                    isOn: $variableExcludedOnly,
+                    identifier: "variableExcludedOnlyChip"
+                )
             }
             .padding(.horizontal)
             .padding(.top, 10)
         }
     }
 
+    /// "Exceeded only"/"Excluded only" — independent toggle chips (issue
+    /// #92 follow-up), visually identical to the `VariableQuickFilter`
+    /// chips above but not part of that radio group: tapping one just
+    /// flips its own boolean, so it can combine freely with whichever quick
+    /// filter is active.
+    private func quickFilterToggleChip(label: String, isOn: Binding<Bool>, identifier: String) -> some View {
+        Button {
+            isOn.wrappedValue.toggle()
+        } label: {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isOn.wrappedValue ? Color.primary : Color(.secondarySystemBackground), in: Capsule())
+                .foregroundStyle(isOn.wrappedValue ? Color(.systemBackground) : .primary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
+
     @ViewBuilder
     private func leadingSwipeActions(for transaction: Wellspent_V1_Transaction) -> some View {
         if canEdit {
             Button {
-                editingTransaction = transaction
+                activeSheet = .editTransaction(transaction)
             } label: {
                 Label("Edit", systemImage: "pencil")
             }
@@ -425,7 +456,7 @@ struct TransactionsListView: View {
                 .accessibilityIdentifier("unsplitInstallments_\(transaction.name)")
             } else if InstallmentPlan.canSplit(transaction) {
                 Button {
-                    installmentTarget = transaction
+                    activeSheet = .installmentPlan(transaction)
                 } label: {
                     Label("Split into installments", systemImage: "arrow.triangle.branch")
                 }
@@ -435,7 +466,7 @@ struct TransactionsListView: View {
 
             if CreateFixedFromTransaction.canCreate(transaction) {
                 Button {
-                    fixedFromTxTarget = transaction
+                    activeSheet = .createFixedFromTransaction(transaction)
                 } label: {
                     Label("Create a fixed expense", systemImage: "arrow.triangle.2.circlepath")
                 }
@@ -449,7 +480,7 @@ struct TransactionsListView: View {
     private func trailingSwipeActions(for transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
         if canEdit {
             Button {
-                markReviewTarget = transaction
+                activeSheet = .markReview(transaction)
             } label: {
                 Label("Flag for Review", systemImage: "flag")
             }
@@ -494,32 +525,6 @@ struct TransactionsListView: View {
         )
     }
 
-    /// Carries forward `TransactionFilterOption.exceededOnly`/`.excludedOnly`
-    /// — real, server-backed filters (docs/features/transactions-filter-for-spent.md)
-    /// — into the Variable tab's own bottom sheet, replacing the toolbar
-    /// filter menu for this tab specifically.
-    private var variableFilterSheet: some View {
-        NavigationStack {
-            Form {
-                Toggle(TransactionFilterOption.exceededOnly.label, isOn: $variableExceededOnly)
-                    .accessibilityIdentifier("variableExceededOnlyToggle")
-                Toggle(TransactionFilterOption.excludedOnly.label, isOn: $variableExcludedOnly)
-                    .accessibilityIdentifier("variableExcludedOnlyToggle")
-                Button("Reset") {
-                    variableExceededOnly = false
-                    variableExcludedOnly = false
-                }
-            }
-            .sheetChrome(Text("Filters")) { isVariableFilterSheetPresented = false }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { isVariableFilterSheetPresented = false }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-
     /// Tap-to-recategorize (issue #92) — a lightweight sheet, same `List`
     /// dot+name row shape `ColorDotPickerField` already uses, rather than a
     /// second picker component.
@@ -527,7 +532,7 @@ struct TransactionsListView: View {
         NavigationStack {
             List(viewModel.categories, id: \.id) { category in
                 Button {
-                    recategorizingTransaction = nil
+                    activeSheet = nil
                     Task { await viewModel.updateCategory(for: transaction, to: category.id) }
                 } label: {
                     HStack {
@@ -543,7 +548,7 @@ struct TransactionsListView: View {
                 .foregroundStyle(.primary)
                 .accessibilityIdentifier("recategorizeTransaction_option_\(category.displayName)")
             }
-            .sheetChrome(Text("Category")) { recategorizingTransaction = nil }
+            .sheetChrome(Text("Category")) { activeSheet = nil }
         }
         .presentationDetents([.medium, .large])
     }
@@ -786,7 +791,7 @@ struct TransactionsListView: View {
     private func categoryChip(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
         let categoryName = viewModel.categoryName(for: transaction.categoryID)
         return Button {
-            recategorizingTransaction = transaction
+            activeSheet = .recategorize(transaction)
         } label: {
             HStack(spacing: 3) {
                 if let categoryName {

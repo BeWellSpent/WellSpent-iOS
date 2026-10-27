@@ -181,6 +181,16 @@
       "changeType": "changed",
       "summaryEn": "Deleting a variable transaction now shows a brief \"Undo\" instead of a confirmation prompt.",
       "summaryEs": "Eliminar una transacción variable ahora muestra un breve aviso con \"Deshacer\" en lugar de un mensaje de confirmación."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Adding a variable transaction no longer pops open the filter sheet by itself right after.",
+      "summaryEs": "Agregar una transacción variable ya no abre el panel de filtros por sí solo justo después."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "\"Exceeded only\" and \"Excluded only\" are now quick-filter chips next to All/Money Out/Money In/Needs review, instead of a separate Filters sheet.",
+      "summaryEs": "\"Solo excedidas\" y \"Solo excluidas\" ahora son filtros rápidos junto a Todas/Dinero gastado/Dinero recibido/Necesita revisión, en lugar de un panel de Filtros aparte."
     }
   ]
 }
