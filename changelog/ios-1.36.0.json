@@ -171,6 +171,16 @@
       "changeType": "fixed",
       "summaryEn": "Opening the app from a cold start asked for Face ID twice, a moment apart. It now only asks once.",
       "summaryEs": "Abrir la app desde cero pedía Face ID dos veces, con un breve lapso entre ambas. Ahora solo lo pide una vez."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Variable transactions tab has a new look: a spending summary card, quick filters (All, Money Out, Money In, Needs review), and every row action — edit, split into installments, flag for review, exclude, delete — now lives behind a swipe instead of a row full of small buttons. Tap a transaction's category to change it without leaving the list.",
+      "summaryEs": "La pestaña de transacciones variables tiene un nuevo aspecto: una tarjeta de resumen de gastos, filtros rápidos (Todas, Dinero gastado, Dinero recibido, Necesita revisión), y cada acción de la fila —editar, dividir en cuotas, marcar para revisión, excluir, eliminar— ahora se desliza en vez de mostrarse como una fila de botones pequeños. Toca la categoría de una transacción para cambiarla sin salir de la lista."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Deleting a variable transaction now shows a brief \"Undo\" instead of a confirmation prompt.",
+      "summaryEs": "Eliminar una transacción variable ahora muestra un breve aviso con \"Deshacer\" en lugar de un mensaje de confirmación."
     }
   ]
 }

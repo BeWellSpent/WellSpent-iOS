@@ -295,9 +295,12 @@ struct BudgetDetailView: View {
                 }
             }
         case .transactions:
-            // Payments gets the same Variable-style add sheet, not the
-            // Fixed-expense form — manual add is allowed there too (issue #76).
-            if canAddTransaction && transactionsSelectedKind != .fixed {
+            // Variable has its own in-content "+" and filter sheet now
+            // (issue #92) — this toolbar no longer offers either for that
+            // tab. Payments still gets the same Variable-style add sheet
+            // here, not the Fixed-expense form — manual add is allowed there
+            // too (issue #76).
+            if canAddTransaction && transactionsSelectedKind == .payments {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         startAddingTransaction { isAddTransactionPresented = true }
@@ -306,7 +309,7 @@ struct BudgetDetailView: View {
                     }
                     .accessibilityIdentifier("addTransactionButton")
                 }
-            } else if canAddTransaction {
+            } else if canAddTransaction && transactionsSelectedKind == .fixed {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         startAddingTransaction { isAddFixedExpensePresented = true }
@@ -316,28 +319,26 @@ struct BudgetDetailView: View {
                     .accessibilityIdentifier("addFixedExpenseButton")
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                // `Menu` + inline `Picker`, not `.pickerStyle(.menu)`: a
-                // menu-style `Picker` ignores this `Image` label and renders
-                // the selected title instead ("Todas las transacciones"),
-                // which pushed the + and bell into an empty overflow menu.
-                // Inline `Picker` still draws the selection checkmark.
-                Menu {
-                    Picker(selection: $transactionsFilter) {
-                        Text(TransactionFilterOption.none.label).tag(TransactionFilterOption.none)
-                        if transactionsSelectedKind == .variable {
-                            Text(TransactionFilterOption.spentOnly.label).tag(TransactionFilterOption.spentOnly)
-                            Text(TransactionFilterOption.exceededOnly.label).tag(TransactionFilterOption.exceededOnly)
+            if transactionsSelectedKind != .variable {
+                ToolbarItem(placement: .topBarTrailing) {
+                    // `Menu` + inline `Picker`, not `.pickerStyle(.menu)`: a
+                    // menu-style `Picker` ignores this `Image` label and renders
+                    // the selected title instead ("Todas las transacciones"),
+                    // which pushed the + and bell into an empty overflow menu.
+                    // Inline `Picker` still draws the selection checkmark.
+                    Menu {
+                        Picker(selection: $transactionsFilter) {
+                            Text(TransactionFilterOption.none.label).tag(TransactionFilterOption.none)
+                            Text(TransactionFilterOption.excludedOnly.label).tag(TransactionFilterOption.excludedOnly)
+                        } label: {
+                            EmptyView()
                         }
-                        Text(TransactionFilterOption.excludedOnly.label).tag(TransactionFilterOption.excludedOnly)
+                        .pickerStyle(.inline)
                     } label: {
-                        EmptyView()
+                        Image(systemName: transactionsFilter == .none ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
                     }
-                    .pickerStyle(.inline)
-                } label: {
-                    Image(systemName: transactionsFilter == .none ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                    .accessibilityIdentifier("transactionsFilterMenu")
                 }
-                .accessibilityIdentifier("transactionsFilterMenu")
             }
         case .review, .reports, .more:
             ToolbarItemGroup {}
@@ -480,7 +481,10 @@ struct BudgetDetailView: View {
                     canEdit: viewModel.canEdit,
                     isArchivedPeriod: viewModel.isArchivedPeriod,
                     searchQuery: transactionsSearchQuery,
-                    filter: transactionsFilter
+                    filter: transactionsFilter,
+                    onRequestAddTransaction: {
+                        startAddingTransaction { isAddTransactionPresented = true }
+                    }
                 )
                 // Same reason as planContent's — see there.
                 .id("\(period.id)|\(focusedViewToken)")
