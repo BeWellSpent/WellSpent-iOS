@@ -49,7 +49,7 @@ final class FixedExpensesViewModel {
     /// exclusion rule beside it, now live in one place instead of being
     /// re-applied here and again on web (#61).
     var totalText: String {
-        TransactionAmountFormatting.totalDisplayText(
+        TransactionAmountFormatting.magnitudeDisplayText(
             amounts: [TransactionAmountFormatting.tuple(from: summary?.fixedActualTotal)],
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier

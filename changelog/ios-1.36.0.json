@@ -171,6 +171,66 @@
       "changeType": "fixed",
       "summaryEn": "Opening the app from a cold start asked for Face ID twice, a moment apart. It now only asks once.",
       "summaryEs": "Abrir la app desde cero pedía Face ID dos veces, con un breve lapso entre ambas. Ahora solo lo pide una vez."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Variable transactions tab has a new look: a spending summary card, quick filters (All, Money Out, Money In, Needs review), and every row action — edit, split into installments, flag for review, exclude, delete — now lives behind a swipe instead of a row full of small buttons. Tap a transaction's category to change it without leaving the list.",
+      "summaryEs": "La pestaña de transacciones variables tiene un nuevo aspecto: una tarjeta de resumen de gastos, filtros rápidos (Todas, Dinero gastado, Dinero recibido, Necesita revisión), y cada acción de la fila —editar, dividir en cuotas, marcar para revisión, excluir, eliminar— ahora se desliza en vez de mostrarse como una fila de botones pequeños. Toca la categoría de una transacción para cambiarla sin salir de la lista."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Deleting a variable transaction now shows a brief \"Undo\" instead of a confirmation prompt.",
+      "summaryEs": "Eliminar una transacción variable ahora muestra un breve aviso con \"Deshacer\" en lugar de un mensaje de confirmación."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Adding a variable transaction no longer pops open the filter sheet by itself right after.",
+      "summaryEs": "Agregar una transacción variable ya no abre el panel de filtros por sí solo justo después."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "\"Exceeded only\" and \"Excluded only\" are now quick-filter chips next to All/Money Out/Money In/Needs review, instead of a separate Filters sheet.",
+      "summaryEs": "\"Solo excedidas\" y \"Solo excluidas\" ahora son filtros rápidos junto a Todas/Dinero gastado/Dinero recibido/Necesita revisión, en lugar de un panel de Filtros aparte."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Fixed expenses tab has a new summary card, and every row action — edit, mark paid, match transactions, exclude, delete — now lives behind a swipe instead of a row full of small buttons. Marking paid, excluding, and deleting now show a brief \"Undo\" instead of taking effect immediately.",
+      "summaryEs": "La pestaña de gastos fijos tiene una nueva tarjeta de resumen, y cada acción de la fila —editar, marcar como pagado, emparejar transacciones, excluir, eliminar— ahora se desliza en vez de mostrarse como una fila de botones pequeños. Marcar como pagado, excluir y eliminar ahora muestran un breve \"Deshacer\" en lugar de aplicarse de inmediato."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Payments tab has a new summary card, and excluding or deleting a row now lives behind a swipe with a brief \"Undo\", instead of an always-visible button or a confirmation prompt.",
+      "summaryEs": "La pestaña de Pagos tiene una nueva tarjeta de resumen, y excluir o eliminar una fila ahora se desliza con un breve \"Deshacer\", en lugar de un botón siempre visible o un mensaje de confirmación."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "The Variable, Fixed, and Payments summary cards no longer show a minus sign in front of the total.",
+      "summaryEs": "Las tarjetas de resumen de Variables, Fijos y Pagos ya no muestran un signo menos delante del total."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Removed a leftover filter button from the top of the Fixed and Payments tabs — all three Transactions tabs now share the same header.",
+      "summaryEs": "Se eliminó un botón de filtro que había quedado en la parte superior de las pestañas de Fijos y Pagos; las tres pestañas de Transacciones ahora comparten el mismo encabezado."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Transactions screen's toolbar now shows the period you're viewing, a search icon, and a single Add button shared by Variable, Fixed, and Payments. Search now opens from that icon instead of always being on screen.",
+      "summaryEs": "La barra de herramientas de la pantalla de Transacciones ahora muestra el período que estás viendo, un ícono de búsqueda y un único botón Agregar compartido por Variables, Fijos y Pagos. La búsqueda ahora se abre desde ese ícono en lugar de estar siempre visible."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Switching periods now happens from the Transactions screen itself — tap the period name to see this year's periods or browse every past one. It's no longer in the More menu.",
+      "summaryEs": "Cambiar de período ahora se hace desde la propia pantalla de Transacciones: toca el nombre del período para ver los de este año o explorar todos los anteriores. Ya no está en el menú Más."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Add/Edit Transaction and Add/Edit Fixed Expense forms now read as fewer, more cohesive groups — the money direction and amount at the top, then one continuous list for name, category, payment method, date and schedule.",
+      "summaryEs": "Los formularios de Agregar/Editar transacción y Agregar/Editar gasto fijo ahora se ven como grupos más cohesivos: la dirección del dinero y el monto arriba, y luego una sola lista continua para nombre, categoría, método de pago, fecha y frecuencia."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Add/Edit Transaction form's direction toggle now says \"Money Out\"/\"Money In\", matching the wording used everywhere else on the Transactions screen.",
+      "summaryEs": "El interruptor de dirección del formulario de Agregar/Editar transacción ahora dice \"Dinero gastado\"/\"Dinero recibido\", igual que en el resto de la pantalla de Transacciones."
     }
   ]
 }

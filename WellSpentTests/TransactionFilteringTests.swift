@@ -38,62 +38,47 @@ struct TransactionFilteringTests {
         #expect(TransactionFiltering.matchesSearch(name: "Groceries", categoryName: nil, ownerName: nil, query: ""))
     }
 
-    // MARK: apply — filter predicates
+    // MARK: apply — search only, now that the legacy filter menu is gone
 
-    @Test("spentOnly keeps only positive (spent) amounts")
-    func spentOnlyKeepsPositiveAmounts() {
-        let spent = transaction(id: "1", units: 20)
-        let received = transaction(id: "2", units: -20)
-
-        let result = TransactionFiltering.apply(
-            [spent, received], filter: .spentOnly, searchQuery: "",
-            incomeCategoryID: nil, overBudgetTransactionIDs: [],
-            categoryName: { _ in nil }, ownerName: { _ in nil }
-        )
-
-        #expect(result.map(\.id) == ["1"])
-    }
-
-    @Test("excludedOnly keeps only manually-excluded or Income-category transactions")
-    func excludedOnlyKeepsExcludedOrIncome() {
-        let excluded = transaction(id: "1", isExcluded: true)
-        let income = transaction(id: "2", categoryID: 99)
-        let normal = transaction(id: "3")
+    @Test("apply with an empty query returns every transaction")
+    func applyEmptyQueryReturnsAll() {
+        let a = transaction(id: "1", name: "Rent")
+        let b = transaction(id: "2", name: "Groceries")
 
         let result = TransactionFiltering.apply(
-            [excluded, income, normal], filter: .excludedOnly, searchQuery: "",
-            incomeCategoryID: 99, overBudgetTransactionIDs: [],
+            [a, b], searchQuery: "",
             categoryName: { _ in nil }, ownerName: { _ in nil }
         )
 
         #expect(Set(result.map(\.id)) == ["1", "2"])
     }
 
-    @Test("exceededOnly keeps only flagged transaction ids")
-    func exceededOnlyKeepsFlaggedIDs() {
-        let flagged = transaction(id: "1")
-        let notFlagged = transaction(id: "2")
+    @Test("apply filters by search query against name")
+    func applyFiltersBySearchQuery() {
+        let match = transaction(id: "1", name: "Rent")
+        let noMatch = transaction(id: "2", name: "Groceries")
 
         let result = TransactionFiltering.apply(
-            [flagged, notFlagged], filter: .exceededOnly, searchQuery: "",
-            incomeCategoryID: nil, overBudgetTransactionIDs: ["1"],
+            [match, noMatch], searchQuery: "rent",
             categoryName: { _ in nil }, ownerName: { _ in nil }
         )
 
         #expect(result.map(\.id) == ["1"])
     }
 
-    @Test("none filter combined with a search query still filters by search")
-    func noneFilterStillAppliesSearch() {
-        let match = transaction(id: "1", name: "Rent")
-        let noMatch = transaction(id: "2", name: "Groceries")
+    @Test("apply falls back to matching category or owner name")
+    func applyFiltersByCategoryOrOwner() {
+        let byCategory = transaction(id: "1", name: "Monthly bill", categoryID: 5)
+        var byOwner = transaction(id: "2", name: "Something else")
+        byOwner.paymentMethodID = "pm-alex"
+        let noMatch = transaction(id: "3", name: "Unrelated")
 
         let result = TransactionFiltering.apply(
-            [match, noMatch], filter: .none, searchQuery: "rent",
-            incomeCategoryID: nil, overBudgetTransactionIDs: [],
-            categoryName: { _ in nil }, ownerName: { _ in nil }
+            [byCategory, byOwner, noMatch], searchQuery: "alex",
+            categoryName: { $0 == 5 ? "Alexandria" : nil },
+            ownerName: { $0 == "pm-alex" ? "Alex" : nil }
         )
 
-        #expect(result.map(\.id) == ["1"])
+        #expect(Set(result.map(\.id)) == ["1", "2"])
     }
 }

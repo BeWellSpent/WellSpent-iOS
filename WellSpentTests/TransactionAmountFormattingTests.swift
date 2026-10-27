@@ -35,6 +35,22 @@ struct TransactionAmountFormattingTests {
         #expect(!text.contains("--"))
     }
 
+    @Test("magnitudeDisplayText has no sign prefix for a spend total")
+    func magnitudeDisplayTextSpend() {
+        let text = TransactionAmountFormatting.magnitudeDisplayText(amounts: [(units: 50, nanos: 0)], currencyCode: "USD", localeIdentifier: "en_US")
+        #expect(!text.hasPrefix("-"))
+        #expect(!text.hasPrefix("+"))
+        #expect(text.contains("50"))
+    }
+
+    @Test("magnitudeDisplayText has no sign prefix for a received total")
+    func magnitudeDisplayTextReceived() {
+        let text = TransactionAmountFormatting.magnitudeDisplayText(amounts: [(units: -50, nanos: 0)], currencyCode: "USD", localeIdentifier: "en_US")
+        #expect(!text.hasPrefix("-"))
+        #expect(!text.hasPrefix("+"))
+        #expect(text.contains("50"))
+    }
+
     @Test("sum carries nanos overflow into units")
     func sumCarriesOverflow() {
         let result = TransactionAmountFormatting.sum([

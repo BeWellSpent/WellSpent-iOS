@@ -49,11 +49,35 @@ final class TransactionsViewModel {
     /// instead would put a second spelling of the number next to the totals
     /// the Plan and Overview tabs print.
     var totalText: String {
-        TransactionAmountFormatting.totalDisplayText(
+        TransactionAmountFormatting.magnitudeDisplayText(
             amounts: [TransactionAmountFormatting.tuple(from: summary?.variableActualTotal)],
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
         )
+    }
+
+    /// Progress of variable spend against the overall planned total
+    /// (`GetExpenseSummary`'s `totalPlanned`), for the Variable tab's summary
+    /// card (issue #92). 0 when nothing is planned, so an empty-budget
+    /// account never shows a divide-by-zero progress bar.
+    var spentProgress: Double {
+        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
+        let plannedValue = Double(planned.units) + Double(planned.nanos) / 1_000_000_000
+        guard plannedValue > 0 else { return 0 }
+        let spent = TransactionAmountFormatting.tuple(from: summary?.variableActualTotal)
+        let spentValue = Double(spent.units) + Double(spent.nanos) / 1_000_000_000
+        return min(max(spentValue / plannedValue, 0), 1)
+    }
+
+    /// "$X left of $Y planned" for the summary card — reuses the same
+    /// server-computed totals `totalText`/`overBudgetTransactionIDs` do.
+    var remainingSummaryText: String {
+        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
+        let spent = TransactionAmountFormatting.tuple(from: summary?.variableActualTotal)
+        let remaining = TransactionAmountFormatting.sum([planned, (units: -spent.units, nanos: -spent.nanos)])
+        let remainingText = MoneyFormatting.format(units: abs(remaining.units), nanos: abs(remaining.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        let plannedText = MoneyFormatting.format(units: abs(planned.units), nanos: abs(planned.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        return String(localized: "\(remainingText) left of \(plannedText) planned", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
     init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client) {
@@ -171,7 +195,7 @@ final class TransactionsViewModel {
     /// and is untouched by this.
     func paymentsTotalText(reviews: [Wellspent_V1_TransactionReview]) -> String {
         let amounts = paymentTransactions(reviews: reviews).map { TransactionAmountFormatting.tuple(from: $0.amount) }
-        return TransactionAmountFormatting.totalDisplayText(amounts: amounts, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        return TransactionAmountFormatting.magnitudeDisplayText(amounts: amounts, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 
     func pendingMatchName(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> String? {
@@ -238,6 +262,27 @@ final class TransactionsViewModel {
             await load()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        }
+    }
+
+    /// Tap-to-recategorize (issue #92) — reuses the locked-edit, category-only
+    /// submit path `AddEditTransactionViewModel` already has for archived/
+    /// Plaid-imported transactions (a plain category change is the same
+    /// shape), instead of a second hand-written category-only RPC call.
+    func updateCategory(for transaction: Wellspent_V1_Transaction, to categoryID: Int32) async {
+        errorMessage = nil
+        let editViewModel = AddEditTransactionViewModel(
+            mode: .edit(transaction),
+            budgetPeriodID: budgetPeriodID,
+            currencyCode: currencyCode,
+            forceLocked: true,
+            restClient: restClient
+        )
+        editViewModel.categoryID = categoryID
+        if let updated = await editViewModel.submit() {
+            replaceTransaction(updated)
+        } else {
+            errorMessage = editViewModel.errorMessage ?? "Couldn't update that transaction."
         }
     }
 

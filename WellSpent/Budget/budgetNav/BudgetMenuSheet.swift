@@ -3,8 +3,11 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-/// Everything that isn't a frequent destination: which period you're looking
-/// at, the manage panels, settings, help, and logging out.
+/// Everything that isn't a frequent destination: the manage panels,
+/// settings, help, and logging out. Period switching used to live here too
+/// (`periodSection`) but moved onto the Transactions screen itself, via
+/// `TransactionsPeriodControl` (issue #92 follow-up) — it belongs on the
+/// screen it affects.
 ///
 /// Presented as a sheet from the **"More" item in the bottom bar**, not from
 /// a hamburger in the navigation bar. A sheet rises from the bottom of the
@@ -16,11 +19,6 @@ import WellSpentREST
 /// this file if it is ever wanted back. Web keeps its own `Drawer`, and the
 /// two clients deliberately differ here: what has to match is the *contents
 /// and their order*, not the animation. See docs/features/main-view-rework.md.
-///
-/// The period switcher lists only the current period's own year. A budget
-/// accumulates twelve periods a year forever, so the full history belongs on
-/// its own screen (`PeriodListView`) rather than in a menu that would grow
-/// without bound.
 struct BudgetMenuSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionStore.self) private var session
@@ -42,21 +40,9 @@ struct BudgetMenuSheet: View {
     /// person-resolution + load/update this one control needs.
     @State private var preferencesViewModel: PreferencesViewModel?
 
-    /// Periods sharing a year with whatever is currently being shown —
-    /// including archived ones, since switching to a past period is exactly
-    /// what this control is for.
-    private var periodsThisYear: [Wellspent_V1_BudgetPeriod] {
-        guard let current = viewModel.currentPeriod else { return [] }
-        let year = Calendar.current.component(.year, from: current.startDate.dateOnly)
-        return viewModel.periods.filter {
-            Calendar.current.component(.year, from: $0.startDate.dateOnly) == year
-        }
-    }
-
     var body: some View {
         NavigationStack {
             List {
-                periodSection
                 focusedViewSection
                 destinationsSection
                 logoutSection
@@ -108,48 +94,6 @@ struct BudgetMenuSheet: View {
             } footer: {
                 Text("Scopes Plan, Overview, Transactions, Income, and Savings to your own numbers plus anything unattributed. Pending reviews always show everyone, flagged when they involve someone else.")
             }
-        }
-    }
-
-    @ViewBuilder
-    private var periodSection: some View {
-        Section("Period") {
-            ForEach(periodsThisYear, id: \.id) { period in
-                Button {
-                    viewModel.selectPeriod(id: period.id)
-                    dismiss()
-                } label: {
-                    HStack {
-                        Text(PeriodGrouping.label(for: period, localeIdentifier: localeIdentifier))
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        if period.id == viewModel.currentPeriod?.id {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(Color.accentColor)
-                        } else if period.isArchived {
-                            Text("Archived")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .accessibilityIdentifier("menuPeriodRow_\(PeriodGrouping.label(for: period, localeIdentifier: localeIdentifier))")
-            }
-
-            NavigationLink {
-                PeriodListView(
-                    profile: viewModel.profile,
-                    periods: viewModel.periods,
-                    localeIdentifier: localeIdentifier,
-                    onSelect: { id in
-                        viewModel.selectPeriod(id: id)
-                        dismiss()
-                    }
-                )
-            } label: {
-                Label("View all periods", systemImage: "calendar")
-            }
-            .accessibilityIdentifier("viewAllPeriodsLink")
         }
     }
 

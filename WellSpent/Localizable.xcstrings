@@ -179,6 +179,22 @@
         }
       }
     },
+    "%@ left of %@ planned" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left of %@ planned"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ de %@ planeados restantes"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -191,6 +207,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld unpaid · %lld paid" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld unpaid · %lld paid"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sin pagar · %lld pagadas"
           }
         }
       }
@@ -627,7 +659,24 @@
         }
       }
     },
+    "All" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas"
+          }
+        }
+      }
+    },
     "All transactions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1134,6 +1183,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Categorías"
+          }
+        }
+      }
+    },
+    "Categorize" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categorize"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categorizar"
           }
         }
       }
@@ -2519,6 +2584,7 @@
       }
     },
     "Delete this transaction?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3065,6 +3131,22 @@
         }
       }
     },
+    "Exclude" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclude"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluir"
+          }
+        }
+      }
+    },
     "Excluded only" : {
       "localizations" : {
         "en" : {
@@ -3211,6 +3293,23 @@
         }
       }
     },
+    "Filters" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filters"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtros"
+          }
+        }
+      }
+    },
     "Finish" : {
       "localizations" : {
         "en" : {
@@ -3319,6 +3418,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gastos fijos"
+          }
+        }
+      }
+    },
+    "Fixed expenses this period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fixed expenses this period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastos fijos de este período"
           }
         }
       }
@@ -3592,6 +3707,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En la app"
+          }
+        }
+      }
+    },
+    "Include" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Include"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluir"
           }
         }
       }
@@ -4027,6 +4158,22 @@
         }
       }
     },
+    "Marked as paid" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marked as paid"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcado como pagado"
+          }
+        }
+      }
+    },
     "Married Filing Jointly" : {
       "localizations" : {
         "en" : {
@@ -4123,6 +4270,38 @@
         }
       }
     },
+    "Money In" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Money In"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dinero recibido"
+          }
+        }
+      }
+    },
+    "Money Out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Money Out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dinero gastado"
+          }
+        }
+      }
+    },
     "Monthly" : {
       "localizations" : {
         "en" : {
@@ -4167,6 +4346,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nombre"
+          }
+        }
+      }
+    },
+    "Needs review" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs review"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesita revisión"
           }
         }
       }
@@ -5145,6 +5340,22 @@
         }
       }
     },
+    "Payments this period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payments this period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagos de este período"
+          }
+        }
+      }
+    },
     "Pending" : {
       "localizations" : {
         "en" : {
@@ -5742,6 +5953,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reenviar correo de verificación"
+          }
+        }
+      }
+    },
+    "Reset" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer"
           }
         }
       }
@@ -6441,6 +6669,7 @@
       }
     },
     "Spent only" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6452,6 +6681,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Solo gastados"
+          }
+        }
+      }
+    },
+    "Spent this period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spent this period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastado este período"
           }
         }
       }
@@ -6807,6 +7052,7 @@
       }
     },
     "This can't be undone." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6935,6 +7181,54 @@
         }
       }
     },
+    "Transaction deleted" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction deleted"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transacción eliminada"
+          }
+        }
+      }
+    },
+    "Transaction excluded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction excluded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transacción excluida"
+          }
+        }
+      }
+    },
+    "Transaction included" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction included"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transacción incluida"
+          }
+        }
+      }
+    },
     "Transactions" : {
       "localizations" : {
         "en" : {
@@ -7015,6 +7309,22 @@
         }
       }
     },
+    "Undo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deshacer"
+          }
+        }
+      }
+    },
     "Undo installment split" : {
       "localizations" : {
         "en" : {
@@ -7091,6 +7401,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Integrante desconocido"
+          }
+        }
+      }
+    },
+    "Unmark as Paid" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unmark as Paid"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar como no pagado"
           }
         }
       }

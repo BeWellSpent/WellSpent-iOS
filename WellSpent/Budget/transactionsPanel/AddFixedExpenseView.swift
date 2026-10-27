@@ -33,11 +33,13 @@ struct AddFixedExpenseView: View {
                 detailsSection
                 scheduleSection
                 paymentPlanSection
-                attributionSection
                 errorSection
             }
             .sheetChrome(Text("Add Fixed Expense")) { dismiss() }
             .toolbar {
+                // Full-width in-body button would be a one-off departure from
+                // every other Add/Edit sheet in this app — see the identical
+                // note on AddEditTransactionView.
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {
@@ -60,6 +62,13 @@ struct AddFixedExpenseView: View {
         }
     }
 
+    /// Merges the old `detailsSection`/`attributionSection` split into one
+    /// cohesive block — amount, name, category, payment method — closer to
+    /// the mockup's single continuous card. `scheduleSection`/
+    /// `paymentPlanSection` stay separate: their header/footer text is real
+    /// information (not a visual-only grouping), and the mockup's simplified
+    /// Repeats/Next due model doesn't map onto this form's actual scheduling
+    /// complexity.
     @ViewBuilder
     private var detailsSection: some View {
         Section {
@@ -71,6 +80,24 @@ struct AddFixedExpenseView: View {
 
             TextField("Name", text: $viewModel.name)
                 .accessibilityIdentifier("fixedExpenseNameField")
+
+            ColorDotPickerField(
+                title: "Category",
+                selection: $viewModel.categoryID,
+                options: categories.map { ColorDotOption(id: $0.id, name: $0.name, hex: $0.color) },
+                noneOption: (id: Int32(0), label: "None"),
+                accessibilityIdentifier: "fixedExpenseCategoryPicker"
+            )
+
+            ColorDotPickerField(
+                title: "Payment Method",
+                selection: $viewModel.paymentMethodID,
+                options: paymentMethods.map {
+                    ColorDotOption(id: $0.id, name: $0.alias.isEmpty ? $0.name : $0.alias, hex: $0.color)
+                },
+                noneOption: (id: "", label: "None"),
+                accessibilityIdentifier: "fixedExpensePaymentMethodPicker"
+            )
         }
     }
 
@@ -122,29 +149,6 @@ struct AddFixedExpenseView: View {
             Text("Payment plan (optional)")
         } footer: {
             Text("Leave blank for an expense that repeats indefinitely.")
-        }
-    }
-
-    @ViewBuilder
-    private var attributionSection: some View {
-        Section {
-            ColorDotPickerField(
-                title: "Category",
-                selection: $viewModel.categoryID,
-                options: categories.map { ColorDotOption(id: $0.id, name: $0.name, hex: $0.color) },
-                noneOption: (id: Int32(0), label: "None"),
-                accessibilityIdentifier: "fixedExpenseCategoryPicker"
-            )
-
-            ColorDotPickerField(
-                title: "Payment Method",
-                selection: $viewModel.paymentMethodID,
-                options: paymentMethods.map {
-                    ColorDotOption(id: $0.id, name: $0.alias.isEmpty ? $0.name : $0.alias, hex: $0.color)
-                },
-                noneOption: (id: "", label: "None"),
-                accessibilityIdentifier: "fixedExpensePaymentMethodPicker"
-            )
         }
     }
 
