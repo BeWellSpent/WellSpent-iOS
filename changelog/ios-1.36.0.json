@@ -236,6 +236,16 @@
       "changeType": "changed",
       "summaryEn": "The bottom bar is now Overview, Plan, Reports, More. Overview is the new home for what actually happened — the actual-spending chart plus Transactions, Payments and Review as tabs underneath it. Plan now holds only your planned amounts per category.",
       "summaryEs": "La barra inferior ahora es Resumen, Plan, Informes y Más. Resumen es el nuevo lugar para ver lo que realmente pasó: el gráfico de gasto real junto con Transacciones, Pagos y Revisión como pestañas debajo. Plan ahora solo contiene tus montos planeados por categoría."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Overview now shows your totals at the top and the actual-spending chart at the bottom at all times — Transactions, Payments and Review switch only the list in between, instead of replacing the chart entirely.",
+      "summaryEs": "Resumen ahora muestra tus totales arriba y el gráfico de gasto real abajo en todo momento; Transacciones, Pagos y Revisión solo cambian la lista del medio, en lugar de reemplazar el gráfico por completo."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Overview's Transactions tab now shows Variable and Fixed together in one list, with unpaid fixed bills floating to the top so what's still owed this period is never buried below everything already spent.",
+      "summaryEs": "La pestaña de Transacciones en Resumen ahora muestra las transacciones Variables y Fijas juntas en una sola lista, con las facturas fijas pendientes de pago destacadas arriba para que lo que aún se debe este período nunca quede oculto bajo lo ya gastado."
     }
   ]
 }

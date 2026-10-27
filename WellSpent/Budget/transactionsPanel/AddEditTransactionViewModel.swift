@@ -29,10 +29,10 @@ final class AddEditTransactionViewModel {
 
     /// True once a transaction's other fields are frozen — either its
     /// period has archived, it's Plaid-imported (`isPlaidImported`), or the
-    /// caller passed `forceLocked` (e.g. a Fixed transaction whose template
-    /// is missing/deactivated — see `FixedExpensesListView`) — and only its
-    /// category can still change. See docs/features/budget-list-view-rework.md.
-    /// Never true in `.add` mode.
+    /// caller passed `forceLocked` (e.g. tap-to-recategorize, see
+    /// `TransactionsViewModel.updateCategory`) — and only its category can
+    /// still change. See docs/features/budget-list-view-rework.md. Never
+    /// true in `.add` mode.
     let isLocked: Bool
 
     private let budgetPeriodID: String

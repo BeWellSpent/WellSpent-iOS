@@ -3,34 +3,42 @@ import WellSpentAPI
 import WellSpentREST
 import os
 
+/// The Overview sub-tab's Transactions list — Variable and Fixed merged into
+/// one combined, type-identified list (Stage 2 of
+/// docs/features/overview-plan-navigation-rework.md, issue #76's Payments
+/// carve-out stays separate in its own sibling `PaymentsListView`).
+///
+/// Unpaid Fixed bills float to a dedicated section at the top — the thing a
+/// user most needs to see — and everything else (paid Fixed rows and all
+/// Variable rows) interleaves into one day-grouped chronological list below,
+/// each row tagged by type (`FixedExpenseRow` vs. the Variable row shape this
+/// file already had). `MergedTransactionGrouping` is the pure split/filter
+/// logic.
+///
+/// Supersedes the former standalone `FixedExpensesListView` (deleted) — its
+/// Unpaid/Paid/Future sections and summary card don't apply once Fixed rows
+/// live here; its row views (`FixedExpenseRow`, `UpcomingFixedExpenseRow`)
+/// were extracted into their own files, the latter reserved for Stage 3's
+/// Plan-side Future section. `FixedExpensesViewModel` itself is untouched and
+/// currently has no caller — kept intact for Stage 3 to reuse once
+/// Fixed-template management moves to Plan.
 struct TransactionsListView: View {
     private static let logger = AppLogger.logger("Transactions")
 
-    /// Local to this file, not a `Shared/` enum like `BudgetSection` — this
-    /// is UI-local tab state, not a reusable domain concept. Payments (issue
-    /// #76) moved out to its own sibling `PaymentsListView` with the
-    /// Overview/Plan nav rework (docs/features/overview-plan-navigation-rework.md),
-    /// leaving this a plain 2-way Variable/Fixed toggle.
-    enum TransactionKind: Hashable {
-        case variable
-        case fixed
-    }
-
-    /// Every locally-triggered sheet on the Variable tab, so only one
-    /// presentation modifier drives its sheets. Stacking separate
-    /// `.sheet(isPresented:)` modifiers on one view is what let the Filter
-    /// sheet pop up unrequested right after the Add sheet dismissed — the
-    /// same class of bug as the v1.25.0 Plaid double-tap fix and
-    /// `FixedExpensesListView.ActiveSheet`. The add sheet stays its own
-    /// modifier (see `content(viewModel:)`) — its binding is owned by
-    /// `BudgetDetailView`'s toolbar/in-content "+", and mirroring it in here
-    /// would reintroduce the cross-wiring this avoids.
+    /// Every locally-triggered sheet on this list, so only one presentation
+    /// modifier drives its sheets (stacking `.sheet(isPresented:)` modifiers
+    /// is what caused the Plaid double-tap bug, v1.25.0). The add sheets stay
+    /// their own modifiers — their bindings are owned by `BudgetDetailView`'s
+    /// toolbar, and mirroring them in here would reintroduce the cross-wiring
+    /// this avoids.
     private enum ActiveSheet: Identifiable {
         case editTransaction(Wellspent_V1_Transaction)
         case markReview(Wellspent_V1_Transaction)
         case installmentPlan(Wellspent_V1_Transaction)
         case createFixedFromTransaction(Wellspent_V1_Transaction)
         case recategorize(Wellspent_V1_Transaction)
+        case markPaid(Wellspent_V1_Transaction)
+        case matchTransactions(Wellspent_V1_Transaction)
 
         var id: String {
             switch self {
@@ -39,6 +47,8 @@ struct TransactionsListView: View {
             case .installmentPlan(let transaction): return "installmentPlan-\(transaction.id)"
             case .createFixedFromTransaction(let transaction): return "createFixedFromTransaction-\(transaction.id)"
             case .recategorize(let transaction): return "recategorize-\(transaction.id)"
+            case .markPaid(let transaction): return "markPaid-\(transaction.id)"
+            case .matchTransactions(let transaction): return "matchTransactions-\(transaction.id)"
             }
         }
     }
@@ -48,27 +58,22 @@ struct TransactionsListView: View {
     let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
-    /// See `ExpensePlanView.selectedKind` — owned by `BudgetDetailView` so it
-    /// can decide which toolbar button to show at the one nav-bar level
-    /// that's actually rendered.
-    @Binding var selectedKind: TransactionKind
     @Binding var isAddTransactionPresented: Bool
     @Binding var isAddFixedExpensePresented: Bool
     /// See `ExpensePlanView.isActive`.
     let isActive: Bool
     /// Owned by `BudgetDetailView` (see `TransactionReviewListView`'s doc
-    /// comment) — read here (and passed into `FixedExpensesListView`) to
-    /// filter confirmed-review matches out of the Variable list and show a
-    /// pending-match hint, mirroring web's `TransactionsPanel.tsx`.
+    /// comment) — read here to filter confirmed-review matches out of the
+    /// Variable rows and show a pending-match hint/linked sub-row, mirroring
+    /// web's `TransactionsPanel.tsx`.
     var reviewViewModel: TransactionReviewViewModel? = nil
     let canEdit: Bool
     /// True when viewing an archived (past) period — see
     /// docs/features/budget-list-view-rework.md. Editing a Variable row's
     /// category stays reachable via `canEdit` alone (see
     /// `AddEditTransactionViewModel`'s `isLocked`); `canMutate` additionally
-    /// requires the period not be archived, gating delete/exclude
-    /// specifically (flag-for-review is left ungated by this, matching the
-    /// backend, which doesn't restrict it).
+    /// requires the period not be archived, gating delete/exclude/mark-paid
+    /// specifically.
     var isArchivedPeriod: Bool = false
     let searchQuery: String
 
@@ -78,60 +83,34 @@ struct TransactionsListView: View {
     @State private var viewModel: TransactionsViewModel?
     @State private var unsplitTarget: Wellspent_V1_Transaction?
 
-    // MARK: Swipe-action toasts (issue #92) — Variable only now. Payments
-    // (`PaymentsListView`) owns its own since the Overview/Plan nav rework.
+    // MARK: Swipe-action toasts (issue #92)
 
     @State private var toastState = ToastState()
     /// Optimistically hidden while a swipe-delete's undo window is open —
-    /// the actual `viewModel.delete(id:)` call only fires once `toastState`'s
-    /// toast expires without being undone.
+    /// the actual delete call only fires once `toastState`'s toast expires
+    /// without being undone.
     @State private var pendingDeleteIDs: Set<String> = []
-    @State private var variableQuickFilter: VariableQuickFilter = .all
     /// Real, server-backed filters (`docs/features/transactions-filter-for-spent.md`)
-    /// — independent toggle chips in the quick-filter row (issue #92
-    /// follow-up), not part of the `VariableQuickFilter` radio group, so a
-    /// user can combine e.g. Money Out with Exceeded only at once. The
-    /// standalone Filter sheet they used to live in is gone — it had nothing
-    /// else in it. Reuses `TransactionFilterOption`'s existing
-    /// `.exceededOnly`/`.excludedOnly` labels rather than duplicating the
-    /// catalog keys.
+    /// — independent toggle chips in the quick-filter row, so a user can
+    /// combine e.g. Money Out with Exceeded only at once. Apply to both
+    /// Fixed and Variable rows (type-agnostic) — see
+    /// `MergedTransactionGrouping.applyFilters`'s doc comment for why the
+    /// quick-filter radio below does not.
     @State private var variableExceededOnly = false
     @State private var variableExcludedOnly = false
+    /// All/Money Out/Money In/Needs review — a Variable-only concept
+    /// (received/spent sign-flip, pending Plaid match). A Fixed row always
+    /// passes this one regardless of which option is active; see
+    /// `MergedTransactionGrouping.passesVariableOnlyFilter`.
+    @State private var variableQuickFilter: VariableQuickFilter = .all
     @State private var activeSheet: ActiveSheet?
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("Type", selection: $selectedKind) {
-                Text("Variable").tag(TransactionKind.variable)
-                Text("Fixed").tag(TransactionKind.fixed)
-            }
-            .pickerStyle(.segmented)
-            .padding([.horizontal, .top])
-            .accessibilityIdentifier("transactionKindPicker")
-
-            switch selectedKind {
-            case .variable:
-                Group {
-                    if let viewModel {
-                        content(viewModel: viewModel)
-                    } else {
-                        ProgressView()
-                    }
-                }
-            case .fixed:
-                FixedExpensesListView(
-                    budgetPeriodID: budgetPeriodID,
-                    budgetProfileID: budgetProfileID,
-                    authenticatedRESTClient: authenticatedRESTClient,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier,
-                    isAddSheetPresented: $isAddFixedExpensePresented,
-                    isActive: isActive && selectedKind == .fixed,
-                    reviewViewModel: reviewViewModel,
-                    canEdit: canEdit,
-                    isArchivedPeriod: isArchivedPeriod,
-                    searchQuery: searchQuery
-                )
+        Group {
+            if let viewModel {
+                content(viewModel: viewModel)
+            } else {
+                ProgressView()
             }
         }
         .navigationTitle("Transactions")
@@ -170,9 +149,27 @@ struct TransactionsListView: View {
     private func content(viewModel: TransactionsViewModel) -> some View {
         let reviews = reviewViewModel?.reviews ?? []
         let confirmedFiltered = viewModel.visibleTransactions(reviews: reviews)
+            .filter { !pendingDeleteIDs.contains($0.id) }
         let hasPendingMatch: (Wellspent_V1_Transaction) -> Bool = { viewModel.pendingMatchName(for: $0, reviews: reviews) != nil }
-        let visibleTransactions = VariableQuickFiltering.apply(
-            confirmedFiltered.filter { !pendingDeleteIDs.contains($0.id) },
+        let fixedTypeID = FixedExpensesViewModel.fixedTypeID
+
+        // Unpaid Fixed floats to the top, always shown (search aside — see
+        // below) regardless of the quick-filter chips: it's the thing a user
+        // most needs to see, and filtering it away by a Variable-only concept
+        // would defeat that. Everything else is subject to the full filter
+        // chain before being day-grouped.
+        let partition = MergedTransactionGrouping.partition(confirmedFiltered, fixedTypeID: fixedTypeID)
+        let searchedUnpaidFixed = partition.unpaidFixed.filter {
+            TransactionFiltering.matchesSearch(
+                name: $0.name,
+                categoryName: viewModel.categoryName(for: $0.categoryID),
+                ownerName: viewModel.ownerName(for: $0.paymentMethodID),
+                query: searchQuery
+            )
+        }
+        let filteredRest = MergedTransactionGrouping.applyFilters(
+            partition.rest,
+            fixedTypeID: fixedTypeID,
             filter: variableQuickFilter,
             exceededOnly: variableExceededOnly,
             excludedOnly: variableExcludedOnly,
@@ -183,8 +180,15 @@ struct TransactionsListView: View {
             ownerName: viewModel.ownerName,
             hasPendingMatch: hasPendingMatch
         )
-        let dayGroups = TransactionDayGrouping.group(visibleTransactions)
-        let needsReviewCount = VariableQuickFiltering.needsReviewCount(confirmedFiltered, categoryName: viewModel.categoryName, hasPendingMatch: hasPendingMatch)
+        let dayGroups = TransactionDayGrouping.group(filteredRest)
+        // "Needs review" only means something for Variable rows (a Fixed row
+        // has no category-missing or pending-match concept of its own) — the
+        // chip's badge count is scoped to those.
+        let needsReviewCount = VariableQuickFiltering.needsReviewCount(
+            confirmedFiltered.filter { $0.transactionTypeID != fixedTypeID },
+            categoryName: viewModel.categoryName,
+            hasPendingMatch: hasPendingMatch
+        )
 
         List {
             Section {
@@ -197,23 +201,28 @@ struct TransactionsListView: View {
 
             if viewModel.transactions.isEmpty && viewModel.isLoading {
                 ProgressView()
-            } else if visibleTransactions.isEmpty {
+            } else if searchedUnpaidFixed.isEmpty && dayGroups.isEmpty {
                 Text("No transactions yet.")
                     .foregroundStyle(.secondary)
             } else {
+                if !searchedUnpaidFixed.isEmpty {
+                    Section {
+                        ForEach(searchedUnpaidFixed, id: \.id) { transaction in
+                            fixedRow(transaction, viewModel: viewModel, reviews: reviews)
+                        }
+                    } header: {
+                        Text("Unpaid")
+                    }
+                }
+
                 ForEach(dayGroups) { group in
                     Section {
                         ForEach(group.transactions, id: \.id) { transaction in
-                            transactionRow(transaction, viewModel: viewModel, reviews: reviews)
-                                // Edit lives on a leading (swipe-right) action now,
-                                // not a row tap — frees the row itself for a plain
-                                // tap gesture (e.g. an expand affordance) later.
-                                .swipeActions(edge: .leading) {
-                                    leadingSwipeActions(for: transaction)
-                                }
-                                .swipeActions(edge: .trailing) {
-                                    trailingSwipeActions(for: transaction, viewModel: viewModel)
-                                }
+                            if transaction.transactionTypeID == fixedTypeID {
+                                fixedRow(transaction, viewModel: viewModel, reviews: reviews)
+                            } else {
+                                variableRow(transaction, viewModel: viewModel, reviews: reviews)
+                            }
                         }
                     } header: {
                         Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
@@ -241,6 +250,17 @@ struct TransactionsListView: View {
                 viewModel.addTransaction(transaction)
             }
         }
+        .sheet(isPresented: $isAddFixedExpensePresented) {
+            AddFixedExpenseView(
+                budgetProfileID: budgetProfileID,
+                currencyCode: currencyCode,
+                categories: viewModel.categories,
+                paymentMethods: viewModel.paymentMethods,
+                restClient: authenticatedRESTClient
+            ) { expense, transaction in
+                viewModel.addFromCreate(expense: expense, transaction: transaction)
+            }
+        }
         .confirmationDialog(
             "Undo installment split",
             isPresented: Binding(
@@ -262,7 +282,7 @@ struct TransactionsListView: View {
         }
     }
 
-    /// Backs this tab's own `.sheet(item: $activeSheet)`.
+    /// Backs this list's own `.sheet(item: $activeSheet)`.
     @ViewBuilder
     private func sheetContent(for sheet: ActiveSheet, viewModel: TransactionsViewModel) -> some View {
         switch sheet {
@@ -313,14 +333,41 @@ struct TransactionsListView: View {
 
         case .recategorize(let transaction):
             recategorizeSheet(for: transaction, viewModel: viewModel)
+
+        case .markPaid(let transaction):
+            MarkAsPaidView(transaction: transaction, currencyCode: currencyCode) { amount, date in
+                Task {
+                    await viewModel.markPaid(transaction, paidAmount: amount, paidAt: date)
+                    Self.logger.info("marked paid transactionID=\(transaction.id, privacy: .public)")
+                    let message = String(localized: "Marked as paid", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+                    toastState.show(message, onUndo: {
+                        Task {
+                            await viewModel.unmark(transaction)
+                            await reviewViewModel?.load()
+                        }
+                    })
+                }
+            }
+
+        case .matchTransactions(let transaction):
+            MatchTransactionsSheet(
+                matchedTransaction: transaction,
+                budgetPeriodID: budgetPeriodID,
+                budgetProfileID: budgetProfileID,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                authenticatedRESTClient: authenticatedRESTClient
+            ) {
+                Task { await reviewViewModel?.load() }
+            }
         }
     }
 
     /// "Spent this period" card above the quick-filter chips (issue #92) —
-    /// reuses the server-computed totals `TransactionsViewModel` already
-    /// carries (`totalText`/`spentProgress`/`remainingSummaryText`); no new
-    /// arithmetic lives in this view. Its own "+" was folded into
-    /// `BudgetDetailView`'s shared toolbar add button.
+    /// now covers both Fixed and Variable, since this is the merged list
+    /// (Stage 2). Reuses the server-computed totals `TransactionsViewModel`
+    /// already carries (`totalText`/`spentProgress`/`remainingSummaryText`);
+    /// no new arithmetic lives in this view.
     private func summaryCard(viewModel: TransactionsViewModel) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Spent this period")
@@ -390,7 +437,8 @@ struct TransactionsListView: View {
     /// #92 follow-up), visually identical to the `VariableQuickFilter`
     /// chips above but not part of that radio group: tapping one just
     /// flips its own boolean, so it can combine freely with whichever quick
-    /// filter is active.
+    /// filter is active. Apply to Fixed rows too — see
+    /// `MergedTransactionGrouping.applyFilters`.
     private func quickFilterToggleChip(label: String, isOn: Binding<Bool>, identifier: String) -> some View {
         Button {
             isOn.wrappedValue.toggle()
@@ -405,6 +453,8 @@ struct TransactionsListView: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
     }
+
+    // MARK: Variable row
 
     @ViewBuilder
     private func leadingSwipeActions(for transaction: Wellspent_V1_Transaction) -> some View {
@@ -526,11 +576,11 @@ struct TransactionsListView: View {
         .presentationDetents([.medium, .large])
     }
 
-    /// Row content for the Variable tab. Every action that used to be an
-    /// inline trailing button (flag/split/create-fixed/exclude) now lives in
+    /// Row content for a Variable transaction. Every action that used to be
+    /// an inline trailing button (flag/split/create-fixed/exclude) lives in
     /// `leadingSwipeActions`/`trailingSwipeActions` instead (issue #92) — the
     /// only tap target left on the row itself is the category chip.
-    private func transactionRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
+    private func variableRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
         let isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
         let pendingMatchName = viewModel.pendingMatchName(for: transaction, reviews: reviews)
 
@@ -590,6 +640,12 @@ struct TransactionsListView: View {
             ))
             .foregroundStyle(isReceived ? .green : .red)
         }
+        .swipeActions(edge: .leading) {
+            leadingSwipeActions(for: transaction)
+        }
+        .swipeActions(edge: .trailing) {
+            trailingSwipeActions(for: transaction, viewModel: viewModel)
+        }
     }
 
     /// Tap-to-recategorize chip (issue #92) — reads "Categorize", dashed
@@ -625,6 +681,130 @@ struct TransactionsListView: View {
         .disabled(!canEdit)
         .accessibilityIdentifier("recategorizeTransaction_\(transaction.name)")
     }
+
+    // MARK: Fixed row
+
+    /// A Fixed row's occurrence-only actions: Mark Paid/Unmark (leading),
+    /// Match Transactions/Exclude/Delete-this-occurrence (trailing). There is
+    /// deliberately no "Edit" action here — editing the underlying recurring
+    /// template is Stage 3's job (moving to Plan alongside Fixed-template
+    /// management), not this merged list's. `FixedExpensesViewModel`/
+    /// `EditFixedExpenseView` stay intact, just unreachable from here.
+    private func fixedRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
+        FixedExpenseRow(
+            transaction: transaction,
+            viewModel: viewModel,
+            linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviews),
+            currencyCode: currencyCode,
+            localeIdentifier: localeIdentifier,
+            canMutate: canMutate,
+            autoUpdatePlannedAmount: viewModel.autoUpdatePlannedAmount
+        )
+        .swipeActions(edge: .leading) {
+            fixedLeadingSwipeActions(for: transaction, viewModel: viewModel)
+        }
+        .swipeActions(edge: .trailing) {
+            fixedTrailingSwipeActions(for: transaction, viewModel: viewModel)
+        }
+    }
+
+    @ViewBuilder
+    private func fixedLeadingSwipeActions(for transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
+        if canMutate {
+            if transaction.isPaid {
+                // No mockup analog for an "unmark" action — deliberately not
+                // toast+Undo'd: the only real "undo" of an unmark is
+                // re-entering the paid amount/date in `MarkAsPaidView`, which
+                // a toast button can't supply.
+                Button {
+                    Self.logger.info("unmark paid tapped transactionID=\(transaction.id, privacy: .public)")
+                    Task {
+                        await viewModel.unmark(transaction)
+                        await reviewViewModel?.load()
+                    }
+                } label: {
+                    Label("Unmark as Paid", systemImage: "xmark.circle")
+                }
+                .tint(.gray)
+                .accessibilityIdentifier("unmarkPaid_\(transaction.name)")
+            } else {
+                Button {
+                    activeSheet = .markPaid(transaction)
+                } label: {
+                    Label("Mark as Paid", systemImage: "checkmark.circle")
+                }
+                .tint(.green)
+                .accessibilityIdentifier("markPaid_\(transaction.name)")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func fixedTrailingSwipeActions(for transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
+        if canMutate && !transaction.isPaid {
+            Button {
+                activeSheet = .matchTransactions(transaction)
+            } label: {
+                Label("Match Transactions", systemImage: "link.badge.plus")
+            }
+            .tint(.indigo)
+            .accessibilityIdentifier("matchTransactions_\(transaction.name)")
+        }
+
+        if canMutate {
+            Button {
+                requestToggleExcludedFixed(transaction, viewModel: viewModel)
+            } label: {
+                Label(transaction.isExcluded ? "Include" : "Exclude", systemImage: transaction.isExcluded ? "eye" : "eye.slash")
+            }
+            .tint(.gray)
+            .accessibilityIdentifier("excludeFixedExpense_\(transaction.name)")
+
+            Button(role: .destructive) {
+                requestDeleteFixed(transaction, viewModel: viewModel)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .accessibilityIdentifier("deleteTransaction_\(transaction.name)")
+        }
+    }
+
+    /// Mirrors `requestDelete` above, calling the Fixed-row deactivate-the-
+    /// template delete instead of the plain Variable one.
+    private func requestDeleteFixed(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) {
+        pendingDeleteIDs.insert(transaction.id)
+        Self.logger.info("staged delete transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+        let message = String(localized: "Transaction deleted", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        let id = transaction.id
+        toastState.show(
+            message,
+            onUndo: { pendingDeleteIDs.remove(id) },
+            onExpire: { Task { await viewModel.delete(transaction) } }
+        )
+    }
+
+    /// Mirrors `TransactionsListView`'s former `requestToggleExcluded` for
+    /// Fixed rows — re-reads the now-updated row for the undo closure rather
+    /// than reusing the stale snapshot, which would otherwise re-apply the
+    /// same flip instead of reversing it.
+    private func requestToggleExcludedFixed(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) {
+        let id = transaction.id
+        Task {
+            await viewModel.toggleExcluded(transaction)
+            guard let updated = viewModel.transactions.first(where: { $0.id == id }) else { return }
+            Self.logger.info("toggled excluded transactionID=\(id, privacy: .public) isExcluded=\(updated.isExcluded, privacy: .public)")
+            let message = updated.isExcluded
+                ? String(localized: "Transaction excluded", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+                : String(localized: "Transaction included", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+            toastState.show(message, onUndo: {
+                Task {
+                    if let current = viewModel.transactions.first(where: { $0.id == id }) {
+                        await viewModel.toggleExcluded(current)
+                    }
+                }
+            })
+        }
+    }
 }
 
 #Preview {
@@ -635,7 +815,6 @@ struct TransactionsListView: View {
             authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
-            selectedKind: .constant(.variable),
             isAddTransactionPresented: .constant(false),
             isAddFixedExpensePresented: .constant(false),
             isActive: true,

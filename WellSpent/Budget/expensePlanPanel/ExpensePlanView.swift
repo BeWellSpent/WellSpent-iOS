@@ -19,7 +19,7 @@ struct ExpensePlanView: View {
     @State private var viewModel: ExpensePlanViewModel?
     @State private var allocatingCategory: Wellspent_V1_Category?
     /// Defaults to pie, matching web's `ExpensesPanel.tsx` (Overview's chart
-    /// defaults to bar instead — see `ExpenseOverviewListView`).
+    /// defaults to bar instead — see `ExpenseOverviewChartListView`).
     /// nil until the person's saved preference has loaded, so the chart isn't
     /// drawn as a pie and then snapped to a bar a moment later. Set from the
     /// toggle too, which overrides the saved default for this visit only —

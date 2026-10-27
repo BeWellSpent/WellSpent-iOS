@@ -70,7 +70,10 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         app.tabBars.buttons["Overview"].tap()
         app.buttons["Transactions"].tap()
 
+        // "+" is now a Menu (Stage 2 merged Variable+Fixed into one list,
+        // so there's no sub-picker left to say which kind "+" means).
         app.buttons["addTransactionButton"].tap()
+        app.buttons["addVariableTransactionMenuItem"].tap()
 
         let categoryPicker = app.buttons["transactionCategoryPicker"]
         XCTAssertTrue(categoryPicker.waitForExistence(timeout: 5))

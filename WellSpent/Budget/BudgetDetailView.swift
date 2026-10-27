@@ -27,14 +27,14 @@ import WellSpentREST
 /// isolation, but those never render in the real, nested app).
 struct BudgetDetailView: View {
     /// Sub-destination within the Overview section — "what actually
-    /// happened." Owned here, not a `Shared/` enum, same reason
-    /// `transactionsSelectedKind` is: it drives which toolbar content shows
-    /// at the one level that actually renders it (see the type-level doc
-    /// comment above). `.overview` is the landing content itself (today's
-    /// Expense Overview chart/actual-breakdown); `.transactions`/`.payments`/
-    /// `.review` are the three sub-tabs beneath it.
+    /// happened." Owned here, not a `Shared/` enum: it drives which toolbar
+    /// content shows at the one level that actually renders it (see the
+    /// type-level doc comment above). Three segments, not four — the chart/
+    /// totals content (formerly its own `.overview` segment, replacing the
+    /// whole screen when picked) is now always-rendered chrome around this
+    /// picker instead of one of its options; see `overviewContent` and
+    /// docs/features/overview-plan-navigation-rework.md's layout correction.
     private enum OverviewSubTab: Hashable, CaseIterable {
-        case overview
         case transactions
         case payments
         case review
@@ -42,7 +42,6 @@ struct BudgetDetailView: View {
         var title: String {
             let locale = AppLanguageStore.currentLocale
             switch self {
-            case .overview: return String(localized: "Overview", bundle: AppLanguageStore.currentBundle, locale: locale)
             case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
             case .payments: return String(localized: "Payments", bundle: AppLanguageStore.currentBundle, locale: locale)
             case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
@@ -63,9 +62,14 @@ struct BudgetDetailView: View {
     @State private var selectedSection: BudgetSection = .overview
     @State private var notificationViewModel: NotificationBellViewModel?
     @State private var reviewViewModel: TransactionReviewViewModel?
+    /// Backs the always-visible totals block and chart/category breakdown —
+    /// see `overviewContent`. Owned here (not by either of those two views)
+    /// so they can share one loaded instance and one `.task` lifecycle,
+    /// the same reasoning `reviewViewModel`/`notificationViewModel` already
+    /// use one level up.
+    @State private var overviewViewModel: ExpenseOverviewViewModel?
 
-    @State private var overviewSelectedSubTab: OverviewSubTab = .overview
-    @State private var transactionsSelectedKind: TransactionsListView.TransactionKind = .variable
+    @State private var overviewSelectedSubTab: OverviewSubTab = .transactions
     @State private var transactionsSearchQuery = ""
     /// Search starts hidden (issue #92 follow-up) — revealed by the toolbar's
     /// search icon (see `toolbarContent`'s `.overview` case) rather than
@@ -322,12 +326,36 @@ struct BudgetDetailView: View {
                 }
                 if viewModel?.canEdit == true && viewModel?.isArchivedPeriod != true {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            startAddingTransactionForCurrentTab()
-                        } label: {
-                            Image(systemName: "plus")
+                        // Transactions merged Variable+Fixed into one list
+                        // (Stage 2) with no sub-picker of its own to say which
+                        // kind "+" means any more, so it offers both; Payments
+                        // only ever adds a Variable (card-payment) row.
+                        if overviewSelectedSubTab == .transactions {
+                            Menu {
+                                Button {
+                                    startAddingTransaction { isAddTransactionPresented = true }
+                                } label: {
+                                    Label("Transaction", systemImage: "cart")
+                                }
+                                .accessibilityIdentifier("addVariableTransactionMenuItem")
+                                Button {
+                                    startAddingTransaction { isAddFixedExpensePresented = true }
+                                } label: {
+                                    Label("Fixed expense", systemImage: "calendar")
+                                }
+                                .accessibilityIdentifier("addFixedExpenseMenuItem")
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityIdentifier("addTransactionButton")
+                        } else {
+                            Button {
+                                startAddingTransaction { isAddTransactionPresented = true }
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityIdentifier("addTransactionButton")
                         }
-                        .accessibilityIdentifier("addTransactionButton")
                     }
                 }
             }
@@ -427,13 +455,27 @@ struct BudgetDetailView: View {
         }
     }
 
-    /// Overview's own container: the chart/actual-breakdown landing content
-    /// plus a sub-tab picker switching to Transactions/Payments/Review.
+    /// Overview's own container. Layout corrected from Stage 1: the chart/
+    /// actual-breakdown content used to be one of the sub-tab picker's own
+    /// segments (replacing the whole screen when picked); it's now always
+    /// rendered, split into a totals block pinned at the top and the chart +
+    /// category list pushed to the bottom, with the 3-way Transactions/
+    /// Payments/Review picker switching only the content in between. See
+    /// docs/features/overview-plan-navigation-rework.md's layout correction.
     @ViewBuilder
     private func overviewContent(viewModel: BudgetDetailViewModel) -> some View {
         VStack(spacing: 0) {
+            if let overviewViewModel {
+                ExpenseOverviewTotalsView(
+                    viewModel: overviewViewModel,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                )
+            }
+
+            Divider()
+
             Picker("View", selection: $overviewSelectedSubTab) {
-                Text(OverviewSubTab.overview.title).tag(OverviewSubTab.overview)
                 Text(OverviewSubTab.transactions.title).tag(OverviewSubTab.transactions)
                 Text(OverviewSubTab.payments.title).tag(OverviewSubTab.payments)
                 Text(reviewSubTabLabel).tag(OverviewSubTab.review)
@@ -446,17 +488,63 @@ struct BudgetDetailView: View {
                 transactionsSearchField
             }
 
-            switch overviewSelectedSubTab {
-            case .overview:
-                overviewLandingContent(viewModel: viewModel)
-            case .transactions:
-                transactionsSubTabContent(viewModel: viewModel)
-            case .payments:
-                paymentsSubTabContent(viewModel: viewModel)
-            case .review:
-                reviewContent(viewModel: viewModel)
+            Group {
+                switch overviewSelectedSubTab {
+                case .transactions:
+                    transactionsSubTabContent(viewModel: viewModel)
+                case .payments:
+                    paymentsSubTabContent(viewModel: viewModel)
+                case .review:
+                    reviewContent(viewModel: viewModel)
+                }
+            }
+            .frame(maxHeight: .infinity)
+
+            if let overviewViewModel {
+                Divider()
+                ExpenseOverviewChartListView(
+                    viewModel: overviewViewModel,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                )
+                // Deliberately a fixed, independently-scrolling panel rather
+                // than one unbroken native scroll with everything above it:
+                // the Transactions/Payments/Review sub-tab content is its own
+                // `List` with `.swipeActions` (Variable/Fixed row actions),
+                // which only works as a genuine `List`, not content embedded
+                // in a shared outer `ScrollView`. Splitting the chart/
+                // category list into its own `List` below, sized to a fixed
+                // height so it's always on screen without scrolling the
+                // whole page to reach it, is the tradeoff that keeps both
+                // "always visible" and every existing swipe action intact.
+                .frame(height: 320)
+            } else if authenticatedRESTClient != nil {
+                ProgressView()
             }
         }
+        .task(id: overviewLoadKey(viewModel: viewModel)) {
+            guard let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty else { return }
+            let model = ExpenseOverviewViewModel(
+                budgetPeriodID: period.id,
+                budgetProfileID: viewModel.profile.id,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                currentUserID: session.userID,
+                restClient: authenticatedRESTClient
+            )
+            overviewViewModel = model
+            await model.load()
+        }
+    }
+
+    /// Re-fetches on a period switch or a Focused View toggle — same keys
+    /// `planContent`/`transactionsSubTabContent` force a remount on, applied
+    /// here via `.task(id:)` instead: cancels and reruns the load whenever
+    /// this changes, which both recreates `overviewViewModel` for the new
+    /// period and avoids needing a full subtree remount just to get a fresh
+    /// `.task`.
+    private func overviewLoadKey(viewModel: BudgetDetailViewModel) -> String {
+        "\(viewModel.currentPeriod?.id ?? "")|\(focusedViewToken)"
     }
 
     /// In-content indicator for the Review sub-tab, since it no longer has
@@ -470,23 +558,6 @@ struct BudgetDetailView: View {
     }
 
     @ViewBuilder
-    private func overviewLandingContent(viewModel: BudgetDetailViewModel) -> some View {
-        if let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
-            ExpenseOverviewListView(
-                budgetPeriodID: period.id,
-                budgetProfileID: viewModel.profile.id,
-                authenticatedRESTClient: authenticatedRESTClient,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier
-            )
-            // Same reason as planContent's — see there.
-            .id("\(period.id)|\(focusedViewToken)")
-        } else {
-            ProgressView()
-        }
-    }
-
-    @ViewBuilder
     private func transactionsSubTabContent(viewModel: BudgetDetailViewModel) -> some View {
         if let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
             TransactionsListView(
@@ -495,7 +566,6 @@ struct BudgetDetailView: View {
                 authenticatedRESTClient: authenticatedRESTClient,
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
-                selectedKind: $transactionsSelectedKind,
                 isAddTransactionPresented: $isAddTransactionPresented,
                 isAddFixedExpensePresented: $isAddFixedExpensePresented,
                 isActive: selectedSection == .overview && overviewSelectedSubTab == .transactions,
@@ -563,27 +633,6 @@ struct BudgetDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .padding(.horizontal)
         .padding(.top, 8)
-    }
-
-    /// One shared add entry point for the Transactions/Payments sub-tabs
-    /// (issue #92 follow-up) — dispatches to whichever sheet the current
-    /// sub-tab needs; the payment-method-required gate is unchanged. A no-op
-    /// on the Overview landing content or the Review sub-tab, where the "+"
-    /// isn't shown in the first place (see `toolbarContent`).
-    private func startAddingTransactionForCurrentTab() {
-        switch overviewSelectedSubTab {
-        case .payments:
-            startAddingTransaction { isAddTransactionPresented = true }
-        case .transactions:
-            switch transactionsSelectedKind {
-            case .fixed:
-                startAddingTransaction { isAddFixedExpensePresented = true }
-            case .variable:
-                startAddingTransaction { isAddTransactionPresented = true }
-            }
-        case .overview, .review:
-            break
-        }
     }
 
     private func reviewContent(viewModel: BudgetDetailViewModel) -> some View {

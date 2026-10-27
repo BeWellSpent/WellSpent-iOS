@@ -8,10 +8,9 @@ import os
 /// Overview/Plan nav rework, docs/features/overview-plan-navigation-rework.md,
 /// then carved this whole tab out of `TransactionsListView` into its own
 /// sibling sub-tab under the new Overview destination, alongside Transactions
-/// and Review). Owns its own `TransactionsViewModel` instance — same
-/// independent-per-leaf-view pattern `FixedExpensesListView` already uses
-/// relative to the Variable tab, rather than sharing one instance across
-/// sibling files.
+/// and Review). Owns its own `TransactionsViewModel` instance, independent
+/// of the merged Variable+Fixed `TransactionsListView`'s own instance,
+/// rather than sharing one across sibling files.
 struct PaymentsListView: View {
     private static let logger = AppLogger.logger("Payments")
 

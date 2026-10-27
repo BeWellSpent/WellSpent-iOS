@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import WellSpentAPI
 
 /// Which fixed-expense templates are upcoming rather than due this period.
@@ -51,5 +52,75 @@ nonisolated enum UpcomingFixedExpenses {
             expense.hasNextDueDate ? expense.nextDueDate : nil,
             localeIdentifier: localeIdentifier
         )
+    }
+}
+
+/// A fixed-expense template that isn't due in this period yet.
+///
+/// Tapping it edits the template and swiping deletes it, matching web — there
+/// is no spawned transaction, so both act on the template directly. Mark-paid
+/// is still absent: there is nothing to pay yet. Muted so an upcoming bill
+/// can't be mistaken for something already owed.
+///
+/// Extracted out of `FixedExpensesListView` when Stage 2 of
+/// docs/features/overview-plan-navigation-rework.md merged that screen's
+/// Unpaid/Paid sections into the Transactions list. The Future section this
+/// row belongs to is explicitly out of scope for Stage 2 — nothing has
+/// happened yet for a Future row, so it moves to Plan in Stage 3 alongside
+/// Fixed-template management. Co-located here (not deleted) so that stage
+/// can reuse it directly; currently unreferenced from any view.
+struct UpcomingFixedExpenseRow: View {
+    let expense: Wellspent_V1_FixedExpense
+    let viewModel: FixedExpensesViewModel
+    let currencyCode: String
+    let localeIdentifier: String
+    let canEdit: Bool
+    let onEdit: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Group {
+                    if canEdit {
+                        Button(action: onEdit) {
+                            Text(expense.name)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Text(expense.name)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Text(MoneyFormatting.format(
+                    units: expense.plannedAmount.units,
+                    nanos: expense.plannedAmount.nanos,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                ))
+                .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 4) {
+                let nextDue = UpcomingFixedExpenses.nextDueText(for: expense, localeIdentifier: localeIdentifier)
+                if !nextDue.isEmpty {
+                    Text("Due \(nextDue)")
+                        .accessibilityIdentifier("upcomingFixedExpenseDue_\(expense.name)")
+                }
+                if let categoryName = viewModel.categoryName(for: expense.categoryID) {
+                    if !nextDue.isEmpty { Text("·") }
+                    ColorDotView(hex: viewModel.categoryColor(for: expense.categoryID), diameter: 8)
+                    Text(categoryName)
+                }
+                if let methodName = viewModel.paymentMethodName(for: expense.paymentMethodID) {
+                    Text("·")
+                    Text(methodName)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .accessibilityIdentifier("upcomingFixedExpenseRow_\(expense.name)")
     }
 }

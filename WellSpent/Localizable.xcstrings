@@ -3422,6 +3422,23 @@
         }
       }
     },
+    "Fixed expense" : {
+      "comment" : "Add-menu item: adds a Fixed expense template, alongside \"Transaction\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fixed expense"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gasto fijo"
+          }
+        }
+      }
+    },
     "Fixed expenses" : {
       "localizations" : {
         "en" : {
@@ -7231,6 +7248,23 @@
         }
       }
     },
+    "Transaction" : {
+      "comment" : "Add-menu item: adds a Variable transaction, alongside \"Fixed expense\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transacción"
+          }
+        }
+      }
+    },
     "Transaction included" : {
       "localizations" : {
         "en" : {
@@ -7435,6 +7469,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marcar como no pagado"
+          }
+        }
+      }
+    },
+    "Unpaid" : {
+      "comment" : "Section header for unpaid fixed bills floated to the top of the merged Transactions list.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unpaid"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin pagar"
           }
         }
       }
