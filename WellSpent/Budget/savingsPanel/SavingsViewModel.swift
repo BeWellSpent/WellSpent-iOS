@@ -29,7 +29,11 @@ final class SavingsViewModel {
     }
 
     var totalText: String {
-        TransactionAmountFormatting.totalDisplayText(
+        // `magnitudeDisplayText`, not `totalDisplayText` — a savings amount
+        // is never signed, and `totalDisplayText`'s Spent/Received "+"/"-"
+        // convention defaults to "-" for anything non-negative, which is
+        // every SavingsSource.amount there is.
+        TransactionAmountFormatting.magnitudeDisplayText(
             amounts: visibleSources.map { (units: $0.amount.units, nanos: $0.amount.nanos) },
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier

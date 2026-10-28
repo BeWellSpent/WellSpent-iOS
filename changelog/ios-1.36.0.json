@@ -296,6 +296,21 @@
       "changeType": "fixed",
       "summaryEn": "A fixed bill paid at a different amount now keeps showing its planned amount on the row, with the \"!\" marker pointing out the difference, instead of switching to the new amount right away.",
       "summaryEs": "Una factura fija pagada por un monto distinto ahora sigue mostrando su monto planeado en la fila, con el marcador \"!\" señalando la diferencia, en lugar de cambiar al nuevo monto de inmediato."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Savings no longer counts toward your spending totals in Transactions or Overview — it's an optimistic allocation, not an expense. The Transactions tab now shows your expected savings alongside what you've actually spent, and Overview shows both the expense-only and with-savings figures for planned and actual.",
+      "summaryEs": "Los ahorros ya no cuentan hacia tus totales de gasto en Transacciones o Resumen: son una asignación optimista, no un gasto. La pestaña de Transacciones ahora muestra tus ahorros esperados junto a lo que realmente gastaste, y Resumen muestra tanto las cifras solo de gastos como las que incluyen ahorros, para lo planeado y lo real."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Transactions now also shows how much you've actually saved/invested this period, next to your expected savings.",
+      "summaryEs": "Transacciones ahora también muestra cuánto has ahorrado o invertido realmente en este período, junto a tu ahorro esperado."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "The Savings total in budget management no longer shows a minus sign in front of it.",
+      "summaryEs": "El total de Ahorros en la administración del presupuesto ya no muestra un signo menos delante."
     }
   ]
 }
