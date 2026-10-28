@@ -306,6 +306,11 @@
       "changeType": "added",
       "summaryEn": "Transactions now also shows how much you've actually saved/invested this period, next to your expected savings.",
       "summaryEs": "Transacciones ahora también muestra cuánto has ahorrado o invertido realmente en este período, junto a tu ahorro esperado."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "The Savings total in budget management no longer shows a minus sign in front of it.",
+      "summaryEs": "El total de Ahorros en la administración del presupuesto ya no muestra un signo menos delante."
     }
   ]
 }
