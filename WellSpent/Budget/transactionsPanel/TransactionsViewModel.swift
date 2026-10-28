@@ -48,6 +48,9 @@ final class TransactionsViewModel {
     let currentUserID: String?
 
     private let restClient: WellSpentREST.Client
+    /// Lets the Overview sub-tab's own summary/chart stay in sync with a
+    /// mutation made here, since it's a separate `ExpenseOverviewViewModel`.
+    private let onDataChanged: (() -> Void)?
 
     /// Which transactions crossed their category's plan — server-computed.
     ///
@@ -106,13 +109,14 @@ final class TransactionsViewModel {
         return String(localized: "\(remainingText) left of \(plannedText) planned", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client, onDataChanged: (() -> Void)? = nil) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
         self.restClient = restClient
+        self.onDataChanged = onDataChanged
     }
 
     func load() async {
@@ -345,6 +349,7 @@ final class TransactionsViewModel {
                 return
             }
             await load()
+            onDataChanged?()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
@@ -366,6 +371,7 @@ final class TransactionsViewModel {
         editViewModel.categoryID = categoryID
         if let updated = await editViewModel.submit() {
             replaceTransaction(updated)
+            onDataChanged?()
         } else {
             errorMessage = editViewModel.errorMessage ?? "Couldn't update that transaction."
         }
@@ -477,28 +483,13 @@ final class TransactionsViewModel {
         if let fetched = await fetchSummary(focusedView: focusedView) {
             summary = fetched
         }
+        onDataChanged?()
     }
 
-    /// Deactivates the linked template; falls back to a plain delete if it's already gone.
+    /// This occurrence only — never the recurring template (that's Plan's job).
     func delete(_ transaction: Wellspent_V1_Transaction) async {
-        guard !transaction.fixedExpenseID.isEmpty else {
-            Self.logger.info("deleting orphaned fixed transactionID=\(transaction.id, privacy: .public) (no linked template)")
-            await delete(id: transaction.id)
-            return
-        }
-        errorMessage = nil
-        let fallback = String(localized: "Couldn't delete that fixed expense.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
-        do {
-            guard case .ok = try await restClient.deleteFixedExpense(.init(path: .init(id: budgetProfileID, feId: transaction.fixedExpenseID))) else {
-                errorMessage = fallback
-                return
-            }
-            fixedExpenses.removeAll { $0.id == transaction.fixedExpenseID }
-            transactions.removeAll { $0.id == transaction.id }
-            await refreshSummary()
-        } catch {
-            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
-        }
+        Self.logger.info("deleting fixed transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+        await delete(id: transaction.id)
     }
 
     private func setPaidOffEarly(_ paidOffEarly: Bool, for transactionID: String) {

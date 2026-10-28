@@ -76,6 +76,8 @@ struct TransactionsListView: View {
     /// specifically.
     var isArchivedPeriod: Bool = false
     let searchQuery: String
+    /// See `TransactionsViewModel.onDataChanged`.
+    var onDataChanged: () -> Void = {}
 
     private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
@@ -124,7 +126,8 @@ struct TransactionsListView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     currentUserID: session.userID,
-                    restClient: authenticatedRESTClient
+                    restClient: authenticatedRESTClient,
+                    onDataChanged: onDataChanged
                 )
             }
             await viewModel?.load()

@@ -276,6 +276,26 @@
       "changeType": "fixed",
       "summaryEn": "Confirming a match in Review now reliably shows the fixed bill as paid the next time you look at Transactions.",
       "summaryEs": "Confirmar una coincidencia en Revisión ahora muestra de forma confiable la factura fija como pagada la próxima vez que miras Transacciones."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Deleting a fixed bill that had already been paid no longer silently fails to delete it.",
+      "summaryEs": "Eliminar una factura fija que ya había sido pagada ya no falla en silencio."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Swiping to delete several transactions in a row now deletes all of them, not just the last one.",
+      "summaryEs": "Deslizar para eliminar varias transacciones en fila ahora las elimina todas, no solo la última."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Marking, excluding, deleting, or recategorizing in Transactions or Payments now also refreshes Overview's totals and chart right away.",
+      "summaryEs": "Marcar, excluir, eliminar o recategorizar en Transacciones o Pagos ahora también actualiza de inmediato los totales y el gráfico de Resumen."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "A fixed bill paid at a different amount now keeps showing its planned amount on the row, with the \"!\" marker pointing out the difference, instead of switching to the new amount right away.",
+      "summaryEs": "Una factura fija pagada por un monto distinto ahora sigue mostrando su monto planeado en la fila, con el marcador \"!\" señalando la diferencia, en lugar de cambiar al nuevo monto de inmediato."
     }
   ]
 }

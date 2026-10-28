@@ -17,9 +17,12 @@ final class ToastState {
     /// Shows a toast. `onExpire` fires once, automatically, if the toast
     /// times out without `performUndo()` being called — this is what lets a
     /// swipe-delete stay reversible for a few seconds instead of deleting
-    /// immediately.
+    /// immediately. A still-pending previous action is committed right away
+    /// instead of being cancelled, so staging several swipes in a row never
+    /// silently drops one — it just loses its own undo window early.
     func show(_ message: String, onUndo: (() -> Void)? = nil, onExpire: (() -> Void)? = nil) {
         dismissTask?.cancel()
+        expireAction?()
         self.message = message
         self.hasUndo = onUndo != nil
         self.undoAction = onUndo

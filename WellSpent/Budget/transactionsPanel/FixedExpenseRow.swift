@@ -74,9 +74,10 @@ struct FixedExpenseRow: View {
                         rePlanMarker
                     }
 
+                    // Planned, not what was actually paid — see rePlanMarker.
                     Text(MoneyFormatting.format(
-                        units: transaction.amount.units,
-                        nanos: transaction.amount.nanos,
+                        units: transaction.plannedAmount.units,
+                        nanos: transaction.plannedAmount.nanos,
                         currencyCode: currencyCode,
                         localeIdentifier: localeIdentifier
                     ))
