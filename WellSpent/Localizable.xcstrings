@@ -195,6 +195,17 @@
         }
       }
     },
+    "%@ over %@ planned" : {
+      "comment" : "How much combined spend has exceeded the overall planned total.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ por encima de %@ planeados"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "en" : {

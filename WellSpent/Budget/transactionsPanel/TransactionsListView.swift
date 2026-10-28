@@ -411,10 +411,10 @@ struct TransactionsListView: View {
                 .font(.title2.bold())
                 .accessibilityIdentifier("transactionsTotal")
             ProgressView(value: viewModel.spentProgress)
-                .tint(.accentColor)
+                .tint(viewModel.isOverBudget ? .red : .accentColor)
             Text(viewModel.remainingSummaryText)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(viewModel.isOverBudget ? .red : .secondary)
             if let expectedSavedText = viewModel.expectedSavedText {
                 Text(expectedSavedText)
                     .font(.caption)

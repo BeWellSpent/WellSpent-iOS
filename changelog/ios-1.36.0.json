@@ -311,6 +311,11 @@
       "changeType": "fixed",
       "summaryEn": "The Savings total in budget management no longer shows a minus sign in front of it.",
       "summaryEs": "El total de Ahorros en la administración del presupuesto ya no muestra un signo menos delante."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Transactions' summary card now shows \"over\" and turns red once spending passes the plan, instead of always saying \"left\".",
+      "summaryEs": "La tarjeta de resumen de Transacciones ahora muestra \"por encima\" y se pone roja cuando el gasto supera el plan, en lugar de decir siempre \"restante\"."
     }
   ]
 }
