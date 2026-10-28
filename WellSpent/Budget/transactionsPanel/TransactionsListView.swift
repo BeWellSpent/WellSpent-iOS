@@ -104,10 +104,7 @@ struct TransactionsListView: View {
     /// `MergedTransactionGrouping.passesVariableOnlyFilter`.
     @State private var variableQuickFilter: VariableQuickFilter = .all
     @State private var activeSheet: ActiveSheet?
-    /// Collapsed state for the floated-to-top Unpaid Fixed section — it can
-    /// run long (every unpaid bill this period, with no day-grouping to
-    /// break it up), so it needs to be collapsible like every other section
-    /// here. Expanded by default: it's the thing a user most needs to see.
+    /// Unpaid Fixed section's collapsed state — expanded by default.
     @State private var isUnpaidExpanded = true
 
     var body: some View {
@@ -211,25 +208,20 @@ struct TransactionsListView: View {
                     .foregroundStyle(.secondary)
             } else {
                 if !searchedUnpaidFixed.isEmpty {
+                    // Real `header:`, not a bare Section, so the boundary reads like the day groups below.
                     Section {
-                        collapsibleHeader(
-                            // `collapsibleHeader`'s `title` is a plain
-                            // `String`, so `Text(title)` never does a catalog
-                            // lookup on its own — resolve the translation
-                            // here instead of interpolating a raw literal
-                            // (same trap this app's CLAUDE.md documents for
-                            // enum `-> String` label helpers).
-                            title: String(localized: "Unpaid (\(searchedUnpaidFixed.count))", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale),
-                            isExpanded: isUnpaidExpanded,
-                            identifier: "toggleUnpaidFixed"
-                        ) { isUnpaidExpanded.toggle() }
-                    }
-                    if isUnpaidExpanded {
-                        Section {
+                        if isUnpaidExpanded {
                             ForEach(searchedUnpaidFixed, id: \.id) { transaction in
                                 fixedRow(transaction, viewModel: viewModel, reviews: reviews)
                             }
                         }
+                    } header: {
+                        collapsibleHeader(
+                            // `Text(String)` skips the catalog, so resolve the translation here.
+                            title: String(localized: "Unpaid (\(searchedUnpaidFixed.count))", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale),
+                            isExpanded: isUnpaidExpanded,
+                            identifier: "toggleUnpaidFixed"
+                        ) { isUnpaidExpanded.toggle() }
                     }
                 }
 
@@ -381,16 +373,7 @@ struct TransactionsListView: View {
         }
     }
 
-    /// "Spent this period" card above the quick-filter chips (issue #92) —
-    /// now covers both Fixed and Variable, since this is the merged list
-    /// (Stage 2). Reuses the server-computed totals `TransactionsViewModel`
-    /// already carries (`totalText`/`spentProgress`/`remainingSummaryText`);
-    /// no new arithmetic lives in this view.
-    /// One tappable section header with a chevron — shared shape the old
-    /// `FixedExpensesListView` established for its Unpaid/Paid/Future
-    /// sections (deleted in Stage 2, recreated here since the merged list's
-    /// own Unpaid section needs the same affordance: unlike a day group, it
-    /// has no natural cap on how long it can get).
+    /// Tappable section header with a chevron, same shape the deleted `FixedExpensesListView` used.
     private func collapsibleHeader(
         title: String,
         isExpanded: Bool,
@@ -408,15 +391,14 @@ struct TransactionsListView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            // Without this, a `Button`'s tap target follows only the
-            // rendered glyphs of its label — the `Spacer` renders nothing,
-            // so the gap between title and chevron wouldn't be tappable.
+            // `Spacer` renders nothing, so the gap wouldn't be tappable without this.
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
     }
 
+    /// "Spent this period" card above the quick-filter chips — now covers both Fixed and Variable.
     private func summaryCard(viewModel: TransactionsViewModel) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Spent this period")
