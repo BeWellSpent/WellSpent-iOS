@@ -271,6 +271,11 @@
       "changeType": "fixed",
       "summaryEn": "Deleting a fixed bill whose recurring template was already removed now actually deletes it, instead of silently reappearing. Deleting any transaction also refreshes the tab's totals right away.",
       "summaryEs": "Eliminar una factura fija cuya plantilla recurrente ya había sido eliminada ahora realmente la borra, en lugar de reaparecer en silencio. Eliminar cualquier transacción también actualiza de inmediato los totales de la pestaña."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Confirming a match in Review now reliably shows the fixed bill as paid the next time you look at Transactions.",
+      "summaryEs": "Confirmar una coincidencia en Revisión ahora muestra de forma confiable la factura fija como pagada la próxima vez que miras Transacciones."
     }
   ]
 }
