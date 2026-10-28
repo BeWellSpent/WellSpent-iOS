@@ -261,6 +261,11 @@
       "changeType": "added",
       "summaryEn": "The Unpaid section at the top of the Transactions list can now be collapsed, so a long list of unpaid bills doesn't push everything else down the screen.",
       "summaryEs": "La sección de \"Sin pagar\" en la parte superior de la lista de Transacciones ahora se puede contraer, para que una lista larga de facturas pendientes no empuje todo lo demás hacia abajo."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Marking a transaction paid, unmarking it, or excluding it now also refreshes the Transactions tab's totals right away, instead of waiting for the next time the tab loads.",
+      "summaryEs": "Marcar una transacción como pagada, desmarcarla o excluirla ahora también actualiza de inmediato los totales de la pestaña de Transacciones, en lugar de esperar a la próxima vez que se cargue la pestaña."
     }
   ]
 }

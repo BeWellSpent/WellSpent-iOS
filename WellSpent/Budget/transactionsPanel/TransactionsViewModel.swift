@@ -383,6 +383,7 @@ final class TransactionsViewModel {
             if let index = transactions.firstIndex(where: { $0.id == transaction.id }) {
                 transactions[index].isExcluded = newExcluded
             }
+            await refreshSummary()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
@@ -440,6 +441,7 @@ final class TransactionsViewModel {
             }
             setPaidOffEarly(BudgetRESTMapping.isFixedExpensePaidOffEarly(from: body.transaction), for: body.transaction.id)
             replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
+            await refreshSummary()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
@@ -459,8 +461,19 @@ final class TransactionsViewModel {
             }
             setPaidOffEarly(BudgetRESTMapping.isFixedExpensePaidOffEarly(from: body.transaction), for: body.transaction.id)
             replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
+            await refreshSummary()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        }
+    }
+
+    /// Mark/unmark paid only patch the one transaction locally, but the
+    /// summary card's totals/progress/over-budget set are server-computed —
+    /// refetch those too so they don't go stale after a mutation.
+    private func refreshSummary() async {
+        let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
+        if let fetched = await fetchSummary(focusedView: focusedView) {
+            summary = fetched
         }
     }
 
