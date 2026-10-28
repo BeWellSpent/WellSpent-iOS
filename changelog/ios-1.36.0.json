@@ -231,6 +231,51 @@
       "changeType": "changed",
       "summaryEn": "The Add/Edit Transaction form's direction toggle now says \"Money Out\"/\"Money In\", matching the wording used everywhere else on the Transactions screen.",
       "summaryEs": "El interruptor de dirección del formulario de Agregar/Editar transacción ahora dice \"Dinero gastado\"/\"Dinero recibido\", igual que en el resto de la pantalla de Transacciones."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The bottom bar is now Overview, Plan, Reports, More. Overview is the new home for what actually happened — the actual-spending chart plus Transactions, Payments and Review as tabs underneath it. Plan now holds only your planned amounts per category.",
+      "summaryEs": "La barra inferior ahora es Resumen, Plan, Informes y Más. Resumen es el nuevo lugar para ver lo que realmente pasó: el gráfico de gasto real junto con Transacciones, Pagos y Revisión como pestañas debajo. Plan ahora solo contiene tus montos planeados por categoría."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Overview now shows your totals at the top and the actual-spending chart at the bottom at all times — Transactions, Payments and Review switch only the list in between, instead of replacing the chart entirely.",
+      "summaryEs": "Resumen ahora muestra tus totales arriba y el gráfico de gasto real abajo en todo momento; Transacciones, Pagos y Revisión solo cambian la lista del medio, en lugar de reemplazar el gráfico por completo."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Overview's Transactions tab now shows Variable and Fixed together in one list, with unpaid fixed bills floating to the top so what's still owed this period is never buried below everything already spent.",
+      "summaryEs": "La pestaña de Transacciones en Resumen ahora muestra las transacciones Variables y Fijas juntas en una sola lista, con las facturas fijas pendientes de pago destacadas arriba para que lo que aún se debe este período nunca quede oculto bajo lo ya gastado."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Plan now has a Fixed Expenses tab alongside Categories, so you can create, edit, and remove recurring bills right where you plan your spending — seeing what was actually paid against one stays in Overview.",
+      "summaryEs": "Plan ahora tiene una pestaña de Gastos fijos junto a Categorías, para que puedas crear, editar y eliminar facturas recurrentes justo donde planificas tus gastos; ver lo que realmente se pagó sigue estando en Resumen."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "The bottom tab formerly called \"Overview\" is now \"Home\". Inside it, totals are back together with the chart as one combined Overview tab, alongside Transactions, Payments, and Review — not split into separate always-visible strips above and below.",
+      "summaryEs": "La pestaña inferior que antes se llamaba \"Resumen\" ahora se llama \"Inicio\". Dentro de ella, los totales vuelven a estar junto con el gráfico en una sola pestaña de Resumen, junto a Transacciones, Pagos y Revisión, en lugar de dividirse en franjas separadas siempre visibles arriba y abajo."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "The Unpaid section at the top of the Transactions list can now be collapsed, so a long list of unpaid bills doesn't push everything else down the screen.",
+      "summaryEs": "La sección de \"Sin pagar\" en la parte superior de la lista de Transacciones ahora se puede contraer, para que una lista larga de facturas pendientes no empuje todo lo demás hacia abajo."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Marking a transaction paid, unmarking it, or excluding it now also refreshes the Transactions tab's totals right away, instead of waiting for the next time the tab loads.",
+      "summaryEs": "Marcar una transacción como pagada, desmarcarla o excluirla ahora también actualiza de inmediato los totales de la pestaña de Transacciones, en lugar de esperar a la próxima vez que se cargue la pestaña."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Deleting a fixed bill whose recurring template was already removed now actually deletes it, instead of silently reappearing. Deleting any transaction also refreshes the tab's totals right away.",
+      "summaryEs": "Eliminar una factura fija cuya plantilla recurrente ya había sido eliminada ahora realmente la borra, en lugar de reaparecer en silencio. Eliminar cualquier transacción también actualiza de inmediato los totales de la pestaña."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Confirming a match in Review now reliably shows the fixed bill as paid the next time you look at Transactions.",
+      "summaryEs": "Confirmar una coincidencia en Revisión ahora muestra de forma confiable la factura fija como pagada la próxima vez que miras Transacciones."
     }
   ]
 }

@@ -2,29 +2,34 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-struct ExpensePlanView: View {
-    /// Local to this file, not a `Shared/` enum — mirrors `TransactionKind`
-    /// in `TransactionsListView.swift`, UI-local tab state rather than a
-    /// reusable domain concept.
-    enum PlanKind: Hashable {
-        case plan
-        case overview
-    }
+/// Plan's two sub-tabs — Categories (per-category planned amounts, the
+/// screen's original content) and Fixed Expenses (recurring-bill template
+/// management, added in Stage 3 of
+/// docs/features/overview-plan-navigation-rework.md). Not private: the
+/// toolbar "+" in `BudgetDetailView` needs to know which is active to decide
+/// whether it opens Add Category or Add Fixed Expense.
+enum PlanSubTab: Hashable, CaseIterable {
+    case categories
+    case fixedExpenses
 
+    var title: String {
+        let locale = AppLanguageStore.currentLocale
+        switch self {
+        case .categories: return String(localized: "Categories", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .fixedExpenses: return String(localized: "Fixed expenses", bundle: AppLanguageStore.currentBundle, locale: locale)
+        }
+    }
+}
+
+struct ExpensePlanView: View {
     let budgetPeriodID: String
     let budgetProfileID: String
     let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
-    /// Owned by `BudgetDetailView`, not locally — the visible nav bar belongs
-    /// to the *outer* `NavigationStack` this view is nested two levels
-    /// inside (per-tab stack → pushed budget detail screen), and neither
-    /// `.toolbar` items nor this picker's selection reliably surface from
-    /// here on their own. `BudgetDetailView` needs `selectedKind` itself to
-    /// decide which toolbar button to show, so it owns the state and this
-    /// view just binds to it.
-    @Binding var selectedKind: PlanKind
     @Binding var isAddCategoryPresented: Bool
+    @Binding var isAddFixedExpensePresented: Bool
+    @Binding var selectedSubTab: PlanSubTab
     /// True while the Plan tab is the selected `BudgetSection` in
     /// `BudgetDetailView`. `TabView` keeps every tab's content mounted, so
     /// `.task` only fires once on first mount — this drives a reload every
@@ -33,9 +38,10 @@ struct ExpensePlanView: View {
     let canEdit: Bool
 
     @State private var viewModel: ExpensePlanViewModel?
-    @State private var allocatingCategory: Wellspent_V1_Category?
+    @State private var fixedExpensesViewModel: FixedExpenseTemplatesViewModel?
+    @State private var activeSheet: ActiveSheet?
     /// Defaults to pie, matching web's `ExpensesPanel.tsx` (Overview's chart
-    /// defaults to bar instead — see `ExpenseOverviewListView`).
+    /// defaults to bar instead — see `ExpenseOverviewChartListView`).
     /// nil until the person's saved preference has loaded, so the chart isn't
     /// drawn as a pie and then snapped to a bar a moment later. Set from the
     /// toggle too, which overrides the saved default for this visit only —
@@ -43,34 +49,45 @@ struct ExpensePlanView: View {
     @State private var chartTypeOverride: ExpenseChartView.ChartType?
     @Environment(SessionStore.self) private var session
 
+    /// Every locally-triggered sheet on this view — the Add sheets stay
+    /// their own `.sheet(isPresented:)` modifiers, since their bindings are
+    /// owned by `BudgetDetailView`'s toolbar (same split `TransactionsListView`
+    /// already established, see its `ActiveSheet` doc comment).
+    private enum ActiveSheet: Identifiable {
+        case allocate(Wellspent_V1_Category)
+        case editFixedExpense(Wellspent_V1_FixedExpense)
+
+        var id: String {
+            switch self {
+            case .allocate(let category): return "allocate-\(category.id)"
+            case .editFixedExpense(let expense): return "editFixedExpense-\(expense.id)"
+            }
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            Picker("View", selection: $selectedKind) {
-                Text("Overview").tag(PlanKind.overview)
-                Text("Plan").tag(PlanKind.plan)
+            Picker("View", selection: $selectedSubTab) {
+                Text(PlanSubTab.categories.title).tag(PlanSubTab.categories)
+                Text(PlanSubTab.fixedExpenses.title).tag(PlanSubTab.fixedExpenses)
             }
             .pickerStyle(.segmented)
             .padding([.horizontal, .top])
-            .accessibilityIdentifier("planKindPicker")
+            .accessibilityIdentifier("planSubTabPicker")
 
-            switch selectedKind {
-            case .plan:
-                Group {
+            Group {
+                switch selectedSubTab {
+                case .categories:
                     if let viewModel {
-                        content(viewModel: viewModel)
+                        categoriesContent(viewModel: viewModel)
                     } else {
                         ProgressView()
                     }
+                case .fixedExpenses:
+                    fixedExpensesContent
                 }
-            case .overview:
-                ExpenseOverviewListView(
-                    budgetPeriodID: budgetPeriodID,
-                    budgetProfileID: budgetProfileID,
-                    authenticatedRESTClient: authenticatedRESTClient,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                )
             }
+            .frame(maxHeight: .infinity)
         }
         .navigationTitle("Expense Plan")
         .task {
@@ -84,20 +101,81 @@ struct ExpensePlanView: View {
                     restClient: authenticatedRESTClient
                 )
             }
+            if fixedExpensesViewModel == nil {
+                fixedExpensesViewModel = FixedExpenseTemplatesViewModel(
+                    budgetProfileID: budgetProfileID,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    currentUserID: session.userID,
+                    restClient: authenticatedRESTClient
+                )
+            }
             await viewModel?.load()
+            await fixedExpensesViewModel?.load()
         }
         .onChange(of: isActive) { _, newValue in
             if newValue {
-                Task { await viewModel?.load() }
+                Task {
+                    await viewModel?.load()
+                    await fixedExpensesViewModel?.load()
+                }
             }
         }
-        .refreshable {
-            await viewModel?.load()
+        .sheet(isPresented: $isAddCategoryPresented) {
+            if let viewModel {
+                let visibleIDs = Set(viewModel.visibleCategories.map(\.id))
+                AddPlanCategoryView(categories: viewModel.categories.filter { !visibleIDs.contains($0.id) }) { category in
+                    activeSheet = .allocate(category)
+                }
+            }
+        }
+        .sheet(isPresented: $isAddFixedExpensePresented) {
+            if let fixedExpensesViewModel {
+                AddFixedExpenseView(
+                    budgetProfileID: budgetProfileID,
+                    currencyCode: currencyCode,
+                    categories: fixedExpensesViewModel.categories,
+                    paymentMethods: fixedExpensesViewModel.paymentMethods,
+                    restClient: authenticatedRESTClient
+                ) { expense, _ in
+                    // The spawned transaction is irrelevant here — this list
+                    // is profile-level, not period-scoped.
+                    fixedExpensesViewModel.addTemplate(expense)
+                }
+            }
+        }
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .allocate(let category):
+                if let viewModel {
+                    AllocateCategoryView(
+                        category: category,
+                        people: viewModel.people,
+                        existingAllocations: viewModel.allocations(for: category.id),
+                        currencyCode: currencyCode
+                    ) { upserted, deletedIDs in
+                        Task { await viewModel.applyAllocationChanges(upserted: upserted, deletedIDs: deletedIDs) }
+                    }
+                }
+            case .editFixedExpense(let expense):
+                if let fixedExpensesViewModel {
+                    EditFixedExpenseView(
+                        expense: expense,
+                        currencyCode: currencyCode,
+                        categories: fixedExpensesViewModel.categories,
+                        paymentMethods: fixedExpensesViewModel.paymentMethods,
+                        remainingBalance: fixedExpensesViewModel.remainingBalance(for: expense.id),
+                        restClient: authenticatedRESTClient
+                    ) { updated in
+                        fixedExpensesViewModel.replaceTemplate(updated)
+                    }
+                }
+            }
         }
     }
 
     @ViewBuilder
-    private func content(viewModel: ExpensePlanViewModel) -> some View {
+    private func categoriesContent(viewModel: ExpensePlanViewModel) -> some View {
         List {
             if !viewModel.visibleCategories.isEmpty {
                 Section {
@@ -145,26 +223,8 @@ struct ExpensePlanView: View {
                 }
             }
         }
-        .sheet(isPresented: $isAddCategoryPresented) {
-            let visibleIDs = Set(viewModel.visibleCategories.map(\.id))
-            AddPlanCategoryView(categories: viewModel.categories.filter { !visibleIDs.contains($0.id) }) { category in
-                allocatingCategory = category
-            }
-        }
-        .sheet(isPresented: Binding(
-            get: { allocatingCategory != nil },
-            set: { if !$0 { allocatingCategory = nil } }
-        )) {
-            if let allocatingCategory {
-                AllocateCategoryView(
-                    category: allocatingCategory,
-                    people: viewModel.people,
-                    existingAllocations: viewModel.allocations(for: allocatingCategory.id),
-                    currencyCode: currencyCode
-                ) { upserted, deletedIDs in
-                    Task { await viewModel.applyAllocationChanges(upserted: upserted, deletedIDs: deletedIDs) }
-                }
-            }
+        .refreshable {
+            await viewModel.load()
         }
     }
 
@@ -195,7 +255,7 @@ struct ExpensePlanView: View {
         return Group {
             if canEdit {
                 Button {
-                    allocatingCategory = category
+                    activeSheet = .allocate(category)
                 } label: {
                     row
                 }
@@ -205,6 +265,56 @@ struct ExpensePlanView: View {
             }
         }
         .accessibilityIdentifier("planCategoryRow_\(category.name)")
+    }
+
+    @ViewBuilder
+    private var fixedExpensesContent: some View {
+        Group {
+            if let fixedExpensesViewModel {
+                List {
+                    if fixedExpensesViewModel.fixedExpenses.isEmpty && fixedExpensesViewModel.isLoading {
+                        ProgressView()
+                    } else if fixedExpensesViewModel.fixedExpenses.isEmpty {
+                        Text("No fixed expenses yet.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(fixedExpensesViewModel.fixedExpenses, id: \.id) { expense in
+                            fixedExpenseRow(expense, viewModel: fixedExpensesViewModel)
+                        }
+                    }
+
+                    if let errorMessage = fixedExpensesViewModel.errorMessage {
+                        Text(errorMessage).foregroundStyle(.red)
+                    }
+                }
+                .refreshable {
+                    await fixedExpensesViewModel.load()
+                }
+            } else {
+                ProgressView()
+            }
+        }
+    }
+
+    private func fixedExpenseRow(_ expense: Wellspent_V1_FixedExpense, viewModel: FixedExpenseTemplatesViewModel) -> some View {
+        UpcomingFixedExpenseRow(
+            expense: expense,
+            viewModel: viewModel,
+            currencyCode: currencyCode,
+            localeIdentifier: localeIdentifier,
+            canEdit: canEdit,
+            onEdit: { activeSheet = .editFixedExpense(expense) }
+        )
+        .swipeActions {
+            if canEdit {
+                Button(role: .destructive) {
+                    Task { await viewModel.deleteTemplate(expense) }
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .accessibilityIdentifier("deleteFixedExpenseTemplate_\(expense.name)")
+            }
+        }
     }
 
     private func displayText(_ amount: (units: Int64, nanos: Int32)) -> String {
@@ -236,8 +346,9 @@ struct ExpensePlanView: View {
             authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
             currencyCode: "USD",
             localeIdentifier: "en",
-            selectedKind: .constant(.plan),
             isAddCategoryPresented: .constant(false),
+            isAddFixedExpensePresented: .constant(false),
+            selectedSubTab: .constant(.categories),
             isActive: true,
             canEdit: true
         )

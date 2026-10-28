@@ -2,14 +2,27 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-struct ExpenseOverviewListView: View {
-    let budgetPeriodID: String
-    let budgetProfileID: String
-    let authenticatedRESTClient: WellSpentREST.Client
+/// The Home section's **Overview** sub-tab: totals + chart + per-category
+/// actual-vs-planned breakdown, as one combined, single-scrolling panel —
+/// `ExpenseOverviewTotalsView` renders as this `List`'s first `Section`
+/// (second correction to docs/features/overview-plan-navigation-rework.md:
+/// the first correction pinned totals above and this chart below as two
+/// separately-scrolling, always-visible panels flanking the Transactions/
+/// Payments/Review picker, which read live as three disconnected panels
+/// rather than one screen; totals are now part of *this* panel instead, and
+/// this whole view is its own sub-tab rather than always-on chrome).
+///
+/// Doesn't own the view model's lifecycle (`.task`/`.refreshable` creating
+/// its own `@State` instance) — `BudgetDetailView` creates and loads one
+/// `ExpenseOverviewViewModel` per Home-section visit, shared by whichever
+/// sub-tab needs it. `.refreshable` stays here since this is the only
+/// `List` the Overview sub-tab renders — refreshing it reloads the shared
+/// instance, so the totals section at the top updates too.
+struct ExpenseOverviewChartListView: View {
+    let viewModel: ExpenseOverviewViewModel
     let currencyCode: String
     let localeIdentifier: String
 
-    @State private var viewModel: ExpenseOverviewViewModel?
     /// Defaults to bar, matching web's `ExpenseOverviewPanel.tsx` (Plan's
     /// chart defaults to pie instead — see `ExpensePlanView`).
     /// nil until the person's saved preference has loaded, so the chart isn't
@@ -20,34 +33,15 @@ struct ExpenseOverviewListView: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
-        Group {
-            if let viewModel {
-                content(viewModel: viewModel)
-            } else {
-                ProgressView()
-            }
-        }
-        .task {
-            if viewModel == nil {
-                viewModel = ExpenseOverviewViewModel(
-                    budgetPeriodID: budgetPeriodID,
-                    budgetProfileID: budgetProfileID,
+        List {
+            Section {
+                ExpenseOverviewTotalsView(
+                    viewModel: viewModel,
                     currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier,
-                    currentUserID: session.userID,
-                    restClient: authenticatedRESTClient
+                    localeIdentifier: localeIdentifier
                 )
             }
-            await viewModel?.load()
-        }
-        .refreshable {
-            await viewModel?.load()
-        }
-    }
 
-    @ViewBuilder
-    private func content(viewModel: ExpenseOverviewViewModel) -> some View {
-        List {
             if !viewModel.visibleCategories.isEmpty {
                 Section {
                     ExpenseChartView(
@@ -87,49 +81,15 @@ struct ExpenseOverviewListView: View {
                 }
             }
 
-            Section {
-                let income = viewModel.incomeTotal
-                let actual = viewModel.totalActual
-                let planned = viewModel.totalPlanned
-                let actualRemainder = viewModel.remainderTotal
-                let plannedRemainder = viewModel.plannedRemainderTotal
-                let overBudget = viewModel.totalOverBudgetAmount
-                let unplanned = viewModel.totalUnplannedAmount
-
-                LabeledContent("Income", value: displayText(income))
-                    .accessibilityIdentifier("overviewIncomeTotal")
-                LabeledContent("Actual", value: overviewText(actual))
-                    .accessibilityIdentifier("overviewActualTotal")
-                LabeledContent("Planned", value: displayText(planned))
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("overviewPlannedTotal")
-                if income.units != 0 || income.nanos != 0 {
-                    // isNegative, not `units < 0`: a -$0.50 remainder has
-                    // units == 0 and would otherwise read green.
-                    LabeledContent("Remaining (actual)", value: displayText(actualRemainder))
-                        .foregroundStyle(MoneyFormatting.isNegative(units: actualRemainder.units, nanos: actualRemainder.nanos) ? .red : .green)
-                        .accessibilityIdentifier("overviewActualRemainderTotal")
-                    LabeledContent("Remaining (planned)", value: displayText(plannedRemainder))
-                        .foregroundStyle(MoneyFormatting.isNegative(units: plannedRemainder.units, nanos: plannedRemainder.nanos) ? .red : .green)
-                        .accessibilityIdentifier("overviewPlannedRemainderTotal")
-                }
-                if overBudget.units != 0 || overBudget.nanos != 0 {
-                    LabeledContent("Over budget", value: displayText(overBudget))
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("overviewOverBudgetTotal")
-                }
-                if unplanned.units != 0 || unplanned.nanos != 0 {
-                    LabeledContent("Unplanned", value: displayText(unplanned))
-                        .foregroundStyle(.orange)
-                        .accessibilityIdentifier("overviewUnplannedTotal")
-                }
-            }
-
             if let errorMessage = viewModel.errorMessage {
                 Section {
                     Text(errorMessage).foregroundStyle(.red)
                 }
             }
+        }
+        .listStyle(.plain)
+        .refreshable {
+            await viewModel.load()
         }
     }
 
@@ -291,7 +251,6 @@ struct ExpenseOverviewListView: View {
         OverviewAmountFormatting.text(amount, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 
-
     /// Saved preference for this tab, falling back to the shared default when
     /// the person hasn't chosen or isn't a linked member. Read from `people`,
     /// which the view model already loads — no extra request.
@@ -310,13 +269,18 @@ struct ExpenseOverviewListView: View {
 
 #Preview {
     NavigationStack {
-        ExpenseOverviewListView(
-            budgetPeriodID: "preview-period",
-            budgetProfileID: "preview-budget",
-            authenticatedRESTClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
+        ExpenseOverviewChartListView(
+            viewModel: ExpenseOverviewViewModel(
+                budgetPeriodID: "preview-period",
+                budgetProfileID: "preview-budget",
+                currencyCode: "USD",
+                localeIdentifier: "en",
+                currentUserID: nil,
+                restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
+            ),
             currencyCode: "USD",
             localeIdentifier: "en"
         )
     }
-
+    .environment(SessionStore())
 }

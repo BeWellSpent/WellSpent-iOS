@@ -2,20 +2,38 @@ import Foundation
 import Observation
 import WellSpentAPI
 import WellSpentREST
+import os
 
 @MainActor
 @Observable
 final class TransactionsViewModel {
+    private static let logger = AppLogger.logger("TransactionsViewModel")
+
     /// `transaction_type` lookup table seed order (see
     /// WellSpent-backend/internal/db/migrations/000001_init_schema.sql):
     /// Fixed = 1, Variable = 2. Raw int32 on the wire, no proto enum.
     static let variableTypeID: Int32 = 2
+    static let fixedTypeID: Int32 = 1
 
     private(set) var isLoading = false
+    /// Now both Variable and Fixed (Stage 2 of
+    /// docs/features/overview-plan-navigation-rework.md merged them into one
+    /// list) — `fetchTransactions` no longer filters by `transactionType`.
     private(set) var transactions: [Wellspent_V1_Transaction] = []
     private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var paymentMethods: [Wellspent_V1_PaymentMethod] = []
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
+    /// Fixed-expense templates — needed by a Fixed row's payments-progress
+    /// caption now that the merged list renders Fixed rows directly.
+    private(set) var fixedExpenses: [Wellspent_V1_FixedExpense] = []
+    /// The budget's auto_update_planned_amount setting, for a Fixed row's
+    /// re-plan marker.
+    private(set) var autoUpdatePlannedAmount = true
+    /// `remainingBalance`/`paidOffDate` have no proto equivalent, keyed by
+    /// fixed expense id — see `BudgetRESTMapping.FixedExpensePayoffInfo`.
+    private(set) var payoffByFixedExpenseID: [String: BudgetRESTMapping.FixedExpensePayoffInfo] = [:]
+    /// Transactions whose payment brought their plan's balance to zero early.
+    private(set) var paidOffEarlyTransactionIDs: Set<String> = []
     /// Totals and the over-budget set, computed server-side. Replaces four
     /// fetches (allocations, savings sources, fixed transactions, and the
     /// planned-total rule applied to them) that existed only to rebuild
@@ -43,28 +61,36 @@ final class TransactionsViewModel {
         Set(summary?.overBudgetTransactionIds ?? [])
     }
 
-    /// Variable spend for the period, server-computed under the same
-    /// exclusion rule as everywhere else — manually excluded rows and the
-    /// system "Income" category never count. Summing the fetched rows here
-    /// instead would put a second spelling of the number next to the totals
-    /// the Plan and Overview tabs print.
+    /// Combined Fixed+Variable spend for the period, server-computed under
+    /// the same exclusion rule as everywhere else. The merged list (Stage 2)
+    /// shows both in one list now, so the summary card's total has to cover
+    /// both rather than Variable alone — summing the two server totals here
+    /// instead of re-deriving either would put a second spelling of the
+    /// number next to the totals the Plan and Overview tabs print.
+    private var combinedActualTotal: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.sum([
+            TransactionAmountFormatting.tuple(from: summary?.variableActualTotal),
+            TransactionAmountFormatting.tuple(from: summary?.fixedActualTotal)
+        ])
+    }
+
     var totalText: String {
         TransactionAmountFormatting.magnitudeDisplayText(
-            amounts: [TransactionAmountFormatting.tuple(from: summary?.variableActualTotal)],
+            amounts: [combinedActualTotal],
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
         )
     }
 
-    /// Progress of variable spend against the overall planned total
-    /// (`GetExpenseSummary`'s `totalPlanned`), for the Variable tab's summary
-    /// card (issue #92). 0 when nothing is planned, so an empty-budget
-    /// account never shows a divide-by-zero progress bar.
+    /// Progress of combined spend against the overall planned total
+    /// (`GetExpenseSummary`'s `totalPlanned`), for the summary card (issue
+    /// #92). 0 when nothing is planned, so an empty-budget account never
+    /// shows a divide-by-zero progress bar.
     var spentProgress: Double {
         let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
         let plannedValue = Double(planned.units) + Double(planned.nanos) / 1_000_000_000
         guard plannedValue > 0 else { return 0 }
-        let spent = TransactionAmountFormatting.tuple(from: summary?.variableActualTotal)
+        let spent = combinedActualTotal
         let spentValue = Double(spent.units) + Double(spent.nanos) / 1_000_000_000
         return min(max(spentValue / plannedValue, 0), 1)
     }
@@ -73,7 +99,7 @@ final class TransactionsViewModel {
     /// server-computed totals `totalText`/`overBudgetTransactionIDs` do.
     var remainingSummaryText: String {
         let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
-        let spent = TransactionAmountFormatting.tuple(from: summary?.variableActualTotal)
+        let spent = combinedActualTotal
         let remaining = TransactionAmountFormatting.sum([planned, (units: -spent.units, nanos: -spent.nanos)])
         let remainingText = MoneyFormatting.format(units: abs(remaining.units), nanos: abs(remaining.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
         let plannedText = MoneyFormatting.format(units: abs(planned.units), nanos: abs(planned.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
@@ -97,6 +123,7 @@ final class TransactionsViewModel {
         async let categoriesResult = fetchCategories()
         async let paymentMethodsResult = fetchPaymentMethods()
         async let peopleResult = fetchPeople()
+        async let profileResult = fetchProfile()
 
         if let fetched = await categoriesResult {
             categories = fetched
@@ -107,11 +134,15 @@ final class TransactionsViewModel {
         if let fetched = await peopleResult {
             people = fetched
         }
+        if let fetched = await profileResult {
+            autoUpdatePlannedAmount = fetched.autoUpdatePlannedAmount
+        }
 
         // Needs `people` resolved first, so these can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        async let transactionsResult = fetchTransactions(transactionTypeID: Self.variableTypeID, focusedView: focusedView)
+        async let transactionsResult = fetchTransactions(focusedView: focusedView)
         async let summaryResult = fetchSummary(focusedView: focusedView)
+        async let fixedExpensesResult = fetchFixedExpenses(focusedView: focusedView)
 
         if let fetched = await transactionsResult {
             transactions = fetched.sorted { $0.date.date > $1.date.date }
@@ -119,6 +150,10 @@ final class TransactionsViewModel {
 
         if let fetched = await summaryResult {
             summary = fetched
+        }
+
+        if let fetched = await fixedExpensesResult {
+            fixedExpenses = fetched
         }
     }
 
@@ -128,17 +163,21 @@ final class TransactionsViewModel {
         return BudgetRESTMapping.expenseSummary(from: body)
     }
 
-    private func fetchTransactions(transactionTypeID: Int32, focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
+    /// No `transactionType` filter — Stage 2 of the Overview/Plan nav rework
+    /// merged Variable and Fixed into one list, so this fetches both in one
+    /// call (same shape `ExpenseOverviewViewModel.fetchTransactions` already
+    /// uses).
+    private func fetchTransactions(focusedView: Bool) async -> [Wellspent_V1_Transaction]? {
         do {
             let output = try await restClient.listTransactions(.init(query: .init(
                 budgetPeriodId: budgetPeriodID,
-                transactionType: BudgetRESTMapping.restExpenseType(from: transactionTypeID),
                 focusedView: focusedView
             )))
             guard case .ok(let ok) = output, let body = try? ok.body.json else {
                 errorMessage = "Couldn't load transactions."
                 return nil
             }
+            paidOffEarlyTransactionIDs = Set(body.transactions.filter(BudgetRESTMapping.isFixedExpensePaidOffEarly(from:)).map(\.id))
             return body.transactions.map(BudgetRESTMapping.transaction(from:))
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load transactions."
@@ -162,6 +201,21 @@ final class TransactionsViewModel {
         guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
               case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
         return body.people.map(BudgetRESTMapping.person(from:))
+    }
+
+    private func fetchProfile() async -> Wellspent_V1_BudgetProfile? {
+        guard let output = try? await restClient.getBudgetProfile(.init(path: .init(id: budgetProfileID))),
+              case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        return BudgetRESTMapping.profile(from: body.profile)
+    }
+
+    private func fetchFixedExpenses(focusedView: Bool) async -> [Wellspent_V1_FixedExpense]? {
+        guard let output = try? await restClient.listFixedExpenses(.init(
+            path: .init(id: budgetProfileID),
+            query: .init(focusedView: focusedView)
+        )), case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
+        payoffByFixedExpenseID = Dictionary(uniqueKeysWithValues: body.fixedExpenses.map { ($0.id, BudgetRESTMapping.fixedExpensePayoffInfo(from: $0)) })
+        return body.fixedExpenses.map(BudgetRESTMapping.fixedExpense(from:))
     }
 
     /// Card payments, as identified by the system "Payment" category — their
@@ -231,8 +285,39 @@ final class TransactionsViewModel {
         return people.first(where: { $0.id == method.budgetPersonID })?.userName
     }
 
+    /// "N / M payments" progress text for a Fixed row's linked template.
+    /// Needed here since the merged list (Stage 2) renders Fixed rows
+    /// directly rather than delegating to a separate view model.
+    /// Deliberately silent (no `AppLogger` calls): runs on every row render.
+    func paymentsProgressText(for transaction: Wellspent_V1_Transaction) -> String? {
+        guard !transaction.fixedExpenseID.isEmpty,
+              let template = fixedExpenses.first(where: { $0.id == transaction.fixedExpenseID }),
+              template.totalPayments > 0 else { return nil }
+        return "\(template.paymentsMade) / \(template.totalPayments) payments"
+    }
+
+    func isPaidOffEarly(_ transaction: Wellspent_V1_Transaction) -> Bool {
+        paidOffEarlyTransactionIDs.contains(transaction.id)
+    }
+
+    /// Confirmed review matches for a Fixed transaction, rendered as an
+    /// expandable linked sub-row — see `TransactionReviewMatching`.
+    func linkedReviews(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_TransactionReview] {
+        TransactionReviewMatching.linkedReviews(forFixedTransactionID: transaction.id, reviews: reviews)
+    }
+
     func addTransaction(_ transaction: Wellspent_V1_Transaction) {
         transactions.insert(transaction, at: 0)
+    }
+
+    /// `CreateFixedExpenseResponse` returns both the new template and the
+    /// transaction it spawned in the current period — inserting both
+    /// directly avoids a full reload for the common case.
+    func addFromCreate(expense: Wellspent_V1_FixedExpense, transaction: Wellspent_V1_Transaction) {
+        fixedExpenses.append(expense)
+        if !transaction.id.isEmpty {
+            transactions.insert(transaction, at: 0)
+        }
     }
 
     func replaceTransaction(_ transaction: Wellspent_V1_Transaction) {
@@ -301,16 +386,22 @@ final class TransactionsViewModel {
             if let index = transactions.firstIndex(where: { $0.id == transaction.id }) {
                 transactions[index].isExcluded = newExcluded
             }
+            await refreshSummary()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
     }
 
     /// Seeds state without a network call, so the partition logic above is
-    /// testable. Mirrors `FixedExpensesViewModel.setStateForTesting`.
-    func setStateForTesting(transactions: [Wellspent_V1_Transaction], categories: [Wellspent_V1_Category] = []) {
+    /// testable.
+    func setStateForTesting(
+        transactions: [Wellspent_V1_Transaction],
+        categories: [Wellspent_V1_Category] = [],
+        fixedExpenses: [Wellspent_V1_FixedExpense] = []
+    ) {
         self.transactions = transactions
         self.categories = categories
+        self.fixedExpenses = fixedExpenses
     }
 
     func delete(id: String) async {
@@ -322,8 +413,99 @@ final class TransactionsViewModel {
                 return
             }
             transactions.removeAll { $0.id == id }
+            await refreshSummary()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        }
+    }
+
+    // MARK: Fixed-row occurrence actions (merged list, Stage 2)
+    //
+    // Mark Paid/Unmark/Exclude/Delete-this-occurrence only — editing the
+    // underlying recurring template is deliberately not reachable from this
+    // list (see `TransactionsListView`'s Fixed-row swipe actions). Template
+    // management itself lives in Plan's Fixed Expenses sub-tab
+    // (`FixedExpenseTemplatesViewModel`).
+
+    func markPaid(_ transaction: Wellspent_V1_Transaction, paidAmount: Wellspent_V1_Money, paidAt: Date) async {
+        errorMessage = nil
+        let fallback = "Couldn't mark that as paid."
+        do {
+            let output = try await restClient.markTransactionAsPaid(.init(
+                path: .init(id: transaction.id),
+                body: .json(.init(
+                    budgetPeriodId: budgetPeriodID,
+                    paidAmount: BudgetRESTMapping.restMoney(from: paidAmount),
+                    paidDate: Google_Protobuf_Timestamp(dateOnly: paidAt).restDateString
+                ))
+            ))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = fallback
+                return
+            }
+            setPaidOffEarly(BudgetRESTMapping.isFixedExpensePaidOffEarly(from: body.transaction), for: body.transaction.id)
+            replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
+            await refreshSummary()
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        }
+    }
+
+    func unmark(_ transaction: Wellspent_V1_Transaction) async {
+        errorMessage = nil
+        let fallback = "Couldn't unmark that transaction."
+        do {
+            let output = try await restClient.unmarkTransactionAsPaid(.init(
+                path: .init(id: transaction.id),
+                body: .json(.init(budgetPeriodId: budgetPeriodID))
+            ))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                errorMessage = fallback
+                return
+            }
+            setPaidOffEarly(BudgetRESTMapping.isFixedExpensePaidOffEarly(from: body.transaction), for: body.transaction.id)
+            replaceTransaction(BudgetRESTMapping.transaction(from: body.transaction))
+            await refreshSummary()
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        }
+    }
+
+    /// Server-computed totals went stale after a local-only transaction patch — refetch them.
+    private func refreshSummary() async {
+        let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
+        if let fetched = await fetchSummary(focusedView: focusedView) {
+            summary = fetched
+        }
+    }
+
+    /// Deactivates the linked template; falls back to a plain delete if it's already gone.
+    func delete(_ transaction: Wellspent_V1_Transaction) async {
+        guard !transaction.fixedExpenseID.isEmpty else {
+            Self.logger.info("deleting orphaned fixed transactionID=\(transaction.id, privacy: .public) (no linked template)")
+            await delete(id: transaction.id)
+            return
+        }
+        errorMessage = nil
+        let fallback = String(localized: "Couldn't delete that fixed expense.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        do {
+            guard case .ok = try await restClient.deleteFixedExpense(.init(path: .init(id: budgetProfileID, feId: transaction.fixedExpenseID))) else {
+                errorMessage = fallback
+                return
+            }
+            fixedExpenses.removeAll { $0.id == transaction.fixedExpenseID }
+            transactions.removeAll { $0.id == transaction.id }
+            await refreshSummary()
+        } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        }
+    }
+
+    private func setPaidOffEarly(_ paidOffEarly: Bool, for transactionID: String) {
+        if paidOffEarly {
+            paidOffEarlyTransactionIDs.insert(transactionID)
+        } else {
+            paidOffEarlyTransactionIDs.remove(transactionID)
         }
     }
 }

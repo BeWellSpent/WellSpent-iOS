@@ -76,4 +76,18 @@ nonisolated enum FixedExpenseScheduling {
             return months / max(intervalMonths, 1)
         }
     }
+
+    /// "Every N month(s)/week(s)" — a plain-language cadence summary for a
+    /// template-management row (Plan's Fixed Expenses list), which has no
+    /// spawned transaction/date to show instead. Reuses the exact catalog
+    /// keys the Add/Edit forms' own Stepper labels already extracted
+    /// ("Every %lld month(s)" / "Every %lld week(s)") rather than adding new
+    /// ones for the same fact.
+    static func scheduleSummary(intervalMonths: Int32, intervalWeeks: Int32, frequencyUnit: Wellspent_V1_FrequencyUnit) -> String {
+        let locale = AppLanguageStore.currentLocale
+        if frequencyUnit == .week {
+            return String(localized: "Every \(Int(intervalWeeks)) week(s)", bundle: AppLanguageStore.currentBundle, locale: locale)
+        }
+        return String(localized: "Every \(Int(intervalMonths)) month(s)", bundle: AppLanguageStore.currentBundle, locale: locale)
+    }
 }

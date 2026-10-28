@@ -110,9 +110,10 @@ struct MarkForReviewSheet: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                            // Same fix as FixedExpensesListView's collapsibleHeader —
-                            // without this, only the rendered glyphs (text, icon) are
-                            // tappable, not the Spacer gap between them.
+                            // A `Button`'s tap target follows the rendered
+                            // glyphs of its label by default — without this,
+                            // only the text/icon are tappable, not the
+                            // `Spacer` gap between them.
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)

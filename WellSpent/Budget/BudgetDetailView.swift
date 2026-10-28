@@ -5,10 +5,15 @@ import WellSpentREST
 
 /// Adaptive navigation shell for a budget: a bottom tab bar on iPhone
 /// (`.compact` horizontal size class), a `NavigationSplitView` sidebar on
-/// iPad (`.regular`). Plan (allocations, 2C-1), Transactions (Variable +
-/// Fixed, 2B-2/2B-3), and Manage (People/Income/Categories/Payment Methods,
-/// 2A/2B-1) are all real. Expense Overview (actual vs. planned) lands in
-/// 2C-2.
+/// iPad (`.regular`). Four real destinations — Home, Plan, Reports, More —
+/// per docs/features/overview-plan-navigation-rework.md: Home is the
+/// destination for *what actually happened*, with four sub-tabs — Overview
+/// (totals + the actual-breakdown chart, one combined panel), Transactions,
+/// Payments, Review — Plan is for *what you intend to spend* (the
+/// per-category planned-amount editor). Home and Plan replaced the former
+/// Plan/Transactions/Review three-way split — see that spec for the full
+/// before/after, including the layout correction that folded the chart back
+/// into its own sub-tab instead of wrapping the whole screen.
 ///
 /// This is the app's home screen (issue #60) — `BudgetHomeView` renders it
 /// directly inside a `NavigationStack`. It nests its own per-tab `NavigationStack`s
@@ -23,6 +28,34 @@ import WellSpentREST
 /// themselves (which still declare their own for canvas-preview accuracy in
 /// isolation, but those never render in the real, nested app).
 struct BudgetDetailView: View {
+    /// Sub-destination within the Home section — "what actually happened."
+    /// Owned here, not a `Shared/` enum: it drives which toolbar content
+    /// shows at the one level that actually renders it (see the type-level
+    /// doc comment above). Four segments: **Overview** first (totals + the
+    /// actual-breakdown chart, one combined panel — see `overviewSubTabContent`),
+    /// then Transactions/Payments/Review. This reverts the second half of
+    /// Stage 2's "always-visible chart" layout correction, after that shape
+    /// read live as three disconnected panels rather than one screen — see
+    /// docs/features/overview-plan-navigation-rework.md's second layout
+    /// correction for the full reasoning. Totals are now part of the same
+    /// panel as the chart, not a separate always-on strip.
+    private enum OverviewSubTab: Hashable, CaseIterable {
+        case overview
+        case transactions
+        case payments
+        case review
+
+        var title: String {
+            let locale = AppLanguageStore.currentLocale
+            switch self {
+            case .overview: return String(localized: "Overview", bundle: AppLanguageStore.currentBundle, locale: locale)
+            case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
+            case .payments: return String(localized: "Payments", bundle: AppLanguageStore.currentBundle, locale: locale)
+            case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
+            }
+        }
+    }
+
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(SessionStore.self) private var session
     private let authenticatedRESTClient: WellSpentREST.Client?
@@ -33,28 +66,49 @@ struct BudgetDetailView: View {
     private let onDeleted: () -> Void
 
     @State private var viewModel: BudgetDetailViewModel?
-    @State private var selectedSection: BudgetSection = .plan
+    @State private var selectedSection: BudgetSection = .home
     @State private var notificationViewModel: NotificationBellViewModel?
     @State private var reviewViewModel: TransactionReviewViewModel?
+    /// Backs the Overview sub-tab's totals + chart/category breakdown — see
+    /// `overviewSubTabContent`. Owned here, not by either of those two views,
+    /// so they can share one loaded instance and one `.task` lifecycle, the
+    /// same reasoning `reviewViewModel`/`notificationViewModel` already use
+    /// one level up.
+    @State private var overviewViewModel: ExpenseOverviewViewModel?
 
-    @State private var planSelectedKind: ExpensePlanView.PlanKind = .overview
-    @State private var transactionsSelectedKind: TransactionsListView.TransactionKind = .variable
+    @State private var overviewSelectedSubTab: OverviewSubTab = .overview
     @State private var transactionsSearchQuery = ""
     /// Search starts hidden (issue #92 follow-up) — revealed by the toolbar's
-    /// search icon (see `toolbarContent`'s `.transactions` case) rather than
-    /// always shown above the list.
+    /// search icon (see `toolbarContent`'s `.home` case) rather than
+    /// always shown above the list. Only relevant to the Transactions/
+    /// Payments sub-tabs.
     @State private var isTransactionsSearchVisible = false
     @State private var isAddCategoryPresented = false
     @State private var isAddTransactionPresented = false
     @State private var isAddFixedExpensePresented = false
+    /// Plan's own Add Fixed Expense trigger — separate from
+    /// `isAddFixedExpensePresented` above, which belongs to Overview's
+    /// Transactions sub-tab "+" Menu. Different parent views, different sheet
+    /// contexts, even though both ultimately open `AddFixedExpenseView`.
+    @State private var isAddFixedExpenseTemplatePresented = false
+    /// Which of Plan's two sub-tabs is active — owned here, not `ExpensePlanView`
+    /// itself, so the toolbar "+" (which only renders at this level, see the
+    /// type-level doc comment) knows whether to dispatch to Add Category or
+    /// Add Fixed Expense.
+    @State private var planSelectedSubTab: PlanSubTab = .categories
     @State private var isMenuPresented = false
     /// Bumped whenever the Focused View toggle changes in `BudgetMenuSheet`,
-    /// so Plan/Transactions rebuild and refetch immediately instead of
+    /// so Plan/Overview rebuild and refetch immediately instead of
     /// showing the old scope until the user leaves and re-enters the tab.
     /// Folded into `.id(period.id)` below — the same trick that already
     /// forces a fresh subtree (and thus a fresh `.task`/load) on a period
     /// switch, reused here for the same reason.
     @State private var focusedViewToken = UUID()
+    /// Bumped when a Transaction Review confirm marks a Fixed row paid, and
+    /// folded into the Transactions sub-tab's `.id(...)` below — forces a
+    /// fresh mount/reload the next time that sub-tab is shown, regardless of
+    /// whether SwiftUI already tore its previous instance down on its own.
+    @State private var transactionsRefreshToken = UUID()
     @State private var isPaymentMethodRequiredPresented = false
     @State private var isPaymentMethodsPresented = false
 
@@ -121,7 +175,7 @@ struct BudgetDetailView: View {
             }
         }
         .task {
-            // Hoisted up from BudgetManageView so the Transactions tab has
+            // Hoisted up from BudgetManageView so the Overview section has
             // `currentPeriod.id` (needed for `budget_period_id`) available
             // regardless of which tab is initially selected, not only once
             // the user happens to open Manage.
@@ -157,8 +211,8 @@ struct BudgetDetailView: View {
         }
         .sheet(isPresented: $isPaymentMethodsPresented) {
             // Presented here rather than switching to the Manage tab and
-            // pushing: dismissing lands the user back on Transactions, ready
-            // to add the thing they came for.
+            // pushing: dismissing lands the user back on Overview, ready to
+            // add the thing they came for.
             if let authenticatedRESTClient, let viewModel {
                 NavigationStack {
                     PaymentMethodsListView(
@@ -190,10 +244,10 @@ struct BudgetDetailView: View {
         }
         .task {
             // Created once here (not inside `TransactionReviewListView`) so
-            // the pending count backs the Review tab's badge — same reasoning
-            // as `notificationViewModel`. Subscribed (not polled) so the
-            // badge — visible from every tab — updates on a matching push
-            // without the user having to enter the Review tab first.
+            // the pending count backs the Overview tab's badge — same
+            // reasoning as `notificationViewModel`. Subscribed (not polled)
+            // so the badge — visible from every tab — updates on a matching
+            // push without the user having to enter the Review sub-tab first.
             guard let authenticatedRESTClient, let viewModel else { return }
             if reviewViewModel == nil {
                 reviewViewModel = TransactionReviewViewModel(
@@ -235,23 +289,17 @@ struct BudgetDetailView: View {
     private func tabView(viewModel: BudgetDetailViewModel) -> some View {
         TabView(selection: tabSelection) {
             NavigationStack {
+                overviewContent(viewModel: viewModel)
+            }
+            .tabItem { Label(BudgetSection.home.title, systemImage: BudgetSection.home.systemImage) }
+            .tag(BudgetSection.home)
+            .badge(reviewViewModel?.pendingReviews.count ?? 0)
+
+            NavigationStack {
                 planContent(viewModel: viewModel)
             }
             .tabItem { Label(BudgetSection.plan.title, systemImage: BudgetSection.plan.systemImage) }
             .tag(BudgetSection.plan)
-
-            NavigationStack {
-                transactionsContent(viewModel: viewModel)
-            }
-            .tabItem { Label(BudgetSection.transactions.title, systemImage: BudgetSection.transactions.systemImage) }
-            .tag(BudgetSection.transactions)
-
-            NavigationStack {
-                reviewContent(viewModel: viewModel)
-            }
-            .tabItem { Label(BudgetSection.review.title, systemImage: BudgetSection.review.systemImage) }
-            .tag(BudgetSection.review)
-            .badge(reviewViewModel?.pendingReviews.count ?? 0)
 
             NavigationStack {
                 reportsContent
@@ -268,26 +316,16 @@ struct BudgetDetailView: View {
         }
     }
 
-    /// Tracks `selectedSection` to reproduce each tab's primary action (plus
-    /// the bell, common to every tab) at the one level that actually renders —
-    /// see the type-level doc comment. The menu is not here: it opens from the
+    /// Tracks `selectedSection` (and, for Overview, `overviewSelectedSubTab`)
+    /// to reproduce each tab's primary action (plus the bell, common to
+    /// every tab) at the one level that actually renders — see the
+    /// type-level doc comment. The menu is not here: it opens from the
     /// bottom bar's "More" item.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         switch selectedSection {
-        case .plan:
-            if viewModel?.canEdit == true && planSelectedKind == .plan {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isAddCategoryPresented = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityIdentifier("addPlanCategoryButton")
-                }
-            }
-        case .transactions:
-            if let viewModel {
+        case .home:
+            if overviewSelectedSubTab != .review, let viewModel {
                 ToolbarItem(placement: .principal) {
                     TransactionsPeriodControl(
                         currentPeriod: viewModel.currentPeriod,
@@ -298,26 +336,74 @@ struct BudgetDetailView: View {
                     )
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    isTransactionsSearchVisible.toggle()
-                    if !isTransactionsSearchVisible { transactionsSearchQuery = "" }
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                }
-                .accessibilityIdentifier("transactionsSearchToggleButton")
-            }
-            if viewModel?.canEdit == true && viewModel?.isArchivedPeriod != true {
+            if overviewSelectedSubTab == .transactions || overviewSelectedSubTab == .payments {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        startAddingTransactionForCurrentTab()
+                        isTransactionsSearchVisible.toggle()
+                        if !isTransactionsSearchVisible { transactionsSearchQuery = "" }
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                    }
+                    .accessibilityIdentifier("transactionsSearchToggleButton")
+                }
+                if viewModel?.canEdit == true && viewModel?.isArchivedPeriod != true {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        // Transactions merged Variable+Fixed into one list
+                        // (Stage 2) with no sub-picker of its own to say which
+                        // kind "+" means any more, so it offers both; Payments
+                        // only ever adds a Variable (card-payment) row.
+                        if overviewSelectedSubTab == .transactions {
+                            Menu {
+                                Button {
+                                    startAddingTransaction { isAddTransactionPresented = true }
+                                } label: {
+                                    Label("Transaction", systemImage: "cart")
+                                }
+                                .accessibilityIdentifier("addVariableTransactionMenuItem")
+                                Button {
+                                    startAddingTransaction { isAddFixedExpensePresented = true }
+                                } label: {
+                                    Label("Fixed expense", systemImage: "calendar")
+                                }
+                                .accessibilityIdentifier("addFixedExpenseMenuItem")
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityIdentifier("addTransactionButton")
+                        } else {
+                            Button {
+                                startAddingTransaction { isAddTransactionPresented = true }
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityIdentifier("addTransactionButton")
+                        }
+                    }
+                }
+            }
+        case .plan:
+            // No more Plan/Overview toggle to check here — Overview's own
+            // content moved to its own BudgetSection. Plan itself now has two
+            // sub-tabs (Categories, Fixed Expenses, Stage 3) — unlike
+            // Overview's Transactions "+" (a Menu, since that merged list has
+            // no sub-picker of its own to express the choice), Plan's two
+            // sub-tabs are already unambiguous, so this dispatches directly
+            // to whichever add flow matches the active one.
+            if viewModel?.canEdit == true {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        if planSelectedSubTab == .categories {
+                            isAddCategoryPresented = true
+                        } else {
+                            isAddFixedExpenseTemplatePresented = true
+                        }
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityIdentifier("addTransactionButton")
+                    .accessibilityIdentifier(planSelectedSubTab == .categories ? "addPlanCategoryButton" : "addFixedExpenseTemplateButton")
                 }
             }
-        case .review, .reports, .more:
+        case .reports, .more:
             ToolbarItemGroup {}
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -352,17 +438,13 @@ struct BudgetDetailView: View {
             }
         } detail: {
             switch selectedSection {
+            case .home:
+                NavigationStack {
+                    overviewContent(viewModel: viewModel)
+                }
             case .plan:
                 NavigationStack {
                     planContent(viewModel: viewModel)
-                }
-            case .transactions:
-                NavigationStack {
-                    transactionsContent(viewModel: viewModel)
-                }
-            case .review:
-                NavigationStack {
-                    reviewContent(viewModel: viewModel)
                 }
             case .reports:
                 NavigationStack {
@@ -384,8 +466,9 @@ struct BudgetDetailView: View {
                 authenticatedRESTClient: authenticatedRESTClient,
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
-                selectedKind: $planSelectedKind,
                 isAddCategoryPresented: $isAddCategoryPresented,
+                isAddFixedExpensePresented: $isAddFixedExpenseTemplatePresented,
+                selectedSubTab: $planSelectedSubTab,
                 isActive: selectedSection == .plan,
                 canEdit: viewModel.canEdit
             )
@@ -393,9 +476,9 @@ struct BudgetDetailView: View {
             // id. ExpensePlanView creates its view model once (`if viewModel ==
             // nil`) and captures budgetPeriodID at that moment, so a plain
             // parameter change left it reloading the period the user had
-            // navigated away from. The parent owns selectedKind and the sheet
-            // flags as @State, so those survive; only the period-scoped
-            // internals are discarded, which is exactly what should happen.
+            // navigated away from. The parent owns the sheet flags as @State,
+            // so those survive; only the period-scoped internals are
+            // discarded, which is exactly what should happen.
             // `focusedViewToken` rides along for the same reason: flipping
             // Focused View needs the same fresh reload a period switch gets.
             .id("\(period.id)|\(focusedViewToken)")
@@ -404,43 +487,156 @@ struct BudgetDetailView: View {
         }
     }
 
+    /// Home's own container. Second layout correction: Stage 2 made the
+    /// chart/totals content always-rendered chrome (totals pinned above the
+    /// sub-tab picker, chart pinned below it) so it would never disappear —
+    /// but three separately-scrolling panels stacked in one screen read live
+    /// as broken, not as one Overview. Totals now render *inside* the same
+    /// panel as the chart (see `overviewSubTabContent`), and that panel is
+    /// its own sub-tab — **Overview**, first in the picker — alongside
+    /// Transactions/Payments/Review, all four mutually exclusive, matching
+    /// every other segmented picker already in this app. See
+    /// docs/features/overview-plan-navigation-rework.md's second layout
+    /// correction.
     @ViewBuilder
-    private func transactionsContent(viewModel: BudgetDetailViewModel) -> some View {
+    private func overviewContent(viewModel: BudgetDetailViewModel) -> some View {
         VStack(spacing: 0) {
-            if isTransactionsSearchVisible {
+            Picker("View", selection: $overviewSelectedSubTab) {
+                Text(OverviewSubTab.overview.title).tag(OverviewSubTab.overview)
+                Text(OverviewSubTab.transactions.title).tag(OverviewSubTab.transactions)
+                Text(OverviewSubTab.payments.title).tag(OverviewSubTab.payments)
+                Text(reviewSubTabLabel).tag(OverviewSubTab.review)
+            }
+            .pickerStyle(.segmented)
+            .padding([.horizontal, .top])
+            .accessibilityIdentifier("overviewSubTabPicker")
+
+            if isTransactionsSearchVisible && (overviewSelectedSubTab == .transactions || overviewSelectedSubTab == .payments) {
                 transactionsSearchField
             }
 
-            if let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
-                TransactionsListView(
-                    budgetPeriodID: period.id,
-                    budgetProfileID: viewModel.profile.id,
-                    authenticatedRESTClient: authenticatedRESTClient,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier,
-                    selectedKind: $transactionsSelectedKind,
-                    isAddTransactionPresented: $isAddTransactionPresented,
-                    isAddFixedExpensePresented: $isAddFixedExpensePresented,
-                    isActive: selectedSection == .transactions,
-                    reviewViewModel: reviewViewModel,
-                    canEdit: viewModel.canEdit,
-                    isArchivedPeriod: viewModel.isArchivedPeriod,
-                    searchQuery: transactionsSearchQuery
-                )
-                // Same reason as planContent's — see there.
-                .id("\(period.id)|\(focusedViewToken)")
-            } else {
-                ProgressView()
+            Group {
+                switch overviewSelectedSubTab {
+                case .overview:
+                    overviewSubTabContent(viewModel: viewModel)
+                case .transactions:
+                    transactionsSubTabContent(viewModel: viewModel)
+                case .payments:
+                    paymentsSubTabContent(viewModel: viewModel)
+                case .review:
+                    reviewContent(viewModel: viewModel)
+                }
             }
+            .frame(maxHeight: .infinity)
+        }
+        .task(id: overviewLoadKey(viewModel: viewModel)) {
+            guard let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty else { return }
+            let model = ExpenseOverviewViewModel(
+                budgetPeriodID: period.id,
+                budgetProfileID: viewModel.profile.id,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                currentUserID: session.userID,
+                restClient: authenticatedRESTClient
+            )
+            overviewViewModel = model
+            await model.load()
+        }
+    }
+
+    /// The Overview sub-tab: totals + chart/category breakdown as one
+    /// combined, single-scrolling panel — `ExpenseOverviewTotalsView` renders
+    /// as the first `Section` inside `ExpenseOverviewChartListView`'s own
+    /// `List`, rather than as a separate view stacked above it. That's what
+    /// makes this "part of the panel with the graph" rather than its own
+    /// strip, per the correction.
+    @ViewBuilder
+    private func overviewSubTabContent(viewModel: BudgetDetailViewModel) -> some View {
+        if let overviewViewModel {
+            ExpenseOverviewChartListView(
+                viewModel: overviewViewModel,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier
+            )
+        } else if authenticatedRESTClient != nil {
+            ProgressView()
+        }
+    }
+
+    /// Re-fetches on a period switch or a Focused View toggle — same keys
+    /// `planContent`/`transactionsSubTabContent` force a remount on, applied
+    /// here via `.task(id:)` instead: cancels and reruns the load whenever
+    /// this changes, which both recreates `overviewViewModel` for the new
+    /// period and avoids needing a full subtree remount just to get a fresh
+    /// `.task`.
+    private func overviewLoadKey(viewModel: BudgetDetailViewModel) -> String {
+        "\(viewModel.currentPeriod?.id ?? "")|\(focusedViewToken)"
+    }
+
+    /// In-content indicator for the Review sub-tab, since it no longer has
+    /// its own `.tabItem` `.badge(_:)` to carry one (that moved to the
+    /// Overview tab item itself — see `tabView`). Plain count suffix rather
+    /// than a true `.badge(_:)` modifier: a segmented `Picker`'s individual
+    /// segments don't support that modifier.
+    private var reviewSubTabLabel: String {
+        let count = reviewViewModel?.pendingReviews.count ?? 0
+        return count > 0 ? "\(OverviewSubTab.review.title) (\(count))" : OverviewSubTab.review.title
+    }
+
+    @ViewBuilder
+    private func transactionsSubTabContent(viewModel: BudgetDetailViewModel) -> some View {
+        if let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+            TransactionsListView(
+                budgetPeriodID: period.id,
+                budgetProfileID: viewModel.profile.id,
+                authenticatedRESTClient: authenticatedRESTClient,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                isAddTransactionPresented: $isAddTransactionPresented,
+                isAddFixedExpensePresented: $isAddFixedExpensePresented,
+                isActive: selectedSection == .home && overviewSelectedSubTab == .transactions,
+                reviewViewModel: reviewViewModel,
+                canEdit: viewModel.canEdit,
+                isArchivedPeriod: viewModel.isArchivedPeriod,
+                searchQuery: transactionsSearchQuery
+            )
+            // Same reason as planContent's — see there, plus
+            // `transactionsRefreshToken` (see its own doc comment).
+            .id("\(period.id)|\(focusedViewToken)|\(transactionsRefreshToken)")
+        } else {
+            ProgressView()
+        }
+    }
+
+    @ViewBuilder
+    private func paymentsSubTabContent(viewModel: BudgetDetailViewModel) -> some View {
+        if let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty {
+            PaymentsListView(
+                budgetPeriodID: period.id,
+                budgetProfileID: viewModel.profile.id,
+                authenticatedRESTClient: authenticatedRESTClient,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier,
+                isAddTransactionPresented: $isAddTransactionPresented,
+                isActive: selectedSection == .home && overviewSelectedSubTab == .payments,
+                reviewViewModel: reviewViewModel,
+                canEdit: viewModel.canEdit,
+                isArchivedPeriod: viewModel.isArchivedPeriod,
+                searchQuery: transactionsSearchQuery
+            )
+            // Same reason as planContent's — see there.
+            .id("\(period.id)|\(focusedViewToken)")
+        } else {
+            ProgressView()
         }
     }
 
     /// Same plain `TextField` this screen has always used for search — see
     /// the history in docs/features (v1.27.1): SwiftUI's native `.searchable`
     /// never installs a search bar at all on this doubly-nested
-    /// NavigationStack architecture. Now gated behind the toolbar's search
-    /// icon (see `toolbarContent`'s `.transactions` case) instead of always
-    /// shown.
+    /// NavigationStack architecture. Gated behind the toolbar's search icon
+    /// (see `toolbarContent`'s `.home` case) and shown above whichever of
+    /// the Transactions/Payments sub-tabs is active.
     private var transactionsSearchField: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
@@ -466,27 +662,14 @@ struct BudgetDetailView: View {
         .padding(.top, 8)
     }
 
-    /// One shared add entry point for all three tabs (issue #92 follow-up) —
-    /// replaces the three separate triggers this screen used to have
-    /// (Variable's own summary-card "+", and the outer toolbar's "+" for
-    /// Fixed/Payments). Dispatches to whichever sheet the current tab needs;
-    /// the payment-method-required gate is unchanged.
-    private func startAddingTransactionForCurrentTab() {
-        switch transactionsSelectedKind {
-        case .fixed:
-            startAddingTransaction { isAddFixedExpensePresented = true }
-        case .variable, .payments:
-            startAddingTransaction { isAddTransactionPresented = true }
-        }
-    }
-
     private func reviewContent(viewModel: BudgetDetailViewModel) -> some View {
         TransactionReviewListView(
             viewModel: reviewViewModel,
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier,
-            isActive: selectedSection == .review,
-            canEdit: viewModel.canEdit
+            isActive: selectedSection == .home && overviewSelectedSubTab == .review,
+            canEdit: viewModel.canEdit,
+            onConfirmed: { transactionsRefreshToken = UUID() }
         )
     }
 

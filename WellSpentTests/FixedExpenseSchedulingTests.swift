@@ -106,4 +106,17 @@ struct FixedExpenseSchedulingTests {
         #expect(FixedExpenseScheduling.totalPayments(fromEndDate: end, anchor: anchor, frequencyUnit: .month, intervalMonths: 1, intervalWeeks: 1) == 1)
     }
 
+    @Test("scheduleSummary reads the monthly cadence")
+    func scheduleSummaryMonthly() {
+        let text = FixedExpenseScheduling.scheduleSummary(intervalMonths: 3, intervalWeeks: 1, frequencyUnit: .month)
+        #expect(text.contains("3"))
+        #expect(text.lowercased().contains("month"))
+    }
+
+    @Test("scheduleSummary reads the weekly cadence")
+    func scheduleSummaryWeekly() {
+        let text = FixedExpenseScheduling.scheduleSummary(intervalMonths: 1, intervalWeeks: 2, frequencyUnit: .week)
+        #expect(text.contains("2"))
+        #expect(text.lowercased().contains("week"))
+    }
 }

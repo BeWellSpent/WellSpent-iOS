@@ -32,7 +32,7 @@ final class MarkForReviewViewModel {
         do {
             let output = try await restClient.listTransactions(.init(query: .init(
                 budgetPeriodId: budgetPeriodID,
-                transactionType: BudgetRESTMapping.restExpenseType(from: FixedExpensesViewModel.fixedTypeID)
+                transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.fixedTypeID)
             )))
             guard case .ok(let ok) = output, let body = try? ok.body.json else {
                 errorMessage = "Couldn't load fixed expenses."

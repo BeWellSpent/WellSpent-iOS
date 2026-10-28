@@ -4,9 +4,10 @@ import WellSpentAPI
 /// Small confirmation sheet — no network call of its own. Amount/date are
 /// prefilled from the transaction (planned amount, its scheduled date);
 /// confirming just hands the built `Money` + date back to the caller, which
-/// delegates to `FixedExpensesViewModel.markPaid`. The backend, not this
-/// view, is responsible for propagating a changed amount back to the
-/// `FixedExpense` template.
+/// delegates to `TransactionsViewModel.markPaid` (the merged Transactions
+/// list, Stage 2 of docs/features/overview-plan-navigation-rework.md). The
+/// backend, not this view, is responsible for propagating a changed amount
+/// back to the `FixedExpense` template.
 struct MarkAsPaidView: View {
     @Environment(\.dismiss) private var dismiss
     let currencyCode: String

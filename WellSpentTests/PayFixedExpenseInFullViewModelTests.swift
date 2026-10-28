@@ -5,9 +5,10 @@ import WellSpentREST
 @testable import WellSpent
 
 /// The RPC itself is an unreachable client (`http://localhost:1`, the
-/// convention here — see `FixedExpensesViewModelTests`), so the submit path
-/// below exercises the failure branch; a real success round-trip needs a
-/// live server and isn't covered by this repo's no-network-mocking tests.
+/// convention here — see `FixedExpenseTemplatesViewModelTests`), so the
+/// submit path below exercises the failure branch; a real success
+/// round-trip needs a live server and isn't covered by this repo's
+/// no-network-mocking tests.
 @MainActor
 @Suite("PayFixedExpenseInFullViewModel")
 struct PayFixedExpenseInFullViewModelTests {

@@ -125,7 +125,7 @@ final class ExpenseOverviewViewModel {
         transactions.filter {
             $0.categoryID == category.id
                 && !ExpenseOverviewCalculations.isTransactionExcluded($0, incomeCategoryID: incomeCategoryID)
-                && !($0.transactionTypeID == FixedExpensesViewModel.fixedTypeID && !$0.isPaid)
+                && !($0.transactionTypeID == TransactionsViewModel.fixedTypeID && !$0.isPaid)
         }
     }
 
