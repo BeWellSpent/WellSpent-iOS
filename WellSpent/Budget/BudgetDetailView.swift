@@ -5,13 +5,15 @@ import WellSpentREST
 
 /// Adaptive navigation shell for a budget: a bottom tab bar on iPhone
 /// (`.compact` horizontal size class), a `NavigationSplitView` sidebar on
-/// iPad (`.regular`). Four real destinations — Overview, Plan, Reports, More
-/// — per docs/features/overview-plan-navigation-rework.md: Overview is the
-/// home for *what actually happened* (the actual-breakdown chart, with
-/// Transactions/Payments/Review as sub-tabs beneath it), Plan for *what you
-/// intend to spend* (the per-category planned-amount editor). Overview and
-/// Plan replaced the former Plan/Transactions/Review three-way split — see
-/// that spec for the full before/after.
+/// iPad (`.regular`). Four real destinations — Home, Plan, Reports, More —
+/// per docs/features/overview-plan-navigation-rework.md: Home is the
+/// destination for *what actually happened*, with four sub-tabs — Overview
+/// (totals + the actual-breakdown chart, one combined panel), Transactions,
+/// Payments, Review — Plan is for *what you intend to spend* (the
+/// per-category planned-amount editor). Home and Plan replaced the former
+/// Plan/Transactions/Review three-way split — see that spec for the full
+/// before/after, including the layout correction that folded the chart back
+/// into its own sub-tab instead of wrapping the whole screen.
 ///
 /// This is the app's home screen (issue #60) — `BudgetHomeView` renders it
 /// directly inside a `NavigationStack`. It nests its own per-tab `NavigationStack`s
@@ -26,15 +28,19 @@ import WellSpentREST
 /// themselves (which still declare their own for canvas-preview accuracy in
 /// isolation, but those never render in the real, nested app).
 struct BudgetDetailView: View {
-    /// Sub-destination within the Overview section — "what actually
-    /// happened." Owned here, not a `Shared/` enum: it drives which toolbar
-    /// content shows at the one level that actually renders it (see the
-    /// type-level doc comment above). Three segments, not four — the chart/
-    /// totals content (formerly its own `.overview` segment, replacing the
-    /// whole screen when picked) is now always-rendered chrome around this
-    /// picker instead of one of its options; see `overviewContent` and
-    /// docs/features/overview-plan-navigation-rework.md's layout correction.
+    /// Sub-destination within the Home section — "what actually happened."
+    /// Owned here, not a `Shared/` enum: it drives which toolbar content
+    /// shows at the one level that actually renders it (see the type-level
+    /// doc comment above). Four segments: **Overview** first (totals + the
+    /// actual-breakdown chart, one combined panel — see `overviewSubTabContent`),
+    /// then Transactions/Payments/Review. This reverts the second half of
+    /// Stage 2's "always-visible chart" layout correction, after that shape
+    /// read live as three disconnected panels rather than one screen — see
+    /// docs/features/overview-plan-navigation-rework.md's second layout
+    /// correction for the full reasoning. Totals are now part of the same
+    /// panel as the chart, not a separate always-on strip.
     private enum OverviewSubTab: Hashable, CaseIterable {
+        case overview
         case transactions
         case payments
         case review
@@ -42,6 +48,7 @@ struct BudgetDetailView: View {
         var title: String {
             let locale = AppLanguageStore.currentLocale
             switch self {
+            case .overview: return String(localized: "Overview", bundle: AppLanguageStore.currentBundle, locale: locale)
             case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
             case .payments: return String(localized: "Payments", bundle: AppLanguageStore.currentBundle, locale: locale)
             case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
@@ -59,20 +66,20 @@ struct BudgetDetailView: View {
     private let onDeleted: () -> Void
 
     @State private var viewModel: BudgetDetailViewModel?
-    @State private var selectedSection: BudgetSection = .overview
+    @State private var selectedSection: BudgetSection = .home
     @State private var notificationViewModel: NotificationBellViewModel?
     @State private var reviewViewModel: TransactionReviewViewModel?
-    /// Backs the always-visible totals block and chart/category breakdown —
-    /// see `overviewContent`. Owned here (not by either of those two views)
-    /// so they can share one loaded instance and one `.task` lifecycle,
-    /// the same reasoning `reviewViewModel`/`notificationViewModel` already
-    /// use one level up.
+    /// Backs the Overview sub-tab's totals + chart/category breakdown — see
+    /// `overviewSubTabContent`. Owned here, not by either of those two views,
+    /// so they can share one loaded instance and one `.task` lifecycle, the
+    /// same reasoning `reviewViewModel`/`notificationViewModel` already use
+    /// one level up.
     @State private var overviewViewModel: ExpenseOverviewViewModel?
 
-    @State private var overviewSelectedSubTab: OverviewSubTab = .transactions
+    @State private var overviewSelectedSubTab: OverviewSubTab = .overview
     @State private var transactionsSearchQuery = ""
     /// Search starts hidden (issue #92 follow-up) — revealed by the toolbar's
-    /// search icon (see `toolbarContent`'s `.overview` case) rather than
+    /// search icon (see `toolbarContent`'s `.home` case) rather than
     /// always shown above the list. Only relevant to the Transactions/
     /// Payments sub-tabs.
     @State private var isTransactionsSearchVisible = false
@@ -279,8 +286,8 @@ struct BudgetDetailView: View {
             NavigationStack {
                 overviewContent(viewModel: viewModel)
             }
-            .tabItem { Label(BudgetSection.overview.title, systemImage: BudgetSection.overview.systemImage) }
-            .tag(BudgetSection.overview)
+            .tabItem { Label(BudgetSection.home.title, systemImage: BudgetSection.home.systemImage) }
+            .tag(BudgetSection.home)
             .badge(reviewViewModel?.pendingReviews.count ?? 0)
 
             NavigationStack {
@@ -312,7 +319,7 @@ struct BudgetDetailView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         switch selectedSection {
-        case .overview:
+        case .home:
             if overviewSelectedSubTab != .review, let viewModel {
                 ToolbarItem(placement: .principal) {
                     TransactionsPeriodControl(
@@ -426,7 +433,7 @@ struct BudgetDetailView: View {
             }
         } detail: {
             switch selectedSection {
-            case .overview:
+            case .home:
                 NavigationStack {
                     overviewContent(viewModel: viewModel)
                 }
@@ -475,27 +482,22 @@ struct BudgetDetailView: View {
         }
     }
 
-    /// Overview's own container. Layout corrected from Stage 1: the chart/
-    /// actual-breakdown content used to be one of the sub-tab picker's own
-    /// segments (replacing the whole screen when picked); it's now always
-    /// rendered, split into a totals block pinned at the top and the chart +
-    /// category list pushed to the bottom, with the 3-way Transactions/
-    /// Payments/Review picker switching only the content in between. See
-    /// docs/features/overview-plan-navigation-rework.md's layout correction.
+    /// Home's own container. Second layout correction: Stage 2 made the
+    /// chart/totals content always-rendered chrome (totals pinned above the
+    /// sub-tab picker, chart pinned below it) so it would never disappear —
+    /// but three separately-scrolling panels stacked in one screen read live
+    /// as broken, not as one Overview. Totals now render *inside* the same
+    /// panel as the chart (see `overviewSubTabContent`), and that panel is
+    /// its own sub-tab — **Overview**, first in the picker — alongside
+    /// Transactions/Payments/Review, all four mutually exclusive, matching
+    /// every other segmented picker already in this app. See
+    /// docs/features/overview-plan-navigation-rework.md's second layout
+    /// correction.
     @ViewBuilder
     private func overviewContent(viewModel: BudgetDetailViewModel) -> some View {
         VStack(spacing: 0) {
-            if let overviewViewModel {
-                ExpenseOverviewTotalsView(
-                    viewModel: overviewViewModel,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                )
-            }
-
-            Divider()
-
             Picker("View", selection: $overviewSelectedSubTab) {
+                Text(OverviewSubTab.overview.title).tag(OverviewSubTab.overview)
                 Text(OverviewSubTab.transactions.title).tag(OverviewSubTab.transactions)
                 Text(OverviewSubTab.payments.title).tag(OverviewSubTab.payments)
                 Text(reviewSubTabLabel).tag(OverviewSubTab.review)
@@ -510,6 +512,8 @@ struct BudgetDetailView: View {
 
             Group {
                 switch overviewSelectedSubTab {
+                case .overview:
+                    overviewSubTabContent(viewModel: viewModel)
                 case .transactions:
                     transactionsSubTabContent(viewModel: viewModel)
                 case .payments:
@@ -519,28 +523,6 @@ struct BudgetDetailView: View {
                 }
             }
             .frame(maxHeight: .infinity)
-
-            if let overviewViewModel {
-                Divider()
-                ExpenseOverviewChartListView(
-                    viewModel: overviewViewModel,
-                    currencyCode: currencyCode,
-                    localeIdentifier: localeIdentifier
-                )
-                // Deliberately a fixed, independently-scrolling panel rather
-                // than one unbroken native scroll with everything above it:
-                // the Transactions/Payments/Review sub-tab content is its own
-                // `List` with `.swipeActions` (Variable/Fixed row actions),
-                // which only works as a genuine `List`, not content embedded
-                // in a shared outer `ScrollView`. Splitting the chart/
-                // category list into its own `List` below, sized to a fixed
-                // height so it's always on screen without scrolling the
-                // whole page to reach it, is the tradeoff that keeps both
-                // "always visible" and every existing swipe action intact.
-                .frame(height: 320)
-            } else if authenticatedRESTClient != nil {
-                ProgressView()
-            }
         }
         .task(id: overviewLoadKey(viewModel: viewModel)) {
             guard let authenticatedRESTClient, let period = viewModel.currentPeriod, !period.id.isEmpty else { return }
@@ -554,6 +536,25 @@ struct BudgetDetailView: View {
             )
             overviewViewModel = model
             await model.load()
+        }
+    }
+
+    /// The Overview sub-tab: totals + chart/category breakdown as one
+    /// combined, single-scrolling panel — `ExpenseOverviewTotalsView` renders
+    /// as the first `Section` inside `ExpenseOverviewChartListView`'s own
+    /// `List`, rather than as a separate view stacked above it. That's what
+    /// makes this "part of the panel with the graph" rather than its own
+    /// strip, per the correction.
+    @ViewBuilder
+    private func overviewSubTabContent(viewModel: BudgetDetailViewModel) -> some View {
+        if let overviewViewModel {
+            ExpenseOverviewChartListView(
+                viewModel: overviewViewModel,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier
+            )
+        } else if authenticatedRESTClient != nil {
+            ProgressView()
         }
     }
 
@@ -588,7 +589,7 @@ struct BudgetDetailView: View {
                 localeIdentifier: localeIdentifier,
                 isAddTransactionPresented: $isAddTransactionPresented,
                 isAddFixedExpensePresented: $isAddFixedExpensePresented,
-                isActive: selectedSection == .overview && overviewSelectedSubTab == .transactions,
+                isActive: selectedSection == .home && overviewSelectedSubTab == .transactions,
                 reviewViewModel: reviewViewModel,
                 canEdit: viewModel.canEdit,
                 isArchivedPeriod: viewModel.isArchivedPeriod,
@@ -611,7 +612,7 @@ struct BudgetDetailView: View {
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
                 isAddTransactionPresented: $isAddTransactionPresented,
-                isActive: selectedSection == .overview && overviewSelectedSubTab == .payments,
+                isActive: selectedSection == .home && overviewSelectedSubTab == .payments,
                 reviewViewModel: reviewViewModel,
                 canEdit: viewModel.canEdit,
                 isArchivedPeriod: viewModel.isArchivedPeriod,
@@ -628,7 +629,7 @@ struct BudgetDetailView: View {
     /// the history in docs/features (v1.27.1): SwiftUI's native `.searchable`
     /// never installs a search bar at all on this doubly-nested
     /// NavigationStack architecture. Gated behind the toolbar's search icon
-    /// (see `toolbarContent`'s `.overview` case) and shown above whichever of
+    /// (see `toolbarContent`'s `.home` case) and shown above whichever of
     /// the Transactions/Payments sub-tabs is active.
     private var transactionsSearchField: some View {
         HStack(spacing: 6) {
@@ -660,7 +661,7 @@ struct BudgetDetailView: View {
             viewModel: reviewViewModel,
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier,
-            isActive: selectedSection == .overview && overviewSelectedSubTab == .review,
+            isActive: selectedSection == .home && overviewSelectedSubTab == .review,
             canEdit: viewModel.canEdit
         )
     }

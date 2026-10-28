@@ -3716,6 +3716,23 @@
         }
       }
     },
+    "Home" : {
+      "comment" : "Bottom tab label — the destination for \"what actually happened\" (totals, chart, Transactions/Payments/Review).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicio"
+          }
+        }
+      }
+    },
     "Hourly" : {
       "localizations" : {
         "en" : {

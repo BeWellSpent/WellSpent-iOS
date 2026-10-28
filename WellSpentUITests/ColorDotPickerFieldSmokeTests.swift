@@ -66,8 +66,9 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
 
         // Overview/Plan navigation rework: Transactions is no longer its own
-        // bottom tab — it's Overview's sub-tab picker.
-        app.tabBars.buttons["Overview"].tap()
+        // bottom tab — it's a sub-tab inside Home (the bottom tab renamed
+        // once "Overview" became a sub-tab's own name instead).
+        app.tabBars.buttons["Home"].tap()
         app.buttons["Transactions"].tap()
 
         // "+" is now a Menu (Stage 2 merged Variable+Fixed into one list,

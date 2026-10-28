@@ -2,23 +2,22 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-/// The Overview screen's chart + per-category actual-vs-planned breakdown —
-/// pushed to the bottom of the screen, below the Transactions/Payments/
-/// Review sub-tab content, always visible regardless of which sub-tab is
-/// selected (correction to Stage 1 of
-/// docs/features/overview-plan-navigation-rework.md: this used to be one of
-/// the sub-tab picker's own segments, replacing the whole screen when
-/// another segment was picked; see `ExpenseOverviewTotalsView`, which this
-/// file's own trailing totals `Section` moved into, for the other half).
+/// The Home section's **Overview** sub-tab: totals + chart + per-category
+/// actual-vs-planned breakdown, as one combined, single-scrolling panel —
+/// `ExpenseOverviewTotalsView` renders as this `List`'s first `Section`
+/// (second correction to docs/features/overview-plan-navigation-rework.md:
+/// the first correction pinned totals above and this chart below as two
+/// separately-scrolling, always-visible panels flanking the Transactions/
+/// Payments/Review picker, which read live as three disconnected panels
+/// rather than one screen; totals are now part of *this* panel instead, and
+/// this whole view is its own sub-tab rather than always-on chrome).
 ///
-/// No longer owns the view model's lifecycle (`.task`/`.refreshable`
-/// creating its own `@State` instance) — `BudgetDetailView` now creates and
-/// loads one `ExpenseOverviewViewModel` for the whole Overview screen, so
-/// this view and `ExpenseOverviewTotalsView` both read the same
-/// already-loaded instance without a second fetch. `.refreshable` stays
-/// here since this is the one `List` left on this screen a pull gesture can
-/// reach — refreshing it reloads the shared instance, so the totals above
-/// update too.
+/// Doesn't own the view model's lifecycle (`.task`/`.refreshable` creating
+/// its own `@State` instance) — `BudgetDetailView` creates and loads one
+/// `ExpenseOverviewViewModel` per Home-section visit, shared by whichever
+/// sub-tab needs it. `.refreshable` stays here since this is the only
+/// `List` the Overview sub-tab renders — refreshing it reloads the shared
+/// instance, so the totals section at the top updates too.
 struct ExpenseOverviewChartListView: View {
     let viewModel: ExpenseOverviewViewModel
     let currencyCode: String
@@ -35,6 +34,14 @@ struct ExpenseOverviewChartListView: View {
 
     var body: some View {
         List {
+            Section {
+                ExpenseOverviewTotalsView(
+                    viewModel: viewModel,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                )
+            }
+
             if !viewModel.visibleCategories.isEmpty {
                 Section {
                     ExpenseChartView(

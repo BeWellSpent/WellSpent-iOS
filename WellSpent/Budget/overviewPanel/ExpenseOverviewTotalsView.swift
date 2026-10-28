@@ -2,18 +2,17 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-/// The Overview screen's totals block — Income/Actual/Planned/Remaining/
-/// Over budget/Unplanned — pulled to the top of the screen, always visible
-/// regardless of which Transactions/Payments/Review sub-tab is selected
-/// (correction to Stage 1 of
-/// docs/features/overview-plan-navigation-rework.md: the chart and this
-/// totals block used to be one of the sub-tab picker's own segments,
-/// replacing the whole screen when another segment was picked).
+/// The Overview sub-tab's totals block — Income/Actual/Planned/Remaining/
+/// Over budget/Unplanned. Rendered as the first `Section` inside
+/// `ExpenseOverviewChartListView`'s `List`, so it's part of the same
+/// single-scrolling panel as the chart, not a separate strip (see that
+/// view's doc comment for the full layout history — this was briefly an
+/// always-visible strip pinned above the sub-tab picker, which read live as
+/// a disconnected third panel rather than part of Overview).
 ///
-/// Split out of what used to be `ExpenseOverviewListView`'s own trailing
-/// `Section` — the figures themselves are unchanged, still read straight off
-/// the shared `ExpenseOverviewViewModel` (owned by `BudgetDetailView` now, so
-/// this view and `ExpenseOverviewChartListView` below can both read the same
+/// The figures themselves are unchanged, still read straight off the shared
+/// `ExpenseOverviewViewModel` (owned by `BudgetDetailView`, so this view and
+/// the rest of `ExpenseOverviewChartListView` both read the same
 /// already-loaded instance without a second fetch).
 struct ExpenseOverviewTotalsView: View {
     let viewModel: ExpenseOverviewViewModel

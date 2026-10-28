@@ -69,15 +69,13 @@ final class TransactionsSearchSmokeTests: XCTestCase {
 
         XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
 
-        let overviewTab = app.tabBars.buttons["Overview"]
-        XCTAssertTrue(overviewTab.waitForExistence(timeout: 10))
-        overviewTab.tap()
+        let homeTab = app.tabBars.buttons["Home"]
+        XCTAssertTrue(homeTab.waitForExistence(timeout: 10))
+        homeTab.tap()
 
-        // Overview's sub-tab picker defaults to Transactions already (the
-        // chart/totals content is always-rendered chrome around it now, not
-        // a competing picker segment — see the layout correction in
-        // docs/features/overview-plan-navigation-rework.md) — tapping the
-        // segment again is harmless and keeps this test explicit either way.
+        // Home's sub-tab picker defaults to Overview (totals + chart, one
+        // combined panel — see docs/features/overview-plan-navigation-rework.md's
+        // second layout correction), so Transactions needs an explicit tap.
         let transactionsSubTab = app.buttons["Transactions"]
         XCTAssertTrue(transactionsSubTab.waitForExistence(timeout: 10))
         transactionsSubTab.tap()
