@@ -117,6 +117,14 @@ final class TransactionsViewModel {
         return String(localized: "Expected savings: \(savedText)", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
+    /// "Saved so far: $X" — how much has actually gone to Savings this period.
+    var actualSavedText: String? {
+        let saved = TransactionAmountFormatting.tuple(from: summary?.savingsActualTotal)
+        guard saved.units != 0 || saved.nanos != 0 else { return nil }
+        let savedText = MoneyFormatting.format(units: saved.units, nanos: saved.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        return String(localized: "Saved so far: \(savedText)", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+    }
+
     init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client, onDataChanged: (() -> Void)? = nil) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID

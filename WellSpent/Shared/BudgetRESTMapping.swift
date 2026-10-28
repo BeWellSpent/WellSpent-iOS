@@ -419,6 +419,7 @@ nonisolated enum BudgetRESTMapping {
             $0.totalPlannedIncludingSavings = money(from: s.totalPlannedIncludingSavings)
             $0.totalActualIncludingSavings = money(from: s.totalActualIncludingSavings)
             $0.savingsPlannedTotal = money(from: s.savingsPlannedTotal)
+            $0.savingsActualTotal = money(from: s.savingsActualTotal)
         }
     }
 

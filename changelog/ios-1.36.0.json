@@ -301,6 +301,11 @@
       "changeType": "fixed",
       "summaryEn": "Savings no longer counts toward your spending totals in Transactions or Overview — it's an optimistic allocation, not an expense. The Transactions tab now shows your expected savings alongside what you've actually spent, and Overview shows both the expense-only and with-savings figures for planned and actual.",
       "summaryEs": "Los ahorros ya no cuentan hacia tus totales de gasto en Transacciones o Resumen: son una asignación optimista, no un gasto. La pestaña de Transacciones ahora muestra tus ahorros esperados junto a lo que realmente gastaste, y Resumen muestra tanto las cifras solo de gastos como las que incluyen ahorros, para lo planeado y lo real."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Transactions now also shows how much you've actually saved/invested this period, next to your expected savings.",
+      "summaryEs": "Transacciones ahora también muestra cuánto has ahorrado o invertido realmente en este período, junto a tu ahorro esperado."
     }
   ]
 }
