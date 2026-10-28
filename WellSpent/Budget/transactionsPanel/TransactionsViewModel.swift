@@ -471,9 +471,7 @@ final class TransactionsViewModel {
         }
     }
 
-    /// Mark/unmark paid only patch the one transaction locally, but the
-    /// summary card's totals/progress/over-budget set are server-computed —
-    /// refetch those too so they don't go stale after a mutation.
+    /// Server-computed totals went stale after a local-only transaction patch — refetch them.
     private func refreshSummary() async {
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
         if let fetched = await fetchSummary(focusedView: focusedView) {
@@ -481,14 +479,7 @@ final class TransactionsViewModel {
         }
     }
 
-    /// Deactivates the Fixed row's linked template (and removes this
-    /// period's unpaid transaction, per the backend's delete semantics) —
-    /// same delete-means-deactivate framing payment methods already use.
-    /// Falls back to a plain single-transaction delete when the template is
-    /// already gone (e.g. deleted from Plan's Fixed Expenses tab, which sets
-    /// `fixed_expense_id` null on every transaction it had spawned) — this
-    /// used to silently no-op here, leaving the optimistically-hidden row
-    /// un-deleted and reappearing on the next load.
+    /// Deactivates the linked template; falls back to a plain delete if it's already gone.
     func delete(_ transaction: Wellspent_V1_Transaction) async {
         guard !transaction.fixedExpenseID.isEmpty else {
             Self.logger.info("deleting orphaned fixed transactionID=\(transaction.id, privacy: .public) (no linked template)")
