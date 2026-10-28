@@ -55,22 +55,11 @@ nonisolated enum TransactionAmountFormatting {
         return (units, Int32(nanosTotal))
     }
 
-    /// Sums a list of (units, nanos) pairs and formats the result. Shared by
-    /// the Variable and Fixed transaction lists' running totals.
-    static func totalDisplayText(amounts: [(units: Int64, nanos: Int32)], currencyCode: String, localeIdentifier: String) -> String {
-        let total = sum(amounts)
-        return displayText(units: total.units, nanos: total.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
-    }
-
     /// Sums a list of (units, nanos) pairs and formats the result as an
-    /// unsigned magnitude — for a report-style total shown next to a planned
-    /// figure or a progress bar (the Transactions tabs' summary cards, issue
-    /// #92), where `totalDisplayText`'s row-level "-$X spent / +$X received"
-    /// convention would read as a net balance instead of "how much was
-    /// spent," and would contradict the already-unsigned planned/remaining
-    /// text right next to it. Mirrors the Expense Overview's own rule that a
-    /// report amount stays a magnitude (docs/features/overview-amount-signs.md)
-    /// — the same rule issue #52 exists because two screens disagreed on.
+    /// unsigned magnitude — for a report-style total that's never signed
+    /// (a savings total, or one shown next to a planned figure/progress bar).
+    /// Mirrors the Expense Overview's own rule that a report amount stays a
+    /// magnitude (docs/features/overview-amount-signs.md).
     static func magnitudeDisplayText(amounts: [(units: Int64, nanos: Int32)], currencyCode: String, localeIdentifier: String) -> String {
         let total = sum(amounts)
         return MoneyFormatting.format(units: abs(total.units), nanos: abs(total.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
