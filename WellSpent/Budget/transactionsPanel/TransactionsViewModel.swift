@@ -2,10 +2,13 @@ import Foundation
 import Observation
 import WellSpentAPI
 import WellSpentREST
+import os
 
 @MainActor
 @Observable
 final class TransactionsViewModel {
+    private static let logger = AppLogger.logger("TransactionsViewModel")
+
     /// `transaction_type` lookup table seed order (see
     /// WellSpent-backend/internal/db/migrations/000001_init_schema.sql):
     /// Fixed = 1, Variable = 2. Raw int32 on the wire, no proto enum.
@@ -410,6 +413,7 @@ final class TransactionsViewModel {
                 return
             }
             transactions.removeAll { $0.id == id }
+            await refreshSummary()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
@@ -480,8 +484,17 @@ final class TransactionsViewModel {
     /// Deactivates the Fixed row's linked template (and removes this
     /// period's unpaid transaction, per the backend's delete semantics) —
     /// same delete-means-deactivate framing payment methods already use.
+    /// Falls back to a plain single-transaction delete when the template is
+    /// already gone (e.g. deleted from Plan's Fixed Expenses tab, which sets
+    /// `fixed_expense_id` null on every transaction it had spawned) — this
+    /// used to silently no-op here, leaving the optimistically-hidden row
+    /// un-deleted and reappearing on the next load.
     func delete(_ transaction: Wellspent_V1_Transaction) async {
-        guard !transaction.fixedExpenseID.isEmpty else { return }
+        guard !transaction.fixedExpenseID.isEmpty else {
+            Self.logger.info("deleting orphaned fixed transactionID=\(transaction.id, privacy: .public) (no linked template)")
+            await delete(id: transaction.id)
+            return
+        }
         errorMessage = nil
         let fallback = String(localized: "Couldn't delete that fixed expense.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
         do {
@@ -491,6 +504,7 @@ final class TransactionsViewModel {
             }
             fixedExpenses.removeAll { $0.id == transaction.fixedExpenseID }
             transactions.removeAll { $0.id == transaction.id }
+            await refreshSummary()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }

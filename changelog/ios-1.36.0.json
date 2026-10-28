@@ -266,6 +266,11 @@
       "changeType": "fixed",
       "summaryEn": "Marking a transaction paid, unmarking it, or excluding it now also refreshes the Transactions tab's totals right away, instead of waiting for the next time the tab loads.",
       "summaryEs": "Marcar una transacción como pagada, desmarcarla o excluirla ahora también actualiza de inmediato los totales de la pestaña de Transacciones, en lugar de esperar a la próxima vez que se cargue la pestaña."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Deleting a fixed bill whose recurring template was already removed now actually deletes it, instead of silently reappearing. Deleting any transaction also refreshes the tab's totals right away.",
+      "summaryEs": "Eliminar una factura fija cuya plantilla recurrente ya había sido eliminada ahora realmente la borra, en lugar de reaparecer en silencio. Eliminar cualquier transacción también actualiza de inmediato los totales de la pestaña."
     }
   ]
 }
