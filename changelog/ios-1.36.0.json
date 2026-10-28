@@ -291,6 +291,11 @@
       "changeType": "fixed",
       "summaryEn": "Marking, excluding, deleting, or recategorizing in Transactions or Payments now also refreshes Overview's totals and chart right away.",
       "summaryEs": "Marcar, excluir, eliminar o recategorizar en Transacciones o Pagos ahora también actualiza de inmediato los totales y el gráfico de Resumen."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "A fixed bill paid at a different amount now keeps showing its planned amount on the row, with the \"!\" marker pointing out the difference, instead of switching to the new amount right away.",
+      "summaryEs": "Una factura fija pagada por un monto distinto ahora sigue mostrando su monto planeado en la fila, con el marcador \"!\" señalando la diferencia, en lugar de cambiar al nuevo monto de inmediato."
     }
   ]
 }
