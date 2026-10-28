@@ -95,6 +95,16 @@ final class ExpenseOverviewViewModel {
         TransactionAmountFormatting.tuple(from: summary?.totalUnplanned)
     }
 
+    /// `totalActual` with Savings folded back in (issue #94) — Savings is excluded from `totalActual` itself.
+    var totalActualIncludingSavings: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: summary?.totalActualIncludingSavings)
+    }
+
+    /// `totalPlanned` with Savings folded back in.
+    var totalPlannedIncludingSavings: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: summary?.totalPlannedIncludingSavings)
+    }
+
     func actualTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
         TransactionAmountFormatting.tuple(from: categorySummary(for: category.id)?.actualTotal)
     }

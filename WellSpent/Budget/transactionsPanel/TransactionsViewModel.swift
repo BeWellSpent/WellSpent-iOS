@@ -109,6 +109,14 @@ final class TransactionsViewModel {
         return String(localized: "\(remainingText) left of \(plannedText) planned", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
+    /// "Expected savings: $X" — standalone, next to the expense-only total above (issue #94).
+    var expectedSavedText: String? {
+        let saved = TransactionAmountFormatting.tuple(from: summary?.savingsPlannedTotal)
+        guard saved.units != 0 || saved.nanos != 0 else { return nil }
+        let savedText = MoneyFormatting.format(units: saved.units, nanos: saved.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        return String(localized: "Expected savings: \(savedText)", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+    }
+
     init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client, onDataChanged: (() -> Void)? = nil) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID

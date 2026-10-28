@@ -23,6 +23,8 @@ struct ExpenseOverviewTotalsView: View {
         let income = viewModel.incomeTotal
         let actual = viewModel.totalActual
         let planned = viewModel.totalPlanned
+        let actualIncludingSavings = viewModel.totalActualIncludingSavings
+        let plannedIncludingSavings = viewModel.totalPlannedIncludingSavings
         let actualRemainder = viewModel.remainderTotal
         let plannedRemainder = viewModel.plannedRemainderTotal
         let overBudget = viewModel.totalOverBudgetAmount
@@ -33,9 +35,15 @@ struct ExpenseOverviewTotalsView: View {
                 .accessibilityIdentifier("overviewIncomeTotal")
             LabeledContent("Actual", value: overviewText(actual))
                 .accessibilityIdentifier("overviewActualTotal")
+            LabeledContent("Actual (with savings)", value: overviewText(actualIncludingSavings))
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("overviewActualIncludingSavingsTotal")
             LabeledContent("Planned", value: displayText(planned))
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("overviewPlannedTotal")
+            LabeledContent("Planned (with savings)", value: displayText(plannedIncludingSavings))
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("overviewPlannedIncludingSavingsTotal")
             if income.units != 0 || income.nanos != 0 {
                 // isNegative, not `units < 0`: a -$0.50 remainder has
                 // units == 0 and would otherwise read green.
