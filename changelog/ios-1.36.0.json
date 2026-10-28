@@ -281,6 +281,11 @@
       "changeType": "fixed",
       "summaryEn": "Deleting a fixed bill that had already been paid no longer silently fails to delete it.",
       "summaryEs": "Eliminar una factura fija que ya había sido pagada ya no falla en silencio."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Swiping to delete several transactions in a row now deletes all of them, not just the last one.",
+      "summaryEs": "Deslizar para eliminar varias transacciones en fila ahora las elimina todas, no solo la última."
     }
   ]
 }
