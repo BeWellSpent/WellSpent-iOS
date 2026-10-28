@@ -98,14 +98,29 @@ final class TransactionsViewModel {
         return min(max(spentValue / plannedValue, 0), 1)
     }
 
-    /// "$X left of $Y planned" for the summary card — reuses the same
-    /// server-computed totals `totalText`/`overBudgetTransactionIDs` do.
-    var remainingSummaryText: String {
+    private var remainingAgainstPlanned: (units: Int64, nanos: Int32) {
         let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
         let spent = combinedActualTotal
-        let remaining = TransactionAmountFormatting.sum([planned, (units: -spent.units, nanos: -spent.nanos)])
+        return TransactionAmountFormatting.sum([planned, (units: -spent.units, nanos: -spent.nanos)])
+    }
+
+    /// True once combined spend passes the overall planned total — tints the summary card's progress bar red.
+    var isOverBudget: Bool {
+        let remaining = remainingAgainstPlanned
+        return MoneyFormatting.isNegative(units: remaining.units, nanos: remaining.nanos)
+    }
+
+    /// "$X left of $Y planned", or "$X over $Y planned" once spend passes
+    /// the plan — reuses the same server-computed totals `totalText`/
+    /// `overBudgetTransactionIDs` do.
+    var remainingSummaryText: String {
+        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
+        let remaining = remainingAgainstPlanned
         let remainingText = MoneyFormatting.format(units: abs(remaining.units), nanos: abs(remaining.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
         let plannedText = MoneyFormatting.format(units: abs(planned.units), nanos: abs(planned.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        if isOverBudget {
+            return String(localized: "\(remainingText) over \(plannedText) planned", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        }
         return String(localized: "\(remainingText) left of \(plannedText) planned", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
