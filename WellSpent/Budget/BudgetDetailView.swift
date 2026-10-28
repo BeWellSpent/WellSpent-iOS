@@ -595,7 +595,8 @@ struct BudgetDetailView: View {
                 reviewViewModel: reviewViewModel,
                 canEdit: viewModel.canEdit,
                 isArchivedPeriod: viewModel.isArchivedPeriod,
-                searchQuery: transactionsSearchQuery
+                searchQuery: transactionsSearchQuery,
+                onDataChanged: { Task { await overviewViewModel?.load() } }
             )
             // Same reason as planContent's, plus the review-confirm refresh token.
             .id("\(period.id)|\(focusedViewToken)|\(transactionsRefreshToken)")
@@ -618,7 +619,8 @@ struct BudgetDetailView: View {
                 reviewViewModel: reviewViewModel,
                 canEdit: viewModel.canEdit,
                 isArchivedPeriod: viewModel.isArchivedPeriod,
-                searchQuery: transactionsSearchQuery
+                searchQuery: transactionsSearchQuery,
+                onDataChanged: { Task { await overviewViewModel?.load() } }
             )
             // Same reason as planContent's — see there.
             .id("\(period.id)|\(focusedViewToken)")

@@ -286,6 +286,11 @@
       "changeType": "fixed",
       "summaryEn": "Swiping to delete several transactions in a row now deletes all of them, not just the last one.",
       "summaryEs": "Deslizar para eliminar varias transacciones en fila ahora las elimina todas, no solo la última."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Marking, excluding, deleting, or recategorizing in Transactions or Payments now also refreshes Overview's totals and chart right away.",
+      "summaryEs": "Marcar, excluir, eliminar o recategorizar en Transacciones o Pagos ahora también actualiza de inmediato los totales y el gráfico de Resumen."
     }
   ]
 }

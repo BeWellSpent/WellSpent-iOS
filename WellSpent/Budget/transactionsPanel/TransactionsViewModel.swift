@@ -48,6 +48,9 @@ final class TransactionsViewModel {
     let currentUserID: String?
 
     private let restClient: WellSpentREST.Client
+    /// Lets the Overview sub-tab's own summary/chart stay in sync with a
+    /// mutation made here, since it's a separate `ExpenseOverviewViewModel`.
+    private let onDataChanged: (() -> Void)?
 
     /// Which transactions crossed their category's plan — server-computed.
     ///
@@ -106,13 +109,14 @@ final class TransactionsViewModel {
         return String(localized: "\(remainingText) left of \(plannedText) planned", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client, onDataChanged: (() -> Void)? = nil) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
         self.restClient = restClient
+        self.onDataChanged = onDataChanged
     }
 
     func load() async {
@@ -345,6 +349,7 @@ final class TransactionsViewModel {
                 return
             }
             await load()
+            onDataChanged?()
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
@@ -366,6 +371,7 @@ final class TransactionsViewModel {
         editViewModel.categoryID = categoryID
         if let updated = await editViewModel.submit() {
             replaceTransaction(updated)
+            onDataChanged?()
         } else {
             errorMessage = editViewModel.errorMessage ?? "Couldn't update that transaction."
         }
@@ -477,6 +483,7 @@ final class TransactionsViewModel {
         if let fetched = await fetchSummary(focusedView: focusedView) {
             summary = fetched
         }
+        onDataChanged?()
     }
 
     /// This occurrence only — never the recurring template (that's Plan's job).
