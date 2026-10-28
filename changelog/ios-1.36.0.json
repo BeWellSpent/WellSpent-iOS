@@ -256,6 +256,11 @@
       "changeType": "fixed",
       "summaryEn": "The bottom tab formerly called \"Overview\" is now \"Home\". Inside it, totals are back together with the chart as one combined Overview tab, alongside Transactions, Payments, and Review — not split into separate always-visible strips above and below.",
       "summaryEs": "La pestaña inferior que antes se llamaba \"Resumen\" ahora se llama \"Inicio\". Dentro de ella, los totales vuelven a estar junto con el gráfico en una sola pestaña de Resumen, junto a Transacciones, Pagos y Revisión, en lugar de dividirse en franjas separadas siempre visibles arriba y abajo."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "The Unpaid section at the top of the Transactions list can now be collapsed, so a long list of unpaid bills doesn't push everything else down the screen.",
+      "summaryEs": "La sección de \"Sin pagar\" en la parte superior de la lista de Transacciones ahora se puede contraer, para que una lista larga de facturas pendientes no empuje todo lo demás hacia abajo."
     }
   ]
 }

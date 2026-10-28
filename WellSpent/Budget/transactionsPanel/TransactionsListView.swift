@@ -104,6 +104,11 @@ struct TransactionsListView: View {
     /// `MergedTransactionGrouping.passesVariableOnlyFilter`.
     @State private var variableQuickFilter: VariableQuickFilter = .all
     @State private var activeSheet: ActiveSheet?
+    /// Collapsed state for the floated-to-top Unpaid Fixed section — it can
+    /// run long (every unpaid bill this period, with no day-grouping to
+    /// break it up), so it needs to be collapsible like every other section
+    /// here. Expanded by default: it's the thing a user most needs to see.
+    @State private var isUnpaidExpanded = true
 
     var body: some View {
         Group {
@@ -207,11 +212,24 @@ struct TransactionsListView: View {
             } else {
                 if !searchedUnpaidFixed.isEmpty {
                     Section {
-                        ForEach(searchedUnpaidFixed, id: \.id) { transaction in
-                            fixedRow(transaction, viewModel: viewModel, reviews: reviews)
+                        collapsibleHeader(
+                            // `collapsibleHeader`'s `title` is a plain
+                            // `String`, so `Text(title)` never does a catalog
+                            // lookup on its own — resolve the translation
+                            // here instead of interpolating a raw literal
+                            // (same trap this app's CLAUDE.md documents for
+                            // enum `-> String` label helpers).
+                            title: String(localized: "Unpaid (\(searchedUnpaidFixed.count))", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale),
+                            isExpanded: isUnpaidExpanded,
+                            identifier: "toggleUnpaidFixed"
+                        ) { isUnpaidExpanded.toggle() }
+                    }
+                    if isUnpaidExpanded {
+                        Section {
+                            ForEach(searchedUnpaidFixed, id: \.id) { transaction in
+                                fixedRow(transaction, viewModel: viewModel, reviews: reviews)
+                            }
                         }
-                    } header: {
-                        Text("Unpaid")
                     }
                 }
 
@@ -368,6 +386,37 @@ struct TransactionsListView: View {
     /// (Stage 2). Reuses the server-computed totals `TransactionsViewModel`
     /// already carries (`totalText`/`spentProgress`/`remainingSummaryText`);
     /// no new arithmetic lives in this view.
+    /// One tappable section header with a chevron — shared shape the old
+    /// `FixedExpensesListView` established for its Unpaid/Paid/Future
+    /// sections (deleted in Stage 2, recreated here since the merged list's
+    /// own Unpaid section needs the same affordance: unlike a day group, it
+    /// has no natural cap on how long it can get).
+    private func collapsibleHeader(
+        title: String,
+        isExpanded: Bool,
+        identifier: String,
+        toggle: @escaping () -> Void
+    ) -> some View {
+        Button(action: toggle) {
+            HStack {
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            // Without this, a `Button`'s tap target follows only the
+            // rendered glyphs of its label — the `Spacer` renders nothing,
+            // so the gap between title and chevron wouldn't be tappable.
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
+
     private func summaryCard(viewModel: TransactionsViewModel) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Spent this period")
