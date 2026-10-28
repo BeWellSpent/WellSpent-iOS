@@ -16,11 +16,7 @@ struct TransactionReviewListView: View {
     /// selected again, since `TabView` keeps every tab mounted.
     let isActive: Bool
     let canEdit: Bool
-    /// Lets `BudgetDetailView` force a fresh reload of the Transactions
-    /// sub-tab once confirming marks a Fixed row paid server-side — a
-    /// `.task`-on-remount already reloads whenever that sub-tab's own
-    /// SwiftUI branch identity is reactivated, but this guarantees it
-    /// independent of that.
+    /// Lets the caller force a Transactions reload after a confirm.
     var onConfirmed: () -> Void = {}
 
     var body: some View {

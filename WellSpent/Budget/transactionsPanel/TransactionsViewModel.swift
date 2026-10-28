@@ -479,26 +479,10 @@ final class TransactionsViewModel {
         }
     }
 
-    /// Deactivates the linked template; falls back to a plain delete if it's already gone.
+    /// This occurrence only — never the recurring template (that's Plan's job).
     func delete(_ transaction: Wellspent_V1_Transaction) async {
-        guard !transaction.fixedExpenseID.isEmpty else {
-            Self.logger.info("deleting orphaned fixed transactionID=\(transaction.id, privacy: .public) (no linked template)")
-            await delete(id: transaction.id)
-            return
-        }
-        errorMessage = nil
-        let fallback = String(localized: "Couldn't delete that fixed expense.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
-        do {
-            guard case .ok = try await restClient.deleteFixedExpense(.init(path: .init(id: budgetProfileID, feId: transaction.fixedExpenseID))) else {
-                errorMessage = fallback
-                return
-            }
-            fixedExpenses.removeAll { $0.id == transaction.fixedExpenseID }
-            transactions.removeAll { $0.id == transaction.id }
-            await refreshSummary()
-        } catch {
-            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
-        }
+        Self.logger.info("deleting fixed transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")
+        await delete(id: transaction.id)
     }
 
     private func setPaidOffEarly(_ paidOffEarly: Bool, for transactionID: String) {

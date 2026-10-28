@@ -104,10 +104,7 @@ struct BudgetDetailView: View {
     /// forces a fresh subtree (and thus a fresh `.task`/load) on a period
     /// switch, reused here for the same reason.
     @State private var focusedViewToken = UUID()
-    /// Bumped when a Transaction Review confirm marks a Fixed row paid, and
-    /// folded into the Transactions sub-tab's `.id(...)` below — forces a
-    /// fresh mount/reload the next time that sub-tab is shown, regardless of
-    /// whether SwiftUI already tore its previous instance down on its own.
+    /// Bumped on review-confirm to force a fresh Transactions reload.
     @State private var transactionsRefreshToken = UUID()
     @State private var isPaymentMethodRequiredPresented = false
     @State private var isPaymentMethodsPresented = false
@@ -600,8 +597,7 @@ struct BudgetDetailView: View {
                 isArchivedPeriod: viewModel.isArchivedPeriod,
                 searchQuery: transactionsSearchQuery
             )
-            // Same reason as planContent's — see there, plus
-            // `transactionsRefreshToken` (see its own doc comment).
+            // Same reason as planContent's, plus the review-confirm refresh token.
             .id("\(period.id)|\(focusedViewToken)|\(transactionsRefreshToken)")
         } else {
             ProgressView()
