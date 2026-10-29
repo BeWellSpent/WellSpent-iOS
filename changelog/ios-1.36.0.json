@@ -326,6 +326,11 @@
       "changeType": "fixed",
       "summaryEn": "A fixed expense template's name on the Plan tab no longer looks dimmed/disabled when it's actually tappable to edit.",
       "summaryEs": "El nombre de una plantilla de gasto fijo en la pestaña Plan ya no se ve atenuado o deshabilitado cuando en realidad se puede tocar para editarlo."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "The \"Money In\" quick filter on Transactions no longer includes paid fixed bills, which are never actually received money.",
+      "summaryEs": "El filtro rápido \"Dinero recibido\" en Transacciones ya no incluye facturas fijas pagadas, que nunca son dinero realmente recibido."
     }
   ]
 }
