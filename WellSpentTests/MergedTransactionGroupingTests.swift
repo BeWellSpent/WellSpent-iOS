@@ -64,10 +64,10 @@ struct MergedTransactionGroupingTests {
 
     // MARK: passesVariableOnlyFilter
 
-    @Test("a Fixed row always passes the Variable-only quick filter, regardless of which one is active")
-    func fixedRowAlwaysPassesQuickFilter() {
+    @Test("a Fixed row passes All, Money Out and Needs review, regardless of amount sign")
+    func fixedRowPassesNonMoneyInQuickFilters() {
         let fixed = transaction(id: "fixed", typeID: fixedTypeID)
-        for filter in VariableQuickFilter.allCases {
+        for filter: VariableQuickFilter in [.all, .moneyOut, .needsReview] {
             #expect(MergedTransactionGrouping.passesVariableOnlyFilter(
                 fixed,
                 fixedTypeID: fixedTypeID,
@@ -76,6 +76,18 @@ struct MergedTransactionGroupingTests {
                 hasPendingMatch: { _ in false }
             ))
         }
+    }
+
+    @Test("a Fixed row never passes Money In — it's never actually received money")
+    func fixedRowFailsMoneyInQuickFilter() {
+        let fixed = transaction(id: "fixed", typeID: fixedTypeID)
+        #expect(!MergedTransactionGrouping.passesVariableOnlyFilter(
+            fixed,
+            fixedTypeID: fixedTypeID,
+            filter: .moneyIn,
+            categoryName: { _ in "Rent" },
+            hasPendingMatch: { _ in false }
+        ))
     }
 
     @Test("a Variable row is still filtered by the quick filter radio")

@@ -32,10 +32,14 @@ nonisolated enum MergedTransactionGrouping {
     }
 
     /// Whether `transaction` passes the Variable-only quick-filter radio
-    /// (All/Money Out/Money In/Needs review). A Fixed row always passes —
-    /// received/spent sign-flip and a pending Plaid match are Variable-only
-    /// concepts a scheduled bill never carries, so filtering by them would
-    /// make a bill disappear for a reason that has nothing to do with it.
+    /// (All/Money Out/Money In/Needs review). A Fixed row always passes All,
+    /// Money Out and Needs review — received/spent sign-flip and a pending
+    /// Plaid match are Variable-only concepts a scheduled bill never carries,
+    /// so filtering by them would make a bill disappear for a reason that has
+    /// nothing to do with it. Money In is the one exception: a Fixed row is
+    /// never actually received money (it's always shown as a plain positive
+    /// amount, never through the Spent/Received sign convention), so it must
+    /// fail that filter rather than unconditionally pass it (issue #96).
     static func passesVariableOnlyFilter(
         _ transaction: Wellspent_V1_Transaction,
         fixedTypeID: Int32,
@@ -43,7 +47,7 @@ nonisolated enum MergedTransactionGrouping {
         categoryName: (Int32) -> String?,
         hasPendingMatch: (Wellspent_V1_Transaction) -> Bool
     ) -> Bool {
-        guard transaction.transactionTypeID != fixedTypeID else { return true }
+        guard transaction.transactionTypeID != fixedTypeID else { return filter != .moneyIn }
         return VariableQuickFiltering.matches(transaction, filter: filter, categoryName: categoryName, hasPendingMatch: hasPendingMatch)
     }
 
