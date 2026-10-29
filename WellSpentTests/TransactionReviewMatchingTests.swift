@@ -14,15 +14,15 @@ struct TransactionReviewMatchingTests {
         }
     }
 
-    @Test("confirmedTransactionIDs only includes confirmed reviews")
-    func confirmedTransactionIDsFiltersByStatus() {
+    @Test("confirmedFixedTransactionIDs only includes Fixed transactions with a confirmed match")
+    func confirmedFixedTransactionIDsFiltersByStatus() {
         let reviews = [
             review(id: "1", transactionID: "tx-1", matchedTransactionID: "fx-1", status: "confirmed"),
             review(id: "2", transactionID: "tx-2", matchedTransactionID: "fx-1", status: "pending"),
             review(id: "3", transactionID: "tx-3", matchedTransactionID: "fx-2", status: "dismissed"),
         ]
 
-        #expect(TransactionReviewMatching.confirmedTransactionIDs(reviews) == ["tx-1"])
+        #expect(TransactionReviewMatching.confirmedFixedTransactionIDs(reviews) == ["fx-1"])
     }
 
     @Test("pendingMatchName finds the matched name for a pending review, nil otherwise")
@@ -37,15 +37,16 @@ struct TransactionReviewMatchingTests {
         #expect(TransactionReviewMatching.pendingMatchName(forTransactionID: "tx-3", reviews: reviews) == nil)
     }
 
-    @Test("linkedReviews only includes confirmed reviews matched to the given fixed transaction")
-    func linkedReviewsFiltersByFixedIDAndStatus() {
+    @Test("confirmedMatch finds the confirmed review for the given transaction, nil otherwise")
+    func confirmedMatchFiltersByTransactionIDAndStatus() {
         let reviews = [
             review(id: "1", transactionID: "tx-1", matchedTransactionID: "fx-1", status: "confirmed"),
             review(id: "2", transactionID: "tx-2", matchedTransactionID: "fx-1", status: "pending"),
             review(id: "3", transactionID: "tx-3", matchedTransactionID: "fx-2", status: "confirmed"),
         ]
 
-        let linked = TransactionReviewMatching.linkedReviews(forFixedTransactionID: "fx-1", reviews: reviews)
-        #expect(linked.map(\.id) == ["1"])
+        #expect(TransactionReviewMatching.confirmedMatch(forTransactionID: "tx-1", reviews: reviews)?.id == "1")
+        #expect(TransactionReviewMatching.confirmedMatch(forTransactionID: "tx-2", reviews: reviews) == nil)
+        #expect(TransactionReviewMatching.confirmedMatch(forTransactionID: "tx-4", reviews: reviews) == nil)
     }
 }

@@ -261,21 +261,20 @@ final class TransactionsViewModel {
         categories.first { $0.isSystem(.payment) }?.id ?? -1
     }
 
-    /// Excludes transactions whose review was confirmed — those are shown
-    /// instead as a linked sub-row under the matched Fixed transaction (see
-    /// `TransactionReviewMatching`) — and card-payment rows, which now live
-    /// on their own tab (issue #76).
+    /// Excludes Fixed occurrences settled by a confirmed match (issue #97:
+    /// the Variable row(s) that paid them show instead, fully editable) and
+    /// card-payment rows, which now live on their own tab (issue #76).
     func visibleTransactions(reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_Transaction] {
-        let confirmedIDs = TransactionReviewMatching.confirmedTransactionIDs(reviews)
+        let confirmedFixedIDs = TransactionReviewMatching.confirmedFixedTransactionIDs(reviews)
         let paymentCategoryID = paymentCategoryID
-        return transactions.filter { !confirmedIDs.contains($0.id) && $0.categoryID != paymentCategoryID }
+        return transactions.filter { !confirmedFixedIDs.contains($0.id) && $0.categoryID != paymentCategoryID }
     }
 
     /// Card-payment rows, carved out of `visibleTransactions` above.
     func paymentTransactions(reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_Transaction] {
-        let confirmedIDs = TransactionReviewMatching.confirmedTransactionIDs(reviews)
+        let confirmedFixedIDs = TransactionReviewMatching.confirmedFixedTransactionIDs(reviews)
         let paymentCategoryID = paymentCategoryID
-        return transactions.filter { !confirmedIDs.contains($0.id) && $0.categoryID == paymentCategoryID }
+        return transactions.filter { !confirmedFixedIDs.contains($0.id) && $0.categoryID == paymentCategoryID }
     }
 
     /// Plain client-side sum of the Payments tab's own rows — there's no
@@ -335,10 +334,13 @@ final class TransactionsViewModel {
         paidOffEarlyTransactionIDs.contains(transaction.id)
     }
 
-    /// Confirmed review matches for a Fixed transaction, rendered as an
-    /// expandable linked sub-row — see `TransactionReviewMatching`.
-    func linkedReviews(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_TransactionReview] {
-        TransactionReviewMatching.linkedReviews(forFixedTransactionID: transaction.id, reviews: reviews)
+    /// The Fixed bill this Variable transaction settled, if its review is
+    /// confirmed — for the row's expand content (issue #97). Looked up from
+    /// the already-loaded merged list, since the review's own denormalized
+    /// fields describe the Variable side, not the Fixed one's real plannedAmount.
+    func matchedFixedTransaction(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> Wellspent_V1_Transaction? {
+        guard let match = TransactionReviewMatching.confirmedMatch(forTransactionID: transaction.id, reviews: reviews) else { return nil }
+        return transactions.first { $0.id == match.matchedTransactionID }
     }
 
     func addTransaction(_ transaction: Wellspent_V1_Transaction) {

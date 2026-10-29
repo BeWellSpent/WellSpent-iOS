@@ -1,11 +1,11 @@
 import SwiftUI
 import WellSpentAPI
 
-/// A Fixed transaction row that expands (only when it has confirmed review
-/// matches) to reveal the linked Variable transaction(s) underneath —
-/// mirrors web's `TxRow.tsx` expand/collapse behavior. Each linked review
-/// carries its own denormalized `transactionName`/`transactionAmount`, so no
-/// separate fetch of the (excluded) Variable transaction is needed.
+/// A Fixed transaction row in the merged list. Never reaches here if it was
+/// settled by a confirmed Transaction Review match — that Variable row shows
+/// instead, fully editable, with an expand of its own showing this bill (see
+/// `TransactionReviewMatching`, issue #97). This row is strictly a plain,
+/// non-expanding row now.
 ///
 /// Extracted out of `FixedExpensesListView` (Stage 2 of
 /// docs/features/overview-plan-navigation-rework.md) so the merged
@@ -16,15 +16,12 @@ import WellSpentAPI
 struct FixedExpenseRow: View {
     let transaction: Wellspent_V1_Transaction
     let viewModel: TransactionsViewModel
-    let linkedReviews: [Wellspent_V1_TransactionReview]
     let currencyCode: String
     let localeIdentifier: String
     let canMutate: Bool
     /// The budget's auto_update_planned_amount setting — drives the re-plan marker.
     let autoUpdatePlannedAmount: Bool
     @State private var isRePlanNoticePresented = false
-
-    @State private var isExpanded = false
 
     /// Paid at a different amount than planned, with the setting on that
     /// would carry the real amount into future periods — see
@@ -36,88 +33,27 @@ struct FixedExpenseRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                // A plain HStack with a `.simultaneousGesture` tap, not a
-                // `Button` — a `Button` spanning nearly the whole row (via
-                // `.contentShape(Rectangle())`) has to be proven NOT a tap
-                // before UIKit will commit to this row's `.swipeActions` pan
-                // gesture, and that arbitration is exactly what showed up as
-                // a ~1s hitch before either swipe direction's reveal
-                // animation started (reported after this row picked up
-                // `.swipeActions(edge: .leading)` below). `.simultaneousGesture`
-                // recognizes independently of — rather than competing
-                // exclusively with — the row's swipe/scroll recognizers, so
-                // it doesn't block them and isn't blocked by them.
-                // `.onTapGesture` (`.gesture(TapGesture())`) was tried first
-                // and is NOT a substitute here: on a `List` row that also
-                // carries `.swipeActions`, it can lose the same arbitration
-                // outright and simply never fire — which is the original bug
-                // this row's tap-to-expand was fixed for.
-                HStack {
-                    if !linkedReviews.isEmpty {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("expandFixedExpense_\(transaction.name)")
-                    }
+        HStack {
+            fixedExpenseNameContent
+                .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
 
-                    fixedExpenseNameContent
-                        .accessibilityIdentifier("fixedExpenseRow_\(transaction.name)")
+            Spacer()
 
-                    Spacer()
-
-                    // Informational, not a mutation, so it stays its own
-                    // inline affordance rather than joining mark-paid/match/
-                    // exclude/delete on a swipe action (issue #92).
-                    if canMutate && showsRePlanNotice {
-                        rePlanMarker
-                    }
-
-                    // Planned, not what was actually paid — see rePlanMarker.
-                    Text(MoneyFormatting.format(
-                        units: transaction.plannedAmount.units,
-                        nanos: transaction.plannedAmount.nanos,
-                        currencyCode: currencyCode,
-                        localeIdentifier: localeIdentifier
-                    ))
-                    .foregroundStyle(.primary)
-                }
-                .contentShape(Rectangle())
-                // `Button` gave this row its tap-is-a-button accessibility
-                // trait for free; restore it explicitly now that the tap is
-                // a plain gesture instead.
-                .accessibilityAddTraits(linkedReviews.isEmpty ? [] : .isButton)
-                .simultaneousGesture(
-                    TapGesture().onEnded {
-                        guard !linkedReviews.isEmpty else { return }
-                        isExpanded.toggle()
-                    }
-                )
+            // Informational, not a mutation, so it stays its own
+            // inline affordance rather than joining mark-paid/match/
+            // exclude/delete on a swipe action (issue #92).
+            if canMutate && showsRePlanNotice {
+                rePlanMarker
             }
 
-            if isExpanded {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(linkedReviews, id: \.id) { review in
-                        HStack {
-                            Text(review.transactionName)
-                                .font(.caption)
-                            Spacer()
-                            Text(MoneyFormatting.format(
-                                units: review.transactionAmount.units,
-                                nanos: review.transactionAmount.nanos,
-                                currencyCode: currencyCode,
-                                localeIdentifier: localeIdentifier
-                            ))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .padding(.leading, 20)
-                .padding(.top, 6)
-                .accessibilityIdentifier("linkedTransactions_\(transaction.name)")
-            }
+            // Planned, not what was actually paid — see rePlanMarker.
+            Text(MoneyFormatting.format(
+                units: transaction.plannedAmount.units,
+                nanos: transaction.plannedAmount.nanos,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier
+            ))
+            .foregroundStyle(.primary)
         }
     }
 

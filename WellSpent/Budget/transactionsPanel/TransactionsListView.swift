@@ -108,6 +108,8 @@ struct TransactionsListView: View {
     @State private var activeSheet: ActiveSheet?
     /// Unpaid Fixed section's collapsed state — expanded by default.
     @State private var isUnpaidExpanded = true
+    /// Variable rows with a confirmed match, expanded to show the Fixed bill they settled — collapsed by default (issue #97).
+    @State private var expandedMatchedTransactionIDs: Set<String> = []
 
     var body: some View {
         Group {
@@ -215,7 +217,7 @@ struct TransactionsListView: View {
                     Section {
                         if isUnpaidExpanded {
                             ForEach(searchedUnpaidFixed, id: \.id) { transaction in
-                                fixedRow(transaction, viewModel: viewModel, reviews: reviews)
+                                fixedRow(transaction, viewModel: viewModel)
                             }
                         }
                     } header: {
@@ -232,7 +234,7 @@ struct TransactionsListView: View {
                     Section {
                         ForEach(group.transactions, id: \.id) { transaction in
                             if transaction.transactionTypeID == fixedTypeID {
-                                fixedRow(transaction, viewModel: viewModel, reviews: reviews)
+                                fixedRow(transaction, viewModel: viewModel)
                             } else {
                                 variableRow(transaction, viewModel: viewModel, reviews: reviews)
                             }
@@ -629,9 +631,26 @@ struct TransactionsListView: View {
     private func variableRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
         let isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
         let pendingMatchName = viewModel.pendingMatchName(for: transaction, reviews: reviews)
+        let matchedFixed = viewModel.matchedFixedTransaction(for: transaction, reviews: reviews)
+        let isExpanded = expandedMatchedTransactionIDs.contains(transaction.id)
 
         let nameContent = VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
+                if matchedFixed != nil {
+                    Button {
+                        if isExpanded {
+                            expandedMatchedTransactionIDs.remove(transaction.id)
+                        } else {
+                            expandedMatchedTransactionIDs.insert(transaction.id)
+                        }
+                    } label: {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("expandMatchedFixed_\(transaction.name)")
+                }
                 Text(transaction.name)
                     .foregroundStyle(.primary)
                 if let pendingMatchName {
@@ -672,19 +691,43 @@ struct TransactionsListView: View {
             }
         }
 
-        return HStack {
-            nameContent
-                .accessibilityIdentifier("transactionRow_\(transaction.name)")
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                nameContent
+                    .accessibilityIdentifier("transactionRow_\(transaction.name)")
 
-            Spacer()
+                Spacer()
 
-            Text(TransactionAmountFormatting.displayText(
-                units: transaction.amount.units,
-                nanos: transaction.amount.nanos,
-                currencyCode: currencyCode,
-                localeIdentifier: localeIdentifier
-            ))
-            .foregroundStyle(isReceived ? .green : .red)
+                Text(TransactionAmountFormatting.displayText(
+                    units: transaction.amount.units,
+                    nanos: transaction.amount.nanos,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                ))
+                .foregroundStyle(isReceived ? .green : .red)
+            }
+
+            // The Fixed bill this transaction settled, with its original
+            // planned amount — read-only context; editing the template
+            // still lives in Plan's Fixed Expenses tab (issue #97).
+            if isExpanded, let matchedFixed {
+                HStack {
+                    Text(matchedFixed.name)
+                        .font(.caption)
+                    Spacer()
+                    Text(MoneyFormatting.format(
+                        units: matchedFixed.plannedAmount.units,
+                        nanos: matchedFixed.plannedAmount.nanos,
+                        currencyCode: currencyCode,
+                        localeIdentifier: localeIdentifier
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .padding(.leading, 20)
+                .padding(.top, 6)
+                .accessibilityIdentifier("matchedFixedExpense_\(transaction.name)")
+            }
         }
         .swipeActions(edge: .leading) {
             leadingSwipeActions(for: transaction)
@@ -735,11 +778,10 @@ struct TransactionsListView: View {
     /// deliberately no "Edit" action here — editing the underlying recurring
     /// template is reached only from Plan's Fixed Expenses sub-tab, not this
     /// merged list.
-    private func fixedRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel, reviews: [Wellspent_V1_TransactionReview]) -> some View {
+    private func fixedRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
         FixedExpenseRow(
             transaction: transaction,
             viewModel: viewModel,
-            linkedReviews: viewModel.linkedReviews(for: transaction, reviews: reviews),
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier,
             canMutate: canMutate,
