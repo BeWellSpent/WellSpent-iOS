@@ -71,6 +71,38 @@ struct TransactionsViewModelTests {
         #expect(viewModel.paymentTransactions(reviews: []).isEmpty)
     }
 
+    private func review(transactionID: String, matchedTransactionID: String, status: String = "confirmed") -> Wellspent_V1_TransactionReview {
+        .with {
+            $0.transactionID = transactionID
+            $0.matchedTransactionID = matchedTransactionID
+            $0.status = status
+        }
+    }
+
+    @Test("a Fixed transaction settled by a confirmed match is hidden; its Variable match still shows (issue #97)")
+    func visibleTransactionsHidesConfirmedFixedMatch() {
+        let viewModel = makeViewModel()
+        viewModel.setStateForTesting(
+            transactions: [tx(id: "variable-1", categoryID: groceriesCategory.id), tx(id: "fixed-1", categoryID: groceriesCategory.id)],
+            categories: [groceriesCategory]
+        )
+        let reviews = [review(transactionID: "variable-1", matchedTransactionID: "fixed-1")]
+
+        #expect(viewModel.visibleTransactions(reviews: reviews).map(\.id) == ["variable-1"])
+    }
+
+    @Test("matchedFixedTransaction resolves the real Fixed transaction behind a confirmed match")
+    func matchedFixedTransactionResolvesFromReviews() {
+        let viewModel = makeViewModel()
+        let fixed = tx(id: "fixed-1", categoryID: groceriesCategory.id, units: 26)
+        let variable = tx(id: "variable-1", categoryID: groceriesCategory.id, units: 35)
+        viewModel.setStateForTesting(transactions: [variable, fixed], categories: [groceriesCategory])
+        let reviews = [review(transactionID: "variable-1", matchedTransactionID: "fixed-1")]
+
+        #expect(viewModel.matchedFixedTransaction(for: variable, reviews: reviews)?.id == "fixed-1")
+        #expect(viewModel.matchedFixedTransaction(for: fixed, reviews: reviews) == nil)
+    }
+
     @Test("paymentsTotalText sums only the payment rows")
     func paymentsTotalSumsCorrectly() {
         let viewModel = makeViewModel()

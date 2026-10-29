@@ -316,6 +316,11 @@
       "changeType": "fixed",
       "summaryEn": "Transactions' summary card now shows \"over\" and turns red once spending passes the plan, instead of always saying \"left\".",
       "summaryEs": "La tarjeta de resumen de Transacciones ahora muestra \"por encima\" y se pone roja cuando el gasto supera el plan, en lugar de decir siempre \"restante\"."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "A bank transaction matched to a fixed bill now shows as its own editable row, with the fixed bill's original planned amount available by expanding it — instead of being hidden behind a read-only row under the bill.",
+      "summaryEs": "Una transacción bancaria emparejada con una factura fija ahora se muestra como su propia fila editable, con el monto planeado original de la factura disponible al expandirla, en lugar de quedar oculta detrás de una fila de solo lectura bajo la factura."
     }
   ]
 }
