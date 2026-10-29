@@ -47,18 +47,7 @@ struct UpcomingFixedExpenseRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Group {
-                    if canEdit {
-                        Button(action: onEdit) {
-                            Text(expense.name)
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        Text(expense.name)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text(expense.name)
                 Spacer()
                 Text(MoneyFormatting.format(
                     units: expense.plannedAmount.units,
@@ -96,6 +85,17 @@ struct UpcomingFixedExpenseRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+        // A real Button around just the name was a narrow, undiscoverable tap
+        // target — the row otherwise looks uniform, so nothing hinted that
+        // only that one piece of text was interactive. Whole-row tap via
+        // .simultaneousGesture (not .onTapGesture, which can lose gesture
+        // arbitration to this row's own .swipeActions and never fire; see
+        // FixedExpenseRow's own fix for the same class of bug, documented in
+        // this repo's CLAUDE.md) instead of a row-spanning Button (which would
+        // itself conflict with .swipeActions' pan gesture, same doc).
+        .contentShape(Rectangle())
+        .simultaneousGesture(TapGesture().onEnded { if canEdit { onEdit() } })
+        .accessibilityAddTraits(canEdit ? .isButton : [])
         .accessibilityIdentifier("upcomingFixedExpenseRow_\(expense.name)")
     }
 }

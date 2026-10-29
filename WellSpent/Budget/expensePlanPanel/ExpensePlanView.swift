@@ -1,3 +1,4 @@
+import os
 import SwiftUI
 import WellSpentAPI
 import WellSpentREST
@@ -296,6 +297,8 @@ struct ExpensePlanView: View {
         }
     }
 
+    private static let logger = AppLogger.logger("ExpensePlan")
+
     private func fixedExpenseRow(_ expense: Wellspent_V1_FixedExpense, viewModel: FixedExpenseTemplatesViewModel) -> some View {
         UpcomingFixedExpenseRow(
             expense: expense,
@@ -303,7 +306,10 @@ struct ExpensePlanView: View {
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier,
             canEdit: canEdit,
-            onEdit: { activeSheet = .editFixedExpense(expense) }
+            onEdit: {
+                Self.logger.info("fixedExpenseRow: edit tapped for \(expense.id, privacy: .public) canEdit=\(self.canEdit, privacy: .public)")
+                activeSheet = .editFixedExpense(expense)
+            }
         )
         .swipeActions {
             if canEdit {

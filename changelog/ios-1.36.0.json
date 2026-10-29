@@ -321,6 +321,11 @@
       "changeType": "changed",
       "summaryEn": "A bank transaction matched to a fixed bill now shows as its own editable row, with the fixed bill's original planned amount available by expanding it — instead of being hidden behind a read-only row under the bill.",
       "summaryEs": "Una transacción bancaria emparejada con una factura fija ahora se muestra como su propia fila editable, con el monto planeado original de la factura disponible al expandirla, en lugar de quedar oculta detrás de una fila de solo lectura bajo la factura."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "A fixed expense template's name on the Plan tab no longer looks dimmed/disabled when it's actually tappable to edit.",
+      "summaryEs": "El nombre de una plantilla de gasto fijo en la pestaña Plan ya no se ve atenuado o deshabilitado cuando en realidad se puede tocar para editarlo."
     }
   ]
 }
