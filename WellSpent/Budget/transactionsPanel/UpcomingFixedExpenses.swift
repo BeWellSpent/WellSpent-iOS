@@ -51,7 +51,6 @@ struct UpcomingFixedExpenseRow: View {
                     if canEdit {
                         Button(action: onEdit) {
                             Text(expense.name)
-                                .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                     } else {
