@@ -1,10 +1,13 @@
 import Observation
+import os
 import WellSpentAPI
 import WellSpentREST
 
 @MainActor
 @Observable
 final class BudgetDetailViewModel {
+    private static let logger = AppLogger.logger("BudgetDetail")
+
     private(set) var profile: Wellspent_V1_BudgetProfile
     private(set) var isLoading = false
     private(set) var currentPeriod: Wellspent_V1_BudgetPeriod?
@@ -108,10 +111,14 @@ final class BudgetDetailViewModel {
     }
 
     func loadRole(currentUserID: String?) async {
-        guard let people = await fetchPeople() else { return }
+        guard let people = await fetchPeople() else {
+            Self.logger.error("loadRole: failed to fetch people for profile \(self.profile.id, privacy: .public) — leaving canEdit at its current value (\(self.canEdit, privacy: .public))")
+            return
+        }
         let role = BudgetRoleResolver.role(currentUserID: currentUserID, budgetOwnerUserID: profile.userID, people: people)
         canEdit = BudgetRoleResolver.canEdit(role)
         canManageUsers = BudgetRoleResolver.canManageUsers(role)
+        Self.logger.info("loadRole: profile=\(self.profile.id, privacy: .public) currentUserID=\(currentUserID ?? "nil", privacy: .public) ownerUserID=\(self.profile.userID, privacy: .public) resolvedRole=\(String(describing: role), privacy: .public) canEdit=\(self.canEdit, privacy: .public)")
     }
 
     private func fetchPeople() async -> [Wellspent_V1_BudgetPerson]? {
