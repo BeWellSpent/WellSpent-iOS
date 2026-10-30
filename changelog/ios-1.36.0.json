@@ -341,6 +341,11 @@
       "changeType": "changed",
       "summaryEn": "Transaction swipe actions now use shorter labels — Split, Undo, Make Fixed, Mark Paid, Unmark Paid — and \"Flag for Review\" is now \"Pair\", with a link icon, since that's what it actually does.",
       "summaryEs": "Las acciones al deslizar una transacción ahora usan textos más cortos — Dividir, Deshacer, Hacer fijo, Marcar pagado, Desmarcar pagado — y \"Marcar para revisión\" ahora es \"Vincular\", con un ícono de enlace, ya que eso es lo que realmente hace."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "When a new period starts for real, you'll now see a review screen showing what carried over, with a link to review and fix up last period's transactions, before you can continue.",
+      "summaryEs": "Cuando empieza un período nuevo de verdad, ahora verás una pantalla de revisión con lo que se trasladó, con un enlace para revisar y corregir las transacciones del período anterior, antes de poder continuar."
     }
   ]
 }

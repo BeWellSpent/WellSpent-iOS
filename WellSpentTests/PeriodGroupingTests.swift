@@ -54,6 +54,65 @@ struct PeriodGroupingTests {
         #expect(PeriodGrouping.resolveActivePeriod([p1, p2])?.id == "p2")
     }
 
+    private func makeRangedPeriod(
+        id: String,
+        startYear: Int, startMonth: Int, startDay: Int,
+        endYear: Int, endMonth: Int, endDay: Int,
+        isArchived: Bool = false
+    ) -> Wellspent_V1_BudgetPeriod {
+        func date(_ y: Int, _ m: Int, _ d: Int) -> Date {
+            var components = DateComponents()
+            components.year = y
+            components.month = m
+            components.day = d
+            components.hour = 12
+            return Calendar.current.date(from: components)!
+        }
+        return .with {
+            $0.id = id
+            $0.startDate = Google_Protobuf_Timestamp(dateOnly: date(startYear, startMonth, startDay))
+            $0.endDate = Google_Protobuf_Timestamp(dateOnly: date(endYear, endMonth, endDay))
+            $0.isArchived = isArchived
+        }
+    }
+
+    private func makeDate(_ year: Int, _ month: Int, _ day: Int) -> Date {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.hour = 12
+        return Calendar.current.date(from: components)!
+    }
+
+    @Test("resolveActivePeriod picks the period whose range actually contains today, over a newer non-archived one")
+    func resolveActivePeriodPicksPeriodContainingToday() {
+        let previous = makeRangedPeriod(id: "previous", startYear: 2026, startMonth: 9, startDay: 1, endYear: 2026, endMonth: 9, endDay: 30)
+        let current = makeRangedPeriod(id: "current", startYear: 2026, startMonth: 10, startDay: 1, endYear: 2026, endMonth: 10, endDay: 31)
+        let today = makeDate(2026, 10, 15)
+        #expect(PeriodGrouping.resolveActivePeriod([previous, current], today: today)?.id == "current")
+    }
+
+    @Test("resolveActivePeriod resolves by date, not always-newest, when today falls inside what should be the previous period")
+    func resolveActivePeriodPicksPreviousPeriodWhenTodayIsThere() {
+        // Both non-archived — current cycling behavior keeps the previous
+        // period non-archived too (see docs/features/month-cycling-review.md)
+        // — so "newest non-archived" would wrongly return `current` here.
+        let previous = makeRangedPeriod(id: "previous", startYear: 2026, startMonth: 9, startDay: 1, endYear: 2026, endMonth: 9, endDay: 30)
+        let current = makeRangedPeriod(id: "current", startYear: 2026, startMonth: 10, startDay: 1, endYear: 2026, endMonth: 10, endDay: 31)
+        let today = makeDate(2026, 9, 15)
+        #expect(PeriodGrouping.resolveActivePeriod([previous, current], today: today)?.id == "previous")
+    }
+
+    @Test("resolveActivePeriod falls back to the newest non-archived period when today is inside no period's range")
+    func resolveActivePeriodFallsBackWhenTodayMatchesNothing() {
+        let archived = makeRangedPeriod(id: "archived", startYear: 2026, startMonth: 8, startDay: 1, endYear: 2026, endMonth: 8, endDay: 31, isArchived: true)
+        let nonArchived = makeRangedPeriod(id: "non-archived", startYear: 2026, startMonth: 9, startDay: 1, endYear: 2026, endMonth: 9, endDay: 30)
+        // The cycling job hasn't run yet — today is past every known period's end date.
+        let today = makeDate(2026, 10, 15)
+        #expect(PeriodGrouping.resolveActivePeriod([archived, nonArchived], today: today)?.id == "non-archived")
+    }
+
     @Test("resolvePeriod returns the active period when no override is given")
     func resolvePeriodNoOverride() {
         let archived = makePeriod(id: "p-archived", year: 2026, month: 6, day: 1, isArchived: true)

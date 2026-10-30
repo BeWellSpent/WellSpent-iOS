@@ -75,6 +75,9 @@ struct BudgetDetailView: View {
     /// same reasoning `reviewViewModel`/`notificationViewModel` already use
     /// one level up.
     @State private var overviewViewModel: ExpenseOverviewViewModel?
+    /// Non-nil blocks the whole screen behind `PeriodReviewGateView` — see
+    /// `BudgetDetailViewModel.periodNeedingReview`.
+    @State private var periodReviewViewModel: PeriodReviewViewModel?
 
     @State private var overviewSelectedSubTab: OverviewSubTab = .overview
     @State private var transactionsSearchQuery = ""
@@ -177,9 +180,32 @@ struct BudgetDetailView: View {
             // regardless of which tab is initially selected, not only once
             // the user happens to open Manage.
             await viewModel?.loadPeriod()
+            await setUpPeriodReviewGateIfNeeded()
         }
         .task {
             await viewModel?.loadRole(currentUserID: session.userID)
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { periodReviewViewModel != nil },
+            set: { if !$0 { periodReviewViewModel = nil } }
+        )) {
+            if let periodReviewViewModel, let authenticatedRESTClient, let viewModel {
+                PeriodReviewGateView(
+                    viewModel: periodReviewViewModel,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier,
+                    paymentMethods: viewModel.paymentMethods,
+                    budgetProfileID: viewModel.profile.id,
+                    canEdit: viewModel.canEdit,
+                    reviewViewModel: reviewViewModel,
+                    restClient: authenticatedRESTClient,
+                    onConfirmed: {
+                        viewModel.markPeriodReviewed(id: periodReviewViewModel.period.id)
+                        self.periodReviewViewModel = nil
+                        transactionsRefreshToken = UUID()
+                    }
+                )
+            }
         }
         .task {
             // Needed by the toolbar's "+" gate, which is visible before
@@ -255,6 +281,21 @@ struct BudgetDetailView: View {
             }
             await reviewViewModel?.observePushEvents()
         }
+    }
+
+    /// Builds (once per flagged period) and loads the blocking review gate
+    /// when `loadPeriod()` turns up a period with `needsReview == true`.
+    private func setUpPeriodReviewGateIfNeeded() async {
+        guard let viewModel, let needsReview = viewModel.periodNeedingReview, let authenticatedRESTClient else { return }
+        guard periodReviewViewModel?.period.id != needsReview.id else { return }
+        let gateViewModel = PeriodReviewViewModel(
+            period: needsReview,
+            previousPeriod: viewModel.previousPeriod(before: needsReview),
+            budgetProfileID: viewModel.profile.id,
+            restClient: authenticatedRESTClient
+        )
+        periodReviewViewModel = gateViewModel
+        await gateViewModel.load()
     }
 
     /// Both Fixed and Variable require a payment method to submit, so with
