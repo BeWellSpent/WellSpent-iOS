@@ -39,7 +39,7 @@ struct MarkAsPaidView: View {
                 DatePicker("Paid date", selection: $paidDate, displayedComponents: .date)
                     .accessibilityIdentifier("markAsPaidDatePicker")
             }
-            .sheetChrome(Text("Mark as Paid")) { dismiss() }
+            .sheetChrome(Text("Mark Paid")) { dismiss() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Confirm") {

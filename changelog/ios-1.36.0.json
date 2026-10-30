@@ -336,6 +336,11 @@
       "changeType": "fixed",
       "summaryEn": "A paid fixed bill matched to a bank transaction can be marked unpaid again, from a swipe on its transaction row.",
       "summaryEs": "Una factura fija pagada y emparejada con una transacción bancaria se puede volver a marcar como no pagada, deslizando en su fila."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Transaction swipe actions now use shorter labels — Split, Undo, Make Fixed, Mark Paid, Unmark Paid — and \"Flag for Review\" is now \"Pair\", with a link icon, since that's what it actually does.",
+      "summaryEs": "Las acciones al deslizar una transacción ahora usan textos más cortos — Dividir, Deshacer, Hacer fijo, Marcar pagado, Desmarcar pagado — y \"Marcar para revisión\" ahora es \"Vincular\", con un ícono de enlace, ya que eso es lo que realmente hace."
     }
   ]
 }

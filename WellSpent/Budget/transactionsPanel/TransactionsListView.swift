@@ -284,7 +284,7 @@ struct TransactionsListView: View {
             ),
             titleVisibility: .visible
         ) {
-            Button("Undo split", role: .destructive) {
+            Button("Undo", role: .destructive) {
                 if let unsplitTarget {
                     Task { await viewModel.deleteInstallmentPlan(unsplitTarget) }
                 }
@@ -523,7 +523,7 @@ struct TransactionsListView: View {
                 Button {
                     unsplitTarget = transaction
                 } label: {
-                    Label("Undo split", systemImage: "arrow.uturn.backward")
+                    Label("Undo", systemImage: "arrow.uturn.backward")
                 }
                 .tint(.orange)
                 .accessibilityIdentifier("unsplitInstallments_\(transaction.name)")
@@ -531,7 +531,7 @@ struct TransactionsListView: View {
                 Button {
                     activeSheet = .installmentPlan(transaction)
                 } label: {
-                    Label("Split into installments", systemImage: "arrow.triangle.branch")
+                    Label("Split", systemImage: "arrow.triangle.branch")
                 }
                 .tint(.purple)
                 .accessibilityIdentifier("splitIntoInstallments_\(transaction.name)")
@@ -541,7 +541,7 @@ struct TransactionsListView: View {
                 Button {
                     activeSheet = .createFixedFromTransaction(transaction)
                 } label: {
-                    Label("Create a fixed expense", systemImage: "arrow.triangle.2.circlepath")
+                    Label("Make Fixed", systemImage: "arrow.triangle.2.circlepath")
                 }
                 .tint(.indigo)
                 .accessibilityIdentifier("createFixedFromTransaction_\(transaction.name)")
@@ -559,7 +559,7 @@ struct TransactionsListView: View {
                     await reviewViewModel?.load()
                 }
             } label: {
-                Label("Unmark as Paid", systemImage: "xmark.circle")
+                Label("Unmark Paid", systemImage: "xmark.circle")
             }
             .tint(.gray)
             .accessibilityIdentifier("unmarkPaid_\(matchedFixed.name)")
@@ -572,7 +572,7 @@ struct TransactionsListView: View {
             Button {
                 activeSheet = .markReview(transaction)
             } label: {
-                Label("Flag for Review", systemImage: "flag")
+                Label("Pair", systemImage: "link")
             }
             .tint(.yellow)
             .accessibilityIdentifier("flagForReview_\(transaction.name)")
@@ -831,7 +831,7 @@ struct TransactionsListView: View {
                         await reviewViewModel?.load()
                     }
                 } label: {
-                    Label("Unmark as Paid", systemImage: "xmark.circle")
+                    Label("Unmark Paid", systemImage: "xmark.circle")
                 }
                 .tint(.gray)
                 .accessibilityIdentifier("unmarkPaid_\(transaction.name)")
@@ -839,7 +839,7 @@ struct TransactionsListView: View {
                 Button {
                     activeSheet = .markPaid(transaction)
                 } label: {
-                    Label("Mark as Paid", systemImage: "checkmark.circle")
+                    Label("Mark Paid", systemImage: "checkmark.circle")
                 }
                 .tint(.green)
                 .accessibilityIdentifier("markPaid_\(transaction.name)")
