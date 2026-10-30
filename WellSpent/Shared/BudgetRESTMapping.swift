@@ -49,6 +49,7 @@ nonisolated enum BudgetRESTMapping {
                 $0.endDate = end
             }
             $0.isArchived = p.isArchived
+            $0.needsReview = p.needsReview
         }
     }
 

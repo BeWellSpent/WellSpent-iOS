@@ -27,10 +27,24 @@ nonisolated enum PeriodGrouping {
         }
     }
 
-    /// The most recent non-archived period, falling back to the newest
-    /// period overall if every period happens to be archived.
-    static func resolveActivePeriod(_ periods: [Wellspent_V1_BudgetPeriod]) -> Wellspent_V1_BudgetPeriod? {
-        periods
+    /// The period whose `[startDate, endDate]` range actually contains
+    /// today's local calendar date — "current", not "newest non-archived".
+    /// Those used to coincide by construction when only the latest period
+    /// was ever non-archived, but the backend now keeps the current *and*
+    /// previous period both non-archived permanently (see
+    /// docs/features/month-cycling-review.md), so that coincidence can no
+    /// longer be relied on. Falls back to the most recent non-archived
+    /// period (then the newest overall) when no period's range contains
+    /// today — e.g. the cycling job hasn't run yet and today has rolled
+    /// past every known period's end date.
+    static func resolveActivePeriod(_ periods: [Wellspent_V1_BudgetPeriod], today: Date = Date()) -> Wellspent_V1_BudgetPeriod? {
+        let todayStart = Calendar.current.startOfDay(for: today)
+        if let containing = periods.first(where: { period in
+            period.startDate.dateOnly <= todayStart && todayStart <= period.endDate.dateOnly
+        }) {
+            return containing
+        }
+        return periods
             .filter { !$0.isArchived }
             .max { $0.startDate.seconds < $1.startDate.seconds }
             ?? periods.max { $0.startDate.seconds < $1.startDate.seconds }

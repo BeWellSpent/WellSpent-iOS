@@ -1,86 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Split" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Split"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dividir"
-          }
-        }
-      }
-    },
-    "Make Fixed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Make Fixed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hacer fijo"
-          }
-        }
-      }
-    },
-    "Unmark Paid" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmark Paid"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desmarcar pagado"
-          }
-        }
-      }
-    },
-    "Mark Paid" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark Paid"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Marcar pagado"
-          }
-        }
-      }
-    },
-    "Pair" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pair"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vincular"
-          }
-        }
-      }
-    },
     "— %@" : {
       "localizations" : {
         "en" : {
@@ -1243,6 +1163,22 @@
         }
       }
     },
+    "Carried over" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carried over"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trasladado"
+          }
+        }
+      }
+    },
     "Carry balance forward" : {
       "localizations" : {
         "en" : {
@@ -2320,6 +2256,7 @@
       }
     },
     "Create a fixed expense" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3592,6 +3529,7 @@
       }
     },
     "Flag for Review" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4264,6 +4202,22 @@
         }
       }
     },
+    "Make Fixed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make Fixed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacer fijo"
+          }
+        }
+      }
+    },
     "Manage" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4314,6 +4268,7 @@
       }
     },
     "Mark as Paid" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4325,6 +4280,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marcar como pagado"
+          }
+        }
+      }
+    },
+    "Mark Paid" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark Paid"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar pagado"
           }
         }
       }
@@ -4997,6 +4968,22 @@
         }
       }
     },
+    "Nothing to review." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to review."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada para revisar."
+          }
+        }
+      }
+    },
     "Not due this period — next due %@" : {
       "localizations" : {
         "en" : {
@@ -5375,6 +5362,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fecha de pago"
+          }
+        }
+      }
+    },
+    "Pair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pair"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincular"
           }
         }
       }
@@ -5908,6 +5911,22 @@
         }
       }
     },
+    "Recompute carried-over balances" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recompute carried-over balances"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalcular los saldos trasladados"
+          }
+        }
+      }
+    },
     "Recurring" : {
       "localizations" : {
         "en" : {
@@ -6186,6 +6205,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Revisión pendiente"
+          }
+        }
+      }
+    },
+    "Review new period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review new period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisar nuevo período"
           }
         }
       }
@@ -6897,7 +6932,24 @@
         }
       }
     },
+    "Split" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Split"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dividir"
+          }
+        }
+      }
+    },
     "Split into installments" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6974,6 +7026,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paso %1$lld de %2$lld — %3$@"
+          }
+        }
+      }
+    },
+    "Still unpaid from %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still unpaid from %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún sin pagar de %@"
           }
         }
       }
@@ -7555,6 +7623,7 @@
       }
     },
     "Undo split" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7619,6 +7688,7 @@
       }
     },
     "Unmark as Paid" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7630,6 +7700,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marcar como no pagado"
+          }
+        }
+      }
+    },
+    "Unmark Paid" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unmark Paid"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desmarcar pagado"
           }
         }
       }

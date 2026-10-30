@@ -54,6 +54,32 @@ final class BudgetDetailViewModel {
     /// since they're profile-level, not period-level.
     var isArchivedPeriod: Bool { currentPeriod?.isArchived ?? false }
 
+    /// The period that just cycled for real and hasn't been reviewed yet, if
+    /// any — see docs/features/month-cycling-review.md. At most one by
+    /// construction; `first` degrades safely if that's ever violated.
+    var periodNeedingReview: Wellspent_V1_BudgetPeriod? {
+        periods.first { $0.needsReview }
+    }
+
+    /// The period immediately before `period` by start date, or `nil` if
+    /// `period` is the oldest known one.
+    func previousPeriod(before period: Wellspent_V1_BudgetPeriod) -> Wellspent_V1_BudgetPeriod? {
+        periods
+            .filter { $0.startDate.seconds < period.startDate.seconds }
+            .max { $0.startDate.seconds < $1.startDate.seconds }
+    }
+
+    /// Flips `needsReview` to false locally after a successful confirm, so
+    /// the gate doesn't reappear without a full refetch.
+    func markPeriodReviewed(id: String) {
+        if let index = periods.firstIndex(where: { $0.id == id }) {
+            periods[index].needsReview = false
+        }
+        if currentPeriod?.id == id {
+            currentPeriod?.needsReview = false
+        }
+    }
+
     private let restClient: WellSpentREST.Client
 
     init(profile: Wellspent_V1_BudgetProfile, overridePeriodID: String? = nil, restClient: WellSpentREST.Client) {
