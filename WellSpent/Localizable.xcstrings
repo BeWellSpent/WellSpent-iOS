@@ -4968,22 +4968,6 @@
         }
       }
     },
-    "Nothing to review." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nothing to review."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nada para revisar."
-          }
-        }
-      }
-    },
     "Not due this period — next due %@" : {
       "localizations" : {
         "en" : {
@@ -6209,6 +6193,22 @@
         }
       }
     },
+    "Review %@ transactions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review %@ transactions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisar transacciones de %@"
+          }
+        }
+      }
+    },
     "Review new period" : {
       "localizations" : {
         "en" : {
@@ -7026,22 +7026,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paso %1$lld de %2$lld — %3$@"
-          }
-        }
-      }
-    },
-    "Still unpaid from %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Still unpaid from %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aún sin pagar de %@"
           }
         }
       }

@@ -7,6 +7,12 @@ import WellSpentREST
 /// Backs `PeriodReviewGateView` — the blocking screen shown when a period's
 /// `needsReview` is true (a genuine cycle, not a profile's first period).
 /// See docs/features/month-cycling-review.md.
+///
+/// Owns only the "carried over" list, which is specific to this screen —
+/// everything else a user needs to review (the previous period's Fixed and
+/// Variable transactions, with the same swipe actions/mark-paid/exclude/
+/// Plaid lock as anywhere else in the app) is the *real* Transactions list,
+/// embedded via `PeriodReviewTransactionsView`, not re-derived here.
 @MainActor
 @Observable
 final class PeriodReviewViewModel {
@@ -18,7 +24,6 @@ final class PeriodReviewViewModel {
     private let restClient: WellSpentREST.Client
 
     private(set) var carriedOverTransactions: [Wellspent_V1_Transaction] = []
-    private(set) var unpaidFixedTransactions: [Wellspent_V1_Transaction] = []
     private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var isLoading = false
     private(set) var isConfirming = false
@@ -38,35 +43,27 @@ final class PeriodReviewViewModel {
         defer { isLoading = false }
 
         guard let previousPeriod else {
-            // No previous period to carry anything from or owe anything to —
-            // shouldn't happen for a row the backend flagged `needsReview`,
-            // but leaves both lists empty rather than crashing on it.
+            // No previous period to carry anything from — shouldn't happen
+            // for a row the backend flagged `needsReview`, but leaves the
+            // list empty rather than crashing on it.
             carriedOverTransactions = []
-            unpaidFixedTransactions = []
             return
         }
 
         async let newPeriodTransactions = fetchTransactions(periodID: period.id)
-        async let previousPeriodTransactions = fetchTransactions(periodID: previousPeriod.id)
         async let fetchedCategories = fetchCategories()
 
         carriedOverTransactions = PeriodReviewFiltering.carriedOverTransactions(
             await newPeriodTransactions ?? [],
             previousPeriodID: previousPeriod.id
         )
-        unpaidFixedTransactions = PeriodReviewFiltering.unpaidFixedTransactions(
-            await previousPeriodTransactions ?? [],
-            fixedTypeID: TransactionsViewModel.fixedTypeID
-        )
         categories = await fetchedCategories ?? []
     }
 
     /// Test seam — injects state directly so pure in-place mutations
-    /// (`replaceCarriedOverTransaction`, the local removal in
-    /// `markUnpaidFixedTransactionPaid`) are testable without a network call.
-    func setStateForTesting(carriedOverTransactions: [Wellspent_V1_Transaction] = [], unpaidFixedTransactions: [Wellspent_V1_Transaction] = []) {
+    /// (`replaceCarriedOverTransaction`) are testable without a network call.
+    func setStateForTesting(carriedOverTransactions: [Wellspent_V1_Transaction] = []) {
         self.carriedOverTransactions = carriedOverTransactions
-        self.unpaidFixedTransactions = unpaidFixedTransactions
     }
 
     private func fetchTransactions(periodID: String) async -> [Wellspent_V1_Transaction]? {
@@ -137,29 +134,5 @@ final class PeriodReviewViewModel {
     func replaceCarriedOverTransaction(_ updated: Wellspent_V1_Transaction) {
         guard let index = carriedOverTransactions.firstIndex(where: { $0.id == updated.id }) else { return }
         carriedOverTransactions[index] = updated
-    }
-
-    func markUnpaidFixedTransactionPaid(_ transaction: Wellspent_V1_Transaction, paidAmount: Wellspent_V1_Money, paidAt: Date) async {
-        guard let previousPeriod else { return }
-        errorMessage = nil
-        do {
-            let output = try await restClient.markTransactionAsPaid(.init(
-                path: .init(id: transaction.id),
-                body: .json(.init(
-                    budgetPeriodId: previousPeriod.id,
-                    paidAmount: BudgetRESTMapping.restMoney(from: paidAmount),
-                    paidDate: Google_Protobuf_Timestamp(dateOnly: paidAt).restDateString
-                ))
-            ))
-            guard case .ok = output else {
-                errorMessage = "Couldn't mark that as paid."
-                Self.logger.error("markUnpaidFixedTransactionPaid failed: unexpected response, transaction=\(transaction.id, privacy: .public)")
-                return
-            }
-            unpaidFixedTransactions.removeAll { $0.id == transaction.id }
-        } catch {
-            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't mark that as paid."
-            Self.logger.error("markUnpaidFixedTransactionPaid failed: transaction=\(transaction.id, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-        }
     }
 }

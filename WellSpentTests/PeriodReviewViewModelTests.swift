@@ -1,4 +1,3 @@
-import Foundation
 import Testing
 import WellSpentAPI
 import WellSpentREST
@@ -20,12 +19,11 @@ struct PeriodReviewViewModelTests {
         )
     }
 
-    @Test("load leaves both lists empty, with no network call, when there is no previous period")
+    @Test("load leaves carriedOverTransactions empty, with no network call, when there is no previous period")
     func loadWithNoPreviousPeriodIsEmpty() async {
         let viewModel = makeViewModel(previousPeriod: nil)
         await viewModel.load()
         #expect(viewModel.carriedOverTransactions.isEmpty)
-        #expect(viewModel.unpaidFixedTransactions.isEmpty)
         #expect(viewModel.errorMessage == nil)
     }
 
@@ -42,16 +40,6 @@ struct PeriodReviewViewModelTests {
         let viewModel = makeViewModel(previousPeriod: period(id: "previous"))
         await viewModel.retrigger()
         #expect(viewModel.errorMessage != nil)
-    }
-
-    @Test("markUnpaidFixedTransactionPaid is a no-op when there is no previous period")
-    func markUnpaidFixedTransactionPaidNoOpWithoutPreviousPeriod() async {
-        let viewModel = makeViewModel(previousPeriod: nil)
-        let transaction = Wellspent_V1_Transaction.with { $0.id = "t1" }
-        viewModel.setStateForTesting(unpaidFixedTransactions: [transaction])
-        await viewModel.markUnpaidFixedTransactionPaid(transaction, paidAmount: .with { $0.units = 100 }, paidAt: Date())
-        #expect(viewModel.unpaidFixedTransactions.map(\.id) == ["t1"])
-        #expect(viewModel.errorMessage == nil)
     }
 
     @Test("replaceCarriedOverTransaction mutates the matching row in place")

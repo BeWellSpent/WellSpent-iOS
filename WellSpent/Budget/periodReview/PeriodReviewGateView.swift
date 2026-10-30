@@ -6,27 +6,24 @@ import WellSpentREST
 /// — see docs/features/month-cycling-review.md. Presented as a
 /// `.fullScreenCover` (not a `.sheet`): same reasoning as `VerifyEmailGateView`,
 /// a swipeable presentation can be dismissed around the rule.
+///
+/// Shows the new period's carried-over rows directly (specific to this
+/// screen), plus a link into the *real* Transactions list for the previous
+/// period — which isn't archived, so it already has the right rules (swipe
+/// actions, mark/unmark paid, exclude, Plaid category-only lock, merged
+/// confirmed-match display) with no new logic needed here.
 struct PeriodReviewGateView: View {
     @Bindable var viewModel: PeriodReviewViewModel
     let currencyCode: String
     let localeIdentifier: String
     let paymentMethods: [Wellspent_V1_PaymentMethod]
+    let budgetProfileID: String
+    let canEdit: Bool
+    var reviewViewModel: TransactionReviewViewModel?
     let restClient: WellSpentREST.Client
     let onConfirmed: () -> Void
 
-    private enum ActiveSheet: Identifiable {
-        case editCarriedOver(Wellspent_V1_Transaction)
-        case markUnpaidFixedPaid(Wellspent_V1_Transaction)
-
-        var id: String {
-            switch self {
-            case .editCarriedOver(let t): return "edit-\(t.id)"
-            case .markUnpaidFixedPaid(let t): return "markPaid-\(t.id)"
-            }
-        }
-    }
-
-    @State private var activeSheet: ActiveSheet?
+    @State private var editingCarriedOverTransaction: Wellspent_V1_Transaction?
 
     private var previousPeriodLabel: String {
         guard let previousPeriod = viewModel.previousPeriod else { return "" }
@@ -38,36 +35,35 @@ struct PeriodReviewGateView: View {
             List {
                 if viewModel.isLoading {
                     ProgressView()
-                } else {
-                    if !viewModel.carriedOverTransactions.isEmpty {
-                        Section("Carried over") {
-                            ForEach(viewModel.carriedOverTransactions, id: \.id) { transaction in
-                                Button {
-                                    activeSheet = .editCarriedOver(transaction)
-                                } label: {
-                                    row(for: transaction)
-                                }
-                                .accessibilityIdentifier("periodReviewCarriedOverRow_\(transaction.id)")
+                } else if !viewModel.carriedOverTransactions.isEmpty {
+                    Section("Carried over") {
+                        ForEach(viewModel.carriedOverTransactions, id: \.id) { transaction in
+                            Button {
+                                editingCarriedOverTransaction = transaction
+                            } label: {
+                                row(for: transaction)
                             }
+                            .accessibilityIdentifier("periodReviewCarriedOverRow_\(transaction.id)")
                         }
                     }
+                }
 
-                    if !viewModel.unpaidFixedTransactions.isEmpty {
-                        Section("Still unpaid from \(previousPeriodLabel)") {
-                            ForEach(viewModel.unpaidFixedTransactions, id: \.id) { transaction in
-                                Button {
-                                    activeSheet = .markUnpaidFixedPaid(transaction)
-                                } label: {
-                                    row(for: transaction)
-                                }
-                                .accessibilityIdentifier("periodReviewUnpaidFixedRow_\(transaction.id)")
-                            }
+                if let previousPeriod = viewModel.previousPeriod {
+                    Section {
+                        NavigationLink {
+                            PeriodReviewTransactionsView(
+                                budgetPeriodID: previousPeriod.id,
+                                budgetProfileID: budgetProfileID,
+                                authenticatedRESTClient: restClient,
+                                currencyCode: currencyCode,
+                                localeIdentifier: localeIdentifier,
+                                canEdit: canEdit,
+                                reviewViewModel: reviewViewModel
+                            )
+                        } label: {
+                            Text("Review \(previousPeriodLabel) transactions")
                         }
-                    }
-
-                    if viewModel.carriedOverTransactions.isEmpty && viewModel.unpaidFixedTransactions.isEmpty {
-                        Text("Nothing to review.")
-                            .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("periodReviewOpenTransactionsButton")
                     }
                 }
 
@@ -114,9 +110,11 @@ struct PeriodReviewGateView: View {
             .task {
                 await viewModel.load()
             }
-            .sheet(item: $activeSheet) { sheet in
-                switch sheet {
-                case .editCarriedOver(let transaction):
+            .sheet(isPresented: Binding(
+                get: { editingCarriedOverTransaction != nil },
+                set: { if !$0 { editingCarriedOverTransaction = nil } }
+            )) {
+                if let transaction = editingCarriedOverTransaction {
                     AddEditTransactionView(
                         mode: .edit(transaction),
                         budgetPeriodID: viewModel.period.id,
@@ -126,10 +124,6 @@ struct PeriodReviewGateView: View {
                         restClient: restClient
                     ) { updated in
                         viewModel.replaceCarriedOverTransaction(updated)
-                    }
-                case .markUnpaidFixedPaid(let transaction):
-                    MarkAsPaidView(transaction: transaction, currencyCode: currencyCode) { amount, paidAt in
-                        Task { await viewModel.markUnpaidFixedTransactionPaid(transaction, paidAmount: amount, paidAt: paidAt) }
                     }
                 }
             }
@@ -171,6 +165,8 @@ struct PeriodReviewGateView: View {
         currencyCode: "USD",
         localeIdentifier: "en_US",
         paymentMethods: [],
+        budgetProfileID: "profile",
+        canEdit: true,
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"),
         onConfirmed: {}
     )

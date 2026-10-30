@@ -195,6 +195,9 @@ struct BudgetDetailView: View {
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     paymentMethods: viewModel.paymentMethods,
+                    budgetProfileID: viewModel.profile.id,
+                    canEdit: viewModel.canEdit,
+                    reviewViewModel: reviewViewModel,
                     restClient: authenticatedRESTClient,
                     onConfirmed: {
                         viewModel.markPeriodReviewed(id: periodReviewViewModel.period.id)
