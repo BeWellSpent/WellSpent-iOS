@@ -284,7 +284,7 @@ struct TransactionsListView: View {
             ),
             titleVisibility: .visible
         ) {
-            Button("Undo split", role: .destructive) {
+            Button("Undo", role: .destructive) {
                 if let unsplitTarget {
                     Task { await viewModel.deleteInstallmentPlan(unsplitTarget) }
                 }
@@ -505,7 +505,11 @@ struct TransactionsListView: View {
     // MARK: Variable row
 
     @ViewBuilder
-    private func leadingSwipeActions(for transaction: Wellspent_V1_Transaction) -> some View {
+    private func leadingSwipeActions(
+        for transaction: Wellspent_V1_Transaction,
+        matchedFixed: Wellspent_V1_Transaction? = nil,
+        viewModel: TransactionsViewModel? = nil
+    ) -> some View {
         if canEdit {
             Button {
                 activeSheet = .editTransaction(transaction)
@@ -519,7 +523,7 @@ struct TransactionsListView: View {
                 Button {
                     unsplitTarget = transaction
                 } label: {
-                    Label("Undo split", systemImage: "arrow.uturn.backward")
+                    Label("Undo", systemImage: "arrow.uturn.backward")
                 }
                 .tint(.orange)
                 .accessibilityIdentifier("unsplitInstallments_\(transaction.name)")
@@ -527,7 +531,7 @@ struct TransactionsListView: View {
                 Button {
                     activeSheet = .installmentPlan(transaction)
                 } label: {
-                    Label("Split into installments", systemImage: "arrow.triangle.branch")
+                    Label("Split", systemImage: "arrow.triangle.branch")
                 }
                 .tint(.purple)
                 .accessibilityIdentifier("splitIntoInstallments_\(transaction.name)")
@@ -537,11 +541,28 @@ struct TransactionsListView: View {
                 Button {
                     activeSheet = .createFixedFromTransaction(transaction)
                 } label: {
-                    Label("Create a fixed expense", systemImage: "arrow.triangle.2.circlepath")
+                    Label("Make Fixed", systemImage: "arrow.triangle.2.circlepath")
                 }
                 .tint(.indigo)
                 .accessibilityIdentifier("createFixedFromTransaction_\(transaction.name)")
             }
+        }
+
+        // Restores the "unmark paid" action for a Fixed bill whose confirmed
+        // match hides its own row (issue #97) — mirrors `fixedLeadingSwipeActions`
+        // exactly, but unmarks the matched Fixed transaction, not this row.
+        if canMutate, let matchedFixed, matchedFixed.isPaid, let viewModel {
+            Button {
+                Self.logger.info("unmark paid tapped (via matched variable) transactionID=\(matchedFixed.id, privacy: .public)")
+                Task {
+                    await viewModel.unmark(matchedFixed)
+                    await reviewViewModel?.load()
+                }
+            } label: {
+                Label("Unmark Paid", systemImage: "xmark.circle")
+            }
+            .tint(.gray)
+            .accessibilityIdentifier("unmarkPaid_\(matchedFixed.name)")
         }
     }
 
@@ -551,7 +572,7 @@ struct TransactionsListView: View {
             Button {
                 activeSheet = .markReview(transaction)
             } label: {
-                Label("Flag for Review", systemImage: "flag")
+                Label("Pair", systemImage: "link")
             }
             .tint(.yellow)
             .accessibilityIdentifier("flagForReview_\(transaction.name)")
@@ -730,7 +751,7 @@ struct TransactionsListView: View {
             }
         }
         .swipeActions(edge: .leading) {
-            leadingSwipeActions(for: transaction)
+            leadingSwipeActions(for: transaction, matchedFixed: matchedFixed, viewModel: viewModel)
         }
         .swipeActions(edge: .trailing) {
             trailingSwipeActions(for: transaction, viewModel: viewModel)
@@ -810,7 +831,7 @@ struct TransactionsListView: View {
                         await reviewViewModel?.load()
                     }
                 } label: {
-                    Label("Unmark as Paid", systemImage: "xmark.circle")
+                    Label("Unmark Paid", systemImage: "xmark.circle")
                 }
                 .tint(.gray)
                 .accessibilityIdentifier("unmarkPaid_\(transaction.name)")
@@ -818,7 +839,7 @@ struct TransactionsListView: View {
                 Button {
                     activeSheet = .markPaid(transaction)
                 } label: {
-                    Label("Mark as Paid", systemImage: "checkmark.circle")
+                    Label("Mark Paid", systemImage: "checkmark.circle")
                 }
                 .tint(.green)
                 .accessibilityIdentifier("markPaid_\(transaction.name)")

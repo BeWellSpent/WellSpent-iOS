@@ -43,7 +43,7 @@ struct MarkForReviewSheet: View {
                     ProgressView()
                 }
             }
-            .sheetChrome(Text("Flag for Review")) { dismiss() }
+            .sheetChrome(Text("Pair")) { dismiss() }
             .task {
                 if viewModel == nil {
                     viewModel = MarkForReviewViewModel(

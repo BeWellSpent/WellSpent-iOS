@@ -26,7 +26,7 @@ struct InstallmentPlanSheet: View {
                     ProgressView()
                 }
             }
-            .sheetChrome(Text("Split into installments")) { dismiss() }
+            .sheetChrome(Text("Split")) { dismiss() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create plan") {

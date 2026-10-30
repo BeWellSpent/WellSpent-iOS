@@ -22,7 +22,7 @@ struct CreateFixedFromTransactionSheet: View {
                     ProgressView()
                 }
             }
-            .sheetChrome(Text("Create a fixed expense")) { dismiss() }
+            .sheetChrome(Text("Make Fixed")) { dismiss() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
