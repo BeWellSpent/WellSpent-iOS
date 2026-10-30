@@ -505,7 +505,11 @@ struct TransactionsListView: View {
     // MARK: Variable row
 
     @ViewBuilder
-    private func leadingSwipeActions(for transaction: Wellspent_V1_Transaction) -> some View {
+    private func leadingSwipeActions(
+        for transaction: Wellspent_V1_Transaction,
+        matchedFixed: Wellspent_V1_Transaction? = nil,
+        viewModel: TransactionsViewModel? = nil
+    ) -> some View {
         if canEdit {
             Button {
                 activeSheet = .editTransaction(transaction)
@@ -542,6 +546,23 @@ struct TransactionsListView: View {
                 .tint(.indigo)
                 .accessibilityIdentifier("createFixedFromTransaction_\(transaction.name)")
             }
+        }
+
+        // Restores the "unmark paid" action for a Fixed bill whose confirmed
+        // match hides its own row (issue #97) — mirrors `fixedLeadingSwipeActions`
+        // exactly, but unmarks the matched Fixed transaction, not this row.
+        if canMutate, let matchedFixed, matchedFixed.isPaid, let viewModel {
+            Button {
+                Self.logger.info("unmark paid tapped (via matched variable) transactionID=\(matchedFixed.id, privacy: .public)")
+                Task {
+                    await viewModel.unmark(matchedFixed)
+                    await reviewViewModel?.load()
+                }
+            } label: {
+                Label("Unmark as Paid", systemImage: "xmark.circle")
+            }
+            .tint(.gray)
+            .accessibilityIdentifier("unmarkPaid_\(matchedFixed.name)")
         }
     }
 
@@ -730,7 +751,7 @@ struct TransactionsListView: View {
             }
         }
         .swipeActions(edge: .leading) {
-            leadingSwipeActions(for: transaction)
+            leadingSwipeActions(for: transaction, matchedFixed: matchedFixed, viewModel: viewModel)
         }
         .swipeActions(edge: .trailing) {
             trailingSwipeActions(for: transaction, viewModel: viewModel)

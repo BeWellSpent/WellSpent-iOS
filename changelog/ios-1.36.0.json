@@ -331,6 +331,11 @@
       "changeType": "fixed",
       "summaryEn": "The \"Money In\" quick filter on Transactions no longer includes paid fixed bills, which are never actually received money.",
       "summaryEs": "El filtro rápido \"Dinero recibido\" en Transacciones ya no incluye facturas fijas pagadas, que nunca son dinero realmente recibido."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "A paid fixed bill matched to a bank transaction can be marked unpaid again, from a swipe on its transaction row.",
+      "summaryEs": "Una factura fija pagada y emparejada con una transacción bancaria se puede volver a marcar como no pagada, deslizando en su fila."
     }
   ]
 }
