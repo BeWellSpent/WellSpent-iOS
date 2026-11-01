@@ -137,6 +137,24 @@ nonisolated enum BudgetRESTMapping {
         }
     }
 
+    /// `anchorDate`/`earlyArrivalToleranceDays` have no proto equivalent —
+    /// same reason as `ActualIncomeSummary` above (issue #104). Carried
+    /// alongside the mapped `IncomeSource` rather than added to the
+    /// generated type. `effectiveFrom`/`effectiveTo` are deliberately not
+    /// carried here — server-computed, never sent by the client, and not
+    /// needed for the Pay Schedule form.
+    struct IncomeSchedule {
+        let anchorDate: Date?
+        let earlyArrivalToleranceDays: Int32
+    }
+
+    static func incomeSchedule(from s: Components.Schemas.IncomeSource) -> IncomeSchedule {
+        IncomeSchedule(
+            anchorDate: s.anchorDate.flatMap { Google_Protobuf_Timestamp(restDate: $0)?.dateOnly },
+            earlyArrivalToleranceDays: s.earlyArrivalToleranceDays ?? 0
+        )
+    }
+
     static func incomeType(from t: Components.Schemas.IncomeType) -> Wellspent_V1_IncomeType {
         switch t {
         case .salary: return .salary
@@ -422,6 +440,37 @@ nonisolated enum BudgetRESTMapping {
             $0.savingsPlannedTotal = money(from: s.savingsPlannedTotal)
             $0.savingsActualTotal = money(from: s.savingsActualTotal)
         }
+    }
+
+    /// `actualIncomeTotal`/`remainderActualIncome`/`actualIncomeByPerson` have
+    /// no proto equivalent — `WellSpent-proto`'s `GetExpenseSummaryResponse`
+    /// message was deliberately not extended for this (income-defined-periods,
+    /// issue #104), only the OpenAPI contract was. Carried alongside the
+    /// mapped `GetExpenseSummaryResponse` rather than added to the generated
+    /// type, same pattern as `FixedExpensePayoffInfo` below.
+    struct ActualIncomeSummary {
+        let total: Wellspent_V1_Money
+        let remainder: Wellspent_V1_Money
+        let byPerson: [PersonActualIncome]
+    }
+
+    struct PersonActualIncome {
+        let budgetPersonID: Int64
+        let actualIncome: Wellspent_V1_Money
+    }
+
+    /// None of the three are in `GetExpenseSummaryResponse`'s `required`
+    /// list — deliberately additive, so an older client omitting them still
+    /// decodes — hence the optional-handling below, unlike every other
+    /// field this struct's sibling functions map.
+    static func actualIncomeSummary(from s: Components.Schemas.GetExpenseSummaryResponse) -> ActualIncomeSummary {
+        ActualIncomeSummary(
+            total: s.actualIncomeTotal.map(money(from:)) ?? Wellspent_V1_Money(),
+            remainder: s.remainderActualIncome.map(money(from:)) ?? Wellspent_V1_Money(),
+            byPerson: (s.actualIncomeByPerson ?? []).map {
+                PersonActualIncome(budgetPersonID: $0.budgetPersonId, actualIncome: money(from: $0.actualIncome))
+            }
+        )
     }
 
     static func fixedExpense(from f: Components.Schemas.FixedExpense) -> Wellspent_V1_FixedExpense {

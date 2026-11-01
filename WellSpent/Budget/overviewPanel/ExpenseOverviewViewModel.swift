@@ -22,6 +22,10 @@ final class ExpenseOverviewViewModel {
     /// considered actual spend, silently dropping planned-but-unspent
     /// categories from `visibleCategories`/every total derived from it.
     private(set) var summary: Wellspent_V1_GetExpenseSummaryResponse?
+    /// `actualIncomeTotal`/`remainderActualIncome`/`actualIncomeByPerson` —
+    /// see `BudgetRESTMapping.ActualIncomeSummary`'s doc comment for why this
+    /// is carried separately from `summary`.
+    private(set) var actualIncomeSummary: BudgetRESTMapping.ActualIncomeSummary?
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -29,15 +33,19 @@ final class ExpenseOverviewViewModel {
     let currencyCode: String
     let localeIdentifier: String
     let currentUserID: String?
+    /// For `IncomeArrivalTiming.arrivedEarly` — this period's own start date,
+    /// not fetched again here (`BudgetDetailViewModel` already has it).
+    let periodStartDate: Date
 
     private let restClient: WellSpentREST.Client
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, periodStartDate: Date = .distantPast, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
+        self.periodStartDate = periodStartDate
         self.restClient = restClient
     }
 
@@ -103,6 +111,31 @@ final class ExpenseOverviewViewModel {
     /// `totalPlanned` with Savings folded back in.
     var totalPlannedIncludingSavings: (units: Int64, nanos: Int32) {
         TransactionAmountFormatting.tuple(from: summary?.totalPlannedIncludingSavings)
+    }
+
+    /// The first real (not planned) income figure in the app — sum of
+    /// non-excluded "Income"-category transactions assigned to this period.
+    var actualIncomeTotal: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: actualIncomeSummary?.total)
+    }
+
+    /// `actualIncomeTotal - totalActual` — the only remainder figure built
+    /// from two real, actual numbers rather than a planned one.
+    var remainderActualIncomeTotal: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: actualIncomeSummary?.remainder)
+    }
+
+    /// Income transactions counted into this period despite being dated
+    /// before it started — the early-arrival-tolerance mechanism (issue
+    /// #101). Surfaced as a count rather than per-row here, since Income
+    /// rows don't otherwise appear in this screen's drill-down
+    /// (`ExpenseOverviewCalculations.isTransactionExcluded` always excludes
+    /// them) — the Transactions tab shows the per-row badge instead.
+    var earlyIncomeTransactionCount: Int {
+        guard let incomeCategoryID else { return 0 }
+        return transactions.filter {
+            $0.categoryID == incomeCategoryID && IncomeArrivalTiming.arrivedEarly($0, periodStartDate: periodStartDate)
+        }.count
     }
 
     func actualTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
@@ -205,16 +238,17 @@ final class ExpenseOverviewViewModel {
         }
 
         if let fetched = await summaryResult {
-            summary = fetched
+            summary = fetched.summary
+            actualIncomeSummary = fetched.actualIncome
         } else if errorMessage == nil {
             errorMessage = "Couldn't load the expense summary."
         }
     }
 
-    private func fetchSummary(focusedView: Bool) async -> Wellspent_V1_GetExpenseSummaryResponse? {
+    private func fetchSummary(focusedView: Bool) async -> (summary: Wellspent_V1_GetExpenseSummaryResponse, actualIncome: BudgetRESTMapping.ActualIncomeSummary)? {
         guard let output = try? await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView))),
               case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-        return BudgetRESTMapping.expenseSummary(from: body)
+        return (BudgetRESTMapping.expenseSummary(from: body), BudgetRESTMapping.actualIncomeSummary(from: body))
     }
 
     private func fetchCategories() async -> [Wellspent_V1_Category]? {

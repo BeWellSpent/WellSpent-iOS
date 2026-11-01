@@ -575,6 +575,7 @@ struct BudgetDetailView: View {
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
                 currentUserID: session.userID,
+                periodStartDate: period.startDate.dateOnly,
                 restClient: authenticatedRESTClient
             )
             overviewViewModel = model
@@ -630,6 +631,8 @@ struct BudgetDetailView: View {
                 authenticatedRESTClient: authenticatedRESTClient,
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
+                periods: viewModel.periods,
+                periodStartDate: period.startDate.dateOnly,
                 isAddTransactionPresented: $isAddTransactionPresented,
                 isAddFixedExpensePresented: $isAddFixedExpensePresented,
                 isActive: selectedSection == .home && overviewSelectedSubTab == .transactions,
@@ -655,6 +658,7 @@ struct BudgetDetailView: View {
                 authenticatedRESTClient: authenticatedRESTClient,
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
+                periods: viewModel.periods,
                 isAddTransactionPresented: $isAddTransactionPresented,
                 isActive: selectedSection == .home && overviewSelectedSubTab == .payments,
                 reviewViewModel: reviewViewModel,

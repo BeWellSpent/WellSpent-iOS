@@ -65,7 +65,8 @@ struct AddEditIncomeViewModelTests {
             $0.paymentFrequency = .monthly
             $0.beforeTax = true
         }
-        let viewModel = makeViewModel(mode: .edit(source), countryCode: "US")
+        let schedule = BudgetRESTMapping.IncomeSchedule(anchorDate: nil, earlyArrivalToleranceDays: 2)
+        let viewModel = makeViewModel(mode: .edit(source, schedule: schedule), countryCode: "US")
 
         #expect(viewModel.name == "Freelance")
         #expect(viewModel.incomeType == .freelance)
@@ -73,5 +74,21 @@ struct AddEditIncomeViewModelTests {
         #expect(viewModel.recurring == false)
         #expect(viewModel.personID == 7)
         #expect(viewModel.beforeTax == true)
+        #expect(viewModel.earlyArrivalToleranceDays == 2)
+    }
+
+    @Test("pay schedule fields hide once income isn't a regular recurring schedule")
+    func payScheduleVisibility() {
+        let viewModel = makeViewModel()
+        viewModel.recurring = true
+        viewModel.paymentFrequency = .monthly
+        #expect(viewModel.showPayScheduleFields)
+
+        viewModel.paymentFrequency = .oneOff
+        #expect(!viewModel.showPayScheduleFields)
+
+        viewModel.paymentFrequency = .monthly
+        viewModel.recurring = false
+        #expect(!viewModel.showPayScheduleFields)
     }
 }

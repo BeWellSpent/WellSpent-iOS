@@ -8,7 +8,7 @@ import WellSpentREST
 final class AddEditIncomeViewModel {
     enum Mode {
         case add
-        case edit(Wellspent_V1_IncomeSource)
+        case edit(Wellspent_V1_IncomeSource, schedule: BudgetRESTMapping.IncomeSchedule)
     }
 
     var name: String
@@ -18,6 +18,18 @@ final class AddEditIncomeViewModel {
     var personID: Int64
     var paymentFrequency: Wellspent_V1_RecurringType
     var beforeTax: Bool
+    /// nil = no regular schedule (irregular income) — the pay-schedule
+    /// fields are additionally hidden whenever `!showPayScheduleFields`,
+    /// which clears both on submit regardless of what's still in these.
+    var anchorDate: Date?
+    var earlyArrivalToleranceDays: Int
+
+    /// Mirrors `AddFixedExpenseView`'s "Has end date" gating shape — shown
+    /// only once there's a real recurring schedule to anchor (irregular/
+    /// one-off income has nothing to schedule against).
+    var showPayScheduleFields: Bool {
+        recurring && paymentFrequency != .oneOff
+    }
 
     private(set) var isSubmitting = false
     private(set) var errorMessage: String?
@@ -57,7 +69,9 @@ final class AddEditIncomeViewModel {
             personID = 0
             paymentFrequency = .monthly
             beforeTax = false
-        case .edit(let source):
+            anchorDate = nil
+            earlyArrivalToleranceDays = 0
+        case .edit(let source, let schedule):
             name = source.name
             incomeType = source.incomeType
             amountText = MoneyInput.formatForEditing(units: source.defaultAmount.units, nanos: source.defaultAmount.nanos)
@@ -65,6 +79,8 @@ final class AddEditIncomeViewModel {
             personID = source.budgetPersonID
             paymentFrequency = source.paymentFrequency
             beforeTax = source.beforeTax
+            anchorDate = schedule.anchorDate
+            earlyArrivalToleranceDays = Int(schedule.earlyArrivalToleranceDays)
         }
     }
 
@@ -81,6 +97,11 @@ final class AddEditIncomeViewModel {
         }
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let applyBeforeTax = showBeforeTaxToggle && beforeTax
+        // Cleared whenever the fields are hidden, so toggling recurring off
+        // (or back to one-off) after picking a schedule doesn't silently
+        // resubmit a stale anchor/tolerance.
+        let effectiveAnchorDate = showPayScheduleFields ? anchorDate : nil
+        let effectiveToleranceDays = showPayScheduleFields ? Int32(earlyArrivalToleranceDays) : 0
 
         switch mode {
         case .add:
@@ -95,7 +116,9 @@ final class AddEditIncomeViewModel {
                         recurring: recurring,
                         budgetPersonId: personID,
                         paymentFrequency: BudgetRESTMapping.restRecurringFrequency(from: paymentFrequency),
-                        beforeTax: applyBeforeTax
+                        beforeTax: applyBeforeTax,
+                        anchorDate: effectiveAnchorDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
+                        earlyArrivalToleranceDays: effectiveToleranceDays
                     ))
                 ))
                 guard case .ok(let ok) = output, let body = try? ok.body.json else {
@@ -107,7 +130,7 @@ final class AddEditIncomeViewModel {
                 errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
                 return nil
             }
-        case .edit(let existing):
+        case .edit(let existing, _):
             let fallback = "Couldn't update that income source."
             do {
                 let output = try await restClient.updateIncomeSource(.init(
@@ -119,7 +142,9 @@ final class AddEditIncomeViewModel {
                         recurring: recurring,
                         budgetPersonId: personID,
                         paymentFrequency: BudgetRESTMapping.restRecurringFrequency(from: paymentFrequency),
-                        beforeTax: applyBeforeTax
+                        beforeTax: applyBeforeTax,
+                        anchorDate: effectiveAnchorDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
+                        earlyArrivalToleranceDays: effectiveToleranceDays
                     ))
                 ))
                 guard case .ok(let ok) = output, let body = try? ok.body.json else {

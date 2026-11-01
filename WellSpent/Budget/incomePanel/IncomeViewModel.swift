@@ -10,6 +10,10 @@ final class IncomeViewModel {
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
     private(set) var isFree = false
     private(set) var errorMessage: String?
+    /// `anchorDate`/`earlyArrivalToleranceDays`, keyed by source id — see
+    /// `BudgetRESTMapping.IncomeSchedule`'s doc comment for why this is
+    /// carried separately from `sources`.
+    private(set) var scheduleByIncomeSourceID: [Int64: BudgetRESTMapping.IncomeSchedule] = [:]
 
     let budgetProfileID: String
     let currentUserID: String?
@@ -77,6 +81,7 @@ final class IncomeViewModel {
                 errorMessage = "Couldn't load income sources."
                 return nil
             }
+            scheduleByIncomeSourceID = Dictionary(uniqueKeysWithValues: body.sources.map { ($0.id, BudgetRESTMapping.incomeSchedule(from: $0)) })
             return body.sources.map(BudgetRESTMapping.incomeSource(from:))
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load income sources."
@@ -88,6 +93,10 @@ final class IncomeViewModel {
         guard let output = try? await restClient.listBudgetPeople(.init(path: .init(id: budgetProfileID))),
               case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
         return body.people.map(BudgetRESTMapping.person(from:))
+    }
+
+    func schedule(for sourceID: Int64) -> BudgetRESTMapping.IncomeSchedule {
+        scheduleByIncomeSourceID[sourceID] ?? BudgetRESTMapping.IncomeSchedule(anchorDate: nil, earlyArrivalToleranceDays: 0)
     }
 
     func personName(for budgetPersonID: Int64) -> String? {

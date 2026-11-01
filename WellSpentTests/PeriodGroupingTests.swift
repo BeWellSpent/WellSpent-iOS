@@ -134,12 +134,25 @@ struct PeriodGroupingTests {
         #expect(PeriodGrouping.resolvePeriod([archived, active], overrideID: "does-not-exist")?.id == "p-active")
     }
 
-    @Test("label formats a localized month + year")
-    func labelFormatsMonthAndYear() {
-        let period = makePeriod(id: "p1", year: 2026, month: 7, day: 15)
+    @Test("label formats an explicit start–end date range, no year")
+    func labelFormatsDateRange() {
+        let period = makeRangedPeriod(id: "p1", startYear: 2026, startMonth: 10, startDay: 31, endYear: 2026, endMonth: 11, endDay: 29)
         let label = PeriodGrouping.label(for: period, localeIdentifier: "en")
-        #expect(label.contains("July"))
-        #expect(label.contains("2026"))
+        #expect(label.contains("Oct"))
+        #expect(label.contains("31"))
+        #expect(label.contains("Nov"))
+        #expect(label.contains("29"))
+        #expect(label.contains("–"))
+        #expect(!label.contains("2026"))
+    }
+
+    @Test("label is still a range even on a calendar-aligned period")
+    func labelFormatsDateRangeEvenWhenCalendarAligned() {
+        let period = makeRangedPeriod(id: "p1", startYear: 2026, startMonth: 7, startDay: 1, endYear: 2026, endMonth: 7, endDay: 31)
+        let label = PeriodGrouping.label(for: period, localeIdentifier: "en")
+        #expect(label.contains("Jul"))
+        #expect(label.contains("1"))
+        #expect(label.contains("31"))
     }
 
     @Test("periodsInSameYear includes archived periods sharing the reference period's year")

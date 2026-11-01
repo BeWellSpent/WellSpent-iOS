@@ -39,6 +39,7 @@ struct TransactionsListView: View {
         case recategorize(Wellspent_V1_Transaction)
         case markPaid(Wellspent_V1_Transaction)
         case matchTransactions(Wellspent_V1_Transaction)
+        case moveToPeriod(Wellspent_V1_Transaction)
 
         var id: String {
             switch self {
@@ -49,6 +50,7 @@ struct TransactionsListView: View {
             case .recategorize(let transaction): return "recategorize-\(transaction.id)"
             case .markPaid(let transaction): return "markPaid-\(transaction.id)"
             case .matchTransactions(let transaction): return "matchTransactions-\(transaction.id)"
+            case .moveToPeriod(let transaction): return "moveToPeriod-\(transaction.id)"
             }
         }
     }
@@ -58,6 +60,14 @@ struct TransactionsListView: View {
     let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
+    /// Backs the "Move to period" swipe action — already loaded by
+    /// `BudgetDetailViewModel`, no new fetch here.
+    var periods: [Wellspent_V1_BudgetPeriod] = []
+    /// For the "arrived early" badge on an Income row — see
+    /// `IncomeArrivalTiming`. Defaults to `.distantPast` so a call site that
+    /// doesn't pass one (previews, the period-review screen) just never
+    /// shows the badge rather than showing it spuriously.
+    var periodStartDate: Date = .distantPast
     @Binding var isAddTransactionPresented: Bool
     @Binding var isAddFixedExpensePresented: Bool
     /// See `ExpensePlanView.isActive`.
@@ -375,6 +385,11 @@ struct TransactionsListView: View {
             ) {
                 Task { await reviewViewModel?.load() }
             }
+
+        case .moveToPeriod(let transaction):
+            MoveToPeriodSheet(transaction: transaction, periods: periods, localeIdentifier: localeIdentifier) { period in
+                Task { await viewModel.moveToPeriod(transaction, newPeriodID: period.id) }
+            }
         }
     }
 
@@ -546,6 +561,16 @@ struct TransactionsListView: View {
                 .tint(.indigo)
                 .accessibilityIdentifier("createFixedFromTransaction_\(transaction.name)")
             }
+
+            if periods.count > 1 {
+                Button {
+                    activeSheet = .moveToPeriod(transaction)
+                } label: {
+                    Label("Move to Period", systemImage: "calendar.badge.clock")
+                }
+                .tint(.teal)
+                .accessibilityIdentifier("moveToPeriod_\(transaction.name)")
+            }
         }
 
         // Restores the "unmark paid" action for a Fixed bill whose confirmed
@@ -697,6 +722,14 @@ struct TransactionsListView: View {
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("carryoverBadge_\(transaction.name)")
                 }
+                // Income counted into this period despite being dated before
+                // it started — the early-arrival-tolerance mechanism (#101).
+                if IncomeArrivalTiming.arrivedEarly(transaction, periodStartDate: periodStartDate) {
+                    Text("(arrived early)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("arrivedEarlyBadge_\(transaction.name)")
+                }
             }
             HStack(spacing: 4) {
                 categoryChip(transaction, viewModel: viewModel)
@@ -843,6 +876,16 @@ struct TransactionsListView: View {
                 }
                 .tint(.green)
                 .accessibilityIdentifier("markPaid_\(transaction.name)")
+            }
+
+            if periods.count > 1 {
+                Button {
+                    activeSheet = .moveToPeriod(transaction)
+                } label: {
+                    Label("Move to Period", systemImage: "calendar.badge.clock")
+                }
+                .tint(.teal)
+                .accessibilityIdentifier("moveToPeriod_\(transaction.name)")
             }
         }
     }

@@ -105,14 +105,18 @@ struct IncomeListView: View {
         )) {
             if let editingSource {
                 AddEditIncomeView(
-                    mode: .edit(editingSource),
+                    mode: .edit(editingSource, schedule: viewModel.schedule(for: editingSource.id)),
                     budgetProfileID: budgetProfileID,
                     countryCode: budgetCountryCode,
                     currencyCode: currencyCode,
                     people: viewModel.people,
                     restClient: authenticatedRESTClient
-                ) { updated in
-                    viewModel.replaceSource(updated)
+                ) { _ in
+                    // Not `replaceSource(updated)`: editing the schedule
+                    // versions the source server-side, so the id returned
+                    // may differ from `editingSource.id` — a full reload is
+                    // the only way to stay correct either way.
+                    Task { await viewModel.load() }
                 }
             }
         }

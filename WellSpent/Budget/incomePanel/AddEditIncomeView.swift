@@ -95,6 +95,43 @@ struct AddEditIncomeView: View {
                     .accessibilityIdentifier("incomeBeforeTaxToggle")
             }
         }
+
+        if viewModel.showPayScheduleFields {
+            payScheduleSection
+        }
+    }
+
+    /// Mirrors `AddFixedExpenseView.paymentPlanSection`'s nil-anchor toggle
+    /// shape — a pay schedule is optional (irregular income has none).
+    @ViewBuilder
+    private var payScheduleSection: some View {
+        Section {
+            Toggle("Has a pay schedule", isOn: Binding(
+                get: { viewModel.anchorDate != nil },
+                set: { viewModel.anchorDate = $0 ? (viewModel.anchorDate ?? Date()) : nil }
+            ))
+            .accessibilityIdentifier("incomeHasScheduleToggle")
+
+            if let anchorDate = viewModel.anchorDate {
+                DatePicker(
+                    "Pay day",
+                    selection: Binding(get: { anchorDate }, set: { viewModel.anchorDate = $0 }),
+                    displayedComponents: .date
+                )
+                .accessibilityIdentifier("incomeAnchorDatePicker")
+
+                Stepper(
+                    "Counts up to \(viewModel.earlyArrivalToleranceDays) day(s) early",
+                    value: $viewModel.earlyArrivalToleranceDays,
+                    in: 0...14
+                )
+                .accessibilityIdentifier("incomeToleranceStepper")
+            }
+        } header: {
+            Text("Pay Schedule")
+        } footer: {
+            Text("Used to define this budget's periods and to track when this income actually arrives. Leave off for irregular income.")
+        }
     }
 
     @ViewBuilder
@@ -142,7 +179,7 @@ struct AddEditIncomeView: View {
             $0.defaultAmount = .with { $0.units = 2500; $0.currency = "USD" }
             $0.recurring = true
             $0.paymentFrequency = .monthly
-        }),
+        }, schedule: BudgetRESTMapping.IncomeSchedule(anchorDate: nil, earlyArrivalToleranceDays: 0)),
         budgetProfileID: "preview-budget",
         countryCode: "US",
         currencyCode: "USD",

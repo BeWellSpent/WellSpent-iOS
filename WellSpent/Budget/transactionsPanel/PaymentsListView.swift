@@ -19,10 +19,12 @@ struct PaymentsListView: View {
     /// with the one case this tab needs.
     private enum ActiveSheet: Identifiable {
         case editTransaction(Wellspent_V1_Transaction)
+        case moveToPeriod(Wellspent_V1_Transaction)
 
         var id: String {
             switch self {
             case .editTransaction(let transaction): return "editTransaction-\(transaction.id)"
+            case .moveToPeriod(let transaction): return "moveToPeriod-\(transaction.id)"
             }
         }
     }
@@ -32,6 +34,8 @@ struct PaymentsListView: View {
     let authenticatedRESTClient: WellSpentREST.Client
     let currencyCode: String
     let localeIdentifier: String
+    /// See `TransactionsListView.periods`.
+    var periods: [Wellspent_V1_BudgetPeriod] = []
     @Binding var isAddTransactionPresented: Bool
     /// See `ExpensePlanView.isActive`.
     let isActive: Bool
@@ -140,6 +144,16 @@ struct PaymentsListView: View {
                                         }
                                         .tint(.blue)
                                         .accessibilityIdentifier("editTransaction_\(transaction.name)")
+
+                                        if periods.count > 1 {
+                                            Button {
+                                                activeSheet = .moveToPeriod(transaction)
+                                            } label: {
+                                                Label("Move to Period", systemImage: "calendar.badge.clock")
+                                            }
+                                            .tint(.teal)
+                                            .accessibilityIdentifier("moveToPeriod_\(transaction.name)")
+                                        }
                                     }
                                 }
                                 .swipeActions(edge: .trailing) {
@@ -202,6 +216,11 @@ struct PaymentsListView: View {
                     restClient: authenticatedRESTClient
                 ) { updated in
                     viewModel.replaceTransaction(updated)
+                }
+
+            case .moveToPeriod(let transaction):
+                MoveToPeriodSheet(transaction: transaction, periods: periods, localeIdentifier: localeIdentifier) { period in
+                    Task { await viewModel.moveToPeriod(transaction, newPeriodID: period.id) }
                 }
             }
         }
