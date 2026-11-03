@@ -146,12 +146,26 @@ nonisolated enum BudgetRESTMapping {
     struct IncomeSchedule {
         let anchorDate: Date?
         let earlyArrivalToleranceDays: Int32
+        /// Whole-job setting, not per-payday (issue #104 weekend-adjustment
+        /// follow-up) — no proto equivalent either, same reasoning as the
+        /// two fields above. Defaults `true`, matching the entity's own
+        /// server-side default; explicit init (not the synthesized
+        /// memberwise one, which excludes a defaulted `let`) so every
+        /// pre-existing call site omitting it still compiles unchanged.
+        let adjustForWeekends: Bool
+
+        init(anchorDate: Date?, earlyArrivalToleranceDays: Int32, adjustForWeekends: Bool = true) {
+            self.anchorDate = anchorDate
+            self.earlyArrivalToleranceDays = earlyArrivalToleranceDays
+            self.adjustForWeekends = adjustForWeekends
+        }
     }
 
     static func incomeSchedule(from s: Components.Schemas.IncomeSource) -> IncomeSchedule {
         IncomeSchedule(
             anchorDate: s.anchorDate.flatMap { Google_Protobuf_Timestamp(restDate: $0)?.dateOnly },
-            earlyArrivalToleranceDays: s.earlyArrivalToleranceDays ?? 0
+            earlyArrivalToleranceDays: s.earlyArrivalToleranceDays ?? 0,
+            adjustForWeekends: s.adjustForWeekends ?? true
         )
     }
 

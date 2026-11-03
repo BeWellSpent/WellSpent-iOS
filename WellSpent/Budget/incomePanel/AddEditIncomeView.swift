@@ -125,12 +125,11 @@ struct AddEditIncomeView: View {
                 .accessibilityIdentifier("incomePayDateCountStepper")
 
                 ForEach(Array(viewModel.payDates.enumerated()), id: \.offset) { index, date in
-                    DatePicker(
-                        "Pay day \(index + 1)",
-                        selection: Binding(get: { date }, set: { viewModel.setPayDate(at: index, to: $0) }),
-                        displayedComponents: .date
+                    PayDayScheduleField(
+                        frequency: viewModel.paymentFrequency,
+                        index: index,
+                        date: Binding(get: { date }, set: { viewModel.setPayDate(at: index, to: $0) })
                     )
-                    .accessibilityIdentifier("incomeAnchorDatePicker_\(index)")
 
                     if viewModel.payDateCount > 1, let splitText = viewModel.splitAmountText(at: index) {
                         Text(splitText)
@@ -138,6 +137,11 @@ struct AddEditIncomeView: View {
                             .foregroundStyle(.secondary)
                             .accessibilityIdentifier("incomeSplitAmount_\(index)")
                     }
+                }
+
+                if viewModel.showWeekendAdjustmentToggle {
+                    Toggle("Adjust for weekends", isOn: $viewModel.adjustForWeekends)
+                        .accessibilityIdentifier("incomeAdjustForWeekendsToggle")
                 }
 
                 Stepper(
@@ -176,6 +180,74 @@ struct AddEditIncomeView: View {
                     .accessibilityIdentifier("incomeErrorMessage")
             }
         }
+    }
+}
+
+/// One payday's picker, shaped by `frequency` alone — never a year or an
+/// exact historical month, since only the day (or day-of-week) is actually
+/// meaningful to the calculator. Construction/extraction is pure
+/// `IncomePayDateInput`; this view only owns which control(s) to show.
+private struct PayDayScheduleField: View {
+    let frequency: Wellspent_V1_RecurringType
+    let index: Int
+    @Binding var date: Date
+
+    var body: some View {
+        switch frequency {
+        case .yearly:
+            yearlyFields
+        case .weekly, .biWeekly:
+            weekdayField
+        default:
+            monthlyField
+        }
+    }
+
+    private var monthlyField: some View {
+        Picker("Pay day \(index + 1)", selection: Binding(
+            get: { IncomePayDateInput.dayOfMonth(from: date) },
+            set: { date = IncomePayDateInput.monthlyDate(dayOfMonth: $0, referenceDate: date) }
+        )) {
+            ForEach(DayOfMonthLabel.selectable, id: \.self) { day in
+                Text(DayOfMonthLabel.text(for: day)).tag(day)
+            }
+        }
+        .accessibilityIdentifier("incomeAnchorDayPicker_\(index)")
+    }
+
+    @ViewBuilder
+    private var yearlyFields: some View {
+        Picker("Month \(index + 1)", selection: Binding(
+            get: { IncomePayDateInput.month(from: date) },
+            set: { date = IncomePayDateInput.yearlyDate(month: $0, dayOfMonth: IncomePayDateInput.dayOfMonth(from: date), referenceDate: date) }
+        )) {
+            ForEach(CalendarSymbolLabel.months, id: \.self) { month in
+                Text(CalendarSymbolLabel.month(month)).tag(month)
+            }
+        }
+        .accessibilityIdentifier("incomeAnchorMonthPicker_\(index)")
+
+        Picker("Day \(index + 1)", selection: Binding(
+            get: { IncomePayDateInput.dayOfMonth(from: date) },
+            set: { date = IncomePayDateInput.yearlyDate(month: IncomePayDateInput.month(from: date), dayOfMonth: $0, referenceDate: date) }
+        )) {
+            ForEach(DayOfMonthLabel.selectable, id: \.self) { day in
+                Text(DayOfMonthLabel.text(for: day)).tag(day)
+            }
+        }
+        .accessibilityIdentifier("incomeAnchorDayPicker_\(index)")
+    }
+
+    private var weekdayField: some View {
+        Picker("Pay day \(index + 1)", selection: Binding(
+            get: { IncomePayDateInput.isoWeekday(from: date) },
+            set: { date = IncomePayDateInput.weekdayDate(isoWeekday: $0, referenceDate: date) }
+        )) {
+            ForEach(CalendarSymbolLabel.isoWeekdays, id: \.self) { weekday in
+                Text(CalendarSymbolLabel.weekday(isoWeekday: weekday)).tag(weekday)
+            }
+        }
+        .accessibilityIdentifier("incomeAnchorWeekdayPicker_\(index)")
     }
 }
 

@@ -22,6 +22,11 @@ final class AddEditIncomeViewModel {
     var paymentFrequency: Wellspent_V1_RecurringType
     var beforeTax: Bool
     var earlyArrivalToleranceDays: Int
+    /// Whole-job setting, not per-payday — mirrors `earlyArrivalToleranceDays`
+    /// above. Meaningless for weekly/bi-weekly (`showWeekendAdjustmentToggle`
+    /// hides it there), since those anchors have no month/day to land on a
+    /// weekend in the first place.
+    var adjustForWeekends: Bool
 
     /// One entry per payday. Empty = no regular schedule (irregular income).
     /// A job paid out more than once per period (e.g. semi-monthly) has more
@@ -37,6 +42,13 @@ final class AddEditIncomeViewModel {
     /// one-off income has nothing to schedule against).
     var showPayScheduleFields: Bool {
         recurring && paymentFrequency != .oneOff
+    }
+
+    /// Only monthly/yearly anchors can land on a weekend day-of-month — a
+    /// weekly/bi-weekly anchor's day-of-week never changes, so the backend's
+    /// own `adjustForWeekends` doc calls it "meaningless" there.
+    var showWeekendAdjustmentToggle: Bool {
+        paymentFrequency == .monthly || paymentFrequency == .yearly
     }
 
     private(set) var isSubmitting = false
@@ -79,6 +91,7 @@ final class AddEditIncomeViewModel {
             beforeTax = false
             payDates = []
             earlyArrivalToleranceDays = 0
+            adjustForWeekends = true
         case .edit(let job):
             let rows = IncomeJobGrouping.sortedRows(job.rows)
             let first = rows[0].source
@@ -91,6 +104,7 @@ final class AddEditIncomeViewModel {
             paymentFrequency = first.paymentFrequency
             beforeTax = first.beforeTax
             earlyArrivalToleranceDays = Int(rows[0].schedule.earlyArrivalToleranceDays)
+            adjustForWeekends = rows[0].schedule.adjustForWeekends
             let anchors = rows.compactMap(\.schedule.anchorDate)
             // Only treat this as a real schedule if every row actually has
             // one — a partial mix shouldn't happen by construction, but
@@ -189,7 +203,8 @@ final class AddEditIncomeViewModel {
                     paymentFrequency: BudgetRESTMapping.restRecurringFrequency(from: paymentFrequency),
                     beforeTax: showBeforeTaxToggle && beforeTax,
                     anchorDate: anchorDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
-                    earlyArrivalToleranceDays: toleranceDays
+                    earlyArrivalToleranceDays: toleranceDays,
+                    adjustForWeekends: adjustForWeekends
                 ))
             ))
             guard case .ok = output else {
@@ -217,7 +232,8 @@ final class AddEditIncomeViewModel {
                     paymentFrequency: BudgetRESTMapping.restRecurringFrequency(from: paymentFrequency),
                     beforeTax: showBeforeTaxToggle && beforeTax,
                     anchorDate: anchorDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
-                    earlyArrivalToleranceDays: toleranceDays
+                    earlyArrivalToleranceDays: toleranceDays,
+                    adjustForWeekends: adjustForWeekends
                 ))
             ))
             guard case .ok = output else {

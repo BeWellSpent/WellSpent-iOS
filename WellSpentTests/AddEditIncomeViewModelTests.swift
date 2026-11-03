@@ -145,6 +145,33 @@ struct AddEditIncomeViewModelTests {
         #expect(viewModel.payDateCount == 1)
     }
 
+    @Test("weekend-adjustment toggle only shows for monthly/yearly frequencies")
+    func weekendAdjustmentVisibility() {
+        let viewModel = makeViewModel()
+        viewModel.paymentFrequency = .monthly
+        #expect(viewModel.showWeekendAdjustmentToggle)
+        viewModel.paymentFrequency = .yearly
+        #expect(viewModel.showWeekendAdjustmentToggle)
+        viewModel.paymentFrequency = .weekly
+        #expect(!viewModel.showWeekendAdjustmentToggle)
+        viewModel.paymentFrequency = .biWeekly
+        #expect(!viewModel.showWeekendAdjustmentToggle)
+        viewModel.paymentFrequency = .oneOff
+        #expect(!viewModel.showWeekendAdjustmentToggle)
+    }
+
+    @Test("adjustForWeekends defaults to true when adding, and prefills from the job's own schedule when editing")
+    func adjustForWeekendsPrefill() {
+        #expect(makeViewModel().adjustForWeekends)
+
+        let row = IncomeJobGrouping.Row(
+            source: source(id: 42),
+            schedule: BudgetRESTMapping.IncomeSchedule(anchorDate: nil, earlyArrivalToleranceDays: 0, adjustForWeekends: false)
+        )
+        let viewModel = makeViewModel(mode: .edit(job(rows: [row])))
+        #expect(!viewModel.adjustForWeekends)
+    }
+
     @Test("split amount text divides the total evenly across pay dates")
     func splitAmountTextDividesEvenly() {
         let viewModel = makeViewModel()
