@@ -376,6 +376,11 @@
       "changeType": "added",
       "summaryEn": "If you enter pay day 1 later in the month than pay day 2, a note now explains that pay day 1 is actually the previous month's last payment.",
       "summaryEs": "Si ingresas el día de pago 1 más tarde en el mes que el día de pago 2, una nota explica ahora que el día de pago 1 es en realidad el último pago del mes anterior."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Editing a pay schedule now says the change applies starting with your next period, and the current period keeps its dates.",
+      "summaryEs": "Al editar un calendario de pago ahora se indica que el cambio aplica desde tu próximo período, y que el período actual conserva sus fechas."
     }
   ]
 }

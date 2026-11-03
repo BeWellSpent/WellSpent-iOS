@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Pay schedule changes apply starting with your next period. The current period keeps its dates." : {
+      "comment" : "A note under the pay schedule fields: edits only affect periods that start later.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay schedule changes apply starting with your next period. The current period keeps its dates."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los cambios del calendario de pago aplican desde tu próximo período. El período actual conserva sus fechas."
+          }
+        }
+      }
+    },
     "— %@" : {
       "localizations" : {
         "en" : {

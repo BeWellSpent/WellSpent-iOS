@@ -152,6 +152,11 @@ struct AddEditIncomeView: View {
                     in: 0...14
                 )
                 .accessibilityIdentifier("incomeToleranceStepper")
+
+                Label("Pay schedule changes apply starting with your next period. The current period keeps its dates.", systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("incomeScheduleAppliesNextPeriodNote")
             }
         } header: {
             Text("Pay Schedule")
