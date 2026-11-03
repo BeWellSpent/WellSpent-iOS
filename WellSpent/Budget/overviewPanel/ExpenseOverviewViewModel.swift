@@ -77,20 +77,10 @@ final class ExpenseOverviewViewModel {
         TransactionAmountFormatting.tuple(from: summary?.totalActual)
     }
 
-    var remainderTotal: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: summary?.remainderActual)
-    }
-
     /// Mirrors web's `totalPlanned` in `ExpenseOverviewPanel.tsx`, shown
     /// alongside `totalActual` for comparison.
     var totalPlanned: (units: Int64, nanos: Int32) {
         TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
-    }
-
-    /// Income minus `totalPlanned` — the planned-side counterpart to
-    /// `remainderTotal` (which is income minus *actual*).
-    var plannedRemainderTotal: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: summary?.remainderPlanned)
     }
 
     /// Mirrors web's `totalOverBudget`.

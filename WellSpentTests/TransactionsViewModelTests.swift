@@ -116,4 +116,22 @@ struct TransactionsViewModelTests {
         )
         #expect(viewModel.paymentsTotalText(reviews: []) == "$50.00")
     }
+
+    @Test("summary card headline counts savings; expenses and saved sit below it")
+    func summaryCardCountsSavings() {
+        func money(_ units: Int64) -> Wellspent_V1_Money { .with { $0.units = units; $0.currency = "USD" } }
+        let viewModel = makeViewModel()
+        viewModel.setStateForTesting(transactions: [], summary: .with {
+            $0.variableActualTotal = money(1000)
+            $0.fixedActualTotal = money(378)
+            $0.savingsActualTotal = money(150)
+            $0.totalActualIncludingSavings = money(1528)
+            $0.totalPlannedIncludingSavings = money(3000)
+        })
+
+        #expect(viewModel.totalText.contains("1,528"))
+        #expect(viewModel.expensesText.contains("1,378"))
+        #expect(viewModel.savedText.contains("150"))
+        #expect(!viewModel.isOverBudget)
+    }
 }

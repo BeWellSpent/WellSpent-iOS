@@ -77,12 +77,31 @@ final class TransactionsViewModel {
         ])
     }
 
+    /// Headline: everything that actually left the account, savings included — the number the
+    /// remaining/progress below is measured against, so it cannot be a flattering one.
     var totalText: String {
         TransactionAmountFormatting.magnitudeDisplayText(
-            amounts: [combinedActualTotal],
+            amounts: [totalActualIncludingSavings],
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier
         )
+    }
+
+    /// "Expenses: $X" — the same server total without savings.
+    var expensesText: String {
+        let text = TransactionAmountFormatting.magnitudeDisplayText(amounts: [combinedActualTotal], currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        return String(localized: "Expenses: \(text)", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+    }
+
+    /// "Saved: $Y" — what has actually gone to Savings this period.
+    var savedText: String {
+        let saved = TransactionAmountFormatting.tuple(from: summary?.savingsActualTotal)
+        let text = MoneyFormatting.format(units: saved.units, nanos: saved.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        return String(localized: "Saved: \(text)", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+    }
+
+    private var totalActualIncludingSavings: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: summary?.totalActualIncludingSavings)
     }
 
     /// Progress of combined spend against the overall planned total
@@ -90,17 +109,17 @@ final class TransactionsViewModel {
     /// #92). 0 when nothing is planned, so an empty-budget account never
     /// shows a divide-by-zero progress bar.
     var spentProgress: Double {
-        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
+        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlannedIncludingSavings)
         let plannedValue = Double(planned.units) + Double(planned.nanos) / 1_000_000_000
         guard plannedValue > 0 else { return 0 }
-        let spent = combinedActualTotal
+        let spent = totalActualIncludingSavings
         let spentValue = Double(spent.units) + Double(spent.nanos) / 1_000_000_000
         return min(max(spentValue / plannedValue, 0), 1)
     }
 
     private var remainingAgainstPlanned: (units: Int64, nanos: Int32) {
-        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
-        let spent = combinedActualTotal
+        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlannedIncludingSavings)
+        let spent = totalActualIncludingSavings
         return TransactionAmountFormatting.sum([planned, (units: -spent.units, nanos: -spent.nanos)])
     }
 
@@ -114,7 +133,7 @@ final class TransactionsViewModel {
     /// the plan — reuses the same server-computed totals `totalText`/
     /// `overBudgetTransactionIDs` do.
     var remainingSummaryText: String {
-        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
+        let planned = TransactionAmountFormatting.tuple(from: summary?.totalPlannedIncludingSavings)
         let remaining = remainingAgainstPlanned
         let remainingText = MoneyFormatting.format(units: abs(remaining.units), nanos: abs(remaining.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
         let plannedText = MoneyFormatting.format(units: abs(planned.units), nanos: abs(planned.nanos), currencyCode: currencyCode, localeIdentifier: localeIdentifier)
@@ -122,22 +141,6 @@ final class TransactionsViewModel {
             return String(localized: "\(remainingText) over \(plannedText) planned", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
         }
         return String(localized: "\(remainingText) left of \(plannedText) planned", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
-    }
-
-    /// "Expected savings: $X" — standalone, next to the expense-only total above (issue #94).
-    var expectedSavedText: String? {
-        let saved = TransactionAmountFormatting.tuple(from: summary?.savingsPlannedTotal)
-        guard saved.units != 0 || saved.nanos != 0 else { return nil }
-        let savedText = MoneyFormatting.format(units: saved.units, nanos: saved.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
-        return String(localized: "Expected savings: \(savedText)", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
-    }
-
-    /// "Saved so far: $X" — how much has actually gone to Savings this period.
-    var actualSavedText: String? {
-        let saved = TransactionAmountFormatting.tuple(from: summary?.savingsActualTotal)
-        guard saved.units != 0 || saved.nanos != 0 else { return nil }
-        let savedText = MoneyFormatting.format(units: saved.units, nanos: saved.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
-        return String(localized: "Saved so far: \(savedText)", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
     }
 
     init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client, onDataChanged: (() -> Void)? = nil) {
@@ -436,8 +439,10 @@ final class TransactionsViewModel {
     func setStateForTesting(
         transactions: [Wellspent_V1_Transaction],
         categories: [Wellspent_V1_Category] = [],
-        fixedExpenses: [Wellspent_V1_FixedExpense] = []
+        fixedExpenses: [Wellspent_V1_FixedExpense] = [],
+        summary: Wellspent_V1_GetExpenseSummaryResponse? = nil
     ) {
+        self.summary = summary
         self.transactions = transactions
         self.categories = categories
         self.fixedExpenses = fixedExpenses
