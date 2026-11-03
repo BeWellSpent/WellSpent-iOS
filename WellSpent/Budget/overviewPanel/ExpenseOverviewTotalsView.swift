@@ -29,10 +29,25 @@ struct ExpenseOverviewTotalsView: View {
         let plannedRemainder = viewModel.plannedRemainderTotal
         let overBudget = viewModel.totalOverBudgetAmount
         let unplanned = viewModel.totalUnplannedAmount
+        let actualIncome = viewModel.actualIncomeTotal
+        let remainderActualIncome = viewModel.remainderActualIncomeTotal
 
         return VStack(spacing: 2) {
             LabeledContent("Income", value: displayText(income))
                 .accessibilityIdentifier("overviewIncomeTotal")
+            if actualIncome.units != 0 || actualIncome.nanos != 0 {
+                LabeledContent("Actual income", value: displayText(actualIncome))
+                    .accessibilityIdentifier("overviewActualIncomeTotal")
+                LabeledContent("Remaining (actual income)", value: displayText(remainderActualIncome))
+                    .foregroundStyle(MoneyFormatting.isNegative(units: remainderActualIncome.units, nanos: remainderActualIncome.nanos) ? .red : .green)
+                    .accessibilityIdentifier("overviewRemainderActualIncomeTotal")
+                if viewModel.earlyIncomeTransactionCount > 0 {
+                    Text("Arrived early, counted for next period")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("overviewEarlyIncomeIndicator")
+                }
+            }
             LabeledContent("Actual", value: overviewText(actual))
                 .accessibilityIdentifier("overviewActualTotal")
             LabeledContent("Actual (with savings)", value: overviewText(actualIncludingSavings))

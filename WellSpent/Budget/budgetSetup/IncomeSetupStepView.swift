@@ -18,7 +18,7 @@ struct IncomeSetupStepView: View {
     let onContinue: () -> Void
 
     @State private var viewModel: AddEditIncomeViewModel
-    @State private var addedSources: [Wellspent_V1_IncomeSource] = []
+    @State private var addedSourceNames: [String] = []
 
     init(
         budgetProfileID: String,
@@ -45,10 +45,10 @@ struct IncomeSetupStepView: View {
 
     var body: some View {
         Form {
-            if !addedSources.isEmpty {
+            if !addedSourceNames.isEmpty {
                 Section("Added so far") {
-                    ForEach(addedSources, id: \.id) { source in
-                        Text(source.name)
+                    ForEach(addedSourceNames, id: \.self) { name in
+                        Text(name)
                     }
                 }
             }
@@ -78,8 +78,9 @@ struct IncomeSetupStepView: View {
 
                 Button {
                     Task {
-                        if let source = await viewModel.submit() {
-                            addedSources.append(source)
+                        let name = viewModel.name
+                        if await viewModel.submit() {
+                            addedSourceNames.append(name)
                             viewModel = AddEditIncomeViewModel(
                                 mode: .add,
                                 budgetProfileID: budgetProfileID,

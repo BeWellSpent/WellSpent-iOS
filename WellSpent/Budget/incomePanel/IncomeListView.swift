@@ -13,7 +13,7 @@ struct IncomeListView: View {
     @Environment(SessionStore.self) private var session
     @State private var viewModel: IncomeViewModel?
     @State private var isAddSheetPresented = false
-    @State private var editingSource: Wellspent_V1_IncomeSource?
+    @State private var editingJob: IncomeJobGrouping.Job?
 
     var body: some View {
         Group {
@@ -64,19 +64,20 @@ struct IncomeListView: View {
                 }
             }
 
-            if viewModel.visibleSources.isEmpty && viewModel.isLoading {
+            let jobs = IncomeJobGrouping.group(sources: viewModel.visibleSources, schedules: viewModel.scheduleByIncomeSourceID)
+            if jobs.isEmpty && viewModel.isLoading {
                 ProgressView()
-            } else if viewModel.visibleSources.isEmpty {
+            } else if jobs.isEmpty {
                 Text("No income sources yet.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(viewModel.visibleSources, id: \.id) { source in
-                    sourceRow(source, viewModel: viewModel)
+                ForEach(jobs) { job in
+                    jobRow(job, viewModel: viewModel)
                 }
                 .onDelete(perform: canEdit ? { offsets in
                     for index in offsets {
-                        let source = viewModel.visibleSources[index]
-                        Task { await viewModel.delete(id: source.id) }
+                        let job = jobs[index]
+                        Task { await viewModel.deleteJob(job) }
                     }
                 } : nil)
             }
@@ -95,45 +96,56 @@ struct IncomeListView: View {
                 currencyCode: currencyCode,
                 people: viewModel.people,
                 restClient: authenticatedRESTClient
-            ) { source in
-                viewModel.addSource(source)
+            ) {
+                // Every save — single or multi-payday — always reloads:
+                // editing a schedule forks new row ids server-side, and a
+                // multi-payday save issues several sequential calls that
+                // may only partially land, so local optimistic state can't
+                // be trusted either way.
+                Task { await viewModel.load() }
             }
         }
         .sheet(isPresented: Binding(
-            get: { editingSource != nil },
-            set: { if !$0 { editingSource = nil } }
+            get: { editingJob != nil },
+            set: { if !$0 { editingJob = nil } }
         )) {
-            if let editingSource {
+            if let editingJob {
                 AddEditIncomeView(
-                    mode: .edit(editingSource),
+                    mode: .edit(editingJob),
                     budgetProfileID: budgetProfileID,
                     countryCode: budgetCountryCode,
                     currencyCode: currencyCode,
                     people: viewModel.people,
                     restClient: authenticatedRESTClient
-                ) { updated in
-                    viewModel.replaceSource(updated)
+                ) {
+                    Task { await viewModel.load() }
                 }
             }
         }
     }
 
-    private func sourceRow(_ source: Wellspent_V1_IncomeSource, viewModel: IncomeViewModel) -> some View {
-        let sourceContent = VStack(alignment: .leading, spacing: 2) {
-            Text(source.name)
+    private func jobRow(_ job: IncomeJobGrouping.Job, viewModel: IncomeViewModel) -> some View {
+        let firstSource = job.rows[0].source
+        let total = job.totalAmount
+        let jobContent = VStack(alignment: .leading, spacing: 2) {
+            Text(firstSource.name)
                 .font(.headline)
                 .foregroundStyle(.primary)
             HStack(spacing: 4) {
                 Text(MoneyFormatting.format(
-                    units: source.defaultAmount.units,
-                    nanos: source.defaultAmount.nanos,
+                    units: total.units,
+                    nanos: total.nanos,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier
                 ))
-                Text("· \(RecurringTypeLabel.text(for: source.paymentFrequency))")
-                if let personName = viewModel.personName(for: source.budgetPersonID) {
+                Text("· \(RecurringTypeLabel.text(for: firstSource.paymentFrequency))")
+                if job.payDateCount > 1 {
+                    Text("· Paid \(job.payDateCount)x")
+                        .accessibilityIdentifier("incomePayDateCountBadge")
+                }
+                if let personName = viewModel.personName(for: firstSource.budgetPersonID) {
                     Text("·")
-                    ColorDotView(hex: viewModel.personColor(for: source.budgetPersonID), diameter: 8)
+                    ColorDotView(hex: viewModel.personColor(for: firstSource.budgetPersonID), diameter: 8)
                     Text(personName)
                 }
             }
@@ -143,16 +155,16 @@ struct IncomeListView: View {
         return Group {
             if canEdit {
                 Button {
-                    editingSource = source
+                    editingJob = job
                 } label: {
-                    sourceContent
+                    jobContent
                 }
                 .buttonStyle(.plain)
             } else {
-                sourceContent
+                jobContent
             }
         }
-        .accessibilityIdentifier("incomeRow_\(source.name)")
+        .accessibilityIdentifier("incomeRow_\(firstSource.name)")
     }
 }
 

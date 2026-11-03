@@ -519,6 +519,33 @@ final class TransactionsViewModel {
         onDataChanged?()
     }
 
+    /// Manually reassigns a transaction to a different period (issue #104's
+    /// "Move to period" swipe action). The row no longer belongs to this
+    /// period's list once moved, so it's dropped locally rather than
+    /// patched in place — same shape as `delete(id:)`.
+    func moveToPeriod(_ transaction: Wellspent_V1_Transaction, newPeriodID: String) async -> Bool {
+        errorMessage = nil
+        let fallback = "Couldn't move that transaction."
+        do {
+            let output = try await restClient.setTransactionPeriod(.init(
+                path: .init(id: transaction.id),
+                body: .json(.init(budgetPeriodId: budgetPeriodID, newBudgetPeriodId: newPeriodID))
+            ))
+            guard case .ok = output else {
+                errorMessage = fallback
+                return false
+            }
+            Self.logger.info("moved transactionID=\(transaction.id, privacy: .public) toPeriodID=\(newPeriodID, privacy: .public)")
+            transactions.removeAll { $0.id == transaction.id }
+            await refreshSummary()
+            return true
+        } catch {
+            Self.logger.error("move to period failed transactionID=\(transaction.id, privacy: .public) error=\(error, privacy: .public)")
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+            return false
+        }
+    }
+
     /// This occurrence only — never the recurring template (that's Plan's job).
     func delete(_ transaction: Wellspent_V1_Transaction) async {
         Self.logger.info("deleting fixed transactionID=\(transaction.id, privacy: .public) fixedExpenseID=\(transaction.fixedExpenseID, privacy: .public)")

@@ -30,6 +30,23 @@ nonisolated enum MoneyInput {
     /// alone only restricts the on-screen keyboard, not a hardware keyboard
     /// or paste (see `AmountTextField`) — this is the actual filter;
     /// `parseAmount` still does the real parse/validate at submit time.
+    /// Splits a total amount evenly across `count` parts, distributing any
+    /// leftover cent to the first parts so they sum back to exactly the
+    /// total (e.g. a $100 salary paid 3x/period becomes $33.34/$33.33/$33.33).
+    /// Works in whole cents, not raw nanos — nanos' 1e-9 resolution is far
+    /// finer than money actually displays, so dividing in cents is what
+    /// keeps every part a real, displayable amount.
+    static func splitEvenly(units: Int64, nanos: Int32, count: Int) -> [(units: Int64, nanos: Int32)] {
+        guard count > 1 else { return [(units, nanos)] }
+        let totalCents = units * 100 + Int64((Double(nanos) / 1_000_000_000 * 100).rounded())
+        let base = totalCents / Int64(count)
+        let remainder = Int(totalCents % Int64(count))
+        return (0..<count).map { i in
+            let cents = base + (i < remainder ? 1 : 0)
+            return (cents / 100, Int32(cents % 100) * 10_000_000)
+        }
+    }
+
     static func sanitize(_ text: String) -> String {
         var seenDecimalPoint = false
         return text.filter { char in

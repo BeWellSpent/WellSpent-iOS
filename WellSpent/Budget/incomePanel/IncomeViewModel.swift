@@ -10,6 +10,10 @@ final class IncomeViewModel {
     private(set) var people: [Wellspent_V1_BudgetPerson] = []
     private(set) var isFree = false
     private(set) var errorMessage: String?
+    /// `anchorDate`/`earlyArrivalToleranceDays`, keyed by source id — see
+    /// `BudgetRESTMapping.IncomeSchedule`'s doc comment for why this is
+    /// carried separately from `sources`.
+    private(set) var scheduleByIncomeSourceID: [Int64: BudgetRESTMapping.IncomeSchedule] = [:]
 
     let budgetProfileID: String
     let currentUserID: String?
@@ -77,6 +81,7 @@ final class IncomeViewModel {
                 errorMessage = "Couldn't load income sources."
                 return nil
             }
+            scheduleByIncomeSourceID = Dictionary(uniqueKeysWithValues: body.sources.map { ($0.id, BudgetRESTMapping.incomeSchedule(from: $0)) })
             return body.sources.map(BudgetRESTMapping.incomeSource(from:))
         } catch {
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load income sources."
@@ -99,13 +104,17 @@ final class IncomeViewModel {
         people.first(where: { $0.id == budgetPersonID })?.color ?? ""
     }
 
-    func addSource(_ source: Wellspent_V1_IncomeSource) {
-        sources.append(source)
-    }
-
-    func replaceSource(_ source: Wellspent_V1_IncomeSource) {
-        guard let index = sources.firstIndex(where: { $0.id == source.id }) else { return }
-        sources[index] = source
+    /// Deletes every row in a logical job (all its paydays) — used only by
+    /// the list's whole-row swipe-to-delete, distinct from the edit sheet's
+    /// per-payday reconciliation (`AddEditIncomeViewModel.submit`), which
+    /// can delete a subset. Stops at the first failure but still reloads
+    /// afterwards so the list reflects whatever actually landed.
+    func deleteJob(_ job: IncomeJobGrouping.Job) async {
+        for row in job.rows {
+            await delete(id: row.source.id)
+            if errorMessage != nil { break }
+        }
+        await load()
     }
 
     func delete(id: Int64) async {

@@ -346,6 +346,41 @@
       "changeType": "added",
       "summaryEn": "When a new period starts for real, you'll now see a review screen showing what carried over, with a link to review and fix up last period's transactions, before you can continue.",
       "summaryEs": "Cuando empieza un período nuevo de verdad, ahora verás una pantalla de revisión con lo que se trasladó, con un enlace para revisar y corregir las transacciones del período anterior, antes de poder continuar."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Period names now show the actual date range (e.g. \"Oct 31 – Nov 29\") everywhere, instead of just a month name — budgets whose periods follow a pay schedule instead of the calendar read correctly now.",
+      "summaryEs": "Los nombres de período ahora muestran el rango de fechas real (p. ej. \"31 oct – 29 nov\") en todas partes, en lugar de solo el nombre del mes, para que los presupuestos cuyos períodos siguen un calendario de pago en vez del mes calendario se lean correctamente."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Income sources can now have a pay schedule, including jobs paid more than once per period (e.g. twice a month) — add a pay day for each one and simply pick its day (or day of the week, or month and day for a yearly job); the amount you enter splits evenly across them. Monthly and yearly pay days can roll back to the preceding Friday when they land on a weekend. Each pay day also gets its own how-many-days-early tolerance for counting a deposit as on time. Overview now shows how much income actually arrived this period, alongside what's planned.",
+      "summaryEs": "Las fuentes de ingreso ahora pueden tener un calendario de pago, incluidos trabajos que se pagan más de una vez por período (por ejemplo, dos veces al mes): agrega un día de pago por cada uno y simplemente elige su día (o el día de la semana, o el mes y el día para un trabajo anual); el monto ingresado se divide en partes iguales entre ellos. Los días de pago mensuales y anuales pueden retroceder al viernes anterior cuando caen en fin de semana. Cada día de pago también tiene su propia tolerancia de días de anticipación para contar un depósito como a tiempo. Resumen ahora muestra cuánto ingreso llegó realmente este período, junto a lo planeado."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "An income deposit counted a few days early toward this period now shows a small \"arrived early\" note on its row.",
+      "summaryEs": "Un depósito de ingreso contado unos días antes para este período ahora muestra una pequeña nota de \"llegó antes\" en su fila."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Variable, Fixed, and Payments rows can now be moved to a different period with a swipe.",
+      "summaryEs": "Las filas de Variables, Fijos y Pagos ahora se pueden mover a otro período deslizando."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Picking \"Last day of month\" for a pay day no longer locks it to whichever month you happened to pick it in — it now correctly lands on the 31st in every month that has one.",
+      "summaryEs": "Elegir \"Último día del mes\" para un día de pago ya no lo fija al mes en que lo elegiste; ahora cae correctamente en el día 31 en cada mes que lo tiene."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "If you enter pay day 1 later in the month than pay day 2, a note now explains that pay day 1 is actually the previous month's last payment.",
+      "summaryEs": "Si ingresas el día de pago 1 más tarde en el mes que el día de pago 2, una nota explica ahora que el día de pago 1 es en realidad el último pago del mes anterior."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Editing a pay schedule now says the change applies starting with your next period, and the current period keeps its dates.",
+      "summaryEs": "Al editar un calendario de pago ahora se indica que el cambio aplica desde tu próximo período, y que el período actual conserva sus fechas."
     }
   ]
 }

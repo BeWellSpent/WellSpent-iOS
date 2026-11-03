@@ -67,13 +67,17 @@ nonisolated enum PeriodGrouping {
         return periods.filter { Calendar.current.component(.year, from: $0.startDate.dateOnly) == year }
     }
 
-    /// A localized "July 2026"-style label for a period row — mirrors
-    /// `TransactionDayGrouping.headerText`'s locale-aware formatting.
+    /// An explicit date-range label ("Oct 31 – Nov 29"), every period, even a
+    /// perfectly calendar-aligned one — not just a month name, since a period's
+    /// boundaries may now follow an income schedule rather than the calendar
+    /// month (docs/features/income-defined-budget-periods.md, issue #104).
+    /// Same en-dash convention `BudgetManageView.periodRangeText` already
+    /// uses; year omitted, mirroring that period rows are already grouped
+    /// under a year header (`PeriodYearGroup`) elsewhere.
     static func label(for period: Wellspent_V1_BudgetPeriod, localeIdentifier: String) -> String {
-        period.startDate.dateOnly.formatted(
-            Date.FormatStyle(locale: Locale(identifier: localeIdentifier))
-                .month(.wide)
-                .year()
-        )
+        let style = Date.FormatStyle(locale: Locale(identifier: localeIdentifier)).month(.abbreviated).day()
+        let start = period.startDate.dateOnly.formatted(style)
+        let end = period.endDate.dateOnly.formatted(style)
+        return "\(start) – \(end)"
     }
 }
