@@ -6,7 +6,10 @@ struct AddEditIncomeView: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable private var viewModel: AddEditIncomeViewModel
     private let people: [Wellspent_V1_BudgetPerson]
-    private let onDone: (Wellspent_V1_IncomeSource) -> Void
+    /// Called after every submit attempt, success or partial failure — the
+    /// list reloads either way so it reflects whatever actually landed
+    /// server-side rather than trusting optimistic local state.
+    private let onDone: () -> Void
 
     init(
         mode: AddEditIncomeViewModel.Mode,
@@ -15,7 +18,7 @@ struct AddEditIncomeView: View {
         currencyCode: String,
         people: [Wellspent_V1_BudgetPerson],
         restClient: WellSpentREST.Client,
-        onDone: @escaping (Wellspent_V1_IncomeSource) -> Void
+        onDone: @escaping () -> Void
     ) {
         _viewModel = Bindable(wrappedValue: AddEditIncomeViewModel(
             mode: mode,
@@ -45,10 +48,9 @@ struct AddEditIncomeView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {
-                            if let source = await viewModel.submit() {
-                                onDone(source)
-                                dismiss()
-                            }
+                            let success = await viewModel.submit()
+                            onDone()
+                            if success { dismiss() }
                         }
                     } label: {
                         if viewModel.isSubmitting {
@@ -102,23 +104,41 @@ struct AddEditIncomeView: View {
     }
 
     /// Mirrors `AddFixedExpenseView.paymentPlanSection`'s nil-anchor toggle
-    /// shape — a pay schedule is optional (irregular income has none).
+    /// shape — a pay schedule is optional (irregular income has none). When
+    /// on, 1-4 paydays can be added; the amount field above is this job's
+    /// whole-period total, split evenly across them (`splitAmountText`).
     @ViewBuilder
     private var payScheduleSection: some View {
         Section {
             Toggle("Has a pay schedule", isOn: Binding(
-                get: { viewModel.anchorDate != nil },
-                set: { viewModel.anchorDate = $0 ? (viewModel.anchorDate ?? Date()) : nil }
+                get: { viewModel.hasPaySchedule },
+                set: { viewModel.setHasPaySchedule($0) }
             ))
             .accessibilityIdentifier("incomeHasScheduleToggle")
 
-            if let anchorDate = viewModel.anchorDate {
-                DatePicker(
-                    "Pay day",
-                    selection: Binding(get: { anchorDate }, set: { viewModel.anchorDate = $0 }),
-                    displayedComponents: .date
+            if viewModel.hasPaySchedule {
+                Stepper(
+                    "Paid \(viewModel.payDateCount) time(s) per period",
+                    onIncrement: { viewModel.setPayDateCount(viewModel.payDateCount + 1) },
+                    onDecrement: { viewModel.setPayDateCount(viewModel.payDateCount - 1) }
                 )
-                .accessibilityIdentifier("incomeAnchorDatePicker")
+                .accessibilityIdentifier("incomePayDateCountStepper")
+
+                ForEach(Array(viewModel.payDates.enumerated()), id: \.offset) { index, date in
+                    DatePicker(
+                        "Pay day \(index + 1)",
+                        selection: Binding(get: { date }, set: { viewModel.setPayDate(at: index, to: $0) }),
+                        displayedComponents: .date
+                    )
+                    .accessibilityIdentifier("incomeAnchorDatePicker_\(index)")
+
+                    if viewModel.payDateCount > 1, let splitText = viewModel.splitAmountText(at: index) {
+                        Text(splitText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("incomeSplitAmount_\(index)")
+                    }
+                }
 
                 Stepper(
                     "Counts up to \(viewModel.earlyArrivalToleranceDays) day(s) early",
@@ -130,7 +150,7 @@ struct AddEditIncomeView: View {
         } header: {
             Text("Pay Schedule")
         } footer: {
-            Text("Used to define this budget's periods and to track when this income actually arrives. Leave off for irregular income.")
+            Text("Used to define this budget's periods and to track when this income actually arrives. Paid more than once per period? Add a pay day for each — the amount above splits evenly across them. Leave off for irregular income.")
         }
     }
 
@@ -167,23 +187,28 @@ struct AddEditIncomeView: View {
         currencyCode: "USD",
         people: [.with { $0.id = 1; $0.userName = "Jane" }],
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
-    ) { _ in }
+    ) {}
 }
 
 #Preview("Edit") {
+    let source = Wellspent_V1_IncomeSource.with {
+        $0.id = 1
+        $0.name = "Paycheck"
+        $0.incomeType = .salary
+        $0.defaultAmount = .with { $0.units = 2500; $0.currency = "USD" }
+        $0.recurring = true
+        $0.paymentFrequency = .monthly
+    }
+    let job = IncomeJobGrouping.Job(
+        key: .init(name: source.name, budgetPersonID: source.budgetPersonID, incomeType: source.incomeType, paymentFrequency: source.paymentFrequency),
+        rows: [.init(source: source, schedule: BudgetRESTMapping.IncomeSchedule(anchorDate: nil, earlyArrivalToleranceDays: 0))]
+    )
     AddEditIncomeView(
-        mode: .edit(.with {
-            $0.id = 1
-            $0.name = "Paycheck"
-            $0.incomeType = .salary
-            $0.defaultAmount = .with { $0.units = 2500; $0.currency = "USD" }
-            $0.recurring = true
-            $0.paymentFrequency = .monthly
-        }, schedule: BudgetRESTMapping.IncomeSchedule(anchorDate: nil, earlyArrivalToleranceDays: 0)),
+        mode: .edit(job),
         budgetProfileID: "preview-budget",
         countryCode: "US",
         currencyCode: "USD",
         people: [.with { $0.id = 1; $0.userName = "Jane" }],
         restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
-    ) { _ in }
+    ) {}
 }

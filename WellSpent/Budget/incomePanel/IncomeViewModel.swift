@@ -95,10 +95,6 @@ final class IncomeViewModel {
         return body.people.map(BudgetRESTMapping.person(from:))
     }
 
-    func schedule(for sourceID: Int64) -> BudgetRESTMapping.IncomeSchedule {
-        scheduleByIncomeSourceID[sourceID] ?? BudgetRESTMapping.IncomeSchedule(anchorDate: nil, earlyArrivalToleranceDays: 0)
-    }
-
     func personName(for budgetPersonID: Int64) -> String? {
         guard budgetPersonID != 0 else { return nil }
         return people.first(where: { $0.id == budgetPersonID })?.userName
@@ -108,13 +104,17 @@ final class IncomeViewModel {
         people.first(where: { $0.id == budgetPersonID })?.color ?? ""
     }
 
-    func addSource(_ source: Wellspent_V1_IncomeSource) {
-        sources.append(source)
-    }
-
-    func replaceSource(_ source: Wellspent_V1_IncomeSource) {
-        guard let index = sources.firstIndex(where: { $0.id == source.id }) else { return }
-        sources[index] = source
+    /// Deletes every row in a logical job (all its paydays) — used only by
+    /// the list's whole-row swipe-to-delete, distinct from the edit sheet's
+    /// per-payday reconciliation (`AddEditIncomeViewModel.submit`), which
+    /// can delete a subset. Stops at the first failure but still reloads
+    /// afterwards so the list reflects whatever actually landed.
+    func deleteJob(_ job: IncomeJobGrouping.Job) async {
+        for row in job.rows {
+            await delete(id: row.source.id)
+            if errorMessage != nil { break }
+        }
+        await load()
     }
 
     func delete(id: Int64) async {

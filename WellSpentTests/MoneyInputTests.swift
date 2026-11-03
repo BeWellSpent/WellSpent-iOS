@@ -45,4 +45,31 @@ struct MoneyInputTests {
         #expect(MoneyInput.sanitize("2500.50") == "2500.50")
         #expect(MoneyInput.sanitize("") == "")
     }
+
+    @Test("splitEvenly returns the whole amount unchanged for a single part")
+    func splitEvenlySinglePart() {
+        let parts = MoneyInput.splitEvenly(units: 4000, nanos: 500_000_000, count: 1)
+        #expect(parts.count == 1)
+        #expect(parts[0].units == 4000)
+        #expect(parts[0].nanos == 500_000_000)
+    }
+
+    @Test("splitEvenly divides a whole-dollar amount with no remainder")
+    func splitEvenlyNoRemainder() {
+        let parts = MoneyInput.splitEvenly(units: 4000, nanos: 0, count: 2)
+        #expect(parts.map(\.units) == [2000, 2000])
+        #expect(parts.allSatisfy { $0.nanos == 0 })
+    }
+
+    @Test("splitEvenly distributes a leftover cent to the first parts")
+    func splitEvenlyDistributesRemainder() {
+        let parts = MoneyInput.splitEvenly(units: 100, nanos: 0, count: 3)
+        #expect(parts[0] == (33, 340_000_000))
+        #expect(parts[1] == (33, 330_000_000))
+        #expect(parts[2] == (33, 330_000_000))
+        // Sums back to exactly the original total.
+        let total = TransactionAmountFormatting.sum(parts)
+        #expect(total.units == 100)
+        #expect(total.nanos == 0)
+    }
 }
