@@ -35,15 +35,13 @@ struct ExpenseOverviewTotalsView: View {
         return VStack(spacing: 2) {
             LabeledContent("Planned income", value: displayText(income))
                 .accessibilityIdentifier("overviewIncomeTotal")
-            if actualIncome.units != 0 || actualIncome.nanos != 0 {
-                LabeledContent("Actual income", value: displayText(actualIncome))
-                    .accessibilityIdentifier("overviewActualIncomeTotal")
-                if viewModel.earlyIncomeTransactionCount > 0 {
-                    Text("Arrived early, counted for next period")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("overviewEarlyIncomeIndicator")
-                }
+            LabeledContent("Actual income", value: displayText(actualIncome))
+                .accessibilityIdentifier("overviewActualIncomeTotal")
+            if viewModel.earlyIncomeTransactionCount > 0 {
+                Text("Arrived early, counted for next period")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("overviewEarlyIncomeIndicator")
             }
             LabeledContent("Planned (with savings)", value: displayText(plannedIncludingSavings))
                 .accessibilityIdentifier("overviewPlannedIncludingSavingsTotal")
@@ -55,11 +53,9 @@ struct ExpenseOverviewTotalsView: View {
             LabeledContent("Actual (without savings)", value: overviewText(actual))
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("overviewActualTotal")
-            if actualIncome.units != 0 || actualIncome.nanos != 0 {
-                LabeledContent("Remaining (actual income)", value: displayText(remainderActualIncome))
-                    .foregroundStyle(MoneyFormatting.isNegative(units: remainderActualIncome.units, nanos: remainderActualIncome.nanos) ? .red : .green)
-                    .accessibilityIdentifier("overviewRemainderActualIncomeTotal")
-            }
+            LabeledContent("Remaining (actual income)", value: displayText(remainderActualIncome))
+                .foregroundStyle(MoneyFormatting.isNegative(units: remainderActualIncome.units, nanos: remainderActualIncome.nanos) ? .red : .green)
+                .accessibilityIdentifier("overviewRemainderActualIncomeTotal")
             if overBudget.units != 0 || overBudget.nanos != 0 {
                 LabeledContent("Over budget", value: displayText(overBudget))
                     .foregroundStyle(.red)
