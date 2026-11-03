@@ -26,11 +26,22 @@ struct IncomePayDateInputTests {
         #expect(Calendar.current.component(.year, from: result) == 2026)
     }
 
-    @Test("monthly construction clamps day 31 in a 30-day month")
-    func monthlyDateClampsShortMonth() {
-        // April has 30 days.
+    @Test("monthly construction preserves day 31 as a sentinel even when picked in a shorter month")
+    func monthlyDatePreservesDay31Sentinel() {
+        // April has only 30 days — day 31 ("Last day of month") must not
+        // collapse into a literal 30 just because it was picked here. Only
+        // `.day` is ever read back for a monthly anchor, so the backend
+        // re-clamps per actual target month on every occurrence anyway.
         let reference = localDate(year: 2026, month: 4, day: 1)
         let result = IncomePayDateInput.monthlyDate(dayOfMonth: 31, referenceDate: reference)
+        #expect(IncomePayDateInput.dayOfMonth(from: result) == 31)
+    }
+
+    @Test("monthly construction still clamps a literal (non-31) day to the reference month's real length")
+    func monthlyDateStillClampsOtherDays() {
+        // April has 30 days.
+        let reference = localDate(year: 2026, month: 4, day: 1)
+        let result = IncomePayDateInput.monthlyDate(dayOfMonth: 30, referenceDate: reference)
         #expect(IncomePayDateInput.dayOfMonth(from: result) == 30)
         #expect(Calendar.current.component(.month, from: result) == 4)
     }

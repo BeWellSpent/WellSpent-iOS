@@ -139,6 +139,13 @@ struct AddEditIncomeView: View {
                     }
                 }
 
+                if let orderingHint = PayDateOrderingHint.message(for: viewModel.payDates, frequency: viewModel.paymentFrequency) {
+                    Text(orderingHint)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .accessibilityIdentifier("incomePayDateOrderingHint")
+                }
+
                 if viewModel.showWeekendAdjustmentToggle {
                     Toggle("Adjust for weekends", isOn: $viewModel.adjustForWeekends)
                         .accessibilityIdentifier("incomeAdjustForWeekendsToggle")

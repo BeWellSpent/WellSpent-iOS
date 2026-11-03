@@ -366,6 +366,16 @@
       "changeType": "added",
       "summaryEn": "Variable, Fixed, and Payments rows can now be moved to a different period with a swipe.",
       "summaryEs": "Las filas de Variables, Fijos y Pagos ahora se pueden mover a otro período deslizando."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Picking \"Last day of month\" for a pay day no longer locks it to whichever month you happened to pick it in — it now correctly lands on the 31st in every month that has one.",
+      "summaryEs": "Elegir \"Último día del mes\" para un día de pago ya no lo fija al mes en que lo elegiste; ahora cae correctamente en el día 31 en cada mes que lo tiene."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "If you enter pay day 1 later in the month than pay day 2, a note now explains that pay day 1 is actually the previous month's last payment.",
+      "summaryEs": "Si ingresas el día de pago 1 más tarde en el mes que el día de pago 2, una nota explica ahora que el día de pago 1 es en realidad el último pago del mes anterior."
     }
   ]
 }
