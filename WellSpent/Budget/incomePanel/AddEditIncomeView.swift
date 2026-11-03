@@ -146,11 +146,6 @@ struct AddEditIncomeView: View {
                         .accessibilityIdentifier("incomePayDateOrderingHint")
                 }
 
-                if viewModel.showWeekendAdjustmentToggle {
-                    Toggle("Adjust for weekends", isOn: $viewModel.adjustForWeekends)
-                        .accessibilityIdentifier("incomeAdjustForWeekendsToggle")
-                }
-
                 Stepper(
                     "Counts up to \(viewModel.earlyArrivalToleranceDays) day(s) early",
                     value: $viewModel.earlyArrivalToleranceDays,
