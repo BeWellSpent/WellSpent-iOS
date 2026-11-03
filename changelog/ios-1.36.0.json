@@ -381,6 +381,11 @@
       "changeType": "added",
       "summaryEn": "Editing a pay schedule now says the change applies starting with your next period, and the current period keeps its dates.",
       "summaryEs": "Al editar un calendario de pago ahora se indica que el cambio aplica desde tu próximo período, y que el período actual conserva sus fechas."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Transactions card now shows everything spent including savings as its headline, with the expenses and the amount saved below it. Overview lists planned and actual income and spend with and without savings, and what is left of your actual income now counts the savings that really left your account.",
+      "summaryEs": "La tarjeta de Transacciones ahora muestra como cifra principal todo lo gastado incluyendo ahorros, con los gastos y lo ahorrado debajo. Resumen lista el ingreso y el gasto planeado y real con y sin ahorros, y lo que queda de tu ingreso real ahora cuenta los ahorros que realmente salieron de tu cuenta."
     }
   ]
 }

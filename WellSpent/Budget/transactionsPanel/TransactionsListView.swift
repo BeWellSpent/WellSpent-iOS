@@ -432,18 +432,14 @@ struct TransactionsListView: View {
             Text(viewModel.remainingSummaryText)
                 .font(.caption)
                 .foregroundStyle(viewModel.isOverBudget ? .red : .secondary)
-            if let expectedSavedText = viewModel.expectedSavedText {
-                Text(expectedSavedText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("transactionsExpectedSaved")
-            }
-            if let actualSavedText = viewModel.actualSavedText {
-                Text(actualSavedText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("transactionsActualSaved")
-            }
+            Text(viewModel.expensesText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("transactionsExpenses")
+            Text(viewModel.savedText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("transactionsSaved")
         }
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
