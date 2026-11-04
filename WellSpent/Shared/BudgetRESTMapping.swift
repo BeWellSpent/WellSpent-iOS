@@ -487,6 +487,12 @@ nonisolated enum BudgetRESTMapping {
         )
     }
 
+    /// Not in `GetExpenseSummaryResponse`'s `required` list (additive, and not in the kept
+    /// proto message), so nil from a server that predates it rather than a misleading zero.
+    static func remainderPlanIncludingSavings(from s: Components.Schemas.GetExpenseSummaryResponse) -> Wellspent_V1_Money? {
+        s.remainderPlanIncludingSavings.map(money(from:))
+    }
+
     static func fixedExpense(from f: Components.Schemas.FixedExpense) -> Wellspent_V1_FixedExpense {
         .with {
             $0.id = f.id

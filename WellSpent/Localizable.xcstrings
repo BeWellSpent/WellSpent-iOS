@@ -1,104 +1,70 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Actual (without savings)" : {
-      "comment" : "Overview totals: actual spend excluding savings.",
+    "Committed (with savings)" : {
+      "comment" : "Plan totals: committed spend including savings.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Actual (without savings)"
+            "value" : "Committed (with savings)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Real (sin ahorros)"
+            "value" : "Comprometido (con ahorros)"
           }
         }
       }
     },
-    "Expenses: %@" : {
-      "comment" : "Transactions card: spending without savings.",
+    "Committed (without savings)" : {
+      "comment" : "Plan totals: committed spend excluding savings.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Expenses: %@"
+            "value" : "Committed (without savings)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gastos: %@"
+            "value" : "Comprometido (sin ahorros)"
           }
         }
       }
     },
-    "Pay schedule changes apply starting with your next period. The current period keeps its dates." : {
-      "comment" : "A note under the pay schedule fields: edits only affect periods that start later.",
+    "Remaining (with savings)" : {
+      "comment" : "Plan totals: planned income minus committed incl. savings.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pay schedule changes apply starting with your next period. The current period keeps its dates."
+            "value" : "Remaining (with savings)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los cambios del calendario de pago aplican desde tu próximo período. El período actual conserva sus fechas."
+            "value" : "Restante (con ahorros)"
           }
         }
       }
     },
-    "Planned income" : {
-      "comment" : "Overview totals: income as planned.",
+    "Remaining (without savings)" : {
+      "comment" : "Plan totals: planned income minus committed excl. savings.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planned income"
+            "value" : "Remaining (without savings)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ingreso planeado"
-          }
-        }
-      }
-    },
-    "Planned (without savings)" : {
-      "comment" : "Overview totals: planned spend excluding savings.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Planned (without savings)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Planeado (sin ahorros)"
-          }
-        }
-      }
-    },
-    "Saved: %@" : {
-      "comment" : "Transactions card: amount actually saved.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saved: %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ahorrado: %@"
+            "value" : "Restante (sin ahorros)"
           }
         }
       }
@@ -504,6 +470,7 @@
       }
     },
     "Actual" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -527,6 +494,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Real (con ahorros)"
+          }
+        }
+      }
+    },
+    "Actual (without savings)" : {
+      "comment" : "Overview totals: actual spend excluding savings.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actual (without savings)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Real (sin ahorros)"
           }
         }
       }
@@ -2071,22 +2055,6 @@
         }
       }
     },
-    "Committed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Committed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comprometido"
-          }
-        }
-      }
-    },
     "Component" : {
       "localizations" : {
         "en" : {
@@ -3467,6 +3435,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gráfico del plan de gastos"
+          }
+        }
+      }
+    },
+    "Expenses: %@" : {
+      "comment" : "Transactions card: spending without savings.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expenses: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastos: %@"
           }
         }
       }
@@ -5758,6 +5743,23 @@
         }
       }
     },
+    "Pay schedule changes apply starting with your next period. The current period keeps its dates." : {
+      "comment" : "A note under the pay schedule fields: edits only affect periods that start later.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay schedule changes apply starting with your next period. The current period keeps its dates."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los cambios del calendario de pago aplican desde tu próximo período. El período actual conserva sus fechas."
+          }
+        }
+      }
+    },
     "Payment days" : {
       "localizations" : {
         "en" : {
@@ -6004,6 +6006,7 @@
     },
     "Planned" : {
       "comment" : "A label for the planned amount of money.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {
@@ -6026,6 +6029,23 @@
         }
       }
     },
+    "Planned (without savings)" : {
+      "comment" : "Overview totals: planned spend excluding savings.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planned (without savings)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planeado (sin ahorros)"
+          }
+        }
+      }
+    },
     "Planned amounts" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6039,6 +6059,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Importes planificados"
+          }
+        }
+      }
+    },
+    "Planned income" : {
+      "comment" : "Overview totals: income as planned.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planned income"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingreso planeado"
           }
         }
       }
@@ -6281,22 +6318,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Registrarse"
-          }
-        }
-      }
-    },
-    "Remaining" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remaining"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restante"
           }
         }
       }
@@ -6635,6 +6656,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guardar cambios"
+          }
+        }
+      }
+    },
+    "Saved: %@" : {
+      "comment" : "Transactions card: amount actually saved.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahorrado: %@"
           }
         }
       }
