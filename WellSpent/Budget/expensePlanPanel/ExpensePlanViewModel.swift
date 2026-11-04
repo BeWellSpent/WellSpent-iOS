@@ -18,6 +18,8 @@ final class ExpensePlanViewModel {
     /// Fixed template) computed from raw savings/income/fixed-transaction
     /// data fetched here.
     private(set) var summary: Wellspent_V1_GetExpenseSummaryResponse?
+    /// Server-computed; carried beside `summary` because it has no proto field.
+    private(set) var remainderPlanIncludingSavingsMoney: Wellspent_V1_Money?
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -51,8 +53,16 @@ final class ExpensePlanViewModel {
         TransactionAmountFormatting.tuple(from: summary?.totalCommitted)
     }
 
+    var committedIncludingSavingsTotal: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: summary?.totalCommittedIncludingSavings)
+    }
+
     var remainderTotal: (units: Int64, nanos: Int32) {
         TransactionAmountFormatting.tuple(from: summary?.remainderPlan)
+    }
+
+    var remainderIncludingSavingsTotal: (units: Int64, nanos: Int32)? {
+        remainderPlanIncludingSavingsMoney.map { TransactionAmountFormatting.tuple(from: $0) }
     }
 
     /// Chart data for the planned-amount chart. Mirrors web's chart-data
@@ -112,7 +122,8 @@ final class ExpensePlanViewModel {
         // Needs `people` resolved first, so this can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
         if let fetched = await fetchSummary(focusedView: focusedView) {
-            summary = fetched
+            summary = fetched.summary
+            remainderPlanIncludingSavingsMoney = fetched.remainderPlanIncludingSavings
         }
     }
 
@@ -130,14 +141,14 @@ final class ExpensePlanViewModel {
         }
     }
 
-    private func fetchSummary(focusedView: Bool) async -> Wellspent_V1_GetExpenseSummaryResponse? {
+    private func fetchSummary(focusedView: Bool) async -> (summary: Wellspent_V1_GetExpenseSummaryResponse, remainderPlanIncludingSavings: Wellspent_V1_Money?)? {
         do {
             let output = try await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView)))
             guard case .ok(let ok) = output, let body = try? ok.body.json else {
                 if errorMessage == nil { errorMessage = "Couldn't load the expense summary." }
                 return nil
             }
-            return BudgetRESTMapping.expenseSummary(from: body)
+            return (BudgetRESTMapping.expenseSummary(from: body), BudgetRESTMapping.remainderPlanIncludingSavings(from: body))
         } catch {
             if errorMessage == nil { errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load the expense summary." }
             return nil
@@ -200,5 +211,11 @@ final class ExpensePlanViewModel {
         }
 
         await load()
+    }
+
+    /// Seeds the summary without a network call, so the totals are testable.
+    func setSummaryForTesting(_ summary: Wellspent_V1_GetExpenseSummaryResponse, remainderPlanIncludingSavings: Wellspent_V1_Money?) {
+        self.summary = summary
+        self.remainderPlanIncludingSavingsMoney = remainderPlanIncludingSavings
     }
 }

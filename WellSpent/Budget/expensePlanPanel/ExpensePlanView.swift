@@ -178,6 +178,31 @@ struct ExpensePlanView: View {
     @ViewBuilder
     private func categoriesContent(viewModel: ExpensePlanViewModel) -> some View {
         List {
+            Section {
+                let income = viewModel.incomeTotal
+                let committed = viewModel.committedTotal
+                let committedWithSavings = viewModel.committedIncludingSavingsTotal
+                let remainder = viewModel.remainderTotal
+
+                LabeledContent("Planned income", value: displayText(income))
+                    .accessibilityIdentifier("planIncomeTotal")
+                LabeledContent("Committed (with savings)", value: displayText(committedWithSavings))
+                    .accessibilityIdentifier("planCommittedIncludingSavingsTotal")
+                LabeledContent("Committed (without savings)", value: displayText(committed))
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("planCommittedTotal")
+                // isNegative, not `units < 0`: a -$0.50 remainder has
+                // units == 0 and would otherwise read as in the black.
+                if let remainderWithSavings = viewModel.remainderIncludingSavingsTotal {
+                    LabeledContent("Remaining (with savings)", value: displayText(remainderWithSavings))
+                        .foregroundStyle(MoneyFormatting.isNegative(units: remainderWithSavings.units, nanos: remainderWithSavings.nanos) ? .red : .primary)
+                        .accessibilityIdentifier("planRemainderIncludingSavingsTotal")
+                }
+                LabeledContent("Remaining (without savings)", value: displayText(remainder))
+                    .foregroundStyle(MoneyFormatting.isNegative(units: remainder.units, nanos: remainder.nanos) ? .red : .secondary)
+                    .accessibilityIdentifier("planRemainderTotal")
+            }
+
             if !viewModel.visibleCategories.isEmpty {
                 Section {
                     ExpenseChartView(
@@ -200,22 +225,6 @@ struct ExpensePlanView: View {
                         categoryRow(category, viewModel: viewModel, canEdit: canEdit)
                     }
                 }
-            }
-
-            Section {
-                let income = viewModel.incomeTotal
-                let committed = viewModel.committedTotal
-                let remainder = viewModel.remainderTotal
-
-                LabeledContent("Income", value: displayText(income))
-                    .accessibilityIdentifier("planIncomeTotal")
-                LabeledContent("Committed", value: displayText(committed))
-                    .accessibilityIdentifier("planCommittedTotal")
-                LabeledContent("Remaining", value: displayText(remainder))
-                    // isNegative, not `units < 0`: a -$0.50 remainder has
-                    // units == 0 and would otherwise read as in the black.
-                    .foregroundStyle(MoneyFormatting.isNegative(units: remainder.units, nanos: remainder.nanos) ? .red : .primary)
-                    .accessibilityIdentifier("planRemainderTotal")
             }
 
             if let errorMessage = viewModel.errorMessage {
