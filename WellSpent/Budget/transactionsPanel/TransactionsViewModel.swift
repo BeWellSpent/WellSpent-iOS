@@ -280,13 +280,19 @@ final class TransactionsViewModel {
         return transactions.filter { !confirmedFixedIDs.contains($0.id) && $0.categoryID == paymentCategoryID }
     }
 
-    /// Plain client-side sum of the Payments tab's own rows — there's no
-    /// server analog; `variableActualTotal` already excludes these from its
-    /// own sum (Payment is category-excluded server-side, same as Income)
-    /// and is untouched by this.
+    /// One entry per card payment: the outflow and its matching inflow folded together,
+    /// or a lone row when nothing matched.
+    func paymentGroups(reviews: [Wellspent_V1_TransactionReview]) -> [PaymentPairing.Group] {
+        PaymentPairing.group(paymentTransactions(reviews: reviews), methodName: { [self] in paymentMethodName(for: $0) })
+    }
+
+    /// What was paid this period, each payment counted once. A pair is one payment (the
+    /// two rows would cancel out); excluded payments are left out like everywhere else.
+    /// Plain client-side arithmetic on this tab's own rows — `variableActualTotal`
+    /// already leaves the Payment category out and is untouched.
     func paymentsTotalText(reviews: [Wellspent_V1_TransactionReview]) -> String {
-        let amounts = paymentTransactions(reviews: reviews).map { TransactionAmountFormatting.tuple(from: $0.amount) }
-        return TransactionAmountFormatting.magnitudeDisplayText(amounts: amounts, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        let paid = paymentGroups(reviews: reviews).filter { !$0.isExcluded }.map(\.paidAmount)
+        return TransactionAmountFormatting.magnitudeDisplayText(amounts: [TransactionAmountFormatting.sum(paid)], currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 
     func pendingMatchName(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> String? {

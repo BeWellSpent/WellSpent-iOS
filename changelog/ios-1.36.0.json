@@ -391,6 +391,11 @@
       "changeType": "changed",
       "summaryEn": "The Plan totals now sit at the top and show committed spending and what is left of your planned income both with and without savings, matching Overview.",
       "summaryEs": "Los totales del Plan ahora aparecen arriba y muestran lo comprometido y lo que queda de tu ingreso planeado con y sin ahorros, igual que en Resumen."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "A card payment now shows as one row in Payments instead of two cancelling ones: the money leaving your account and the matching payment on the card are matched by amount and date. Tap it to see both sides, and the total counts each payment once.",
+      "summaryEs": "Un pago de tarjeta ahora aparece como una sola fila en Pagos en lugar de dos que se cancelan: el dinero que sale de tu cuenta y el pago correspondiente en la tarjeta se emparejan por monto y fecha. Tócala para ver ambos lados, y el total cuenta cada pago una sola vez."
     }
   ]
 }
