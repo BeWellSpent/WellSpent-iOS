@@ -53,11 +53,7 @@ final class BudgetSmokeTests: XCTestCase {
         // created; skip through People/Income/Payment Methods here and add
         // the person/income source afterward via the regular panels, same
         // as before the wizard existed.
-        for _ in 0..<3 {
-            let skipButton = app.buttons["setupSkipButton"]
-            XCTAssertTrue(skipButton.waitForExistence(timeout: 5))
-            skipButton.tap()
-        }
+        finishBudgetSetup(app)
 
         // Finishing setup lands straight on the budget — it is the home
         // screen now (issue #60), there is no list in between. The manage

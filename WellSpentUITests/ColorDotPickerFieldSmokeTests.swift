@@ -52,17 +52,9 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         nameField.typeText(budgetName)
         app.buttons["createBudgetButton"].tap()
 
-        for _ in 0..<3 {
-            let skipButton = app.buttons["setupSkipButton"]
-            XCTAssertTrue(skipButton.waitForExistence(timeout: 5))
-            skipButton.tap()
-        }
+        finishBudgetSetup(app, paymentMethodName: "UITest Card")
 
-        // Setup finishes straight onto the budget — it is the home screen
-        // since issue #60. This test still cannot pass end to end; see issue
-        // #58 for the two remaining breakages (the skipped Payment Methods
-        // step, and a budget that can no longer be deleted once it has a
-        // payment method).
+        // Setup finishes straight onto the budget — the home screen since issue #60.
         XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
 
         // Overview/Plan navigation rework: Transactions is no longer its own

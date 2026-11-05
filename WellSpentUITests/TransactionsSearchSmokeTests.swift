@@ -61,11 +61,7 @@ final class TransactionsSearchSmokeTests: XCTestCase {
         nameField.typeText(budgetName)
         app.buttons["createBudgetButton"].tap()
 
-        for _ in 0..<3 {
-            let skipButton = app.buttons["setupSkipButton"]
-            XCTAssertTrue(skipButton.waitForExistence(timeout: 5))
-            skipButton.tap()
-        }
+        finishBudgetSetup(app)
 
         XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
 

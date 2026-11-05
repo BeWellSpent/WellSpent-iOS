@@ -45,3 +45,38 @@ func openManagePanels(_ app: XCUIApplication, timeout: TimeInterval = 15) -> Boo
 func waitForBudgetHome(_ app: XCUIApplication, timeout: TimeInterval = 20) -> Bool {
     app.tabBars.firstMatch.waitForExistence(timeout: timeout)
 }
+
+/// Walks the setup wizard (People → Payment methods → Income → Savings) that
+/// follows "Create budget", skipping every step. Pass `paymentMethodName` to
+/// add one first: adding a transaction is blocked until the budget has a
+/// payment method (transaction-prerequisites).
+///
+/// Each skip waits for that step's own field rather than the shared
+/// `setupSkipButton`, which would still match mid-transition and double-tap.
+func finishBudgetSetup(_ app: XCUIApplication, paymentMethodName: String? = nil) {
+    func anchor(_ id: String) -> XCUIElement { app.descendants(matching: .any)[id] }
+    func skip(after anchorID: String) {
+        XCTAssertTrue(anchor(anchorID).waitForExistence(timeout: 10), "expected setup step \(anchorID)")
+        app.buttons["setupSkipButton"].tap()
+    }
+
+    skip(after: "setupPersonNameField")
+
+    if let paymentMethodName {
+        let nameField = app.textFields["setupPaymentMethodNameField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 10), "expected the Payment Methods step")
+        nameField.tap()
+        nameField.typeText(paymentMethodName)
+        app.buttons["setupAddPaymentMethodButton"].tap()
+        XCTAssertTrue(app.staticTexts[paymentMethodName].waitForExistence(timeout: 10), "expected the payment method to be added")
+    }
+    skip(after: "setupPaymentMethodNameField")
+    skip(after: "setupIncomeNameField")
+
+    XCTAssertTrue(
+        anchor("setupSavingsNameField").waitForExistence(timeout: 10)
+            || anchor("setupSavingsNeedsPaymentMethod").exists,
+        "expected the Savings step"
+    )
+    app.buttons["setupSkipButton"].tap()
+}
