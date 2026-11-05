@@ -133,6 +133,7 @@ struct BudgetHomeView: View {
             .accessibilityIdentifier("logoutButton")
             .padding(.top, 8)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("emptyBudgetsState")
         .navigationTitle("Budgets")
     }

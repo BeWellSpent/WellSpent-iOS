@@ -38,8 +38,8 @@ final class LoginSmokeTests: XCTestCase {
         dismissSavePasswordPromptIfPresent(app)
 
         // Log Out lives in the ☰ menu since issue #60, so a successful login
-        // is proven by the budget home screen rather than by that button.
-        XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after login")
+        // is proven by the budget home (or the no-budget empty state).
+        XCTAssertTrue(waitForAuthenticatedLanding(app), "expected the budget home screen after login")
     }
 
     @MainActor

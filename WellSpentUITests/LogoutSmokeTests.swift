@@ -33,8 +33,12 @@ final class LogoutSmokeTests: XCTestCase {
 
         app.buttons["loginButton"].tap()
         dismissSavePasswordPromptIfPresent(app)
-        // Log Out moved into the ☰ menu (issue #60).
-        XCTAssertTrue(openBudgetMenu(app), "expected the ☰ menu to open")
+        // Log Out moved into the ☰ menu (issue #60); an account with no budget
+        // has the button on its empty state instead.
+        XCTAssertTrue(waitForAuthenticatedLanding(app), "expected to be logged in")
+        if app.tabBars.firstMatch.exists {
+            XCTAssertTrue(openBudgetMenu(app), "expected the ☰ menu to open")
+        }
         XCTAssertTrue(app.buttons["logoutButton"].waitForExistence(timeout: 5))
 
         app.buttons["logoutButton"].tap()

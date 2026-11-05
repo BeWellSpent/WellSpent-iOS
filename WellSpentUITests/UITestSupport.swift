@@ -80,3 +80,10 @@ func finishBudgetSetup(_ app: XCUIApplication, paymentMethodName: String? = nil)
     )
     app.buttons["setupSkipButton"].tap()
 }
+
+/// An account with no budget lands on the empty state instead of the tab bar,
+/// and either one proves the login worked.
+func waitForAuthenticatedLanding(_ app: XCUIApplication, timeout: TimeInterval = 20) -> Bool {
+    waitForBudgetHome(app, timeout: timeout)
+        || app.descendants(matching: .any)["emptyBudgetsState"].exists
+}

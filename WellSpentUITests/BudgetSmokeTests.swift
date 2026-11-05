@@ -74,7 +74,7 @@ final class BudgetSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Test Person"].waitForExistence(timeout: 10))
 
-        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["BackButton"].tap()
 
         // Income
         let incomeLink = app.buttons["incomeNavLink"]
@@ -96,7 +96,7 @@ final class BudgetSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.buttons["incomeRow_Test Salary"].waitForExistence(timeout: 10))
 
-        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["BackButton"].tap()
 
         // Cleanup: delete the budget so the test leaves no orphan data behind.
         // Edit/Delete live on the manage screen's own toolbar now that it is a

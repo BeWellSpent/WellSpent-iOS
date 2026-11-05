@@ -1,4 +1,4 @@
-.PHONY: generate generate-proto generate-rest
+.PHONY: generate generate-proto generate-rest test
 
 # The OpenAPI contract lives in WellSpent-proto but does not go through BSR —
 # there is no OpenAPI equivalent. That repo is public, so this fetches the raw
@@ -17,3 +17,16 @@ generate-proto:
 # itself, which is why Xcode Cloud needs nothing here beyond this file existing.
 generate-rest:
 	curl -fsSL "$(OPENAPI_SPEC)" -o "$(REST_SPEC_PATH)"
+
+# UI smoke tests against the dev backend the Debug build points at (Docker, :5021).
+# TEST_RUNNER_-prefixed vars are how xcodebuild forwards env to the test runner.
+# Dev-DB test account (account_type = 'test'); override either to use your own.
+UITEST_EMAIL ?= smokeduitest@email.com
+UITEST_PASSWORD ?= smokeUitest1234!
+SIM_DEVICE ?= iPhone 17 Pro
+
+test:
+	DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+	TEST_RUNNER_UITEST_EMAIL='$(UITEST_EMAIL)' TEST_RUNNER_UITEST_PASSWORD='$(UITEST_PASSWORD)' \
+	xcodebuild test -scheme WellSpent -destination 'platform=iOS Simulator,name=$(SIM_DEVICE)' \
+		-skipPackagePluginValidation -skipMacroValidation -only-testing:WellSpentUITests
