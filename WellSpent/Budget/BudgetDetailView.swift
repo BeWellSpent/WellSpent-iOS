@@ -301,12 +301,21 @@ struct BudgetDetailView: View {
     /// Both Fixed and Variable require a payment method to submit, so with
     /// none the form would open, fill in, and refuse to save with nothing
     /// explaining why. Explain up front instead.
-    private func startAddingTransaction(_ present: () -> Void) {
-        if viewModel?.needsPaymentMethodSetup == true {
-            isPaymentMethodRequiredPresented = true
+    private func startAddingTransaction(_ present: @escaping () -> Void) {
+        guard viewModel?.needsPaymentMethodSetup == true else {
+            present()
             return
         }
-        present()
+        // The list is loaded once on appear, so one added since (the setup
+        // wizard runs above this screen) is invisible until re-read.
+        Task {
+            await viewModel?.loadPaymentMethods()
+            if viewModel?.needsPaymentMethodSetup == true {
+                isPaymentMethodRequiredPresented = true
+            } else {
+                present()
+            }
+        }
     }
 
     /// Shown above the tab content, regardless of which tab is selected —

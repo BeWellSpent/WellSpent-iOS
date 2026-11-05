@@ -18,34 +18,15 @@ final class SheetChromeSmokeTests: XCTestCase {
 
     @MainActor
     func testSheetShowsDismissingCloseIconInsteadOfCancelButton() throws {
-        guard let email = ProcessInfo.processInfo.environment["UITEST_EMAIL"],
-              let password = ProcessInfo.processInfo.environment["UITEST_PASSWORD"] else {
-            throw XCTSkip("Set UITEST_EMAIL / UITEST_PASSWORD to run this test against a seeded account.")
-        }
-
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetSession"]
-        app.launch()
+        try signInToEmptyAccount(app)
 
-        let emailField = app.textFields["emailField"]
-        XCTAssertTrue(emailField.waitForExistence(timeout: 5))
-        emailField.tap()
-        emailField.typeText(email)
-
-        let passwordField = app.secureTextFields["passwordField"]
-        passwordField.tap()
-        passwordField.typeText(password)
-
-        app.buttons["loginButton"].tap()
-        dismissSavePasswordPromptIfPresent(app)
-
-        // The bottom bar's "More" sheet is reachable whenever a budget exists,
-        // unlike addBudgetButton, which only appears for an account that has
-        // none. Any sheet exercises the shared chrome equally well.
-        XCTAssertTrue(openBudgetMenu(app), "expected the More menu to open")
-
-        // The sheet is up once one of its own rows is on screen.
-        XCTAssertTrue(app.buttons["manageBudgetLink"].waitForExistence(timeout: 5))
+        // The Create Budget sheet is reachable from the no-budget empty state
+        // and carries the shared chrome like every other sheet.
+        let addButton = app.buttons["addBudgetButton"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 10))
+        addButton.tap()
+        XCTAssertTrue(app.textFields["budgetNameField"].waitForExistence(timeout: 5))
 
         let closeButton = app.navigationBars.buttons["sheetCancelButton"]
         XCTAssertTrue(closeButton.exists, "sheet should carry the shared ✕ button")
@@ -60,7 +41,7 @@ final class SheetChromeSmokeTests: XCTestCase {
         // — whether the title is drawn is not observable from here.
 
         closeButton.tap()
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 5), "✕ should dismiss the sheet")
-        XCTAssertFalse(app.buttons["manageBudgetLink"].exists)
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "✕ should dismiss the sheet")
+        XCTAssertFalse(app.textFields["budgetNameField"].exists)
     }
 }

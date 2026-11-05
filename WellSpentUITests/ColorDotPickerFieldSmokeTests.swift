@@ -20,42 +20,10 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
 
     @MainActor
     func testCategoryPickerSheetOpensAndSelects() throws {
-        guard let email = ProcessInfo.processInfo.environment["UITEST_EMAIL"],
-              let password = ProcessInfo.processInfo.environment["UITEST_PASSWORD"] else {
-            throw XCTSkip("Set UITEST_EMAIL / UITEST_PASSWORD to run this test against a seeded account.")
-        }
-
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetSession"]
-        app.launch()
+        try signInToEmptyAccount(app)
 
-        let emailField = app.textFields["emailField"]
-        XCTAssertTrue(emailField.waitForExistence(timeout: 5))
-        emailField.tap()
-        emailField.typeText(email)
-
-        let passwordField = app.secureTextFields["passwordField"]
-        passwordField.tap()
-        passwordField.typeText(password)
-
-        app.buttons["loginButton"].tap()
-        dismissSavePasswordPromptIfPresent(app)
-
-        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 10))
-
-        let budgetName = "UITest ColorDotPicker \(Int(Date().timeIntervalSince1970))"
-        app.buttons["addBudgetButton"].tap()
-
-        let nameField = app.textFields["budgetNameField"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
-        nameField.tap()
-        nameField.typeText(budgetName)
-        app.buttons["createBudgetButton"].tap()
-
-        finishBudgetSetup(app, paymentMethodName: "UITest Card")
-
-        // Setup finishes straight onto the budget — the home screen since issue #60.
-        XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
+        createBudget(app, name: "UITest ColorDotPicker \(Int(Date().timeIntervalSince1970))", paymentMethodName: "UITest Card")
 
         // Overview/Plan navigation rework: Transactions is no longer its own
         // bottom tab — it's a sub-tab inside Home (the bottom tab renamed
@@ -90,13 +58,6 @@ final class ColorDotPickerFieldSmokeTests: XCTestCase {
         app.navigationBars.buttons["sheetCancelButton"].tap()
 
         // Cleanup: delete the budget so the test leaves no orphan data behind.
-        XCTAssertTrue(openManagePanels(app), "expected the ☰ menu to open the manage panels")
-        let detailMenu = app.buttons["budgetDetailMenu"]
-        XCTAssertTrue(detailMenu.waitForExistence(timeout: 5))
-        detailMenu.tap()
-        app.buttons["Delete Budget"].tap()
-        app.buttons["Delete"].tap()
-
-        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 15))
+        deleteCurrentBudget(app)
     }
 }

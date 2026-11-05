@@ -16,49 +16,13 @@ final class BudgetSmokeTests: XCTestCase {
 
     @MainActor
     func testCreateBudgetAddPersonAndIncome() throws {
-        guard let email = ProcessInfo.processInfo.environment["UITEST_EMAIL"],
-              let password = ProcessInfo.processInfo.environment["UITEST_PASSWORD"] else {
-            throw XCTSkip("Set UITEST_EMAIL / UITEST_PASSWORD to run this test against a seeded account.")
-        }
-
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetSession"]
-        app.launch()
+        try signInToEmptyAccount(app)
 
-        let emailField = app.textFields["emailField"]
-        XCTAssertTrue(emailField.waitForExistence(timeout: 5))
-        emailField.tap()
-        emailField.typeText(email)
-
-        let passwordField = app.secureTextFields["passwordField"]
-        passwordField.tap()
-        passwordField.typeText(password)
-
-        app.buttons["loginButton"].tap()
-        dismissSavePasswordPromptIfPresent(app)
-
-        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 10))
-
-        // Create a budget with a unique name so repeated runs don't collide.
+        // Unique name so repeated runs don't collide.
         let budgetName = "UITest Budget \(Int(Date().timeIntervalSince1970))"
-        app.buttons["addBudgetButton"].tap()
+        createBudget(app, name: budgetName)
 
-        let nameField = app.textFields["budgetNameField"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
-        nameField.tap()
-        nameField.typeText(budgetName)
-        app.buttons["createBudgetButton"].tap()
-
-        // The setup wizard opens on step 2 (People) once the budget is
-        // created; skip through People/Income/Payment Methods here and add
-        // the person/income source afterward via the regular panels, same
-        // as before the wizard existed.
-        finishBudgetSetup(app)
-
-        // Finishing setup lands straight on the budget — it is the home
-        // screen now (issue #60), there is no list in between. The manage
-        // panels moved behind the ☰.
-        XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
         XCTAssertTrue(openManagePanels(app), "expected the ☰ menu to open the manage panels")
 
         // People

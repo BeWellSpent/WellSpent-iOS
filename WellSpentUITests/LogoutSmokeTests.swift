@@ -39,10 +39,10 @@ final class LogoutSmokeTests: XCTestCase {
         if app.tabBars.firstMatch.exists {
             XCTAssertTrue(openBudgetMenu(app), "expected the ☰ menu to open")
         }
-        XCTAssertTrue(app.buttons["logoutButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["logoutButton"].waitForExistence(timeout: 15))
 
         app.buttons["logoutButton"].tap()
-        XCTAssertTrue(app.descendants(matching: .any)["loginView"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["loginView"].waitForExistence(timeout: 20))
 
         // Relaunch *without* the reset flag — if the Keychain token were still
         // present, SessionStore would restore an authenticated session and

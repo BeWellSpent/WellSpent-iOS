@@ -396,6 +396,16 @@
       "changeType": "changed",
       "summaryEn": "A card payment now shows as one row in Payments instead of two cancelling ones: the money leaving your account and the matching payment on the card are matched by amount and date. Tap it to see both sides. The total counts a matched payment once and adds or subtracts every other row by its sign, so a refund brings it down.",
       "summaryEs": "Un pago de tarjeta ahora aparece como una sola fila en Pagos en lugar de dos que se cancelan: el dinero que sale de tu cuenta y el pago correspondiente en la tarjeta se emparejan por monto y fecha. Tócala para ver ambos lados. El total cuenta una sola vez un pago emparejado y suma o resta cada otra fila según su signo, así que un reembolso lo reduce."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "Adding an income source without choosing a person no longer fails.",
+      "summaryEs": "Agregar una fuente de ingresos sin elegir una persona ya no falla."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "A payment method added during budget setup is now recognised straight away when adding a transaction.",
+      "summaryEs": "Un método de pago agregado durante la configuración del presupuesto ahora se reconoce de inmediato al agregar una transacción."
     }
   ]
 }
