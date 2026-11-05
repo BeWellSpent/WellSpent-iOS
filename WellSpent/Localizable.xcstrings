@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Card payment" : {
+      "comment" : "Payments tab: a paired payment whose card has no name.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card payment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago de tarjeta"
+          }
+        }
+      }
+    },
     "Committed (with savings)" : {
       "comment" : "Plan totals: committed spend including savings.",
       "localizations" : {
@@ -31,6 +48,125 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comprometido (sin ahorros)"
+          }
+        }
+      }
+    },
+    "Payment to %@" : {
+      "comment" : "Payments tab: a paired card payment, named after the card that received it.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago a %@"
+          }
+        }
+      }
+    },
+    "From %@" : {
+      "comment" : "Payments tab: the account a paired payment left.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desde %@"
+          }
+        }
+      }
+    },
+    "Into %@" : {
+      "comment" : "Payments tab leg: money arriving in an account.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Into %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacia %@"
+          }
+        }
+      }
+    },
+    "Out of %@" : {
+      "comment" : "Payments tab leg: money leaving an account.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Out of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desde %@ (salida)"
+          }
+        }
+      }
+    },
+    "Payment deleted" : {
+      "comment" : "Toast after deleting a paired payment.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment deleted"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago eliminado"
+          }
+        }
+      }
+    },
+    "Payment excluded" : {
+      "comment" : "Toast after excluding a paired payment.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment excluded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago excluido"
+          }
+        }
+      }
+    },
+    "Payment included" : {
+      "comment" : "Toast after including a paired payment.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment included"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago incluido"
           }
         }
       }

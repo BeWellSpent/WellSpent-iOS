@@ -58,6 +58,8 @@ struct PaymentsListView: View {
     /// Optimistically hidden while a swipe-delete's undo window is open — see
     /// `TransactionsListView.pendingDeleteIDs`.
     @State private var pendingDeleteIDs: Set<String> = []
+    /// Pair groups whose two legs are showing.
+    @State private var expandedPairIDs: Set<String> = []
 
     var body: some View {
         Group {
@@ -107,15 +109,20 @@ struct PaymentsListView: View {
     private func content(viewModel: TransactionsViewModel) -> some View {
         let reviews = reviewViewModel?.reviews ?? []
         let paymentCategoryID = viewModel.categories.first { $0.isSystem(.payment) }?.id ?? 0
-        let visibleTransactions = TransactionFiltering.apply(
-            viewModel.paymentTransactions(reviews: reviews),
-            searchQuery: searchQuery,
-            categoryName: viewModel.categoryName,
-            ownerName: viewModel.ownerName
-        )
-        // Optimistically hidden during a swipe-delete's undo window.
-        .filter { !pendingDeleteIDs.contains($0.id) }
-        let dayGroups = TransactionDayGrouping.group(visibleTransactions)
+        // Pairing runs on every payment row so search never changes which rows pair up
+        // (or the total); a group shows when any of its legs matches the search.
+        let visibleGroups = viewModel.paymentGroups(reviews: reviews).filter { group in
+            // Optimistically hidden during a swipe-delete's undo window.
+            !group.transactions.contains { pendingDeleteIDs.contains($0.id) }
+                && !TransactionFiltering.apply(
+                    group.transactions,
+                    searchQuery: searchQuery,
+                    categoryName: viewModel.categoryName,
+                    ownerName: viewModel.ownerName
+                ).isEmpty
+        }
+        let groupByRepresentative = Dictionary(uniqueKeysWithValues: visibleGroups.map { ($0.representative.id, $0) })
+        let dayGroups = TransactionDayGrouping.group(visibleGroups.map(\.representative))
 
         List {
             Section {
@@ -127,57 +134,19 @@ struct PaymentsListView: View {
 
             if viewModel.transactions.isEmpty && viewModel.isLoading {
                 ProgressView()
-            } else if visibleTransactions.isEmpty {
+            } else if visibleGroups.isEmpty {
                 Text("No transactions yet.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(dayGroups) { group in
+                ForEach(dayGroups) { day in
                     Section {
-                        ForEach(group.transactions, id: \.id) { transaction in
-                            row(transaction, viewModel: viewModel)
-                                .swipeActions(edge: .leading) {
-                                    if canEdit {
-                                        Button {
-                                            activeSheet = .editTransaction(transaction)
-                                        } label: {
-                                            Label("Edit", systemImage: "pencil")
-                                        }
-                                        .tint(.blue)
-                                        .accessibilityIdentifier("editTransaction_\(transaction.name)")
-
-                                        if periods.count > 1 {
-                                            Button {
-                                                activeSheet = .moveToPeriod(transaction)
-                                            } label: {
-                                                Label("Move to Period", systemImage: "calendar.badge.clock")
-                                            }
-                                            .tint(.teal)
-                                            .accessibilityIdentifier("moveToPeriod_\(transaction.name)")
-                                        }
-                                    }
-                                }
-                                .swipeActions(edge: .trailing) {
-                                    if canMutate {
-                                        Button {
-                                            requestToggleExcluded(transaction, viewModel: viewModel)
-                                        } label: {
-                                            Label(transaction.isExcluded ? "Include" : "Exclude", systemImage: transaction.isExcluded ? "eye" : "eye.slash")
-                                        }
-                                        .tint(.gray)
-                                        .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
-                                    }
-                                    if canMutate && !transaction.isPlaidImported {
-                                        Button(role: .destructive) {
-                                            requestDelete(transaction, viewModel: viewModel)
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
-                                        .accessibilityIdentifier("deleteTransaction_\(transaction.name)")
-                                    }
-                                }
+                        ForEach(day.transactions, id: \.id) { representative in
+                            if let group = groupByRepresentative[representative.id] {
+                                groupRows(group, viewModel: viewModel)
+                            }
                         }
                     } header: {
-                        Text(TransactionDayGrouping.headerText(for: group.id, localeIdentifier: localeIdentifier))
+                        Text(TransactionDayGrouping.headerText(for: day.id, localeIdentifier: localeIdentifier))
                     }
                 }
             }
@@ -224,6 +193,171 @@ struct PaymentsListView: View {
                 }
             }
         }
+    }
+
+    /// A lone payment is the old single row; a pair is one summary row that opens into its
+    /// two legs, each still swipeable on its own.
+    @ViewBuilder
+    private func groupRows(_ group: PaymentPairing.Group, viewModel: TransactionsViewModel) -> some View {
+        if group.isPair {
+            pairRow(group, viewModel: viewModel)
+                .swipeActions(edge: .trailing) {
+                    if canMutate {
+                        Button {
+                            requestToggleExcluded(group, viewModel: viewModel)
+                        } label: {
+                            Label(group.isExcluded ? "Include" : "Exclude", systemImage: group.isExcluded ? "eye" : "eye.slash")
+                        }
+                        .tint(.gray)
+                        .accessibilityIdentifier("excludePayment_\(group.id)")
+                    }
+                    if canMutate && !group.transactions.contains(where: \.isPlaidImported) {
+                        Button(role: .destructive) {
+                            requestDelete(group, viewModel: viewModel)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        .accessibilityIdentifier("deletePayment_\(group.id)")
+                    }
+                }
+            if expandedPairIDs.contains(group.id) {
+                ForEach(group.transactions, id: \.id) { leg in
+                    legRow(leg, viewModel: viewModel)
+                        .swipeActions(edge: .leading) { leadingActions(for: leg) }
+                        .swipeActions(edge: .trailing) { trailingActions(for: leg, viewModel: viewModel) }
+                }
+            }
+        } else if let transaction = group.transactions.first {
+            row(transaction, viewModel: viewModel)
+                .swipeActions(edge: .leading) { leadingActions(for: transaction) }
+                .swipeActions(edge: .trailing) { trailingActions(for: transaction, viewModel: viewModel) }
+        }
+    }
+
+    @ViewBuilder
+    private func leadingActions(for transaction: Wellspent_V1_Transaction) -> some View {
+        if canEdit {
+            Button {
+                activeSheet = .editTransaction(transaction)
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(.blue)
+            .accessibilityIdentifier("editTransaction_\(transaction.name)")
+
+            if periods.count > 1 {
+                Button {
+                    activeSheet = .moveToPeriod(transaction)
+                } label: {
+                    Label("Move to Period", systemImage: "calendar.badge.clock")
+                }
+                .tint(.teal)
+                .accessibilityIdentifier("moveToPeriod_\(transaction.name)")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func trailingActions(for transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
+        if canMutate {
+            Button {
+                requestToggleExcluded(transaction, viewModel: viewModel)
+            } label: {
+                Label(transaction.isExcluded ? "Include" : "Exclude", systemImage: transaction.isExcluded ? "eye" : "eye.slash")
+            }
+            .tint(.gray)
+            .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
+        }
+        if canMutate && !transaction.isPlaidImported {
+            Button(role: .destructive) {
+                requestDelete(transaction, viewModel: viewModel)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .accessibilityIdentifier("deleteTransaction_\(transaction.name)")
+        }
+    }
+
+    /// One payment, shown once at the amount that left the paying account.
+    private func pairRow(_ group: PaymentPairing.Group, viewModel: TransactionsViewModel) -> some View {
+        let outflow = group.transactions[0]
+        let inflow = group.transactions[1]
+        let card = viewModel.paymentMethodName(for: inflow.paymentMethodID)
+        let source = viewModel.paymentMethodName(for: outflow.paymentMethodID)
+        let isExpanded = expandedPairIDs.contains(group.id)
+
+        return HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                if let card {
+                    Text("Payment to \(card)")
+                } else {
+                    Text("Card payment")
+                }
+                if let source {
+                    HStack(spacing: 4) {
+                        ColorDotView(hex: viewModel.paymentMethodColor(for: outflow.paymentMethodID), diameter: 8)
+                        Text("From \(source)")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Text(TransactionAmountFormatting.displayText(
+                units: outflow.amount.units,
+                nanos: outflow.amount.nanos,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier
+            ))
+            .foregroundStyle(.red)
+            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .opacity(group.isExcluded ? 0.5 : 1)
+        .contentShape(Rectangle())
+        // A simultaneous gesture, not a Button: a row-spanning Button makes the swipe
+        // recognisers wait to rule out a tap (see FixedExpenseRow).
+        .simultaneousGesture(TapGesture().onEnded {
+            if isExpanded { expandedPairIDs.remove(group.id) } else { expandedPairIDs.insert(group.id) }
+        })
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("paymentPair_\(group.id)")
+    }
+
+    /// One side of a paired payment: which way the money went, in which account, on which day.
+    private func legRow(_ transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
+        let isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
+        let method = viewModel.paymentMethodName(for: transaction.paymentMethodID) ?? ""
+        let date = transaction.date.dateOnly.formatted(.dateTime.month(.abbreviated).day().locale(AppLanguageStore.currentLocale))
+
+        return HStack {
+            Image(systemName: isReceived ? "arrow.down.left" : "arrow.up.right")
+                .foregroundStyle(isReceived ? .green : .red)
+                .frame(width: 20)
+            VStack(alignment: .leading, spacing: 2) {
+                if isReceived {
+                    Text("Into \(method)")
+                } else {
+                    Text("Out of \(method)")
+                }
+                Text("\(date) · \(transaction.name)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Text(TransactionAmountFormatting.displayText(
+                units: transaction.amount.units,
+                nanos: transaction.amount.nanos,
+                currencyCode: currencyCode,
+                localeIdentifier: localeIdentifier
+            ))
+            .foregroundStyle(isReceived ? .green : .red)
+        }
+        .padding(.leading, 12)
+        .opacity(transaction.isExcluded ? 0.5 : 1)
+        .accessibilityIdentifier("paymentLeg_\(transaction.id)")
     }
 
     /// "Payments this period" card — reuses the already-computed client-side
@@ -296,6 +430,43 @@ struct PaymentsListView: View {
             onUndo: { pendingDeleteIDs.remove(id) },
             onExpire: { Task { await viewModel.delete(id: id) } }
         )
+    }
+
+    /// Deleting a pair removes both legs together, behind one Undo.
+    private func requestDelete(_ group: PaymentPairing.Group, viewModel: TransactionsViewModel) {
+        let ids = group.transactions.map(\.id)
+        pendingDeleteIDs.formUnion(ids)
+        Self.logger.info("staged delete payment pair transactionIDs=\(ids.joined(separator: ","), privacy: .public)")
+        let message = String(localized: "Payment deleted", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        toastState.show(
+            message,
+            onUndo: { pendingDeleteIDs.subtract(ids) },
+            onExpire: { Task { for id in ids { await viewModel.delete(id: id) } } }
+        )
+    }
+
+    /// Excludes or includes both legs so the pair never ends up half-counted.
+    private func requestToggleExcluded(_ group: PaymentPairing.Group, viewModel: TransactionsViewModel) {
+        let ids = group.transactions.map(\.id)
+        let shouldExclude = !group.transactions.allSatisfy(\.isExcluded)
+        Task {
+            await setExcluded(ids: ids, to: shouldExclude, viewModel: viewModel)
+            Self.logger.info("toggled excluded payment pair transactionIDs=\(ids.joined(separator: ","), privacy: .public) isExcluded=\(shouldExclude, privacy: .public)")
+            let message = shouldExclude
+                ? String(localized: "Payment excluded", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+                : String(localized: "Payment included", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+            toastState.show(message, onUndo: {
+                Task { await setExcluded(ids: ids, to: !shouldExclude, viewModel: viewModel) }
+            })
+        }
+    }
+
+    private func setExcluded(ids: [String], to excluded: Bool, viewModel: TransactionsViewModel) async {
+        for id in ids {
+            if let current = viewModel.transactions.first(where: { $0.id == id }), current.isExcluded != excluded {
+                await viewModel.toggleExcluded(current)
+            }
+        }
     }
 
     /// Exclude/Include gets toast+Undo — see

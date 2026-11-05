@@ -117,6 +117,31 @@ struct TransactionsViewModelTests {
         #expect(viewModel.paymentsTotalText(reviews: []) == "$50.00")
     }
 
+    @Test("paymentsTotalText counts a paired payment once and skips excluded ones")
+    func paymentsTotalCountsPairsOnce() {
+        func paymentTx(_ id: String, units: Int64, method: String, excluded: Bool = false) -> Wellspent_V1_Transaction {
+            .with {
+                $0.id = id
+                $0.categoryID = paymentCategory.id
+                $0.amount = .with { $0.units = units; $0.currency = "USD" }
+                $0.paymentMethodID = method
+                $0.isExcluded = excluded
+            }
+        }
+        let viewModel = makeViewModel()
+        viewModel.setStateForTesting(
+            transactions: [
+                paymentTx("out", units: 200, method: "checking"),
+                paymentTx("in", units: -200, method: "visa"),
+                paymentTx("lone", units: 30, method: "checking"),
+                paymentTx("skipped", units: 999, method: "checking", excluded: true),
+            ],
+            categories: [paymentCategory]
+        )
+
+        #expect(viewModel.paymentsTotalText(reviews: []) == "$230.00")
+    }
+
     @Test("summary card headline counts savings; expenses and saved sit below it")
     func summaryCardCountsSavings() {
         func money(_ units: Int64) -> Wellspent_V1_Money { .with { $0.units = units; $0.currency = "USD" } }
