@@ -394,8 +394,8 @@
     },
     {
       "changeType": "changed",
-      "summaryEn": "A card payment now shows as one row in Payments instead of two cancelling ones: the money leaving your account and the matching payment on the card are matched by amount and date. Tap it to see both sides, and the total counts each payment once.",
-      "summaryEs": "Un pago de tarjeta ahora aparece como una sola fila en Pagos en lugar de dos que se cancelan: el dinero que sale de tu cuenta y el pago correspondiente en la tarjeta se emparejan por monto y fecha. Tócala para ver ambos lados, y el total cuenta cada pago una sola vez."
+      "summaryEn": "A card payment now shows as one row in Payments instead of two cancelling ones: the money leaving your account and the matching payment on the card are matched by amount and date. Tap it to see both sides. The total counts a matched payment once and adds or subtracts every other row by its sign, so a refund brings it down.",
+      "summaryEs": "Un pago de tarjeta ahora aparece como una sola fila en Pagos en lugar de dos que se cancelan: el dinero que sale de tu cuenta y el pago correspondiente en la tarjeta se emparejan por monto y fecha. Tócala para ver ambos lados. El total cuenta una sola vez un pago emparejado y suma o resta cada otra fila según su signo, así que un reembolso lo reduce."
     }
   ]
 }

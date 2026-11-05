@@ -286,13 +286,14 @@ final class TransactionsViewModel {
         PaymentPairing.group(paymentTransactions(reviews: reviews), methodName: { [self] in paymentMethodName(for: $0) })
     }
 
-    /// What was paid this period, each payment counted once. A pair is one payment (the
-    /// two rows would cancel out); excluded payments are left out like everywhere else.
+    /// Net paid this period: a paired payment counts once, every other row keeps its sign
+    /// (a refund subtracts), excluded payments are left out. Shown signed, so a period with
+    /// more refunds than payments reads negative instead of hiding as a positive number.
     /// Plain client-side arithmetic on this tab's own rows — `variableActualTotal`
     /// already leaves the Payment category out and is untouched.
     func paymentsTotalText(reviews: [Wellspent_V1_TransactionReview]) -> String {
-        let paid = paymentGroups(reviews: reviews).filter { !$0.isExcluded }.map(\.paidAmount)
-        return TransactionAmountFormatting.magnitudeDisplayText(amounts: [TransactionAmountFormatting.sum(paid)], currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+        let net = TransactionAmountFormatting.sum(paymentGroups(reviews: reviews).filter { !$0.isExcluded }.map(\.netAmount))
+        return MoneyFormatting.format(units: net.units, nanos: net.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
 
     func pendingMatchName(for transaction: Wellspent_V1_Transaction, reviews: [Wellspent_V1_TransactionReview]) -> String? {

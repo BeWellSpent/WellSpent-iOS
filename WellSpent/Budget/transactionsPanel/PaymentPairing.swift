@@ -20,12 +20,11 @@ nonisolated enum PaymentPairing {
         var representative: Wellspent_V1_Transaction { transactions[0] }
         var isExcluded: Bool { transactions.contains { $0.isExcluded } }
 
-        /// What was paid, counted once: a pair is one payment, not two cancelling rows.
-        var paidAmount: (units: Int64, nanos: Int32) {
-            let amount = TransactionAmountFormatting.tuple(from: representative.amount)
-            return TransactionAmountFormatting.isReceived(units: amount.units, nanos: amount.nanos)
-                ? (units: -amount.units, nanos: -amount.nanos)
-                : amount
+        /// What this group adds to the total. A pair is one payment, so it counts once at the
+        /// amount that left the paying account; any other row keeps its sign, so a refund
+        /// subtracts and the total is what you paid net of what came back.
+        var netAmount: (units: Int64, nanos: Int32) {
+            TransactionAmountFormatting.tuple(from: representative.amount)
         }
     }
 

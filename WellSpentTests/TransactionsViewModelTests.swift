@@ -117,8 +117,8 @@ struct TransactionsViewModelTests {
         #expect(viewModel.paymentsTotalText(reviews: []) == "$50.00")
     }
 
-    @Test("paymentsTotalText counts a paired payment once and skips excluded ones")
-    func paymentsTotalCountsPairsOnce() {
+    @Test("paymentsTotalText counts a pair once, keeps the sign of every other row and skips excluded ones")
+    func paymentsTotalNetsRefundsAndCountsPairsOnce() {
         func paymentTx(_ id: String, units: Int64, method: String, excluded: Bool = false) -> Wellspent_V1_Transaction {
             .with {
                 $0.id = id
@@ -133,13 +133,31 @@ struct TransactionsViewModelTests {
             transactions: [
                 paymentTx("out", units: 200, method: "checking"),
                 paymentTx("in", units: -200, method: "visa"),
-                paymentTx("lone", units: 30, method: "checking"),
+                paymentTx("charge", units: 50, method: "mp3"),
+                paymentTx("charge2", units: 13, method: "mp3"),
+                paymentTx("refund", units: -15, method: "mp3"),
                 paymentTx("skipped", units: 999, method: "checking", excluded: true),
             ],
             categories: [paymentCategory]
         )
 
-        #expect(viewModel.paymentsTotalText(reviews: []) == "$230.00")
+        // 200 (the pair, once) + 50 + 13 - 15
+        #expect(viewModel.paymentsTotalText(reviews: []) == "$248.00")
+    }
+
+    @Test("paymentsTotalText reads negative when refunds outweigh payments")
+    func paymentsTotalCanBeNegative() {
+        let viewModel = makeViewModel()
+        viewModel.setStateForTesting(
+            transactions: [.with {
+                $0.id = "refund"
+                $0.categoryID = paymentCategory.id
+                $0.amount = .with { $0.units = -30; $0.currency = "USD" }
+            }],
+            categories: [paymentCategory]
+        )
+
+        #expect(viewModel.paymentsTotalText(reviews: []) == "-$30.00")
     }
 
     @Test("summary card headline counts savings; expenses and saved sit below it")

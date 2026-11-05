@@ -28,7 +28,7 @@ struct PaymentPairingTests {
         #expect(groups.count == 1)
         #expect(groups[0].isPair)
         #expect(groups[0].transactions.map(\.id) == ["bank", "card"])
-        #expect(groups[0].paidAmount.units == 532)
+        #expect(groups[0].netAmount.units == 532)
     }
 
     @Test("the same amount outside the 5 day window stays two rows")
@@ -92,13 +92,13 @@ struct PaymentPairingTests {
         #expect(pair?.transactions.map(\.id) == ["out", "far"])
     }
 
-    @Test("an unmatched inflow still counts once, by its amount")
-    func unmatchedCountsOnce() {
+    @Test("an unmatched row keeps its sign, so a refund subtracts")
+    func unmatchedKeepsItsSign() {
         let groups = PaymentPairing.group([tx("lone", units: -65, nanos: -40_000_000, method: "visa", day: 3)])
 
         #expect(groups.count == 1)
         #expect(!groups[0].isPair)
-        #expect(groups[0].paidAmount.units == 65)
-        #expect(groups[0].paidAmount.nanos == 40_000_000)
+        #expect(groups[0].netAmount.units == -65)
+        #expect(groups[0].netAmount.nanos == -40_000_000)
     }
 }
