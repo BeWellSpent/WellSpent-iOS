@@ -5,10 +5,11 @@ import Testing
 /// Simulates the Keychain-gated refresh-token store without ever touching
 /// the real Security framework — reading the real store triggers a system
 /// Face ID/Touch ID prompt a unit test can't answer. `failRead` simulates a
-/// declined prompt or an undecryptable item even while `exists()` is true.
+/// declined prompt or a locked device even while `exists()` is true.
 private final class FakeRefreshTokenStore: RefreshTokenStoring, @unchecked Sendable {
     var stored: String?
     var failRead = false
+    private(set) var readCount = 0
     /// Which flag set the most recent `save` was asked for, and how many
     /// times `save` has been called — lets a test assert both the mapping
     /// and that a re-key actually happened (clear + save), without touching
@@ -19,13 +20,22 @@ private final class FakeRefreshTokenStore: RefreshTokenStoring, @unchecked Senda
     init(initial: String? = nil) { stored = initial }
 
     func exists() -> Bool { stored != nil }
-    func read() async -> String? { failRead ? nil : stored }
+    func read() async -> RefreshTokenReadResult {
+        readCount += 1
+        if failRead { return .unavailable }
+        return stored.map(RefreshTokenReadResult.token) ?? .notFound
+    }
     func save(token: String, accessControl: RefreshTokenAccessControl) {
         stored = token
         lastAccessControl = accessControl
         saveCount += 1
     }
     func clear() { stored = nil }
+}
+
+private final class Box<Value>: @unchecked Sendable {
+    var value: Value
+    init(_ value: Value) { self.value = value }
 }
 
 @Suite("SessionStore")
@@ -70,7 +80,7 @@ struct SessionStoreTests {
             tokenStore: makeTokenStore(),
             refreshTokenStore: refreshStore,
             deviceIDStore: makeDeviceIDStore(),
-            refreshCallOverride: { _, _ in (accessToken: makeJWT(subject: "user-7", expiresAt: Date().addingTimeInterval(900)), refreshToken: "rotated-refresh") }
+            refreshCallOverride: { _, _ in .success(accessToken: makeJWT(subject: "user-7", expiresAt: Date().addingTimeInterval(900)), refreshToken: "rotated-refresh") }
         )
         await waitForResolution(session)
 
@@ -81,8 +91,8 @@ struct SessionStoreTests {
         #expect(refreshStore.stored == "rotated-refresh") // rotation persisted
     }
 
-    @Test("cold-start resume fails when the biometric read is declined: falls back to logged out")
-    func coldStartResumeFailsOnDeclinedRead() async {
+    @Test("a declined or failed biometric read keeps the stored token and waits for a retry instead of logging out")
+    func coldStartKeepsTokenWhenReadIsUnavailable() async {
         let refreshStore = FakeRefreshTokenStore(initial: "stored-refresh")
         refreshStore.failRead = true
         let session = SessionStore(
@@ -90,13 +100,45 @@ struct SessionStoreTests {
             tokenStore: makeTokenStore(),
             refreshTokenStore: refreshStore,
             deviceIDStore: makeDeviceIDStore(),
-            refreshCallOverride: { _, _ in (accessToken: "unused", refreshToken: "unused") }
+            refreshCallOverride: { _, _ in .rejected }
         )
         await waitForResolution(session)
 
         #expect(!session.isResolvingSession)
         #expect(!session.isAuthenticated)
-        #expect(!refreshStore.exists()) // declined read clears the local item too
+        #expect(session.isAwaitingUnlock)
+        #expect(refreshStore.exists()) // a failed read must never delete the session
+    }
+
+    @Test("retrying after a failed read resumes the session once the read works")
+    func retryAfterUnavailableReadResumes() async {
+        let refreshStore = FakeRefreshTokenStore(initial: "stored-refresh")
+        refreshStore.failRead = true
+        let session = SessionStore(
+            baseURL: "http://localhost:1",
+            tokenStore: makeTokenStore(),
+            refreshTokenStore: refreshStore,
+            deviceIDStore: makeDeviceIDStore(),
+            refreshCallOverride: { _, _ in .success(accessToken: makeJWT(subject: "user-9", expiresAt: Date().addingTimeInterval(900)), refreshToken: "rotated") }
+        )
+        await waitForResolution(session)
+        refreshStore.failRead = false
+
+        session.retryResume()
+        await waitForResolution(session)
+
+        #expect(session.isAuthenticated)
+        #expect(!session.isAwaitingUnlock)
+        #expect(session.userID == "user-9")
+    }
+
+    @Test("an item that is simply not there falls back to logged out, not to the unlock screen")
+    func coldStartWithMissingItemIsLoggedOut() async {
+        let session = SessionStore(baseURL: "http://localhost:1", tokenStore: makeTokenStore(), refreshTokenStore: FakeRefreshTokenStore(), deviceIDStore: makeDeviceIDStore())
+        await waitForResolution(session)
+
+        #expect(!session.isAuthenticated)
+        #expect(!session.isAwaitingUnlock)
     }
 
     @Test("cold-start resume fails when the server rejects the refresh token: falls back to logged out")
@@ -107,12 +149,58 @@ struct SessionStoreTests {
             tokenStore: makeTokenStore(),
             refreshTokenStore: refreshStore,
             deviceIDStore: makeDeviceIDStore(),
-            refreshCallOverride: { _, _ in nil }
+            refreshCallOverride: { _, _ in .rejected }
         )
         await waitForResolution(session)
 
         #expect(!session.isResolvingSession)
         #expect(!session.isAuthenticated)
+        #expect(!session.isAwaitingUnlock)
+        #expect(!refreshStore.exists())
+    }
+
+    @Test("a refresh that can't reach the server keeps the token and retries without reading the Keychain again")
+    func coldStartTransientFailureKeepsSessionAndRetriesWithoutRereading() async {
+        let refreshStore = FakeRefreshTokenStore(initial: "stored-refresh")
+        let online = Box(false)
+        let session = SessionStore(
+            baseURL: "http://localhost:1",
+            tokenStore: makeTokenStore(),
+            refreshTokenStore: refreshStore,
+            deviceIDStore: makeDeviceIDStore(),
+            refreshCallOverride: { _, _ in
+                online.value
+                    ? .success(accessToken: makeJWT(subject: "user-3", expiresAt: Date().addingTimeInterval(900)), refreshToken: "rotated")
+                    : .unavailable
+            }
+        )
+        await waitForResolution(session)
+        #expect(session.isAwaitingUnlock)
+        #expect(refreshStore.exists())
+
+        online.value = true
+        session.retryResume()
+        await waitForResolution(session)
+
+        #expect(session.isAuthenticated)
+        #expect(refreshStore.readCount == 1) // one Face ID prompt, not two
+    }
+
+    @Test("abandoning the resume clears the stored session and shows the login screen")
+    func abandonResumeLogsOut() async {
+        let refreshStore = FakeRefreshTokenStore(initial: "stored-refresh")
+        refreshStore.failRead = true
+        let session = SessionStore(
+            baseURL: "http://localhost:1",
+            tokenStore: makeTokenStore(),
+            refreshTokenStore: refreshStore,
+            deviceIDStore: makeDeviceIDStore()
+        )
+        await waitForResolution(session)
+
+        session.abandonResume()
+
+        #expect(!session.isAwaitingUnlock)
         #expect(!refreshStore.exists())
     }
 

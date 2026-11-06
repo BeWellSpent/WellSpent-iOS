@@ -406,6 +406,11 @@
       "changeType": "fixed",
       "summaryEn": "A payment method added during budget setup is now recognised straight away when adding a transaction.",
       "summaryEs": "Un método de pago agregado durante la configuración del presupuesto ahora se reconoce de inmediato al agregar una transacción."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "A failed or cancelled Face ID prompt, or a dropped connection, no longer signs you out. You now get an Unlock screen to try again, and you are only signed out when the server actually ends your session.",
+      "summaryEs": "Un Face ID fallido o cancelado, o una conexión caída, ya no cierra tu sesión. Ahora aparece una pantalla de desbloqueo para intentar de nuevo, y solo se cierra la sesión cuando el servidor realmente la termina."
     }
   ]
 }

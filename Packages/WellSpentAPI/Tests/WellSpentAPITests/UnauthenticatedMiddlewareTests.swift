@@ -27,7 +27,7 @@ struct UnauthenticatedMiddlewareTests {
     func passesThroughSuccess() async throws {
         let refreshCalls = Box(0)
         let middleware = UnauthenticatedMiddleware(
-            refreshAccessToken: { refreshCalls.value += 1; return "new-token" },
+            refreshAccessToken: { refreshCalls.value += 1; return .refreshed("new-token") },
             onUnauthenticated: { Issue.record("should not fire") }
         )
 
@@ -46,7 +46,7 @@ struct UnauthenticatedMiddlewareTests {
         let unauthenticatedCalled = Box(false)
 
         let middleware = UnauthenticatedMiddleware(
-            refreshAccessToken: { "refreshed-token" },
+            refreshAccessToken: { .refreshed("refreshed-token") },
             onUnauthenticated: { unauthenticatedCalled.value = true }
         )
 
@@ -62,13 +62,13 @@ struct UnauthenticatedMiddlewareTests {
         #expect(!unauthenticatedCalled.value)
     }
 
-    @Test("falls through to onUnauthenticated, with no retry, when the refresh itself fails")
+    @Test("falls through to onUnauthenticated, with no retry, when the server rejects the refresh")
     func onUnauthenticatedWhenRefreshFails() async throws {
         let callCount = Box(0)
         let unauthenticatedCalled = Box(false)
 
         let middleware = UnauthenticatedMiddleware(
-            refreshAccessToken: { nil },
+            refreshAccessToken: { .rejected },
             onUnauthenticated: { unauthenticatedCalled.value = true }
         )
 
@@ -82,13 +82,30 @@ struct UnauthenticatedMiddlewareTests {
         #expect(unauthenticatedCalled.value)
     }
 
+    @Test("keeps the session, with no retry, when the refresh merely couldn't complete")
+    func keepsSessionWhenRefreshUnavailable() async throws {
+        let callCount = Box(0)
+        let middleware = UnauthenticatedMiddleware(
+            refreshAccessToken: { .unavailable },
+            onUnauthenticated: { Issue.record("a network failure must not log the user out") }
+        )
+
+        let (response, _) = try await middleware.intercept(makeRequest(), body: nil, baseURL: baseURL, operationID: "op") { _, _, _ in
+            callCount.value += 1
+            return (self.makeResponse(.unauthorized), nil)
+        }
+
+        #expect(response.status == .unauthorized)
+        #expect(callCount.value == 1)
+    }
+
     @Test("calls onUnauthenticated, with exactly one retry, when the retried request still 401s")
     func onUnauthenticatedWhenRetryStillFails() async throws {
         let callCount = Box(0)
         let unauthenticatedCalled = Box(false)
 
         let middleware = UnauthenticatedMiddleware(
-            refreshAccessToken: { "refreshed-token" },
+            refreshAccessToken: { .refreshed("refreshed-token") },
             onUnauthenticated: { unauthenticatedCalled.value = true }
         )
 
@@ -100,5 +117,24 @@ struct UnauthenticatedMiddlewareTests {
         #expect(response.status == .unauthorized)
         #expect(callCount.value == 2) // exactly one retry, never a second
         #expect(unauthenticatedCalled.value)
+    }
+}
+
+@Suite("isUnauthorizedResponse")
+struct IsUnauthorizedResponseTests {
+    private func clientError(status: HTTPResponse.Status?) -> ClientError {
+        ClientError(
+            operationID: "refreshToken", operationInput: (), request: nil, requestBody: nil, baseURL: nil,
+            response: status.map { HTTPResponse(status: $0) }, responseBody: nil,
+            causeDescription: "test", underlyingError: URLError(.badServerResponse)
+        )
+    }
+
+    @Test("a 401 that failed to decode still counts; any other status, no response, or foreign error does not")
+    func classification() {
+        #expect(isUnauthorizedResponse(clientError(status: .unauthorized)))
+        #expect(!isUnauthorizedResponse(clientError(status: .internalServerError)))
+        #expect(!isUnauthorizedResponse(clientError(status: nil)))
+        #expect(!isUnauthorizedResponse(URLError(.notConnectedToInternet)))
     }
 }
