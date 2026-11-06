@@ -8,9 +8,19 @@ import Security
 /// which a unit test can't answer.
 protocol RefreshTokenStoring: Sendable {
     func exists() -> Bool
-    func read() async -> String?
+    func read() async -> RefreshTokenReadResult
     func save(token: String, accessControl: RefreshTokenAccessControl)
     func clear()
+}
+
+/// Why `notFound` and `unavailable` are separate: only a genuinely absent item
+/// means "no session". A cancelled or failed Face ID prompt, or a device that
+/// is locked at launch, leaves a perfectly good token in place — treating
+/// those as absence deleted the session on one failed unlock.
+enum RefreshTokenReadResult: Sendable, Equatable {
+    case token(String)
+    case notFound
+    case unavailable
 }
 
 /// Which Keychain access-control flag set guards the refresh token.
@@ -59,7 +69,7 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
     }
 
     /// Triggers the biometric/passcode prompt — call off the main actor.
-    func read() async -> String? {
+    func read() async -> RefreshTokenReadResult {
         let callID = UUID().uuidString.prefix(8)
         Self.logger.info("read() called instanceId=\(self.instanceID, privacy: .public) callId=\(callID, privacy: .public)")
         return await withCheckedContinuation { continuation in
@@ -76,16 +86,35 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
                 var result: AnyObject?
                 let status = SecItemCopyMatching(query as CFDictionary, &result)
                 Self.logger.info("read() finished instanceId=\(self.instanceID, privacy: .public) callId=\(callID, privacy: .public) status=\(status, privacy: .public)")
-                guard status == errSecSuccess, let data = result as? Data else {
-                    continuation.resume(returning: nil)
-                    return
+                let readResult = Self.readResult(status: status, data: result as? Data)
+                if case .token = readResult {
+                    self.lock.lock()
+                    self.recentContext = context
+                    self.lock.unlock()
                 }
-                self.lock.lock()
-                self.recentContext = context
-                self.lock.unlock()
-                continuation.resume(returning: String(data: data, encoding: .utf8))
+                continuation.resume(returning: readResult)
             }
         }
+    }
+
+    static func readResult(status: OSStatus, data: Data?) -> RefreshTokenReadResult {
+        switch status {
+        case errSecSuccess:
+            guard let data, let token = String(data: data, encoding: .utf8) else { return .notFound }
+            return .token(token)
+        case errSecItemNotFound:
+            return .notFound
+        default:
+            return .unavailable
+        }
+    }
+
+    /// An update that failed for any reason other than "no such item" (a
+    /// cancelled prompt, a locked device) would leave the already-revoked
+    /// previous token in place, and replaying it at the next launch makes the
+    /// server revoke every session this user has. Delete + add needs no auth.
+    static func shouldReplaceItem(afterUpdate status: OSStatus) -> Bool {
+        status != errSecSuccess && status != errSecItemNotFound
     }
 
     /// `accessControl` only takes effect on a freshly-added item — updating
@@ -122,6 +151,11 @@ nonisolated final class KeychainRefreshTokenStore: RefreshTokenStoring, Sendable
             Self.logger.info("save() update interactive instanceId=\(self.instanceID, privacy: .public) status=\(updateStatus, privacy: .public)")
         }
 
+        if Self.shouldReplaceItem(afterUpdate: updateStatus) {
+            Self.logger.error("save() in-place update failed, replacing item instanceId=\(self.instanceID, privacy: .public) status=\(updateStatus, privacy: .public)")
+            SecItemDelete(query as CFDictionary)
+            updateStatus = errSecItemNotFound
+        }
         guard updateStatus == errSecItemNotFound else { return }
 
         guard let secAccessControl = SecAccessControlCreateWithFlags(

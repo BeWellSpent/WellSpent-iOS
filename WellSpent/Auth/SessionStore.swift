@@ -9,15 +9,27 @@ import WellSpentREST
 /// login/logout, for everything else.
 ///
 /// The access token (15 min) refreshes reactively on a 401, rotating the
-/// Keychain-gated refresh token too — every refresh re-prompts Face ID, not
-/// just cold start. Concurrent 401s share one in-flight refresh. `init`
-/// resumes a session asynchronously, tracked via `isResolvingSession` so
-/// `RootView` can wait instead of flashing the login screen.
+/// Keychain-gated refresh token too. Concurrent 401s share one in-flight
+/// refresh. `init` resumes a session asynchronously, tracked via
+/// `isResolvingSession` so `RootView` can wait instead of flashing the login
+/// screen. The stored session is deleted only when it is genuinely gone or the
+/// server refuses it; a failed unlock or a network error sets
+/// `isAwaitingUnlock` so the user can retry.
+/// What the `/auth/refresh-token` call came back with, before it is applied.
+enum RefreshCallResult: Sendable {
+    case success(accessToken: String, refreshToken: String)
+    case rejected
+    case unavailable
+}
+
 @MainActor
 @Observable
 final class SessionStore {
     private(set) var isAuthenticated: Bool
     private(set) var isResolvingSession: Bool
+    /// The session is intact but could not be resumed this time (Face ID
+    /// declined/failed, device locked, or no connection).
+    private(set) var isAwaitingUnlock = false
     private(set) var userID: String?
 
     let publicRESTClient: WellSpentREST.Client
@@ -33,7 +45,7 @@ final class SessionStore {
 
     /// Overrides the real `/auth/refresh-token` network call in tests, so the
     /// refresh paths are exercisable without hitting a live backend.
-    private let refreshCallOverride: (@Sendable (String, String) async -> (accessToken: String, refreshToken: String)?)?
+    private let refreshCallOverride: (@Sendable (String, String) async -> RefreshCallResult)?
 
     /// Kept in memory for the life of the foreground session so a reactive
     /// 401 refresh never needs to re-read (and re-prompt for) the Keychain.
@@ -51,7 +63,7 @@ final class SessionStore {
         refreshTokenStore: any RefreshTokenStoring = KeychainRefreshTokenStore(),
         deviceIDStore: AuthDeviceIDStore = AuthDeviceIDStore(),
         biometricPreferenceDefaults: UserDefaults = .standard,
-        refreshCallOverride: (@Sendable (String, String) async -> (accessToken: String, refreshToken: String)?)? = nil
+        refreshCallOverride: (@Sendable (String, String) async -> RefreshCallResult)? = nil
     ) {
         self.baseURL = baseURL
         self.tokenStore = tokenStore
@@ -84,7 +96,7 @@ final class SessionStore {
         authenticatedRESTClient = Self.makeAuthenticatedRESTClient(
             baseURL: baseURL,
             tokenStore: tokenStore,
-            refreshAccessToken: { [weak self] in await self?.refreshAccessTokenInSession() },
+            refreshAccessToken: { [weak self] in await self?.refreshAccessTokenInSession() ?? .unavailable },
             onUnauthenticated: { [weak self] in self?.endSession() }
         )
     }
@@ -110,47 +122,79 @@ final class SessionStore {
 
     /// Cold-start resume: reads the refresh token (the one point in a session
     /// this prompts for Face ID/Touch ID) and exchanges it for a fresh pair.
-    /// Any failure — declined prompt, missing/undecryptable item, or a
-    /// rejected refresh call — falls back to the login screen.
+    /// Only a missing item or a server rejection ends the session; a failed
+    /// unlock or an unreachable server parks it on the unlock screen.
     private func resumeSession() async {
         defer { isResolvingSession = false }
         Self.logger.info("resumeSession() entered id=\(self.instanceID, privacy: .public)")
+        isAwaitingUnlock = false
 
-        guard let storedRefreshToken = await refreshTokenStore.read() else {
-            Self.logger.error("cold-start resume: refresh token unreadable (declined prompt or missing item)")
-            clearLocalSession()
-            return
-        }
-        guard let accessToken = await performRefresh(refreshToken: storedRefreshToken) else {
-            Self.logger.error("cold-start resume: refresh-token exchange failed")
-            clearLocalSession()
-            return
+        let storedRefreshToken: String
+        if let refreshToken {
+            storedRefreshToken = refreshToken // already unlocked; a retry must not prompt again
+        } else {
+            switch await refreshTokenStore.read() {
+            case .token(let token):
+                storedRefreshToken = token
+            case .notFound:
+                Self.logger.info("cold-start resume: no stored refresh token")
+                clearLocalSession()
+                return
+            case .unavailable:
+                Self.logger.error("cold-start resume: refresh token unreadable (prompt declined/failed or device locked) — keeping it, awaiting retry")
+                isAwaitingUnlock = true
+                return
+            }
         }
 
-        userID = JWT.decode(accessToken)?.subject
-        isAuthenticated = true
-        authenticatedRESTClient = Self.makeAuthenticatedRESTClient(
-            baseURL: baseURL,
-            tokenStore: tokenStore,
-            refreshAccessToken: { [weak self] in await self?.refreshAccessTokenInSession() },
-            onUnauthenticated: { [weak self] in self?.endSession() }
-        )
-        Self.logger.info("cold-start resume succeeded")
+        switch await performRefresh(refreshToken: storedRefreshToken) {
+        case .refreshed(let accessToken):
+            userID = JWT.decode(accessToken)?.subject
+            isAuthenticated = true
+            authenticatedRESTClient = Self.makeAuthenticatedRESTClient(
+                baseURL: baseURL,
+                tokenStore: tokenStore,
+                refreshAccessToken: { [weak self] in await self?.refreshAccessTokenInSession() ?? .unavailable },
+                onUnauthenticated: { [weak self] in self?.endSession() }
+            )
+            Self.logger.info("cold-start resume succeeded")
+        case .rejected:
+            Self.logger.error("cold-start resume: server rejected the refresh token")
+            clearLocalSession()
+        case .unavailable:
+            Self.logger.error("cold-start resume: refresh call could not complete — keeping the session, awaiting retry")
+            refreshToken = storedRefreshToken
+            isAwaitingUnlock = true
+        }
+    }
+
+    /// The unlock screen's "Try again".
+    func retryResume() {
+        guard isAwaitingUnlock, !isResolvingSession else { return }
+        isResolvingSession = true
+        Task { @MainActor [weak self] in
+            await self?.resumeSession()
+        }
+    }
+
+    /// The unlock screen's "Log in with password instead".
+    func abandonResume() {
+        endSession()
     }
 
     /// Shares one in-flight refresh across concurrent 401s — the backend
     /// rotates the refresh token per use and treats reuse as theft, so
     /// racing calls must not each refresh independently.
-    private var inFlightRefresh: Task<String?, Never>?
+    private var inFlightRefresh: Task<TokenRefreshOutcome, Never>?
 
     /// In-session refresh triggered by a 401 from any authenticated call.
-    private func refreshAccessTokenInSession() async -> String? {
+    private func refreshAccessTokenInSession() async -> TokenRefreshOutcome {
         if let inFlightRefresh {
             return await inFlightRefresh.value
         }
         guard let refreshToken else {
             Self.logger.error("in-session refresh attempted with no refresh token in memory")
-            return nil
+            return .rejected
         }
         let task = Task { await self.performRefresh(refreshToken: refreshToken) }
         inFlightRefresh = task
@@ -160,29 +204,56 @@ final class SessionStore {
     }
 
     /// Shared by both refresh paths: exchanges a refresh token, persists and
-    /// returns the new access token on success.
-    private func performRefresh(refreshToken: String) async -> String? {
+    /// returns the new access token on success. Only the server saying 401
+    /// counts as `.rejected`; a thrown error or any other status is `.unavailable`.
+    private func performRefresh(refreshToken: String) async -> TokenRefreshOutcome {
+        let result: RefreshCallResult
         if let refreshCallOverride {
-            guard let result = await refreshCallOverride(refreshToken, deviceID) else { return nil }
-            persist(accessToken: result.accessToken, refreshToken: result.refreshToken)
-            return result.accessToken
+            result = await refreshCallOverride(refreshToken, deviceID)
+        } else {
+            result = await callRefreshEndpoint(refreshToken: refreshToken)
         }
+        switch result {
+        case .success(let accessToken, let newRefreshToken):
+            persist(accessToken: accessToken, refreshToken: newRefreshToken)
+            return .refreshed(accessToken)
+        case .rejected:
+            return .rejected
+        case .unavailable:
+            return .unavailable
+        }
+    }
+
+    private func callRefreshEndpoint(refreshToken: String) async -> RefreshCallResult {
         do {
             let output = try await publicRESTClient.refreshToken(.init(body: .json(.init(
                 refreshToken: refreshToken,
                 deviceId: deviceID
             ))))
-            guard case .ok(let ok) = output else {
-                Self.logger.error("refresh-token call rejected deviceId=\(self.deviceID, privacy: .public) output=\(String(describing: output), privacy: .public)")
-                return nil
+            switch output {
+            case .ok(let ok):
+                let body = try ok.body.json
+                return .success(accessToken: body.accessToken, refreshToken: body.refreshToken)
+            case .unauthorized:
+                Self.logger.error("refresh-token call rejected deviceId=\(self.deviceID, privacy: .public)")
+                return .rejected
+            default:
+                Self.logger.error("refresh-token call failed deviceId=\(self.deviceID, privacy: .public) output=\(String(describing: output), privacy: .public)")
+                return .unavailable
             }
-            let body = try ok.body.json
-            persist(accessToken: body.accessToken, refreshToken: body.refreshToken)
-            return body.accessToken
         } catch {
-            Self.logger.error("refresh-token call failed deviceId=\(self.deviceID, privacy: .public) error=\(String(describing: error), privacy: .public)")
-            return nil
+            let result = Self.refreshResult(forThrown: error)
+            Self.logger.error("refresh-token call failed deviceId=\(self.deviceID, privacy: .public) result=\(String(describing: result), privacy: .public) error=\(String(describing: error), privacy: .public)")
+            return result
         }
+    }
+
+    /// The server's error body doesn't decode against the contract (it sends
+    /// `Code`/`Message`, the contract says `code`/`message`), so a refusal
+    /// arrives as a thrown decoding error carrying the 401 rather than as
+    /// `.unauthorized`. Without this a revoked token would look like an outage.
+    static func refreshResult(forThrown error: Error) -> RefreshCallResult {
+        isUnauthorizedResponse(error) ? .rejected : .unavailable
     }
 
     private func persist(accessToken: String, refreshToken: String) {
@@ -211,6 +282,7 @@ final class SessionStore {
         tokenStore.deleteToken()
         refreshTokenStore.clear()
         refreshToken = nil
+        isAwaitingUnlock = false
         authenticatedRESTClient = nil
         isAuthenticated = false
         userID = nil
@@ -223,7 +295,7 @@ final class SessionStore {
     private static func makeAuthenticatedRESTClient(
         baseURL: String,
         tokenStore: KeychainTokenStore,
-        refreshAccessToken: @escaping @Sendable @MainActor () async -> String?,
+        refreshAccessToken: @escaping @Sendable @MainActor () async -> TokenRefreshOutcome,
         onUnauthenticated: @escaping @Sendable @MainActor () -> Void
     ) -> WellSpentREST.Client {
         RESTClient.makeAuthenticatedClient(

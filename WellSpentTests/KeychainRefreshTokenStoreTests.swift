@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import Testing
 @testable import WellSpent
 
@@ -61,5 +62,24 @@ struct KeychainRefreshTokenStoreTests {
         let store = makeStore()
         store.clear()
         #expect(!store.exists())
+    }
+
+    @Test("only a missing item reads as notFound; every other failure is unavailable, never a reason to delete")
+    func readResultMapsStatuses() {
+        let data = Data("tok".utf8)
+        #expect(KeychainRefreshTokenStore.readResult(status: errSecSuccess, data: data) == .token("tok"))
+        #expect(KeychainRefreshTokenStore.readResult(status: errSecItemNotFound, data: nil) == .notFound)
+        #expect(KeychainRefreshTokenStore.readResult(status: errSecUserCanceled, data: nil) == .unavailable)
+        #expect(KeychainRefreshTokenStore.readResult(status: errSecAuthFailed, data: nil) == .unavailable)
+        #expect(KeychainRefreshTokenStore.readResult(status: errSecInteractionNotAllowed, data: nil) == .unavailable)
+    }
+
+    @Test("a rotated token that can't be written in place is replaced, so the Keychain never keeps a revoked one")
+    func failedUpdateIsReplaced() {
+        #expect(!KeychainRefreshTokenStore.shouldReplaceItem(afterUpdate: errSecSuccess))
+        #expect(!KeychainRefreshTokenStore.shouldReplaceItem(afterUpdate: errSecItemNotFound)) // the add path handles this
+        #expect(KeychainRefreshTokenStore.shouldReplaceItem(afterUpdate: errSecUserCanceled))
+        #expect(KeychainRefreshTokenStore.shouldReplaceItem(afterUpdate: errSecAuthFailed))
+        #expect(KeychainRefreshTokenStore.shouldReplaceItem(afterUpdate: errSecInteractionNotAllowed))
     }
 }

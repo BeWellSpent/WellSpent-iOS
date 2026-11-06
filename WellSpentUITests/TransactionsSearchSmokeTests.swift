@@ -9,8 +9,9 @@ import XCTest
 /// search bar element ever installed at all on this screen's doubly-nested
 /// NavigationStack architecture. It now starts hidden behind the header's
 /// search icon (issue #92 follow-up) instead of always shown, so this test
-/// taps that icon before asserting the field exists. No seeded account
-/// needed — same fresh-email pattern as `RegisterSmokeTests`.
+/// taps that icon before asserting the field exists. Needs the
+/// seeded account (`UITEST_EMAIL`) — a fresh sign-up lands on the
+/// email-verification gate, never a budget.
 ///
 /// Updated for the Overview/Plan navigation rework
 /// (docs/features/overview-plan-navigation-rework.md): Transactions is no
@@ -23,51 +24,9 @@ final class TransactionsSearchSmokeTests: XCTestCase {
     @MainActor
     func testSearchFieldExistsOnTransactionsTab() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetSession"]
-        app.launch()
+        try signInToEmptyAccount(app)
 
-        let registerLink = app.buttons["goToRegisterLink"]
-        XCTAssertTrue(registerLink.waitForExistence(timeout: 5))
-        registerLink.tap()
-
-        let firstNameField = app.textFields["firstNameField"]
-        XCTAssertTrue(firstNameField.waitForExistence(timeout: 5))
-        firstNameField.tap()
-        firstNameField.typeText("Ada")
-
-        let lastNameField = app.textFields["lastNameField"]
-        lastNameField.tap()
-        lastNameField.typeText("Lovelace")
-
-        let emailField = app.textFields["registerEmailField"]
-        emailField.tap()
-        emailField.typeText("ios-uitest-search-\(Int(Date().timeIntervalSince1970))@example.com")
-
-        let passwordField = app.secureTextFields["registerPasswordField"]
-        passwordField.tap()
-        passwordField.typeText("Valid1Password!")
-
-        app.buttons["registerButton"].tap()
-        dismissSavePasswordPromptIfPresent(app)
-
-        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 10))
-
-        let budgetName = "UITest Search Budget \(Int(Date().timeIntervalSince1970))"
-        app.buttons["addBudgetButton"].tap()
-
-        let nameField = app.textFields["budgetNameField"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
-        nameField.tap()
-        nameField.typeText(budgetName)
-        app.buttons["createBudgetButton"].tap()
-
-        for _ in 0..<3 {
-            let skipButton = app.buttons["setupSkipButton"]
-            XCTAssertTrue(skipButton.waitForExistence(timeout: 5))
-            skipButton.tap()
-        }
-
-        XCTAssertTrue(waitForBudgetHome(app), "expected the budget home screen after setup")
+        createBudget(app, name: "UITest Search Budget \(Int(Date().timeIntervalSince1970))")
 
         let homeTab = app.tabBars.buttons["Home"]
         XCTAssertTrue(homeTab.waitForExistence(timeout: 10))
@@ -88,13 +47,6 @@ final class TransactionsSearchSmokeTests: XCTestCase {
         XCTAssertTrue(searchField.waitForExistence(timeout: 10), "Search field should be visible after tapping the header's search icon")
 
         // Cleanup: delete the budget so this test leaves no orphan data behind.
-        // There is no Manage tab any more — it lives behind the ☰.
-        XCTAssertTrue(openManagePanels(app), "expected the ☰ menu to open the manage panels")
-        let detailMenu = app.buttons["budgetDetailMenu"]
-        XCTAssertTrue(detailMenu.waitForExistence(timeout: 5))
-        detailMenu.tap()
-        app.buttons["Delete Budget"].tap()
-        app.buttons["Delete"].tap()
-        XCTAssertTrue(app.buttons["addBudgetButton"].waitForExistence(timeout: 15))
+        deleteCurrentBudget(app)
     }
 }

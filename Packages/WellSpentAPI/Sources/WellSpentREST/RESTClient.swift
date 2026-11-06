@@ -33,14 +33,14 @@ public enum RESTClient {
     ///
     /// `tokenProvider` is read per request rather than captured once, so a
     /// refreshed token is picked up without rebuilding the client.
-    /// `refreshAccessToken` returns the new access token on success, or `nil`
-    /// if the refresh itself failed (expired/revoked refresh token, no
-    /// network, ...) — in which case `onUnauthenticated` fires instead of
-    /// retrying.
+    /// `refreshAccessToken` reports whether the refresh worked, was refused by
+    /// the server (`onUnauthenticated` fires), or just couldn't complete (no
+    /// network, a 5xx — the session is kept and the call fails as it would
+    /// offline).
     public static func makeAuthenticatedClient(
         baseURL: String,
         tokenProvider: @escaping @Sendable () -> String?,
-        refreshAccessToken: @escaping @Sendable () async -> String?,
+        refreshAccessToken: @escaping @Sendable () async -> TokenRefreshOutcome,
         onUnauthenticated: @escaping @Sendable () -> Void
     ) -> Client {
         Client(
@@ -105,12 +105,28 @@ struct BearerTokenMiddleware: ClientMiddleware {
     }
 }
 
+/// True when a thrown client error carries an HTTP 401. The server's error
+/// body doesn't decode against the contract (`Code`/`Message` vs `code`/
+/// `message`), so a refusal surfaces as a thrown decoding error, not `.unauthorized`.
+public func isUnauthorizedResponse(_ error: Error) -> Bool {
+    (error as? ClientError)?.response?.status == .unauthorized
+}
+
+/// How a silent access-token refresh ended. Only `.rejected` means the session
+/// is truly over; `.unavailable` (offline, server error) must not log anyone out.
+public enum TokenRefreshOutcome: Sendable, Equatable {
+    case refreshed(String)
+    case rejected
+    case unavailable
+}
+
 /// On a 401, tries a silent refresh and retries the original request exactly
 /// once with the new access token. Falls through to `onUnauthenticated` if
-/// the refresh fails or the retry itself still 401s — never a second retry,
-/// so a server that keeps rejecting can't loop this forever.
+/// the server rejects the refresh or the retry itself still 401s — never a
+/// second retry, so a server that keeps rejecting can't loop this forever. A
+/// refresh that merely couldn't complete returns the 401 untouched.
 struct UnauthenticatedMiddleware: ClientMiddleware {
-    let refreshAccessToken: @Sendable () async -> String?
+    let refreshAccessToken: @Sendable () async -> TokenRefreshOutcome
     let onUnauthenticated: @Sendable () -> Void
 
     func intercept(
@@ -123,8 +139,14 @@ struct UnauthenticatedMiddleware: ClientMiddleware {
         let (response, responseBody) = try await next(request, body, baseURL)
         guard response.status == .unauthorized else { return (response, responseBody) }
 
-        guard let newAccessToken = await refreshAccessToken() else {
+        let newAccessToken: String
+        switch await refreshAccessToken() {
+        case .refreshed(let token):
+            newAccessToken = token
+        case .rejected:
             onUnauthenticated()
+            return (response, responseBody)
+        case .unavailable:
             return (response, responseBody)
         }
 

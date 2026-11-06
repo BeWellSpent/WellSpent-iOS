@@ -74,6 +74,8 @@ struct RootView: View {
                 // Cold-start resume in progress (reading the Keychain-gated
                 // refresh token) — avoids flashing the login screen first.
                 ProgressView()
+            } else if session.isAwaitingUnlock {
+                SessionUnlockView()
             } else if session.isAuthenticated {
                 if let verifyGateViewModel, isEmailUnverified {
                     // Replaces the app outright instead of covering it: a
