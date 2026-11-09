@@ -411,6 +411,11 @@
       "changeType": "fixed",
       "summaryEn": "A failed or cancelled Face ID prompt, or a dropped connection, no longer signs you out. You now get an Unlock screen to try again, and you are only signed out when the server actually ends your session.",
       "summaryEs": "Un Face ID fallido o cancelado, o una conexión caída, ya no cierra tu sesión. Ahora aparece una pantalla de desbloqueo para intentar de nuevo, y solo se cierra la sesión cuando el servidor realmente la termina."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Each bank connection now has a Sync now button that fetches only what is new when the last update looks old. The previous button is now labelled Re-sync from scratch.",
+      "summaryEs": "Cada conexión bancaria ahora tiene un botón Sincronizar ahora que trae solo lo nuevo cuando la última actualización se ve vieja. El botón anterior ahora se llama Resincronizar desde cero."
     }
   ]
 }
