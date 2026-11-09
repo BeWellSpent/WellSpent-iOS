@@ -26,6 +26,14 @@ nonisolated enum ResyncCooldown {
         return nil
     }
 
+    /// Why "Sync now" is unavailable. Same ownership and entitlement rules as
+    /// a re-sync, but no cooldown: it clears nothing and joins a run in flight.
+    static func syncBlockedReason(for connection: Wellspent_V1_PlaidConnection) -> BlockedReason? {
+        if !connection.isOwner { return .notOwner }
+        if !connection.syncEnabled { return .syncDisabled }
+        return nil
+    }
+
     /// Whole hours until the next re-sync is allowed, rounded up and floored
     /// at 1.
     ///

@@ -174,6 +174,7 @@ struct PlaidConnectionsView: View {
                         isManagingAccounts: viewModel.managingAccountsConnectionID == connection.id,
                         isDisconnecting: viewModel.disconnectingConnectionID == connection.id,
                         isResyncing: viewModel.resyncingConnectionID == connection.id,
+                        isSyncing: viewModel.syncingConnectionID == connection.id,
                         manageAccountsDisabled: viewModel.isFree,
                         onManageAccounts: {
                             Task { await viewModel.startManageAccounts(connection) }
@@ -183,6 +184,9 @@ struct PlaidConnectionsView: View {
                         },
                         onResync: {
                             confirmResync = connection
+                        },
+                        onSync: {
+                            Task { await viewModel.sync(connection) }
                         }
                     )
                     if connection.id != viewModel.connections.last?.id {

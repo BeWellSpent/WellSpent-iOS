@@ -27,6 +27,15 @@ struct ResyncCooldownTests {
         #expect(ResyncCooldown.blockedReason(for: connection(), now: Self.now) == nil)
     }
 
+    @Test("Sync now ignores the resync cooldown but keeps the ownership and entitlement rules")
+    func syncNowHasNoCooldown() {
+        let cooling = connection(availableAt: Self.now.addingTimeInterval(3600))
+        #expect(ResyncCooldown.blockedReason(for: cooling, now: Self.now) == .cooldown)
+        #expect(ResyncCooldown.syncBlockedReason(for: cooling) == nil)
+        #expect(ResyncCooldown.syncBlockedReason(for: connection(isOwner: false)) == .notOwner)
+        #expect(ResyncCooldown.syncBlockedReason(for: connection(syncEnabled: false)) == .syncDisabled)
+    }
+
     @Test("A connection the caller doesn't own is blocked")
     func blockedForNonOwner() {
         #expect(ResyncCooldown.blockedReason(for: connection(isOwner: false), now: Self.now) == .notOwner)

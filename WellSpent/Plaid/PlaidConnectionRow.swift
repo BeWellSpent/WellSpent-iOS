@@ -9,10 +9,12 @@ struct PlaidConnectionRow: View {
     let isManagingAccounts: Bool
     let isDisconnecting: Bool
     let isResyncing: Bool
+    let isSyncing: Bool
     var manageAccountsDisabled: Bool = false
     let onManageAccounts: () -> Void
     let onDisconnect: () -> Void
     let onResync: () -> Void
+    let onSync: () -> Void
 
     /// Not `static` — must be rebuilt with the current locale on every
     /// access so a language change (which can happen without relaunching
@@ -26,7 +28,10 @@ struct PlaidConnectionRow: View {
     }
 
     private var isConnected: Bool { connection.status != "disconnected" }
-    private var isBusy: Bool { isManagingAccounts || isDisconnecting || isResyncing }
+    private var isBusy: Bool { isManagingAccounts || isDisconnecting || isResyncing || isSyncing }
+    private var syncBlocked: ResyncCooldown.BlockedReason? {
+        ResyncCooldown.syncBlockedReason(for: connection)
+    }
     private var resyncBlocked: ResyncCooldown.BlockedReason? {
         ResyncCooldown.blockedReason(for: connection)
     }
@@ -77,16 +82,31 @@ struct PlaidConnectionRow: View {
             if isConnected {
                 HStack(spacing: 12) {
                     Button {
-                        onResync()
+                        onSync()
                     } label: {
-                        if isResyncing {
+                        if isSyncing {
                             ProgressView()
                         } else {
                             Image(systemName: "arrow.clockwise")
                         }
                     }
                     .buttonStyle(.plain)
+                    .disabled(isBusy || syncBlocked != nil)
+                    .accessibilityLabel("Sync now")
+                    .accessibilityIdentifier("syncConnection_\(connection.id)")
+
+                    Button {
+                        onResync()
+                    } label: {
+                        if isResyncing {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "clock.arrow.circlepath")
+                        }
+                    }
+                    .buttonStyle(.plain)
                     .disabled(isBusy || resyncBlocked != nil)
+                    .accessibilityLabel("Re-sync from scratch")
                     .accessibilityIdentifier("resyncConnection_\(connection.id)")
 
                     Button {
@@ -138,9 +158,11 @@ struct PlaidConnectionRow: View {
             isManagingAccounts: false,
             isDisconnecting: false,
             isResyncing: false,
+            isSyncing: false,
             onManageAccounts: {},
             onDisconnect: {},
-            onResync: {}
+            onResync: {},
+            onSync: {}
         )
     }
 }

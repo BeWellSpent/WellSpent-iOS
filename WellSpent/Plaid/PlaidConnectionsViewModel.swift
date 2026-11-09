@@ -49,6 +49,7 @@ final class PlaidConnectionsViewModel {
     private(set) var managingAccountsConnectionID: String?
     private(set) var disconnectingConnectionID: String?
     private(set) var resyncingConnectionID: String?
+    private(set) var syncingConnectionID: String?
 
     private let restClient: WellSpentREST.Client
 
@@ -267,6 +268,31 @@ final class PlaidConnectionsViewModel {
             }
         } catch {
             Self.logger.error("plaid resync REST failed id=\(connection.id, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
+        }
+    }
+
+    /// "Sync now": fetches only what is new from the connection's current
+    /// cursor. The server finishes the sync before replying, so the reload
+    /// shows the new last-synced time.
+    func sync(_ connection: Wellspent_V1_PlaidConnection) async {
+        errorMessage = nil
+        syncingConnectionID = connection.id
+        defer { syncingConnectionID = nil }
+
+        let fallback = String(localized: "Couldn't sync that bank. Try again in a moment.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        do {
+            let output = try await restClient.syncPlaidConnection(.init(path: .init(id: connection.id)))
+            switch output {
+            case .ok:
+                Self.logger.info("plaid sync now finished id=\(connection.id, privacy: .public)")
+                await load()
+            default:
+                RESTNetworkError.logUnexpectedOutput(output)
+                errorMessage = fallback
+            }
+        } catch {
+            Self.logger.error("plaid sync now REST failed id=\(connection.id, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? fallback
         }
     }
