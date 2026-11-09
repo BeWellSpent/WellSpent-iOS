@@ -112,14 +112,14 @@ struct PlaidConnectionsView: View {
             }
         }
         .confirmationDialog(
-            "Re-sync this bank?",
+            "Re-sync this bank from scratch?",
             isPresented: Binding(
                 get: { confirmResync != nil },
                 set: { if !$0 { confirmResync = nil } }
             ),
             titleVisibility: .visible
         ) {
-            Button("Re-sync") {
+            Button("Re-sync from scratch") {
                 if let confirmResync {
                     Task { await viewModel?.resync(confirmResync) }
                 }

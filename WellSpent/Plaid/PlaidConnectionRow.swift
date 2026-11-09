@@ -80,61 +80,49 @@ struct PlaidConnectionRow: View {
             Spacer()
 
             if isConnected {
-                HStack(spacing: 12) {
-                    Button {
-                        onSync()
-                    } label: {
-                        if isSyncing {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "arrow.clockwise")
+                if isBusy {
+                    ProgressView()
+                } else {
+                    Menu {
+                        Button {
+                            onSync()
+                        } label: {
+                            Label("Sync now", systemImage: "arrow.clockwise")
                         }
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isBusy || syncBlocked != nil)
-                    .accessibilityLabel("Sync now")
-                    .accessibilityIdentifier("syncConnection_\(connection.id)")
+                        .disabled(syncBlocked != nil)
+                        .accessibilityIdentifier("syncConnection_\(connection.id)")
 
-                    Button {
-                        onResync()
-                    } label: {
-                        if isResyncing {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "clock.arrow.circlepath")
+                        Button {
+                            onResync()
+                        } label: {
+                            Label("Re-sync from scratch", systemImage: "clock.arrow.circlepath")
                         }
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isBusy || resyncBlocked != nil)
-                    .accessibilityLabel("Re-sync from scratch")
-                    .accessibilityIdentifier("resyncConnection_\(connection.id)")
+                        .disabled(resyncBlocked != nil)
+                        .accessibilityIdentifier("resyncConnection_\(connection.id)")
 
-                    Button {
-                        onManageAccounts()
-                    } label: {
-                        if isManagingAccounts {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "gearshape")
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isBusy || manageAccountsDisabled || !connection.isOwner)
-                    .accessibilityIdentifier("manageAccounts_\(connection.id)")
+                        Divider()
 
-                    Button {
-                        onDisconnect()
-                    } label: {
-                        if isDisconnecting {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "link.badge.minus")
-                                .foregroundStyle(.red)
+                        Button {
+                            onManageAccounts()
+                        } label: {
+                            Label("Manage accounts", systemImage: "gearshape")
                         }
+                        .disabled(manageAccountsDisabled || !connection.isOwner)
+                        .accessibilityIdentifier("manageAccounts_\(connection.id)")
+
+                        Button(role: .destructive) {
+                            onDisconnect()
+                        } label: {
+                            Label("Disconnect", systemImage: "link.badge.minus")
+                        }
+                        .disabled(!connection.isOwner)
+                        .accessibilityIdentifier("disconnectConnection_\(connection.id)")
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.title3)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(isBusy || !connection.isOwner)
-                    .accessibilityIdentifier("disconnectConnection_\(connection.id)")
+                    .accessibilityLabel("Connection actions")
+                    .accessibilityIdentifier("connectionActions_\(connection.id)")
                 }
             }
         }

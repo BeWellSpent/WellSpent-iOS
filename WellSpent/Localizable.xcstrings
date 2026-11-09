@@ -1,6 +1,54 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Re-sync this bank from scratch?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-sync this bank from scratch?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Resincronizar este banco desde cero?"
+          }
+        }
+      }
+    },
+    "Manage accounts" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage accounts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Administrar cuentas"
+          }
+        }
+      }
+    },
+    "Connection actions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acciones de la conexión"
+          }
+        }
+      }
+    },
     "Sync now" : {
       "localizations" : {
         "en" : {
