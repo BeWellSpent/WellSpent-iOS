@@ -28,7 +28,7 @@ final class ExpenseOverviewViewModel {
     private(set) var unattributedSpent: Wellspent_V1_Money?
     private(set) var remainderPlanIncludingSavings: Wellspent_V1_Money?
     /// Set while the Chart style menu's choice is being saved; overrides the stored one meanwhile.
-    private(set) var chartTypeOverride: ExpenseChartView.ChartType?
+    private(set) var chartTypeOverride: ExpenseChartType?
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -125,7 +125,7 @@ final class ExpenseOverviewViewModel {
     }
 
     /// The person's saved Overview chart preference, or the shared default.
-    var chartType: ExpenseChartView.ChartType {
+    var chartType: ExpenseChartType {
         if let chartTypeOverride { return chartTypeOverride }
         let me = ChartPreference.myPerson(currentUserID: currentUserID, people: people)
         return ChartPreference.chartType(for: me?.overviewChartType ?? .unspecified)
@@ -134,31 +134,23 @@ final class ExpenseOverviewViewModel {
     /// Saves the Chart style menu's choice as the person's Overview
     /// preference, the same one Preferences sets, keeping their Plan
     /// preference as it is. Shown at once and rolled back if the save fails.
-    func setChartType(_ type: ExpenseChartView.ChartType) async {
+    func setChartType(_ type: ExpenseChartType) async {
         let previous = chartType
         chartTypeOverride = type
         let me = ChartPreference.myPerson(currentUserID: currentUserID, people: people)
-        let plan = me?.planChartType ?? .unspecified
-        do {
-            let output = try await restClient.updateMyBudgetPreferences(.init(
-                path: .init(id: budgetProfileID),
-                body: .json(.init(
-                    planChartType: BudgetRESTMapping.restChartType(from: plan),
-                    overviewChartType: BudgetRESTMapping.restChartType(from: ChartPreference.stored(for: type))
-                ))
-            ))
-            guard case .ok = output else {
-                RESTNetworkError.logUnexpectedOutput(output)
-                chartTypeOverride = previous
-                return
-            }
-            if let fetched = await fetchPeople() {
-                people = fetched
-                chartTypeOverride = nil
-            }
-        } catch {
-            _ = RESTNetworkError.connectivityMessage(for: error)
+        let saved = await ChartPreferenceSaver.save(
+            plan: me?.planChartType ?? .unspecified,
+            overview: ChartPreference.stored(for: type),
+            budgetProfileID: budgetProfileID,
+            restClient: restClient
+        )
+        guard saved else {
             chartTypeOverride = previous
+            return
+        }
+        if let fetched = await fetchPeople() {
+            people = fetched
+            chartTypeOverride = nil
         }
     }
 

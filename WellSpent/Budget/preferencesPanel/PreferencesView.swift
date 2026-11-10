@@ -97,9 +97,9 @@ struct PreferencesView: View {
     private func chartPicker(
         title: LocalizedStringKey,
         caption: LocalizedStringKey,
-        selection: ExpenseChartView.ChartType,
+        selection: ExpenseChartType,
         identifier: String,
-        onChange: @escaping (ExpenseChartView.ChartType) -> Void
+        onChange: @escaping (ExpenseChartType) -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
@@ -112,8 +112,8 @@ struct PreferencesView: View {
                 get: { selection },
                 set: { onChange($0) }
             )) {
-                Label("Pie", systemImage: "chart.pie").tag(ExpenseChartView.ChartType.pie)
-                Label("Bar", systemImage: "chart.bar").tag(ExpenseChartView.ChartType.bar)
+                Label("Pie", systemImage: "chart.pie").tag(ExpenseChartType.pie)
+                Label("Bar", systemImage: "chart.bar").tag(ExpenseChartType.bar)
             }
             .pickerStyle(.segmented)
             .labelsHidden()

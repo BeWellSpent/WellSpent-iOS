@@ -20,6 +20,11 @@ final class ExpensePlanViewModel {
     private(set) var summary: Wellspent_V1_GetExpenseSummaryResponse?
     /// Server-computed; carried beside `summary` because it has no proto field.
     private(set) var remainderPlanIncludingSavingsMoney: Wellspent_V1_Money?
+    /// Per-person planned figures and the Plan tab's extras — REST-only, carried beside `summary`.
+    private(set) var personSummaries: [BudgetRESTMapping.PersonPeriodSummary] = []
+    private(set) var extras: BudgetRESTMapping.PlanSummaryExtras?
+    /// Set while the Chart style menu's choice is being saved.
+    private(set) var chartTypeOverride: ExpenseChartType?
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -65,10 +70,74 @@ final class ExpensePlanViewModel {
         remainderPlanIncludingSavingsMoney.map { TransactionAmountFormatting.tuple(from: $0) }
     }
 
-    /// Chart data for the planned-amount chart. Mirrors web's chart-data
-    /// construction in `ExpensesPanel.tsx` (category-grouping mode).
-    var chartData: [ExpenseChartCalculations.Datum] {
-        ExpenseChartCalculations.data(categories: visibleCategories, amount: { [self] in plannedTotal(for: $0) })
+    /// Planned amounts per category for the compact chart; not-due rows plan $0 and take no space.
+    func chartSegments(otherName: String) -> [HomeOverviewCalculations.Segment] {
+        HomeOverviewCalculations.segments(
+            visibleCategories.map { .init(id: String($0.id), name: $0.displayName, colorHex: $0.color, amount: plannedTotal(for: $0)) },
+            otherName: otherName
+        )
+    }
+
+    /// Categories whose fixed bills due this period exceed their manual amount.
+    var fixedOverManualCategories: [Wellspent_V1_Category] {
+        visibleCategories.filter {
+            ExpensePlanCalculations.source(allocated: allocatedTotal(for: $0), fixedDue: fixedDueTotal(for: $0)) == .manualAndFixed
+                && HomeOverviewCalculations.isOver(spent: fixedDueTotal(for: $0), planned: allocatedTotal(for: $0))
+        }
+    }
+
+    // MARK: People
+
+    /// Person cards in the budget's order; only the caller under focused view.
+    var personCards: [(person: Wellspent_V1_BudgetPerson, summary: BudgetRESTMapping.PersonPeriodSummary)] {
+        personSummaries.compactMap { summary in
+            people.first { $0.id == summary.budgetPersonID }.map { (person: $0, summary: summary) }
+        }
+    }
+
+    /// Planned amounts belonging to no person; nil when zero or unknown.
+    var unattributedPlanned: (units: Int64, nanos: Int32)? {
+        guard let money = extras?.unattributedPlanned else { return nil }
+        let amount = TransactionAmountFormatting.tuple(from: money)
+        return HomeOverviewCalculations.isZero(amount) ? nil : amount
+    }
+
+    // MARK: Fixed expenses
+
+    var fixedDuePlannedTotal: (units: Int64, nanos: Int32)? {
+        extras?.fixedDuePlannedTotal.map { TransactionAmountFormatting.tuple(from: $0) }
+    }
+
+    var dueFixedExpenseIDs: Set<String>? { extras?.dueFixedExpenseIDs }
+
+    // MARK: Chart style
+
+    var chartType: ExpenseChartType {
+        if let chartTypeOverride { return chartTypeOverride }
+        let me = ChartPreference.myPerson(currentUserID: currentUserID, people: people)
+        return ChartPreference.chartType(for: me?.planChartType ?? .unspecified)
+    }
+
+    /// Saves the menu's choice as the person's Plan chart preference, keeping
+    /// their Overview one; shown at once and rolled back if the save fails.
+    func setChartType(_ type: ExpenseChartType) async {
+        let previous = chartType
+        chartTypeOverride = type
+        let me = ChartPreference.myPerson(currentUserID: currentUserID, people: people)
+        let saved = await ChartPreferenceSaver.save(
+            plan: ChartPreference.stored(for: type),
+            overview: me?.overviewChartType ?? .unspecified,
+            budgetProfileID: budgetProfileID,
+            restClient: restClient
+        )
+        guard saved else {
+            chartTypeOverride = previous
+            return
+        }
+        if let fetched = await fetchPeople() {
+            people = fetched
+            chartTypeOverride = nil
+        }
     }
 
     func plannedTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
@@ -135,6 +204,8 @@ final class ExpensePlanViewModel {
         if let fetched = await fetchSummary(focusedView: focusedView) {
             summary = fetched.summary
             remainderPlanIncludingSavingsMoney = fetched.remainderPlanIncludingSavings
+            personSummaries = fetched.people
+            extras = fetched.extras
         }
     }
 
@@ -152,14 +223,24 @@ final class ExpensePlanViewModel {
         }
     }
 
-    private func fetchSummary(focusedView: Bool) async -> (summary: Wellspent_V1_GetExpenseSummaryResponse, remainderPlanIncludingSavings: Wellspent_V1_Money?)? {
+    private func fetchSummary(focusedView: Bool) async -> (
+        summary: Wellspent_V1_GetExpenseSummaryResponse,
+        remainderPlanIncludingSavings: Wellspent_V1_Money?,
+        people: [BudgetRESTMapping.PersonPeriodSummary],
+        extras: BudgetRESTMapping.PlanSummaryExtras
+    )? {
         do {
             let output = try await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView)))
             guard case .ok(let ok) = output, let body = try? ok.body.json else {
                 if errorMessage == nil { errorMessage = "Couldn't load the expense summary." }
                 return nil
             }
-            return (BudgetRESTMapping.expenseSummary(from: body), BudgetRESTMapping.remainderPlanIncludingSavings(from: body))
+            return (
+                BudgetRESTMapping.expenseSummary(from: body),
+                BudgetRESTMapping.remainderPlanIncludingSavings(from: body),
+                BudgetRESTMapping.personPeriodSummaries(from: body),
+                BudgetRESTMapping.planSummaryExtras(from: body)
+            )
         } catch {
             if errorMessage == nil { errorMessage = RESTNetworkError.connectivityMessage(for: error) ?? "Couldn't load the expense summary." }
             return nil

@@ -19,7 +19,7 @@ struct HomePersonCard: View {
 
         HomeCard {
             HStack(spacing: 8) {
-                avatar
+                PersonAvatar(person: person)
                 Text(person.userName)
                     .font(.subheadline.weight(.semibold))
             }
@@ -71,16 +71,6 @@ struct HomePersonCard: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("homePersonCard_\(person.userName)")
-    }
-
-    private var avatar: some View {
-        let tint = person.color.isEmpty ? Color.accentColor : Color(hexString: person.color)
-        return Text(String(person.userName.prefix(1)).uppercased())
-            .font(.caption.weight(.bold))
-            .foregroundStyle(tint)
-            .frame(width: 28, height: 28)
-            .background(tint.opacity(0.15), in: Circle())
-            .accessibilityHidden(true)
     }
 
     private func line(_ text: Text, systemImage: String, status: HomeOverviewCalculations.LineStatus) -> some View {
