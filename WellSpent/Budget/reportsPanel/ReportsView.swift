@@ -38,10 +38,12 @@ struct ReportsView: View {
                     planBadge(isPro: viewModel.isPro)
                 }
 
-                PillSegmentedControl(
-                    options: [(ReportsViewModel.Report.trends, Text("Trends")), (.scorecard, Text("Scorecard"))],
-                    selection: Binding(get: { viewModel.report }, set: { viewModel.report = $0 })
-                )
+                // The system control, like every other sub-tab switch in the app (Home, Plan).
+                Picker("Report", selection: Binding(get: { viewModel.report }, set: { viewModel.report = $0 })) {
+                    Text("Trends").tag(ReportsViewModel.Report.trends)
+                    Text("Scorecard").tag(ReportsViewModel.Report.scorecard)
+                }
+                .pickerStyle(.segmented)
                 .accessibilityIdentifier("reportsPicker")
 
                 personChips(viewModel)
@@ -114,16 +116,15 @@ struct ReportsView: View {
     }
 }
 
-/// The Transactions screens' switch: a grey track with the selected option on a
-/// white pill. `compact` is the in-card size the reports use for range and units.
+/// The reports' small in-card switch (range, units): a grey track with the
+/// selected option raised on a lighter segment, in both light and dark mode.
 struct PillSegmentedControl<Value: Hashable>: View {
     let options: [(Value, Text)]
     @Binding var selection: Value
-    var compact = false
     var disabled: Set<Value> = []
 
     var body: some View {
-        HStack(spacing: compact ? 2 : 4) {
+        HStack(spacing: 2) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                 let selected = option.0 == selection
                 let isDisabled = disabled.contains(option.0)
@@ -131,16 +132,15 @@ struct PillSegmentedControl<Value: Hashable>: View {
                     selection = option.0
                 } label: {
                     option.1
-                        .font(compact ? .footnote.weight(.semibold) : .subheadline.weight(.semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(selected ? .primary : (isDisabled ? .tertiary : .secondary))
-                        .padding(.horizontal, compact ? 10 : 0)
-                        .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 30 : 36)
-                        .frame(minWidth: compact ? 40 : nil)
+                        .padding(.horizontal, 10)
+                        .frame(minWidth: 40, minHeight: 30)
                         .background {
                             if selected {
-                                RoundedRectangle(cornerRadius: compact ? 8 : 10)
-                                    .fill(Color(.secondarySystemGroupedBackground))
-                                    .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(pillSelectedFill)
+                                    .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
                             }
                         }
                         .contentShape(Rectangle())
@@ -150,10 +150,13 @@ struct PillSegmentedControl<Value: Hashable>: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-        .padding(compact ? 3 : 4)
-        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: compact ? 10 : 14))
+        .padding(3)
+        .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 10))
     }
 }
+
+/// White in light mode; in dark, lighter than the track so it reads as raised, not sunk.
+private let pillSelectedFill = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? .systemGray3 : .white })
 
 /// 3, 6 or 12 periods; the longer ranges are locked on Free.
 struct ReportRangePicker: View {
@@ -166,7 +169,6 @@ struct ReportRangePicker: View {
                 (range, locked.contains(range) ? Text("\(range) periods") + Text(verbatim: " ") + Text(Image(systemName: "lock.fill")).font(.caption2) : Text("\(range) periods"))
             },
             selection: Binding(get: { viewModel.range }, set: { newRange in Task { await viewModel.selectRange(newRange) } }),
-            compact: true,
             disabled: locked
         )
         .accessibilityIdentifier("reportsRangePicker")

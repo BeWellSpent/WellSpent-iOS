@@ -34,8 +34,7 @@ struct CategoryTrendsReportView: View {
                 Spacer()
                 PillSegmentedControl(
                     options: [(false, Text(verbatim: "$")), (true, Text(verbatim: "%"))],
-                    selection: Binding(get: { viewModel.showPercent }, set: { viewModel.showPercent = $0 }),
-                    compact: true
+                    selection: Binding(get: { viewModel.showPercent }, set: { viewModel.showPercent = $0 })
                 )
                 .accessibilityIdentifier("reportsUnitsPicker")
             }
