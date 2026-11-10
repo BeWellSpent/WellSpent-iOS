@@ -56,4 +56,29 @@ struct ExpensePlanCalculationsTests {
         #expect(result.amount.units == 0)
         #expect(!result.isNotDue)
     }
+
+    @Test("source says manual, fixed, both or neither")
+    func sourceClassification() {
+        let none = (units: Int64(0), nanos: Int32(0))
+        let some = (units: Int64(268), nanos: Int32(0))
+        #expect(ExpensePlanCalculations.source(allocated: some, fixedDue: none) == .manual)
+        #expect(ExpensePlanCalculations.source(allocated: none, fixedDue: some) == .fixed)
+        #expect(ExpensePlanCalculations.source(allocated: some, fixedDue: some) == .manualAndFixed)
+        #expect(ExpensePlanCalculations.source(allocated: none, fixedDue: none) == .none)
+        // A sub-dollar amount is still an amount.
+        #expect(ExpensePlanCalculations.source(allocated: (0, 500_000_000), fixedDue: none) == .manual)
+    }
+
+    @Test("roomLeft is manual minus fixed, negative when fixed bills exceed the manual amount")
+    func roomLeft() {
+        let room = ExpensePlanCalculations.roomLeft(allocated: (500, 0), fixedDue: (268, 0))
+        #expect(room.units == 232 && room.nanos == 0)
+        let over = ExpensePlanCalculations.roomLeft(allocated: (200, 0), fixedDue: (250, 0))
+        #expect(over.units == -50 && over.nanos == 0)
+        // Cents borrow across the unit boundary: 10.25 - 3.50 = 6.75, and 3.00 - 3.50 = -0.50.
+        let cents = ExpensePlanCalculations.roomLeft(allocated: (10, 250_000_000), fixedDue: (3, 500_000_000))
+        #expect(cents.units == 6 && cents.nanos == 750_000_000)
+        let subDollar = ExpensePlanCalculations.roomLeft(allocated: (3, 0), fixedDue: (3, 500_000_000))
+        #expect(subDollar.units == 0 && subDollar.nanos == -500_000_000)
+    }
 }

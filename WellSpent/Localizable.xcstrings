@@ -1,6 +1,70 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Manual" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual"
+          }
+        }
+      }
+    },
+    "From fixed expenses" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From fixed expenses"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De gastos fijos"
+          }
+        }
+      }
+    },
+    "%@ fixed · %@ other spending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ fixed · %@ other spending"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ fijos · %2$@ para otros gastos"
+          }
+        }
+      }
+    },
+    "%@ fixed · %@ over the manual amount" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ fixed · %@ over the manual amount"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ fijos · %2$@ más que el monto manual"
+          }
+        }
+      }
+    },
     "Installments" : {
       "localizations" : {
         "en" : {

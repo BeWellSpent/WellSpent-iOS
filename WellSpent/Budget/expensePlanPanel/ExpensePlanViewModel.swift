@@ -84,6 +84,17 @@ final class ExpensePlanViewModel {
         return TransactionAmountFormatting.tuple(from: row.notDuePlannedTotal)
     }
 
+    /// The two inputs behind `plannedTotal(for:)`; zero when unset.
+    func allocatedTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
+        guard let row = planRow(for: category), row.hasAllocatedTotal else { return (0, 0) }
+        return TransactionAmountFormatting.tuple(from: row.allocatedTotal)
+    }
+
+    func fixedDueTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
+        guard let row = planRow(for: category), row.hasFixedDueTotal else { return (0, 0) }
+        return TransactionAmountFormatting.tuple(from: row.fixedDueTotal)
+    }
+
     /// When this category next costs anything, for the not-due caption.
     /// Empty when nothing is upcoming.
     func nextDueText(for category: Wellspent_V1_Category) -> String {

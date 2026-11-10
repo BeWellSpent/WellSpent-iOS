@@ -424,6 +424,12 @@ nonisolated enum BudgetRESTMapping {
             if let notDue = c.notDuePlannedTotal {
                 $0.notDuePlannedTotal = money(from: notDue)
             }
+            if let allocated = c.allocatedTotal {
+                $0.allocatedTotal = money(from: allocated)
+            }
+            if let fixedDue = c.fixedDueTotal {
+                $0.fixedDueTotal = money(from: fixedDue)
+            }
             if let nextDue = c.nextDueDate, let ts = SwiftProtobuf.Google_Protobuf_Timestamp(restDate: nextDue) {
                 $0.nextDueDate = ts
             }

@@ -244,11 +244,15 @@ struct ExpensePlanView: View {
             notDue: viewModel.notDuePlannedTotal(for: category)
         )
         let dueText = viewModel.nextDueText(for: category)
+        let allocated = viewModel.allocatedTotal(for: category)
+        let fixedDue = viewModel.fixedDueTotal(for: category)
+        let source = ExpensePlanCalculations.source(allocated: allocated, fixedDue: fixedDue)
         let row = HStack {
             ColorDotView(hex: category.color)
             VStack(alignment: .leading, spacing: 2) {
                 Text(category.displayName)
                     .foregroundStyle(.primary)
+                planSourceLabel(source, allocated: allocated, fixedDue: fixedDue, categoryName: category.name)
                 // Only on a not-due row, so an amount that counts toward
                 // nothing always says so rather than looking like a plan.
                 if total.isNotDue && !dueText.isEmpty {
@@ -330,6 +334,52 @@ struct ExpensePlanView: View {
                 .accessibilityIdentifier("deleteFixedExpenseTemplate_\(expense.name)")
             }
         }
+    }
+
+    /// Says whether the amount on the right is a manual plan, derived from
+    /// fixed expenses, or both — the server never adds the two, so with both
+    /// the manual amount is the figure and this line shows what fixed bills
+    /// already take out of it.
+    @ViewBuilder
+    private func planSourceLabel(
+        _ source: ExpensePlanCalculations.PlanAmountSource,
+        allocated: (units: Int64, nanos: Int32),
+        fixedDue: (units: Int64, nanos: Int32),
+        categoryName: String
+    ) -> some View {
+        switch source {
+        case .none:
+            EmptyView()
+        case .manual:
+            sourceTag(Text("Manual"), id: "planCategorySource_\(categoryName)")
+        case .fixed:
+            sourceTag(Text("From fixed expenses"), id: "planCategorySource_\(categoryName)")
+        case .manualAndFixed:
+            let room = ExpensePlanCalculations.roomLeft(allocated: allocated, fixedDue: fixedDue)
+            let over = MoneyFormatting.isNegative(units: room.units, nanos: room.nanos)
+            let fixedText = displayText(fixedDue)
+            let roomText = displayText(over ? (-room.units, -room.nanos) : room)
+            HStack(spacing: 6) {
+                sourceTag(Text("Manual"), id: "planCategorySource_\(categoryName)")
+                (over
+                    ? Text("\(fixedText) fixed · \(roomText) over the manual amount")
+                    : Text("\(fixedText) fixed · \(roomText) other spending"))
+                    .font(.caption)
+                    .foregroundStyle(over ? .orange : .secondary)
+                    .accessibilityIdentifier("planCategoryBreakdown_\(categoryName)")
+            }
+        }
+    }
+
+    private func sourceTag(_ text: Text, id: String) -> some View {
+        text
+            .font(.caption2)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .background(Color.accentColor.opacity(0.15))
+            .foregroundStyle(Color.accentColor)
+            .clipShape(Capsule())
+            .accessibilityIdentifier(id)
     }
 
     private func displayText(_ amount: (units: Int64, nanos: Int32)) -> String {
