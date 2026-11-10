@@ -426,6 +426,11 @@
       "changeType": "added",
       "summaryEn": "Each category in the Plan now says whether its planned amount is manual, from fixed expenses, or both. When both apply it shows how much of the manual amount fixed bills already take, and warns if they exceed it.",
       "summaryEs": "Cada categoría del Plan ahora indica si su monto planeado es manual, de gastos fijos, o ambos. Cuando aplican ambos, muestra cuánto del monto manual ya ocupan los gastos fijos y avisa si lo superan."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Home overview is redesigned: your plan at the top, a card for each person with what they spent, saved and received against their plan, and a compact categories card showing the top 3 with everything over plan called out. Chart style moved into the card's … menu.",
+      "summaryEs": "La vista general de Inicio está rediseñada: tu plan arriba, una tarjeta por persona con lo que gastó, ahorró y recibió frente a su plan, y una tarjeta compacta de categorías con las 3 principales y todo lo que supera el plan resaltado. El estilo del gráfico pasó al menú … de la tarjeta."
     }
   ]
 }

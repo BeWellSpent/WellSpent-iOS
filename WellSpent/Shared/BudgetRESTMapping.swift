@@ -138,7 +138,7 @@ nonisolated enum BudgetRESTMapping {
     }
 
     /// `anchorDate`/`earlyArrivalToleranceDays` have no proto equivalent —
-    /// same reason as `ActualIncomeSummary` above (issue #104). Carried
+    /// same reason as `PersonPeriodSummary` below — REST-only, no proto field (issue #104). Carried
     /// alongside the mapped `IncomeSource` rather than added to the
     /// generated type. `effectiveFrom`/`effectiveTo` are deliberately not
     /// carried here — server-computed, never sent by the client, and not
@@ -462,35 +462,33 @@ nonisolated enum BudgetRESTMapping {
         }
     }
 
-    /// `actualIncomeTotal`/`remainderActualIncome`/`actualIncomeByPerson` have
-    /// no proto equivalent — `WellSpent-proto`'s `GetExpenseSummaryResponse`
-    /// message was deliberately not extended for this (income-defined-periods,
-    /// issue #104), only the OpenAPI contract was. Carried alongside the
-    /// mapped `GetExpenseSummaryResponse` rather than added to the generated
-    /// type, same pattern as `FixedExpensePayoffInfo` below.
-    struct ActualIncomeSummary {
-        let total: Wellspent_V1_Money
-        let remainder: Wellspent_V1_Money
-        let byPerson: [PersonActualIncome]
-    }
-
-    struct PersonActualIncome {
+    /// One person's period for the Home person cards. Spent figures include savings;
+    /// saved* is the savings part. REST-only: the kept proto `GetExpenseSummaryResponse`
+    /// was deliberately not extended, only the OpenAPI contract was.
+    struct PersonPeriodSummary {
         let budgetPersonID: Int64
-        let actualIncome: Wellspent_V1_Money
+        let spentActual: Wellspent_V1_Money
+        let spentPlanned: Wellspent_V1_Money
+        let savedActual: Wellspent_V1_Money
+        let savedPlanned: Wellspent_V1_Money
+        let incomeActual: Wellspent_V1_Money
+        let incomePlanned: Wellspent_V1_Money
     }
 
-    /// None of the three are in `GetExpenseSummaryResponse`'s `required`
-    /// list — deliberately additive, so an older client omitting them still
-    /// decodes — hence the optional-handling below, unlike every other
-    /// field this struct's sibling functions map.
-    static func actualIncomeSummary(from s: Components.Schemas.GetExpenseSummaryResponse) -> ActualIncomeSummary {
-        ActualIncomeSummary(
-            total: s.actualIncomeTotal.map(money(from:)) ?? Wellspent_V1_Money(),
-            remainder: s.remainderActualIncome.map(money(from:)) ?? Wellspent_V1_Money(),
-            byPerson: (s.actualIncomeByPerson ?? []).map {
-                PersonActualIncome(budgetPersonID: $0.budgetPersonId, actualIncome: money(from: $0.actualIncome))
-            }
-        )
+    /// Empty from a server that predates `people`, so the cards simply don't show.
+    static func personPeriodSummaries(from s: Components.Schemas.GetExpenseSummaryResponse) -> [PersonPeriodSummary] {
+        (s.people ?? []).map {
+            PersonPeriodSummary(
+                budgetPersonID: $0.budgetPersonId,
+                spentActual: money(from: $0.spentActual), spentPlanned: money(from: $0.spentPlanned),
+                savedActual: money(from: $0.savedActual), savedPlanned: money(from: $0.savedPlanned),
+                incomeActual: money(from: $0.incomeActual), incomePlanned: money(from: $0.incomePlanned)
+            )
+        }
+    }
+
+    static func unattributedSpent(from s: Components.Schemas.GetExpenseSummaryResponse) -> Wellspent_V1_Money? {
+        s.unattributedSpent.map(money(from:))
     }
 
     /// Not in `GetExpenseSummaryResponse`'s `required` list (additive, and not in the kept

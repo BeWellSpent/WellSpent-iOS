@@ -41,8 +41,8 @@ struct ExpensePlanView: View {
     @State private var viewModel: ExpensePlanViewModel?
     @State private var fixedExpensesViewModel: FixedExpenseTemplatesViewModel?
     @State private var activeSheet: ActiveSheet?
-    /// Defaults to pie, matching web's `ExpensesPanel.tsx` (Overview's chart
-    /// defaults to bar instead — see `ExpenseOverviewChartListView`).
+    /// Defaults to pie, matching web's `ExpensesPanel.tsx` (Home's Overview
+    /// uses its own compact chart, see `HomeSpendingChart`).
     /// nil until the person's saved preference has loaded, so the chart isn't
     /// drawn as a pie and then snapped to a bar a moment later. Set from the
     /// toggle too, which overrides the saved default for this visit only —

@@ -1,494 +1,210 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Manual" : {
+    "Planned expenses with savings" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Manual"
+            "value" : "Planned expenses with savings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Manual"
+            "value" : "Gastos planeados con ahorros"
           }
         }
       }
     },
-    "From fixed expenses" : {
+    "Planned expenses without savings" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "From fixed expenses"
+            "value" : "Planned expenses without savings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De gastos fijos"
+            "value" : "Gastos planeados sin ahorros"
           }
         }
       }
     },
-    "%@ fixed · %@ other spending" : {
+    "Not planned yet" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ fixed · %@ other spending"
+            "value" : "Not planned yet"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ fijos · %2$@ para otros gastos"
+            "value" : "Aún sin planear"
           }
         }
       }
     },
-    "%@ fixed · %@ over the manual amount" : {
+    "%@ saved of %@ planned" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ fixed · %@ over the manual amount"
+            "value" : "%@ saved of %@ planned"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ fijos · %2$@ más que el monto manual"
+            "value" : "%1$@ ahorrados de %2$@ planeados"
           }
         }
       }
     },
-    "Installments" : {
+    "%@ income of %@ planned" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Installments"
+            "value" : "%@ income of %@ planned"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cuotas"
+            "value" : "%1$@ de ingreso de %2$@ planeados"
           }
         }
       }
     },
-    "Payment plan" : {
+    "%@ of %@ planned" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Payment plan"
+            "value" : "%@ of %@ planned"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plan de pagos"
+            "value" : "%1$@ de %2$@ planeados"
           }
         }
       }
     },
-    "%lld / %lld payments" : {
+    "Chart style" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld / %lld payments"
+            "value" : "Chart style"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld / %2$lld pagos"
+            "value" : "Estilo del gráfico"
           }
         }
       }
     },
-    "Ends %@" : {
+    "Show top %lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ends %@"
+            "value" : "Show top %lld"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Termina %@"
+            "value" : "Mostrar las %lld principales"
           }
         }
       }
     },
-    "Re-sync this bank from scratch?" : {
+    "Show all %lld categories" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Re-sync this bank from scratch?"
+            "value" : "Show all %lld categories"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Resincronizar este banco desde cero?"
+            "value" : "Mostrar las %lld categorías"
           }
         }
       }
     },
-    "Manage accounts" : {
+    "%lld over plan: %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Manage accounts"
+            "value" : "%lld over plan: %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Administrar cuentas"
+            "value" : "%1$lld por encima del plan: %2$@"
           }
         }
       }
     },
-    "Connection actions" : {
+    "Spending by category" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connection actions"
+            "value" : "Spending by category"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Acciones de la conexión"
+            "value" : "Gasto por categoría"
           }
         }
       }
     },
-    "Sync now" : {
+    "Expanded" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sync now"
+            "value" : "Expanded"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizar ahora"
+            "value" : "Expandido"
           }
         }
       }
     },
-    "Re-sync from scratch" : {
+    "Collapsed" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Re-sync from scratch"
+            "value" : "Collapsed"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Resincronizar desde cero"
-          }
-        }
-      }
-    },
-    "Couldn't sync that bank. Try again in a moment." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't sync that bank. Try again in a moment."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pudimos sincronizar ese banco. Inténtalo de nuevo en un momento."
-          }
-        }
-      }
-    },
-    "Unlock WellSpent" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unlock WellSpent"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desbloquear WellSpent"
-          }
-        }
-      }
-    },
-    "We couldn't confirm it's you or reach the server. You're still signed in." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We couldn't confirm it's you or reach the server. You're still signed in."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pudimos confirmar que eres tú ni conectar con el servidor. Tu sesión sigue iniciada."
-          }
-        }
-      }
-    },
-    "Try again" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try again"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Intentar de nuevo"
-          }
-        }
-      }
-    },
-    "Log in with password instead" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Log in with password instead"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iniciar sesión con contraseña"
-          }
-        }
-      }
-    },
-    "Card payment" : {
-      "comment" : "Payments tab: a paired payment whose card has no name.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Card payment"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago de tarjeta"
-          }
-        }
-      }
-    },
-    "Committed (with savings)" : {
-      "comment" : "Plan totals: committed spend including savings.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Committed (with savings)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comprometido (con ahorros)"
-          }
-        }
-      }
-    },
-    "Committed (without savings)" : {
-      "comment" : "Plan totals: committed spend excluding savings.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Committed (without savings)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comprometido (sin ahorros)"
-          }
-        }
-      }
-    },
-    "Payment to %@" : {
-      "comment" : "Payments tab: a paired card payment, named after the card that received it.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Payment to %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago a %@"
-          }
-        }
-      }
-    },
-    "From %@" : {
-      "comment" : "Payments tab: the account a paired payment left.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desde %@"
-          }
-        }
-      }
-    },
-    "Into %@" : {
-      "comment" : "Payments tab leg: money arriving in an account.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Into %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hacia %@"
-          }
-        }
-      }
-    },
-    "Out of %@" : {
-      "comment" : "Payments tab leg: money leaving an account.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Out of %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desde %@ (salida)"
-          }
-        }
-      }
-    },
-    "Payment deleted" : {
-      "comment" : "Toast after deleting a paired payment.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Payment deleted"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago eliminado"
-          }
-        }
-      }
-    },
-    "Payment excluded" : {
-      "comment" : "Toast after excluding a paired payment.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Payment excluded"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago excluido"
-          }
-        }
-      }
-    },
-    "Payment included" : {
-      "comment" : "Toast after including a paired payment.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Payment included"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago incluido"
-          }
-        }
-      }
-    },
-    "Remaining (with savings)" : {
-      "comment" : "Plan totals: planned income minus committed incl. savings.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remaining (with savings)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restante (con ahorros)"
-          }
-        }
-      }
-    },
-    "Remaining (without savings)" : {
-      "comment" : "Plan totals: planned income minus committed excl. savings.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remaining (without savings)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restante (sin ahorros)"
+            "value" : "Contraído"
           }
         }
       }
@@ -673,6 +389,38 @@
         }
       }
     },
+    "%@ fixed · %@ other spending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ fixed · %@ other spending"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ fijos · %2$@ para otros gastos"
+          }
+        }
+      }
+    },
+    "%@ fixed · %@ over the manual amount" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ fixed · %@ over the manual amount"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ fijos · %2$@ más que el monto manual"
+          }
+        }
+      }
+    },
     "%@ has income attributed to them. Choose who to reassign it to before removing them." : {
       "localizations" : {
         "en" : {
@@ -744,6 +492,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld / %lld payments" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld / %lld payments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld pagos"
           }
         }
       }
@@ -1739,6 +1503,23 @@
         }
       }
     },
+    "Card payment" : {
+      "comment" : "Payments tab: a paired payment whose card has no name.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card payment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago de tarjeta"
+          }
+        }
+      }
+    },
     "Carried over" : {
       "localizations" : {
         "en" : {
@@ -2479,6 +2260,40 @@
         }
       }
     },
+    "Committed (with savings)" : {
+      "comment" : "Plan totals: committed spend including savings.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Committed (with savings)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprometido (con ahorros)"
+          }
+        }
+      }
+    },
+    "Committed (without savings)" : {
+      "comment" : "Plan totals: committed spend excluding savings.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Committed (without savings)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprometido (sin ahorros)"
+          }
+        }
+      }
+    },
     "Component" : {
       "localizations" : {
         "en" : {
@@ -2555,6 +2370,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cuentas bancarias conectadas"
+          }
+        }
+      }
+    },
+    "Connection actions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acciones de la conexión"
           }
         }
       }
@@ -2763,6 +2594,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No se pudieron guardar tus preferencias."
+          }
+        }
+      }
+    },
+    "Couldn't sync that bank. Try again in a moment." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't sync that bank. Try again in a moment."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos sincronizar ese banco. Inténtalo de nuevo en un momento."
           }
         }
       }
@@ -3606,6 +3453,22 @@
         }
       }
     },
+    "Ends %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ends %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termina %@"
+          }
+        }
+      }
+    },
     "English" : {
       "localizations" : {
         "en" : {
@@ -4271,6 +4134,39 @@
         }
       }
     },
+    "From %@" : {
+      "comment" : "Payments tab: the account a paired payment left.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desde %@"
+          }
+        }
+      }
+    },
+    "From fixed expenses" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From fixed expenses"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De gastos fijos"
+          }
+        }
+      }
+    },
     "Future (%lld)" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4465,6 +4361,22 @@
         }
       }
     },
+    "Installments" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuotas"
+          }
+        }
+      }
+    },
     "Interest" : {
       "localizations" : {
         "en" : {
@@ -4477,6 +4389,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Interés"
+          }
+        }
+      }
+    },
+    "Into %@" : {
+      "comment" : "Payments tab leg: money arriving in an account.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Into %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacia %@"
           }
         }
       }
@@ -4805,6 +4734,22 @@
         }
       }
     },
+    "Log in with password instead" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log in with password instead"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciar sesión con contraseña"
+          }
+        }
+      }
+    },
     "Log out" : {
       "comment" : "A button that logs out the user.",
       "isCommentAutoGenerated" : true,
@@ -4866,6 +4811,22 @@
         }
       }
     },
+    "Manage accounts" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage accounts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Administrar cuentas"
+          }
+        }
+      }
+    },
     "Manage budget" : {
       "localizations" : {
         "en" : {
@@ -4878,6 +4839,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Administrar presupuesto"
+          }
+        }
+      }
+    },
+    "Manual" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual"
           }
         }
       }
@@ -5903,6 +5880,23 @@
         }
       }
     },
+    "Out of %@" : {
+      "comment" : "Payments tab leg: money leaving an account.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Out of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desde %@ (salida)"
+          }
+        }
+      }
+    },
     "Over budget" : {
       "comment" : "A label for the amount of money that has been spent over the budget.",
       "isCommentAutoGenerated" : true,
@@ -6200,6 +6194,57 @@
         }
       }
     },
+    "Payment deleted" : {
+      "comment" : "Toast after deleting a paired payment.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment deleted"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago eliminado"
+          }
+        }
+      }
+    },
+    "Payment excluded" : {
+      "comment" : "Toast after excluding a paired payment.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment excluded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago excluido"
+          }
+        }
+      }
+    },
+    "Payment included" : {
+      "comment" : "Toast after including a paired payment.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment included"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago incluido"
+          }
+        }
+      }
+    },
     "Payment Method" : {
       "localizations" : {
         "en" : {
@@ -6232,6 +6277,22 @@
         }
       }
     },
+    "Payment plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan de pagos"
+          }
+        }
+      }
+    },
     "Payment plan (optional)" : {
       "localizations" : {
         "en" : {
@@ -6244,6 +6305,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plan de pagos (opcional)"
+          }
+        }
+      }
+    },
+    "Payment to %@" : {
+      "comment" : "Payments tab: a paired card payment, named after the card that received it.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago a %@"
           }
         }
       }
@@ -6634,6 +6712,7 @@
       }
     },
     "Re-sync" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6649,7 +6728,40 @@
         }
       }
     },
+    "Re-sync from scratch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-sync from scratch"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resincronizar desde cero"
+          }
+        }
+      }
+    },
+    "Re-sync this bank from scratch?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-sync this bank from scratch?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Resincronizar este banco desde cero?"
+          }
+        }
+      }
+    },
     "Re-sync this bank?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6758,6 +6870,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restante (ingreso real)"
+          }
+        }
+      }
+    },
+    "Remaining (with savings)" : {
+      "comment" : "Plan totals: planned income minus committed incl. savings.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remaining (with savings)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restante (con ahorros)"
+          }
+        }
+      }
+    },
+    "Remaining (without savings)" : {
+      "comment" : "Plan totals: planned income minus committed excl. savings.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remaining (without savings)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restante (sin ahorros)"
           }
         }
       }
@@ -7831,6 +7977,22 @@
         }
       }
     },
+    "Sync now" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar ahora"
+          }
+        }
+      }
+    },
     "Synced %@" : {
       "localizations" : {
         "en" : {
@@ -8311,6 +8473,22 @@
         }
       }
     },
+    "Try again" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intentar de nuevo"
+          }
+        }
+      }
+    },
     "Type" : {
       "localizations" : {
         "en" : {
@@ -8452,6 +8630,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Integrante desconocido"
+          }
+        }
+      }
+    },
+    "Unlock WellSpent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock WellSpent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear WellSpent"
           }
         }
       }
@@ -8758,6 +8952,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Espectador"
+          }
+        }
+      }
+    },
+    "We couldn't confirm it's you or reach the server. You're still signed in." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't confirm it's you or reach the server. You're still signed in."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos confirmar que eres tú ni conectar con el servidor. Tu sesión sigue iniciada."
           }
         }
       }

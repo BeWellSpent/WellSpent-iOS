@@ -584,7 +584,6 @@ struct BudgetDetailView: View {
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier,
                 currentUserID: session.userID,
-                periodStartDate: period.startDate.dateOnly,
                 restClient: authenticatedRESTClient
             )
             overviewViewModel = model
@@ -592,16 +591,11 @@ struct BudgetDetailView: View {
         }
     }
 
-    /// The Overview sub-tab: totals + chart/category breakdown as one
-    /// combined, single-scrolling panel — `ExpenseOverviewTotalsView` renders
-    /// as the first `Section` inside `ExpenseOverviewChartListView`'s own
-    /// `List`, rather than as a separate view stacked above it. That's what
-    /// makes this "part of the panel with the graph" rather than its own
-    /// strip, per the correction.
+    /// The Overview sub-tab: plan, people and categories (docs/features/home-view-redesign.md).
     @ViewBuilder
     private func overviewSubTabContent(viewModel: BudgetDetailViewModel) -> some View {
         if let overviewViewModel {
-            ExpenseOverviewChartListView(
+            HomeOverviewView(
                 viewModel: overviewViewModel,
                 currencyCode: currencyCode,
                 localeIdentifier: localeIdentifier
