@@ -41,13 +41,6 @@ struct ExpensePlanView: View {
     @State private var viewModel: ExpensePlanViewModel?
     @State private var fixedExpensesViewModel: FixedExpenseTemplatesViewModel?
     @State private var activeSheet: ActiveSheet?
-    /// Defaults to pie, matching web's `ExpensesPanel.tsx` (Home's Overview
-    /// uses its own compact chart, see `HomeSpendingChart`).
-    /// nil until the person's saved preference has loaded, so the chart isn't
-    /// drawn as a pie and then snapped to a bar a moment later. Set from the
-    /// toggle too, which overrides the saved default for this visit only —
-    /// Preferences is the only place that writes one.
-    @State private var chartTypeOverride: ExpenseChartView.ChartType?
     @Environment(SessionStore.self) private var session
 
     /// Every locally-triggered sheet on this view — the Add sheets stay
@@ -80,17 +73,32 @@ struct ExpensePlanView: View {
                 switch selectedSubTab {
                 case .categories:
                     if let viewModel {
-                        categoriesContent(viewModel: viewModel)
+                        PlanCategoriesView(viewModel: viewModel, currencyCode: currencyCode, localeIdentifier: localeIdentifier, canEdit: canEdit) { category in
+                            activeSheet = .allocate(category)
+                        }
                     } else {
                         ProgressView()
                     }
                 case .fixedExpenses:
-                    fixedExpensesContent
+                    if let viewModel, let fixedExpensesViewModel {
+                        PlanFixedExpensesView(
+                            templatesViewModel: fixedExpensesViewModel,
+                            planViewModel: viewModel,
+                            currencyCode: currencyCode,
+                            localeIdentifier: localeIdentifier,
+                            canEdit: canEdit
+                        ) { expense in
+                            activeSheet = .editFixedExpense(expense)
+                        }
+                    } else {
+                        ProgressView()
+                    }
                 }
             }
             .frame(maxHeight: .infinity)
         }
-        .navigationTitle("Expense Plan")
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Plan")
         .task {
             if viewModel == nil {
                 viewModel = ExpensePlanViewModel(
@@ -175,232 +183,6 @@ struct ExpensePlanView: View {
         }
     }
 
-    @ViewBuilder
-    private func categoriesContent(viewModel: ExpensePlanViewModel) -> some View {
-        List {
-            Section {
-                let income = viewModel.incomeTotal
-                let committed = viewModel.committedTotal
-                let committedWithSavings = viewModel.committedIncludingSavingsTotal
-                let remainder = viewModel.remainderTotal
-
-                LabeledContent("Planned income", value: displayText(income))
-                    .accessibilityIdentifier("planIncomeTotal")
-                LabeledContent("Committed (with savings)", value: displayText(committedWithSavings))
-                    .accessibilityIdentifier("planCommittedIncludingSavingsTotal")
-                LabeledContent("Committed (without savings)", value: displayText(committed))
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("planCommittedTotal")
-                // isNegative, not `units < 0`: a -$0.50 remainder has
-                // units == 0 and would otherwise read as in the black.
-                if let remainderWithSavings = viewModel.remainderIncludingSavingsTotal {
-                    LabeledContent("Remaining (with savings)", value: displayText(remainderWithSavings))
-                        .foregroundStyle(MoneyFormatting.isNegative(units: remainderWithSavings.units, nanos: remainderWithSavings.nanos) ? .red : .primary)
-                        .accessibilityIdentifier("planRemainderIncludingSavingsTotal")
-                }
-                LabeledContent("Remaining (without savings)", value: displayText(remainder))
-                    .foregroundStyle(MoneyFormatting.isNegative(units: remainder.units, nanos: remainder.nanos) ? .red : .secondary)
-                    .accessibilityIdentifier("planRemainderTotal")
-            }
-
-            if !viewModel.visibleCategories.isEmpty {
-                Section {
-                    ExpenseChartView(
-                        data: viewModel.chartData,
-                        chartType: chartTypeBinding(viewModel.people),
-                        currencyCode: currencyCode,
-                        localeIdentifier: localeIdentifier
-                    )
-                }
-            }
-
-            Section {
-                if viewModel.categories.isEmpty && viewModel.isLoading {
-                    ProgressView()
-                } else if viewModel.visibleCategories.isEmpty {
-                    Text("No categories planned yet. Tap + to add one.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(viewModel.visibleCategories, id: \.id) { category in
-                        categoryRow(category, viewModel: viewModel, canEdit: canEdit)
-                    }
-                }
-            }
-
-            if let errorMessage = viewModel.errorMessage {
-                Section {
-                    Text(errorMessage).foregroundStyle(.red)
-                }
-            }
-        }
-        .refreshable {
-            await viewModel.load()
-        }
-    }
-
-    private func categoryRow(_ category: Wellspent_V1_Category, viewModel: ExpensePlanViewModel, canEdit: Bool) -> some View {
-        let total = ExpensePlanCalculations.categoryTotal(
-            planned: viewModel.plannedTotal(for: category),
-            notDue: viewModel.notDuePlannedTotal(for: category)
-        )
-        let dueText = viewModel.nextDueText(for: category)
-        let allocated = viewModel.allocatedTotal(for: category)
-        let fixedDue = viewModel.fixedDueTotal(for: category)
-        let source = ExpensePlanCalculations.source(allocated: allocated, fixedDue: fixedDue)
-        let row = HStack {
-            ColorDotView(hex: category.color)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(category.displayName)
-                    .foregroundStyle(.primary)
-                planSourceLabel(source, allocated: allocated, fixedDue: fixedDue, categoryName: category.name)
-                // Only on a not-due row, so an amount that counts toward
-                // nothing always says so rather than looking like a plan.
-                if total.isNotDue && !dueText.isEmpty {
-                    Text("Not due this period — next due \(dueText)")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .accessibilityIdentifier("planCategoryNotDue_\(category.name)")
-                }
-            }
-            Spacer()
-            Text(displayText(total.amount))
-                .foregroundStyle(total.isNotDue ? .tertiary : .secondary)
-        }
-        return Group {
-            if canEdit {
-                Button {
-                    activeSheet = .allocate(category)
-                } label: {
-                    row
-                }
-                .buttonStyle(.plain)
-            } else {
-                row
-            }
-        }
-        .accessibilityIdentifier("planCategoryRow_\(category.name)")
-    }
-
-    @ViewBuilder
-    private var fixedExpensesContent: some View {
-        Group {
-            if let fixedExpensesViewModel {
-                List {
-                    if fixedExpensesViewModel.fixedExpenses.isEmpty && fixedExpensesViewModel.isLoading {
-                        ProgressView()
-                    } else if fixedExpensesViewModel.fixedExpenses.isEmpty {
-                        Text("No fixed expenses yet.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(fixedExpensesViewModel.fixedExpenses, id: \.id) { expense in
-                            fixedExpenseRow(expense, viewModel: fixedExpensesViewModel)
-                        }
-                    }
-
-                    if let errorMessage = fixedExpensesViewModel.errorMessage {
-                        Text(errorMessage).foregroundStyle(.red)
-                    }
-                }
-                .refreshable {
-                    await fixedExpensesViewModel.load()
-                }
-            } else {
-                ProgressView()
-            }
-        }
-    }
-
-    private static let logger = AppLogger.logger("ExpensePlan")
-
-    private func fixedExpenseRow(_ expense: Wellspent_V1_FixedExpense, viewModel: FixedExpenseTemplatesViewModel) -> some View {
-        UpcomingFixedExpenseRow(
-            expense: expense,
-            viewModel: viewModel,
-            currencyCode: currencyCode,
-            localeIdentifier: localeIdentifier,
-            canEdit: canEdit,
-            onEdit: {
-                Self.logger.info("fixedExpenseRow: edit tapped for \(expense.id, privacy: .public) canEdit=\(self.canEdit, privacy: .public)")
-                activeSheet = .editFixedExpense(expense)
-            }
-        )
-        .swipeActions {
-            if canEdit {
-                Button(role: .destructive) {
-                    Task { await viewModel.deleteTemplate(expense) }
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-                .accessibilityIdentifier("deleteFixedExpenseTemplate_\(expense.name)")
-            }
-        }
-    }
-
-    /// Says whether the amount on the right is a manual plan, derived from
-    /// fixed expenses, or both — the server never adds the two, so with both
-    /// the manual amount is the figure and this line shows what fixed bills
-    /// already take out of it.
-    @ViewBuilder
-    private func planSourceLabel(
-        _ source: ExpensePlanCalculations.PlanAmountSource,
-        allocated: (units: Int64, nanos: Int32),
-        fixedDue: (units: Int64, nanos: Int32),
-        categoryName: String
-    ) -> some View {
-        switch source {
-        case .none:
-            EmptyView()
-        case .manual:
-            sourceTag(Text("Manual"), id: "planCategorySource_\(categoryName)")
-        case .fixed:
-            sourceTag(Text("From fixed expenses"), id: "planCategorySource_\(categoryName)")
-        case .manualAndFixed:
-            let room = ExpensePlanCalculations.roomLeft(allocated: allocated, fixedDue: fixedDue)
-            let over = MoneyFormatting.isNegative(units: room.units, nanos: room.nanos)
-            let fixedText = displayText(fixedDue)
-            let roomText = displayText(over ? (-room.units, -room.nanos) : room)
-            HStack(spacing: 6) {
-                sourceTag(Text("Manual"), id: "planCategorySource_\(categoryName)")
-                (over
-                    ? Text("\(fixedText) fixed · \(roomText) over the manual amount")
-                    : Text("\(fixedText) fixed · \(roomText) other spending"))
-                    .font(.caption)
-                    .foregroundStyle(over ? .orange : .secondary)
-                    .accessibilityIdentifier("planCategoryBreakdown_\(categoryName)")
-            }
-        }
-    }
-
-    private func sourceTag(_ text: Text, id: String) -> some View {
-        text
-            .font(.caption2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 1)
-            .background(Color.accentColor.opacity(0.15))
-            .foregroundStyle(Color.accentColor)
-            .clipShape(Capsule())
-            .accessibilityIdentifier(id)
-    }
-
-    private func displayText(_ amount: (units: Int64, nanos: Int32)) -> String {
-        MoneyFormatting.format(units: amount.units, nanos: amount.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
-    }
-
-
-    /// Saved preference for this tab, falling back to the shared default when
-    /// the person hasn't chosen or isn't a linked member. Read from `people`,
-    /// which the view model already loads — no extra request.
-    private func savedChartType(_ people: [Wellspent_V1_BudgetPerson]) -> ExpenseChartView.ChartType {
-        let me = ChartPreference.myPerson(currentUserID: session.userID, people: people)
-        return ChartPreference.chartType(for: me?.planChartType ?? .unspecified)
-    }
-
-    private func chartTypeBinding(_ people: [Wellspent_V1_BudgetPerson]) -> Binding<ExpenseChartView.ChartType> {
-        Binding(
-            get: { chartTypeOverride ?? savedChartType(people) },
-            set: { chartTypeOverride = $0 }
-        )
-    }
 }
 
 #Preview {

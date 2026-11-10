@@ -17,7 +17,7 @@ import os
 ///
 /// Supersedes the former standalone `FixedExpensesListView` (deleted) — its
 /// Unpaid/Paid/Future sections and summary card don't apply once Fixed rows
-/// live here; its row views (`FixedExpenseRow`, `UpcomingFixedExpenseRow`)
+/// live here; its row views (`FixedExpenseRow`; Plan's template rows are `PlanFixedExpenseRow`)
 /// were extracted into their own files, the latter now used by Plan's Fixed
 /// Expenses sub-tab. `FixedExpensesViewModel` itself was deleted (Stage 3) —
 /// template management now lives in `FixedExpenseTemplatesViewModel`, Plan's

@@ -6,8 +6,8 @@ import WellSpentREST
 @MainActor
 @Observable
 final class PreferencesViewModel {
-    private(set) var planChart: ExpenseChartView.ChartType = ChartPreference.fallback
-    private(set) var overviewChart: ExpenseChartView.ChartType = ChartPreference.fallback
+    private(set) var planChart: ExpenseChartType = ChartPreference.fallback
+    private(set) var overviewChart: ExpenseChartType = ChartPreference.fallback
     private(set) var manualMatchReview = true
     private(set) var focusedView = false
     private(set) var isFree = false
@@ -65,7 +65,7 @@ final class PreferencesViewModel {
         )
     }
 
-    func update(plan: ExpenseChartView.ChartType, overview: ExpenseChartView.ChartType) async {
+    func update(plan: ExpenseChartType, overview: ExpenseChartType) async {
         // Applied immediately so the toggle responds, then rolled back if the
         // server refuses — the UI must never claim a preference that wasn't saved.
         let previousPlan = planChart

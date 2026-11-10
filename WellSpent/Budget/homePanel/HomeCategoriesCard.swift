@@ -90,8 +90,8 @@ struct HomeCategoriesCard: View {
                 get: { viewModel.chartType },
                 set: { newValue in Task { await viewModel.setChartType(newValue) } }
             )) {
-                Label("Bar", systemImage: "chart.bar.fill").tag(ExpenseChartView.ChartType.bar)
-                Label("Pie", systemImage: "chart.pie.fill").tag(ExpenseChartView.ChartType.pie)
+                Label("Bar", systemImage: "chart.bar.fill").tag(ExpenseChartType.bar)
+                Label("Pie", systemImage: "chart.pie.fill").tag(ExpenseChartType.pie)
             } label: {
                 Text("Chart style")
             }

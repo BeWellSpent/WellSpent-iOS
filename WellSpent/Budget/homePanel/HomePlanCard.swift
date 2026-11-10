@@ -2,15 +2,17 @@ import SwiftUI
 
 /// Planned income and planned expenses with and without savings, with a bar
 /// showing how planned income splits into expenses, savings and what's left.
+/// Shared by Home and Plan, which show the same plan.
 struct HomePlanCard: View {
-    let viewModel: ExpenseOverviewViewModel
+    let income: (units: Int64, nanos: Int32)
+    let withSavings: (units: Int64, nanos: Int32)
+    let withoutSavings: (units: Int64, nanos: Int32)
+    /// Nil from a server that predates it, so the row hides rather than reading $0.
+    let remaining: (units: Int64, nanos: Int32)?
     let currencyCode: String
     let localeIdentifier: String
 
     var body: some View {
-        let income = viewModel.plannedIncome
-        let withSavings = viewModel.plannedExpensesIncludingSavings
-        let withoutSavings = viewModel.plannedExpenses
         let savings = TransactionAmountFormatting.sum([withSavings, (units: -withoutSavings.units, nanos: -withoutSavings.nanos)])
 
         HomeCard {
@@ -24,7 +26,7 @@ struct HomePlanCard: View {
             row(Text("Expenses with savings"), amount: withSavings, dot: .green, id: "homePlannedWithSavings")
             row(Text("Expenses without savings"), amount: withoutSavings, dot: .accentColor, id: "homePlannedWithoutSavings")
 
-            if let remaining = viewModel.remainingPlan {
+            if let remaining {
                 Divider()
                 LabeledContent {
                     Text(format(remaining))

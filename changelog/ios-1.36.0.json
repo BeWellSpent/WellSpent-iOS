@@ -431,6 +431,11 @@
       "changeType": "changed",
       "summaryEn": "The Home overview is redesigned: your plan at the top, a card for each person with what they spent, saved and received against their plan, and a compact categories card showing the top 3 with everything over plan called out. Chart style moved into the card's … menu.",
       "summaryEs": "La vista general de Inicio está rediseñada: tu plan arriba, una tarjeta por persona con lo que gastó, ahorró y recibió frente a su plan, y una tarjeta compacta de categorías con las 3 principales y todo lo que supera el plan resaltado. El estilo del gráfico pasó al menú … de la tarjeta."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The Plan tab now matches Home: your plan on top, a card per person with their planned expenses, savings and what remains of their income, and a compact categories card showing where each amount comes from. Fixed expenses are grouped into payment plans, recurring bills and bills not due this period.",
+      "summaryEs": "La pestaña Plan ahora se ve como Inicio: tu plan arriba, una tarjeta por persona con sus gastos planeados, ahorros y lo que queda de su ingreso, y una tarjeta compacta de categorías que muestra de dónde sale cada monto. Los gastos fijos se agrupan en planes de pago, gastos recurrentes y gastos que no vencen este período."
     }
   ]
 }

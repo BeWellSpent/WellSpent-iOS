@@ -9,9 +9,9 @@ nonisolated enum ChartPreference {
     /// Both tabs open as a pie unless the person chose otherwise. Overview
     /// used to default to bar; with the chart configurable, one consistent
     /// starting point beats two.
-    static let fallback: ExpenseChartView.ChartType = .pie
+    static let fallback: ExpenseChartType = .pie
 
-    static func chartType(for stored: Wellspent_V1_ChartType) -> ExpenseChartView.ChartType {
+    static func chartType(for stored: Wellspent_V1_ChartType) -> ExpenseChartType {
         switch stored {
         case .pie: return .pie
         case .bar: return .bar
@@ -19,7 +19,7 @@ nonisolated enum ChartPreference {
         }
     }
 
-    static func stored(for chartType: ExpenseChartView.ChartType) -> Wellspent_V1_ChartType {
+    static func stored(for chartType: ExpenseChartType) -> Wellspent_V1_ChartType {
         switch chartType {
         case .pie: return .pie
         case .bar: return .bar

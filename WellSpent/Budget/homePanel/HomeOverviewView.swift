@@ -15,11 +15,18 @@ struct HomeOverviewView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                sectionHeader(Text("Plan"))
-                HomePlanCard(viewModel: viewModel, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
+                HomeSectionHeader(title: Text("Plan"))
+                HomePlanCard(
+                    income: viewModel.plannedIncome,
+                    withSavings: viewModel.plannedExpensesIncludingSavings,
+                    withoutSavings: viewModel.plannedExpenses,
+                    remaining: viewModel.remainingPlan,
+                    currencyCode: currencyCode,
+                    localeIdentifier: localeIdentifier
+                )
 
                 if !viewModel.personCards.isEmpty {
-                    sectionHeader(Text("People"))
+                    HomeSectionHeader(title: Text("People"))
                     peopleCards
                 }
                 if let unattributed = viewModel.unattributedSpentAmount {
@@ -34,7 +41,7 @@ struct HomeOverviewView: View {
                     .accessibilityIdentifier("homeUnattributedSpent")
                 }
 
-                sectionHeader(Text("Categories"))
+                HomeSectionHeader(title: Text("Categories"))
                 HomeCategoriesCard(viewModel: viewModel, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
 
                 if let errorMessage = viewModel.errorMessage {
@@ -54,49 +61,9 @@ struct HomeOverviewView: View {
         .accessibilityIdentifier("homeOverview")
     }
 
-    /// One person fills the width; several scroll sideways with the next one
-    /// peeking in, so Categories stays visible without scrolling down.
-    @ViewBuilder
     private var peopleCards: some View {
-        let cards = viewModel.personCards
-        if cards.count == 1, let only = cards.first {
-            HomePersonCard(person: only.person, summary: only.summary, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
-        } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
-                    ForEach(cards, id: \.person.id) { card in
-                        HomePersonCard(person: card.person, summary: card.summary, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
-                            .containerRelativeFrame(.horizontal) { width, _ in width * 0.86 }
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.viewAligned)
-            .scrollClipDisabled()
+        CardCarousel(items: viewModel.personCards, id: \.person.id) { card in
+            HomePersonCard(person: card.person, summary: card.summary, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
         }
-    }
-
-    private func sectionHeader(_ title: Text) -> some View {
-        title
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 4)
-            .padding(.top, 6)
-            .accessibilityAddTraits(.isHeader)
-    }
-}
-
-/// White rounded card on the grouped background, the Transactions summary card's look.
-struct HomeCard<Content: View>: View {
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            content
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }

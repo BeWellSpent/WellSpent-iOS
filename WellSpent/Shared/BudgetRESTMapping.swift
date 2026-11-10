@@ -473,6 +473,26 @@ nonisolated enum BudgetRESTMapping {
         let savedPlanned: Wellspent_V1_Money
         let incomeActual: Wellspent_V1_Money
         let incomePlanned: Wellspent_V1_Money
+        /// Nil from a server that predates them.
+        let plannedExpenses: Wellspent_V1_Money?
+        let plannedRemaining: Wellspent_V1_Money?
+    }
+
+    /// The Plan tab's extra figures: planned amounts belonging to no one, the
+    /// fixed bills due this period, and which templates those are. Nil/empty
+    /// from a server that predates them.
+    struct PlanSummaryExtras {
+        let unattributedPlanned: Wellspent_V1_Money?
+        let fixedDuePlannedTotal: Wellspent_V1_Money?
+        let dueFixedExpenseIDs: Set<String>?
+    }
+
+    static func planSummaryExtras(from s: Components.Schemas.GetExpenseSummaryResponse) -> PlanSummaryExtras {
+        PlanSummaryExtras(
+            unattributedPlanned: s.unattributedPlanned.map(money(from:)),
+            fixedDuePlannedTotal: s.fixedDuePlannedTotal.map(money(from:)),
+            dueFixedExpenseIDs: s.dueFixedExpenseIds.map(Set.init)
+        )
     }
 
     /// Empty from a server that predates `people`, so the cards simply don't show.
@@ -482,7 +502,8 @@ nonisolated enum BudgetRESTMapping {
                 budgetPersonID: $0.budgetPersonId,
                 spentActual: money(from: $0.spentActual), spentPlanned: money(from: $0.spentPlanned),
                 savedActual: money(from: $0.savedActual), savedPlanned: money(from: $0.savedPlanned),
-                incomeActual: money(from: $0.incomeActual), incomePlanned: money(from: $0.incomePlanned)
+                incomeActual: money(from: $0.incomeActual), incomePlanned: money(from: $0.incomePlanned),
+                plannedExpenses: $0.plannedExpenses.map(money(from:)), plannedRemaining: $0.plannedRemaining.map(money(from:))
             )
         }
     }

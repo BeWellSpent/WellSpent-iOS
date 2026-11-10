@@ -5,7 +5,7 @@ import SwiftUI
 /// with a legend. Each category keeps its own colour.
 struct HomeSpendingChart: View {
     let segments: [HomeOverviewCalculations.Segment]
-    let chartType: ExpenseChartView.ChartType
+    let chartType: ExpenseChartType
     let centerText: String
 
     var body: some View {
