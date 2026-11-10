@@ -1,210 +1,114 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Planned expenses with savings" : {
+    "Expenses with savings" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planned expenses with savings"
+            "value" : "Expenses with savings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gastos planeados con ahorros"
+            "value" : "Gastos con ahorros"
           }
         }
       }
     },
-    "Planned expenses without savings" : {
+    "Expenses without savings" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planned expenses without savings"
+            "value" : "Expenses without savings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gastos planeados sin ahorros"
+            "value" : "Gastos sin ahorros"
           }
         }
       }
     },
-    "Not planned yet" : {
+    "%@ left of %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Not planned yet"
+            "value" : "%@ left of %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aún sin planear"
+            "value" : "%1$@ restantes de %2$@"
           }
         }
       }
     },
-    "%@ saved of %@ planned" : {
+    "%@ over %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ saved of %@ planned"
+            "value" : "%@ over %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ ahorrados de %2$@ planeados"
+            "value" : "%1$@ por encima de %2$@"
           }
         }
       }
     },
-    "%@ income of %@ planned" : {
+    "%@ saved of %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ income of %@ planned"
+            "value" : "%@ saved of %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ de ingreso de %2$@ planeados"
+            "value" : "%1$@ ahorrados de %2$@"
           }
         }
       }
     },
-    "%@ of %@ planned" : {
+    "%@ income of %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ of %@ planned"
+            "value" : "%@ income of %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ de %2$@ planeados"
+            "value" : "%1$@ de ingreso de %2$@"
           }
         }
       }
     },
-    "Chart style" : {
+    "%@ of %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chart style"
+            "value" : "%@ of %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estilo del gráfico"
-          }
-        }
-      }
-    },
-    "Show top %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show top %lld"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar las %lld principales"
-          }
-        }
-      }
-    },
-    "Show all %lld categories" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show all %lld categories"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar las %lld categorías"
-          }
-        }
-      }
-    },
-    "%lld over plan: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld over plan: %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld por encima del plan: %2$@"
-          }
-        }
-      }
-    },
-    "Spending by category" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spending by category"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gasto por categoría"
-          }
-        }
-      }
-    },
-    "Expanded" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expanded"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expandido"
-          }
-        }
-      }
-    },
-    "Collapsed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collapsed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contraído"
+            "value" : "%1$@ de %2$@"
           }
         }
       }
@@ -512,6 +416,22 @@
         }
       }
     },
+    "%lld over plan: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld over plan: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld por encima del plan: %2$@"
+          }
+        }
+      }
+    },
     "%lld unpaid · %lld paid" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -546,6 +466,7 @@
       }
     },
     "+%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -676,6 +597,7 @@
     },
     "Actual (with savings)" : {
       "comment" : "A label for the total amount of money that the user",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {
@@ -688,6 +610,7 @@
     },
     "Actual (without savings)" : {
       "comment" : "Overview totals: actual spend excluding savings.",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -704,6 +627,7 @@
       }
     },
     "Actual income" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1181,6 +1105,7 @@
       }
     },
     "Arrived early, counted for next period" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2153,6 +2078,22 @@
         }
       }
     },
+    "Chart style" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chart style"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estilo del gráfico"
+          }
+        }
+      }
+    },
     "Chart type" : {
       "localizations" : {
         "es" : {
@@ -2223,6 +2164,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Colaborador"
+          }
+        }
+      }
+    },
+    "Collapsed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapsed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraído"
           }
         }
       }
@@ -3657,6 +3614,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Solo excluidas"
+          }
+        }
+      }
+    },
+    "Expanded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expanded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandido"
           }
         }
       }
@@ -5641,6 +5614,22 @@
         }
       }
     },
+    "Not planned yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not planned yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún sin planear"
+          }
+        }
+      }
+    },
     "Not set" : {
       "localizations" : {
         "en" : {
@@ -5741,6 +5730,7 @@
     },
     "of %@ planned" : {
       "comment" : "A label that shows the planned amount of a budget category.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {
@@ -5899,6 +5889,7 @@
     },
     "Over budget" : {
       "comment" : "A label for the amount of money that has been spent over the budget.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {
@@ -6521,6 +6512,7 @@
     },
     "Planned (with savings)" : {
       "comment" : "A label for the total of the user's planned expenses,",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {
@@ -6533,6 +6525,7 @@
     },
     "Planned (without savings)" : {
       "comment" : "Overview totals: planned spend excluding savings.",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6859,6 +6852,7 @@
       }
     },
     "Remaining (actual income)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7603,6 +7597,40 @@
         }
       }
     },
+    "Share" : {
+      "comment" : "Label for the accessibility value of the donut chart.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proporción"
+          }
+        }
+      }
+    },
+    "Show all %lld categories" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show all %lld categories"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar las %lld categorías"
+          }
+        }
+      }
+    },
     "Show less" : {
       "localizations" : {
         "en" : {
@@ -7615,6 +7643,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ver menos"
+          }
+        }
+      }
+    },
+    "Show top %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show top %lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar las %lld principales"
           }
         }
       }
@@ -7777,6 +7821,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Algunas cuentas no se están sincronizando"
+          }
+        }
+      }
+    },
+    "Spending by category" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spending by category"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gasto por categoría"
           }
         }
       }
@@ -8721,6 +8781,7 @@
     },
     "Unplanned" : {
       "comment" : "A label for the total of unplanned expenses.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {

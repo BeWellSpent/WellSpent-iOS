@@ -20,9 +20,9 @@ struct HomePlanCard: View {
             )
             .padding(.bottom, 4)
 
-            row(Text("Planned income"), amount: income, emphasized: true, id: "homePlannedIncome")
-            row(Text("Planned expenses with savings"), amount: withSavings, dot: .green, id: "homePlannedWithSavings")
-            row(Text("Planned expenses without savings"), amount: withoutSavings, dot: .accentColor, id: "homePlannedWithoutSavings")
+            row(Text("Income"), amount: income, emphasized: true, id: "homePlannedIncome")
+            row(Text("Expenses with savings"), amount: withSavings, dot: .green, id: "homePlannedWithSavings")
+            row(Text("Expenses without savings"), amount: withoutSavings, dot: .accentColor, id: "homePlannedWithoutSavings")
 
             if let notPlanned = viewModel.notPlannedYet {
                 Divider()

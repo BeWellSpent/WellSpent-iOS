@@ -39,8 +39,8 @@ struct HomePersonCard: View {
                 let plannedText = format(planned)
                 line(
                     isOver
-                        ? Text("\(format(remaining)) over \(plannedText) planned")
-                        : Text("\(format(remaining)) left of \(plannedText) planned"),
+                        ? Text("\(format(remaining)) over \(plannedText)")
+                        : Text("\(format(remaining)) left of \(plannedText)"),
                     systemImage: isOver ? "exclamationmark" : "wallet.bifold",
                     status: isOver ? .over : .neutral
                 )
@@ -50,7 +50,7 @@ struct HomePersonCard: View {
                 let savedPlanned = TransactionAmountFormatting.tuple(from: summary.savedPlanned)
                 let savedStatus = Calc.savedStatus(saved: saved, planned: savedPlanned)
                 line(
-                    Text("\(format(saved)) saved of \(format(savedPlanned)) planned"),
+                    Text("\(format(saved)) saved of \(format(savedPlanned))"),
                     systemImage: savedStatus == .met ? "checkmark" : "banknote",
                     status: savedStatus
                 )
@@ -60,7 +60,7 @@ struct HomePersonCard: View {
                 let incomePlanned = TransactionAmountFormatting.tuple(from: summary.incomePlanned)
                 let incomeStatus = Calc.incomeStatus(received: income, planned: incomePlanned)
                 line(
-                    Text("\(format(income)) income of \(format(incomePlanned)) planned"),
+                    Text("\(format(income)) income of \(format(incomePlanned))"),
                     systemImage: incomeStatus == .met ? "checkmark" : "arrow.down",
                     status: incomeStatus
                 )

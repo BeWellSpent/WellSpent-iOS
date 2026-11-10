@@ -18,7 +18,7 @@ struct HomeCategoriesCard: View {
 
         HomeCard {
             HStack(alignment: .firstTextBaseline) {
-                Text("\(format(viewModel.categoriesSpent)) of \(format(viewModel.categoriesPlanned)) planned")
+                Text("\(format(viewModel.categoriesSpent)) of \(format(viewModel.categoriesPlanned))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
