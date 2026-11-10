@@ -146,7 +146,7 @@ struct CategoryTrendsReportView: View {
                     if index > 0 { Divider() }
                     Button {
                         if let periodID = report.periods.last?.id {
-                            drillDown = ReportDrillDown(periodID: periodID, categoryID: mover.categoryID, fixedOnly: false)
+                            drillDown = ReportDrillDown(periodID: periodID, categoryID: mover.categoryID)
                         }
                     } label: {
                         moverRow(mover, currentMonth: report.periods.last.map { monthLabel($0.start) } ?? "")

@@ -1,38 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ / period" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ / period"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ / período"
-          }
-        }
-      }
-    },
-    "%@ in %@ · %@ average" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ in %@ · %@ average"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ en %2$@ · %3$@ en promedio"
-          }
-        }
-      }
-    },
     "— %@" : {
       "localizations" : {
         "en" : {
@@ -213,6 +181,22 @@
         }
       }
     },
+    "%@ / period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ / period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ / período"
+          }
+        }
+      }
+    },
     "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade." : {
       "localizations" : {
         "en" : {
@@ -293,6 +277,22 @@
         }
       }
     },
+    "%@ in %@ · %@ average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ in %@ · %@ average"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ en %2$@ · %3$@ en promedio"
+          }
+        }
+      }
+    },
     "%@ income of %@" : {
       "localizations" : {
         "en" : {
@@ -358,6 +358,7 @@
       }
     },
     "%@ now · %@ average" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7519,6 +7520,7 @@
       }
     },
     "Report" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9974,6 +9976,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tus categorías"
+          }
+        }
+      }
+    },
+    "Commitment" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commitment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compromiso"
           }
         }
       }

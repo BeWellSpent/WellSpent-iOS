@@ -3,20 +3,17 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-/// Plan's two sub-tabs — Categories (per-category planned amounts, the
-/// screen's original content) and Fixed Expenses (recurring-bill template
-/// management, added in Stage 3 of
-/// docs/features/overview-plan-navigation-rework.md). Not private: the
-/// toolbar "+" in `BudgetDetailView` needs to know which is active to decide
-/// whether it opens Add Category or Add Fixed Expense.
+/// Plan's two sub-tabs: Commitment (reading the whole plan) and Fixed expenses
+/// (maintaining the templates). Not private: the toolbar "+" in
+/// `BudgetDetailView` opens Add Category or Add Fixed Expense by which is active.
 enum PlanSubTab: Hashable, CaseIterable {
-    case categories
+    case commitment
     case fixedExpenses
 
     var title: String {
         let locale = AppLanguageStore.currentLocale
         switch self {
-        case .categories: return String(localized: "Categories", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .commitment: return String(localized: "Commitment", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .fixedExpenses: return String(localized: "Fixed expenses", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
     }
@@ -62,7 +59,7 @@ struct ExpensePlanView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("View", selection: $selectedSubTab) {
-                Text(PlanSubTab.categories.title).tag(PlanSubTab.categories)
+                Text(PlanSubTab.commitment.title).tag(PlanSubTab.commitment)
                 Text(PlanSubTab.fixedExpenses.title).tag(PlanSubTab.fixedExpenses)
             }
             .pickerStyle(.segmented)
@@ -71,11 +68,17 @@ struct ExpensePlanView: View {
 
             Group {
                 switch selectedSubTab {
-                case .categories:
-                    if let viewModel {
-                        PlanCategoriesView(viewModel: viewModel, currencyCode: currencyCode, localeIdentifier: localeIdentifier, canEdit: canEdit) { category in
-                            activeSheet = .allocate(category)
-                        }
+                case .commitment:
+                    if let viewModel, let fixedExpensesViewModel {
+                        PlanCommitmentView(
+                            viewModel: viewModel,
+                            templatesViewModel: fixedExpensesViewModel,
+                            currencyCode: currencyCode,
+                            localeIdentifier: localeIdentifier,
+                            canEdit: canEdit,
+                            onAllocate: { activeSheet = .allocate($0) },
+                            onEditFixedExpense: { activeSheet = .editFixedExpense($0) }
+                        )
                     } else {
                         ProgressView()
                     }
@@ -195,7 +198,7 @@ struct ExpensePlanView: View {
             localeIdentifier: "en",
             isAddCategoryPresented: .constant(false),
             isAddFixedExpensePresented: .constant(false),
-            selectedSubTab: .constant(.categories),
+            selectedSubTab: .constant(.commitment),
             isActive: true,
             canEdit: true
         )

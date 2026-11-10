@@ -5,9 +5,8 @@ import WellSpentAPI
 struct ReportDrillDown: Identifiable {
     let periodID: String
     let categoryID: Int32
-    let fixedOnly: Bool
 
-    var id: String { "\(periodID)-\(categoryID)-\(fixedOnly)" }
+    var id: String { "\(periodID)-\(categoryID)" }
 }
 
 /// The transactions behind a report row — the "so what do I do about it" step.
@@ -54,7 +53,7 @@ struct ReportTransactionsSheet: View {
                 }
             }
             .task {
-                transactions = await viewModel.transactions(periodID: drillDown.periodID, categoryID: drillDown.categoryID, fixedOnly: drillDown.fixedOnly)
+                transactions = await viewModel.transactions(periodID: drillDown.periodID, categoryID: drillDown.categoryID)
             }
         }
         .accessibilityIdentifier("reportTransactionsSheet")

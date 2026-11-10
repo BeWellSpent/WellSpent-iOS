@@ -2,9 +2,9 @@ import os
 import SwiftUI
 import WellSpentAPI
 
-/// Plan's Fixed expenses sub-tab: a "Fixed this period" card, then payment
-/// plans, recurring bills and bills not due this period. An inset grouped
-/// list, so rows keep swipe-to-delete while reading as Home's cards.
+/// Plan's Fixed expenses sub-tab, for maintaining the templates: recurring
+/// bills, payment plans and bills not due this period. Totals and plan
+/// progress are read on the Commitment tab.
 struct PlanFixedExpensesView: View {
     let templatesViewModel: FixedExpenseTemplatesViewModel
     let planViewModel: ExpensePlanViewModel
@@ -21,10 +21,6 @@ struct PlanFixedExpensesView: View {
         let groups = PlanFixedGrouping.group(templates, dueIDs: dueIDs)
 
         List {
-            Section {
-                summary(groups: groups, templates: templates, dueIDs: dueIDs)
-            }
-
             if templates.isEmpty {
                 Section {
                     if templatesViewModel.isLoading {
@@ -35,8 +31,8 @@ struct PlanFixedExpensesView: View {
                 }
             }
 
-            group(Text("Payment plans"), groups.plans, muted: false, id: "planFixedPlans")
             group(Text("Recurring bills"), groups.recurring, muted: false, id: "planFixedRecurring")
+            group(Text("Payment plans"), groups.plans, muted: false, id: "planFixedPlans")
             group(Text("Not due this period"), groups.notDue, muted: true, id: "planFixedNotDue")
 
             if let errorMessage = templatesViewModel.errorMessage {
@@ -50,36 +46,6 @@ struct PlanFixedExpensesView: View {
             await templatesViewModel.load()
             await planViewModel.load()
         }
-    }
-
-    private func summary(groups: PlanFixedGrouping.Groups, templates: [Wellspent_V1_FixedExpense], dueIDs: Set<String>?) -> some View {
-        let endingSoon = groups.plans.filter { FixedExpensePlanSummary.isEndingSoon($0) }.count
-        let parts: [String] = [
-            PlanFixedGrouping.dueCount(templates, dueIDs: dueIDs).map {
-                String(localized: "\($0) bills this period", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
-            },
-            String(localized: "\(groups.plans.count) payment plans", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale),
-            endingSoon > 0
-                ? String(localized: "\(endingSoon) ending soon", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
-                : nil,
-        ].compactMap { $0 }
-
-        return VStack(alignment: .leading, spacing: 6) {
-            Text("Fixed this period")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            if let total = planViewModel.fixedDuePlannedTotal {
-                Text(MoneyFormatting.format(units: total.units, nanos: total.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier))
-                    .font(.title2.bold())
-                    .monospacedDigit()
-                    .accessibilityIdentifier("planFixedDueTotal")
-            }
-            Text(parts.joined(separator: " · "))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder

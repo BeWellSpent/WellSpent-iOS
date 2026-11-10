@@ -12,13 +12,6 @@ struct ReportsCalculationsTests {
         #expect(!ReportsCalculations.isRangeLocked(12, isPro: true))
     }
 
-    @Test("Bars scale to the tallest unlocked amount; locked ones get a ghost height")
-    func bars() {
-        let fractions = ReportsCalculations.barFractions([nil, (1000, 0), (2000, 0)], lockedHeight: 0.6)
-        #expect(fractions == [0.6, 0.5, 1])
-        #expect(ReportsCalculations.barFractions([(0, 0)]) == [0])
-    }
-
     @Test("Percentages keep a decimal under 10%")
     func percents() {
         #expect(ReportsCalculations.percentText(41.4) == "41%")

@@ -98,7 +98,7 @@ struct BudgetDetailView: View {
     /// itself, so the toolbar "+" (which only renders at this level, see the
     /// type-level doc comment) knows whether to dispatch to Add Category or
     /// Add Fixed Expense.
-    @State private var planSelectedSubTab: PlanSubTab = .categories
+    @State private var planSelectedSubTab: PlanSubTab = .commitment
     @State private var isMenuPresented = false
     /// Bumped whenever the Focused View toggle changes in `BudgetMenuSheet`,
     /// so Plan/Overview rebuild and refetch immediately instead of
@@ -439,7 +439,7 @@ struct BudgetDetailView: View {
             if viewModel?.canEdit == true {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        if planSelectedSubTab == .categories {
+                        if planSelectedSubTab == .commitment {
                             isAddCategoryPresented = true
                         } else {
                             isAddFixedExpenseTemplatePresented = true
@@ -447,7 +447,7 @@ struct BudgetDetailView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityIdentifier(planSelectedSubTab == .categories ? "addPlanCategoryButton" : "addFixedExpenseTemplateButton")
+                    .accessibilityIdentifier(planSelectedSubTab == .commitment ? "addPlanCategoryButton" : "addFixedExpenseTemplateButton")
                 }
             }
         case .reports, .more:

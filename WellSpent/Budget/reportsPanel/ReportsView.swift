@@ -2,7 +2,7 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-/// The Reports tab: Commitments and Category trends, with a person filter
+/// The Reports tab: Category trends, with a person filter
 /// (docs/features/reports.md). Free sees the current period and the 3 before
 /// it; locked content says "Pro — coming soon".
 struct ReportsView: View {
@@ -38,20 +38,9 @@ struct ReportsView: View {
                     planBadge(isPro: viewModel.isPro)
                 }
 
-                PillSegmentedControl(
-                    options: [(ReportsViewModel.Tab.commitments, Text("Commitments")), (.trends, Text("Trends"))],
-                    selection: Binding(get: { viewModel.tab }, set: { viewModel.tab = $0 })
-                )
-                .accessibilityIdentifier("reportsTabPicker")
-
                 personChips(viewModel)
 
-                switch viewModel.tab {
-                case .commitments:
-                    CommitmentReportView(viewModel: viewModel)
-                case .trends:
-                    CategoryTrendsReportView(viewModel: viewModel)
-                }
+                CategoryTrendsReportView(viewModel: viewModel)
 
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
@@ -111,40 +100,6 @@ struct ReportsView: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier(id)
-    }
-}
-
-/// The Transactions screens' switch: a grey track with the selected option on a white pill.
-struct PillSegmentedControl<Value: Hashable>: View {
-    let options: [(Value, Text)]
-    @Binding var selection: Value
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                let selected = option.0 == selection
-                Button {
-                    selection = option.0
-                } label: {
-                    option.1
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(selected ? .primary : .secondary)
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                        .background {
-                            if selected {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(.secondarySystemGroupedBackground))
-                                    .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .padding(4)
-        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 14))
     }
 }
 
