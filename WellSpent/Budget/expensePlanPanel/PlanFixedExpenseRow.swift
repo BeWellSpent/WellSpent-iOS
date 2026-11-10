@@ -2,8 +2,7 @@ import SwiftUI
 import WellSpentAPI
 
 /// One fixed-expense template in Plan: name, kind tag and amount; its schedule
-/// and next due date; category and payment method; and, for a payment plan,
-/// progress and end date (orange when it ends soon). Tapping edits it.
+/// and next due date; category and payment method. Tapping edits it.
 struct PlanFixedExpenseRow: View {
     let expense: Wellspent_V1_FixedExpense
     let viewModel: FixedExpenseTemplatesViewModel
@@ -55,10 +54,6 @@ struct PlanFixedExpenseRow: View {
             .font(.footnote)
             .foregroundStyle(.secondary)
             .padding(.leading, 20)
-
-            planProgress
-                .padding(.leading, 20)
-                .padding(.top, 2)
         }
         .padding(.vertical, 4)
         // Whole-row tap via .simultaneousGesture, not .onTapGesture or a
@@ -73,34 +68,5 @@ struct PlanFixedExpenseRow: View {
     private var details: some View {
         let parts = [viewModel.categoryName(for: expense.categoryID), viewModel.paymentMethodName(for: expense.paymentMethodID)].compactMap { $0 }
         return Text(parts.joined(separator: " · "))
-    }
-
-    @ViewBuilder
-    private var planProgress: some View {
-        if FixedExpensePlanSummary.kind(for: expense) != nil {
-            let endingSoon = FixedExpensePlanSummary.isEndingSoon(expense)
-            VStack(alignment: .leading, spacing: 4) {
-                if expense.totalPayments > 0 {
-                    ProgressView(value: Double(expense.paymentsMade), total: Double(expense.totalPayments))
-                        .tint(endingSoon ? .orange : .accentColor)
-                }
-                HStack(spacing: 4) {
-                    if let progress = FixedExpensePlanSummary.progressText(for: expense) {
-                        Text(progress)
-                            .accessibilityIdentifier("fixedExpenseProgress_\(expense.name)")
-                    }
-                    if let ends = FixedExpensePlanSummary.endsText(for: expense, localeIdentifier: localeIdentifier) {
-                        if FixedExpensePlanSummary.progressText(for: expense) != nil { Text("·") }
-                        Text(ends)
-                            .fontWeight(endingSoon ? .semibold : .regular)
-                            .foregroundStyle(endingSoon ? .orange : .secondary)
-                            .accessibilityIdentifier("fixedExpenseEnds_\(expense.name)")
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-            }
-        }
     }
 }

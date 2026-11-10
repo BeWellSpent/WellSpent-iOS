@@ -4,8 +4,8 @@ import os
 import WellSpentAPI
 import WellSpentREST
 
-/// Plan's Fixed Expenses sub-tab — profile-level recurring-bill template
-/// management (create/edit/deactivate), not a period's spawned occurrences
+/// Plan's fixed-expense templates and their projection — managed on the Fixed
+/// expenses sub-tab, read on Commitment. Not a period's spawned occurrences
 /// (that's Overview's Transactions sub-tab, backed by `TransactionsViewModel`).
 ///
 /// Replaces the old `FixedExpensesViewModel`, which this screen deliberately
@@ -27,6 +27,8 @@ final class FixedExpenseTemplatesViewModel {
     /// see `BudgetRESTMapping.FixedExpensePayoffInfo`. Needed so Edit's "Pay
     /// in Full" sheet still works from here.
     private(set) var payoffByFixedExpenseID: [String: BudgetRESTMapping.FixedExpensePayoffInfo] = [:]
+    /// Coming up on the Commitment tab; nil until loaded or when the load failed.
+    private(set) var projection: FixedExpenseProjectionMapping.Projection?
     private(set) var errorMessage: String?
 
     let budgetProfileID: String
@@ -59,8 +61,24 @@ final class FixedExpenseTemplatesViewModel {
 
         // Needs `people` resolved first, so this can't join the batch above.
         let focusedView = ChartPreference.myPerson(currentUserID: currentUserID, people: people)?.focusedViewEnabled ?? false
-        if let fetched = await fetchFixedExpenses(focusedView: focusedView) {
-            fixedExpenses = fetched
+        async let fixedResult = fetchFixedExpenses(focusedView: focusedView)
+        async let projectionResult = fetchProjection(focusedView: focusedView)
+        if let fetched = await fixedResult { fixedExpenses = fetched }
+        projection = await projectionResult ?? projection
+    }
+
+    private func fetchProjection(focusedView: Bool) async -> FixedExpenseProjectionMapping.Projection? {
+        do {
+            let output = try await restClient.getFixedExpenseProjection(.init(path: .init(id: budgetProfileID), query: .init(focusedView: focusedView)))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                RESTNetworkError.logUnexpectedOutput(output)
+                Self.logger.error("load fixed expense projection failed budgetProfileID=\(self.budgetProfileID, privacy: .public)")
+                return nil
+            }
+            return FixedExpenseProjectionMapping.projection(from: body)
+        } catch {
+            Self.logger.error("load fixed expense projection failed budgetProfileID=\(self.budgetProfileID, privacy: .public) error=\(String(describing: error), privacy: .public)")
+            return nil
         }
     }
 
