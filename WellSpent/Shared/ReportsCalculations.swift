@@ -7,6 +7,22 @@ nonisolated enum ReportsCalculations {
     /// Free sees the current period and the 3 before it, so only the 3-period range is fully open.
     static let freeMaxRange = 3
 
+    enum ScorecardStatus: Equatable {
+        case locked, inProgress, noPlan, notScored, onPlan, over
+    }
+
+    /// What one scorecard row says about its period.
+    static func scorecardStatus(locked: Bool, inProgress: Bool, planRecorded: Bool, onPlan: Bool?) -> ScorecardStatus {
+        if locked { return .locked }
+        if inProgress { return .inProgress }
+        if !planRecorded { return .noPlan }
+        switch onPlan {
+        case true?: return .onPlan
+        case false?: return .over
+        case nil: return .notScored
+        }
+    }
+
     static func isRangeLocked(_ range: Int, isPro: Bool) -> Bool {
         !isPro && range > freeMaxRange
     }

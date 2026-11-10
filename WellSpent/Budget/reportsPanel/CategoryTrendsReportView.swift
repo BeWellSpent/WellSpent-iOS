@@ -30,7 +30,7 @@ struct CategoryTrendsReportView: View {
     private func chartCard(_ report: ReportsRESTMapping.Trends) -> some View {
         HomeCard {
             HStack {
-                rangePicker
+                ReportRangePicker(viewModel: viewModel)
                 Spacer()
                 Picker("Units", selection: Binding(get: { viewModel.showPercent }, set: { viewModel.showPercent = $0 })) {
                     Text(verbatim: "$").tag(false)
@@ -103,30 +103,6 @@ struct CategoryTrendsReportView: View {
     private func value(_ category: ReportsRESTMapping.CategoryAmount) -> Double {
         if viewModel.showPercent { return category.percentOfIncome ?? 0 }
         return NSDecimalNumber(decimal: HomeOverviewCalculations.decimal(TransactionAmountFormatting.tuple(from: category.amount))).doubleValue
-    }
-
-    private var rangePicker: some View {
-        HStack(spacing: 4) {
-            ForEach(ReportsCalculations.trendRanges, id: \.self) { range in
-                let locked = ReportsCalculations.isRangeLocked(range, isPro: viewModel.isPro)
-                Button {
-                    Task { await viewModel.selectRange(range) }
-                } label: {
-                    HStack(spacing: 3) {
-                        Text("\(range) periods")
-                        if locked { Image(systemName: "lock.fill").font(.caption2) }
-                    }
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(viewModel.range == range ? Color.primary : Color(.tertiarySystemFill), in: Capsule())
-                    .foregroundStyle(viewModel.range == range ? Color(.systemBackground) : (locked ? .secondary : .primary))
-                }
-                .buttonStyle(.plain)
-                .disabled(locked)
-                .accessibilityIdentifier("reportsRange_\(range)")
-            }
-        }
     }
 
     private func legend(_ report: ReportsRESTMapping.Trends) -> some View {

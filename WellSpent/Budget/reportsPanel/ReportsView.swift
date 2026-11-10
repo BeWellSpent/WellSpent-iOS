@@ -2,7 +2,7 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-/// The Reports tab: Category trends, with a person filter
+/// The Reports tab: Category trends and the Plan scorecard, with a person filter
 /// (docs/features/reports.md). Free sees the current period and the 3 before
 /// it; locked content says "Pro — coming soon".
 struct ReportsView: View {
@@ -38,9 +38,20 @@ struct ReportsView: View {
                     planBadge(isPro: viewModel.isPro)
                 }
 
+                PillSegmentedControl(
+                    options: [(ReportsViewModel.Report.trends, Text("Trends")), (.scorecard, Text("Scorecard"))],
+                    selection: Binding(get: { viewModel.report }, set: { viewModel.report = $0 })
+                )
+                .accessibilityIdentifier("reportsPicker")
+
                 personChips(viewModel)
 
-                CategoryTrendsReportView(viewModel: viewModel)
+                switch viewModel.report {
+                case .trends:
+                    CategoryTrendsReportView(viewModel: viewModel)
+                case .scorecard:
+                    PlanScorecardReportView(viewModel: viewModel)
+                }
 
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
@@ -100,6 +111,70 @@ struct ReportsView: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier(id)
+    }
+}
+
+/// The Transactions screens' switch: a grey track with the selected option on a white pill.
+struct PillSegmentedControl<Value: Hashable>: View {
+    let options: [(Value, Text)]
+    @Binding var selection: Value
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+                let selected = option.0 == selection
+                Button {
+                    selection = option.0
+                } label: {
+                    option.1
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(selected ? .primary : .secondary)
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .background {
+                            if selected {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(.secondarySystemGroupedBackground))
+                                    .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+/// 3, 6 or 12 periods; the longer ranges show a lock on Free.
+struct ReportRangePicker: View {
+    let viewModel: ReportsViewModel
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(ReportsCalculations.trendRanges, id: \.self) { range in
+                let locked = ReportsCalculations.isRangeLocked(range, isPro: viewModel.isPro)
+                let selected = viewModel.range == range
+                Button {
+                    Task { await viewModel.selectRange(range) }
+                } label: {
+                    HStack(spacing: 3) {
+                        Text("\(range) periods")
+                        if locked { Image(systemName: "lock.fill").font(.caption2) }
+                    }
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(selected ? Color.primary : Color(.tertiarySystemFill), in: Capsule())
+                    .foregroundStyle(selected ? Color(.systemBackground) : (locked ? .secondary : .primary))
+                }
+                .buttonStyle(.plain)
+                .disabled(locked)
+                .accessibilityIdentifier("reportsRange_\(range)")
+            }
+        }
     }
 }
 

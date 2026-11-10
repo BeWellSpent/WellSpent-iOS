@@ -4,12 +4,18 @@ import os
 import WellSpentAPI
 import WellSpentREST
 
-/// The Reports tab: Category trends (docs/features/reports.md). Every figure
-/// comes from the report endpoint; the budget's people, categories and payment
-/// methods are only for labels, colours and the person filter.
+/// The Reports tab: Category trends and the Plan scorecard (docs/features/reports.md,
+/// plan-scorecard.md). Every figure comes from the report endpoints; the budget's
+/// people, categories and payment methods are only for labels, colours and the person filter.
 @MainActor
 @Observable
 final class ReportsViewModel {
+    enum Report: Hashable {
+        case trends
+        case scorecard
+    }
+
+    var report: Report = .trends
     var showPercent = false
     private(set) var personID: Int64?
     private(set) var range = ReportsCalculations.freeMaxRange
@@ -18,6 +24,7 @@ final class ReportsViewModel {
     private(set) var categories: [Wellspent_V1_Category] = []
     private(set) var paymentMethods: [Wellspent_V1_PaymentMethod] = []
     private(set) var trends: ReportsRESTMapping.Trends?
+    private(set) var scorecard: ReportsRESTMapping.Scorecard?
     private(set) var isLoading = false
     private(set) var errorMessage: String?
 
@@ -46,20 +53,27 @@ final class ReportsViewModel {
         people = await peopleResult ?? people
         categories = await categoriesResult ?? categories
         paymentMethods = await methodsResult ?? paymentMethods
-        await loadTrends()
+        await loadReports()
     }
 
     func selectPerson(_ id: Int64?) async {
         guard id != personID else { return }
         personID = id
-        await loadTrends()
+        await loadReports()
     }
 
     /// A range Free can't open is ignored; the control shows it locked.
     func selectRange(_ newRange: Int) async {
         guard newRange != range, !ReportsCalculations.isRangeLocked(newRange, isPro: isPro) else { return }
         range = newRange
-        await loadTrends()
+        await loadReports()
+    }
+
+    private func loadReports() async {
+        errorMessage = nil
+        async let trendsLoad: Void = loadTrends()
+        async let scorecardLoad: Void = loadScorecard()
+        _ = await (trendsLoad, scorecardLoad)
     }
 
     // MARK: Labels
@@ -104,7 +118,6 @@ final class ReportsViewModel {
     // MARK: Loading
 
     private func loadTrends() async {
-        errorMessage = nil
         do {
             let output = try await restClient.getCategoryTrends(.init(path: .init(id: budgetProfileID), query: .init(periods: Int32(range), budgetPersonId: personID)))
             guard case .ok(let ok) = output, let body = try? ok.body.json else {
@@ -114,6 +127,23 @@ final class ReportsViewModel {
             }
             trends = ReportsRESTMapping.trends(from: body)
         } catch {
+            errorMessage = RESTNetworkError.connectivityMessage(for: error)
+                ?? String(localized: "Couldn't load your reports.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+        }
+    }
+
+    private func loadScorecard() async {
+        do {
+            let output = try await restClient.getPlanScorecard(.init(path: .init(id: budgetProfileID), query: .init(periods: Int32(range), budgetPersonId: personID)))
+            guard case .ok(let ok) = output, let body = try? ok.body.json else {
+                RESTNetworkError.logUnexpectedOutput(output)
+                Self.logger.error("load plan scorecard failed budgetProfileId=\(self.budgetProfileID, privacy: .public)")
+                errorMessage = String(localized: "Couldn't load your reports.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
+                return
+            }
+            scorecard = ReportsRESTMapping.scorecard(from: body)
+        } catch {
+            Self.logger.error("load plan scorecard failed budgetProfileId=\(self.budgetProfileID, privacy: .public) error=\(String(describing: error), privacy: .public)")
             errorMessage = RESTNetworkError.connectivityMessage(for: error)
                 ?? String(localized: "Couldn't load your reports.", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
         }

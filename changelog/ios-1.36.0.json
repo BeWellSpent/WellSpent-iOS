@@ -441,6 +441,11 @@
       "changeType": "added",
       "summaryEn": "Reports are here: Category trends shows how spending per category has moved, with the biggest changes against your recent average. Free covers the last four periods; full history is Pro. Plan's Categories tab is now Commitment — your whole plan in one place, with fixed bills this period, payment plans and when your fixed costs go down — and Fixed expenses is just for managing them.",
       "summaryEs": "Llegaron los informes: Tendencias por categoría muestra cómo ha cambiado el gasto por categoría, con los mayores cambios frente a tu promedio reciente. La versión gratuita cubre los últimos cuatro períodos; el historial completo es Pro. La pestaña Categorías del Plan ahora es Compromiso: todo tu plan en un lugar, con los gastos fijos del período, los planes de pago y cuándo bajan tus gastos fijos. Gastos fijos queda solo para administrarlos."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "A Plan scorecard in Reports shows how each period went against the plan it had: how many periods stayed on plan, your streak, categories within plan, savings, and this period so far.",
+      "summaryEs": "Un informe de cumplimiento en Informes muestra cómo le fue a cada período frente al plan que tenía: cuántos períodos se mantuvieron dentro del plan, tu racha, las categorías dentro del plan, el ahorro y este período hasta ahora."
     }
   ]
 }

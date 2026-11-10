@@ -12,6 +12,17 @@ struct ReportsCalculationsTests {
         #expect(!ReportsCalculations.isRangeLocked(12, isPro: true))
     }
 
+    @Test("A scorecard row's status: locked and in-progress win, then no plan, then the score")
+    func scorecardStatus() {
+        typealias C = ReportsCalculations
+        #expect(C.scorecardStatus(locked: true, inProgress: true, planRecorded: true, onPlan: true) == .locked)
+        #expect(C.scorecardStatus(locked: false, inProgress: true, planRecorded: true, onPlan: nil) == .inProgress)
+        #expect(C.scorecardStatus(locked: false, inProgress: false, planRecorded: false, onPlan: nil) == .noPlan)
+        #expect(C.scorecardStatus(locked: false, inProgress: false, planRecorded: true, onPlan: true) == .onPlan)
+        #expect(C.scorecardStatus(locked: false, inProgress: false, planRecorded: true, onPlan: false) == .over)
+        #expect(C.scorecardStatus(locked: false, inProgress: false, planRecorded: true, onPlan: nil) == .notScored)
+    }
+
     @Test("Percentages keep a decimal under 10%")
     func percents() {
         #expect(ReportsCalculations.percentText(41.4) == "41%")

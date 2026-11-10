@@ -2,7 +2,7 @@ import Foundation
 import WellSpentAPI
 import WellSpentREST
 
-/// Plain values for Category trends. Reports have no protobuf types, and the
+/// Plain values for Category trends and the Plan scorecard. Reports have no protobuf types, and the
 /// generated REST ones split each period across `value1`/`value2` (allOf), so
 /// they're flattened here once rather than at every view.
 nonisolated enum ReportsRESTMapping {
@@ -33,6 +33,52 @@ nonisolated enum ReportsRESTMapping {
     struct Trends: Equatable {
         let periods: [Period]
         let movers: [Mover]
+    }
+
+    struct ScorecardPeriod: Equatable {
+        let id: String
+        let start: Date
+        let locked: Bool
+        let inProgress: Bool
+        let planRecorded: Bool
+        let plannedSpending: Wellspent_V1_Money?
+        let actualSpending: Wellspent_V1_Money?
+        let onPlan: Bool?
+        let categoriesWithin: Int?
+        let categoriesPlanned: Int?
+        let savingsPlanned: Wellspent_V1_Money?
+        let savingsActual: Wellspent_V1_Money?
+        let savingsMet: Bool?
+    }
+
+    struct ScorecardCategory: Equatable {
+        let categoryID: Int32
+        let planned: Wellspent_V1_Money
+        let actual: Wellspent_V1_Money
+    }
+
+    struct Scorecard: Equatable {
+        let periods: [ScorecardPeriod]
+        let current: [ScorecardCategory]
+        let onPlanCount: Int
+        let scoredCount: Int
+        let streak: Int
+    }
+
+    static func scorecard(from r: Components.Schemas.PlanScorecard) -> Scorecard {
+        Scorecard(
+            periods: r.periods.map {
+                let p = $0.value1, s = $0.value2
+                return ScorecardPeriod(
+                    id: p.budgetPeriodId, start: date(p.startDate), locked: p.locked, inProgress: s.inProgress, planRecorded: s.planRecorded,
+                    plannedSpending: s.plannedSpending.map(BudgetRESTMapping.money(from:)), actualSpending: s.actualSpending.map(BudgetRESTMapping.money(from:)),
+                    onPlan: s.onPlan, categoriesWithin: s.categoriesWithin.map(Int.init), categoriesPlanned: s.categoriesPlanned.map(Int.init),
+                    savingsPlanned: s.savingsPlanned.map(BudgetRESTMapping.money(from:)), savingsActual: s.savingsActual.map(BudgetRESTMapping.money(from:)),
+                    savingsMet: s.savingsMet)
+            },
+            current: r.current.map { ScorecardCategory(categoryID: $0.categoryId, planned: BudgetRESTMapping.money(from: $0.planned), actual: BudgetRESTMapping.money(from: $0.actual)) },
+            onPlanCount: Int(r.onPlanCount), scoredCount: Int(r.scoredCount), streak: Int(r.streak)
+        )
     }
 
     static func trends(from r: Components.Schemas.CategoryTrendsReport) -> Trends {
