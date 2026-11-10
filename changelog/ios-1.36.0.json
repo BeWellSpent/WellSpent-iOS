@@ -436,6 +436,11 @@
       "changeType": "changed",
       "summaryEn": "The Plan tab now matches Home: your plan on top, a card per person with their planned expenses, savings and what remains of their income, and a compact categories card showing where each amount comes from. Fixed expenses are grouped into payment plans, recurring bills and bills not due this period.",
       "summaryEs": "La pestaña Plan ahora se ve como Inicio: tu plan arriba, una tarjeta por persona con sus gastos planeados, ahorros y lo que queda de su ingreso, y una tarjeta compacta de categorías que muestra de dónde sale cada monto. Los gastos fijos se agrupan en planes de pago, gastos recurrentes y gastos que no vencen este período."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Reports are here. Commitments shows what you owe each period before spending anything, your payment plans, and when your fixed costs go down. Trends shows how spending per category has moved, with the biggest changes against your recent average. Free covers the last four periods; full history is Pro.",
+      "summaryEs": "Llegaron los informes. Compromisos muestra lo que debes cada período antes de gastar, tus planes de pago y cuándo bajan tus gastos fijos. Tendencias muestra cómo ha cambiado el gasto por categoría, con los mayores cambios frente a tu promedio reciente. La versión gratuita cubre los últimos cuatro períodos; el historial completo es Pro."
     }
   ]
 }

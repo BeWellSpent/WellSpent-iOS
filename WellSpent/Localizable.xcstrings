@@ -1,370 +1,354 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Planned this period" : {
+    "Report" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planned this period"
+            "value" : "Report"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planeado este período"
+            "value" : "Informe"
           }
         }
       }
     },
-    "%@ expenses" : {
+    "Commitments" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ expenses"
+            "value" : "Commitments"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ en gastos"
+            "value" : "Compromisos"
           }
         }
       }
     },
-    "%@ savings" : {
+    "Trends" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ savings"
+            "value" : "Trends"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ en ahorros"
+            "value" : "Tendencias"
           }
         }
       }
     },
-    "%@ remaining of %@ income" : {
+    "Everyone" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ remaining of %@ income"
+            "value" : "Everyone"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ restantes de %2$@ de ingreso"
+            "value" : "Todos"
           }
         }
       }
     },
-    "Shared (no person)" : {
+    "Pro is coming soon" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shared (no person)"
+            "value" : "Pro is coming soon"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Compartido (sin persona)"
+            "value" : "Pro llegará pronto"
           }
         }
       }
     },
-    "%lld categories" : {
+    "Committed each period" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld categories"
+            "value" : "Committed each period"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld categorías"
+            "value" : "Comprometido cada período"
           }
         }
       }
     },
-    "Other spending" : {
+    "Coming up" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Other spending"
+            "value" : "Coming up"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otros gastos"
+            "value" : "Próximamente"
           }
         }
       }
     },
-    "%@: fixed bills are %@ over the manual amount" : {
+    "By category" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@: fixed bills are %@ over the manual amount"
+            "value" : "By category"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@: los gastos fijos superan el monto manual por %2$@"
+            "value" : "Por categoría"
           }
         }
       }
     },
-    "Fixed this period" : {
+    "%@ of income" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fixed this period"
+            "value" : "%@ of income"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fijos este período"
+            "value" : "%@ del ingreso"
           }
         }
       }
     },
-    "%lld bills this period" : {
+    "%lld bills" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld bills this period"
+            "value" : "%lld bills"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld gastos este período"
+            "value" : "%lld gastos"
           }
         }
       }
     },
-    "%lld payment plans" : {
+    "See when your fixed costs go down" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld payment plans"
+            "value" : "See when your fixed costs go down"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld planes de pago"
+            "value" : "Mira cuándo bajan tus gastos fijos"
           }
         }
       }
     },
-    "%lld ending soon" : {
+    "No payment plans end in the next six months." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld ending soon"
+            "value" : "No payment plans end in the next six months."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld por terminar"
+            "value" : "Ningún plan de pago termina en los próximos seis meses."
           }
         }
       }
     },
-    "Payment plans" : {
+    "Units" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Payment plans"
+            "value" : "Units"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planes de pago"
+            "value" : "Unidades"
           }
         }
       }
     },
-    "Recurring bills" : {
+    "Spending by period" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recurring bills"
+            "value" : "Spending by period"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gastos recurrentes"
+            "value" : "Gasto por período"
           }
         }
       }
     },
-    "Not due this period" : {
+    "Older periods and 6 or 12 period ranges are Pro." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Not due this period"
+            "value" : "Older periods and 6 or 12 period ranges are Pro."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No vencen este período"
+            "value" : "Los períodos anteriores y los rangos de 6 o 12 períodos son Pro."
           }
         }
       }
     },
-    "%@ · due %@" : {
+    "Biggest movers" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ · due %@"
+            "value" : "Biggest movers"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ · vence %2$@"
+            "value" : "Mayores cambios"
           }
         }
       }
     },
-    "Expenses with savings" : {
+    "vs 3-period average" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Expenses with savings"
+            "value" : "vs 3-period average"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gastos con ahorros"
+            "value" : "vs. promedio de 3 períodos"
           }
         }
       }
     },
-    "Expenses without savings" : {
+    "%lld periods" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Expenses without savings"
+            "value" : "%lld periods"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gastos sin ahorros"
+            "value" : "%lld períodos"
           }
         }
       }
     },
-    "%@ left of %@" : {
+    "Trends appear once you have a few periods." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ left of %@"
+            "value" : "Trends appear once you have a few periods."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ restantes de %2$@"
+            "value" : "Las tendencias aparecen cuando tienes algunos períodos."
           }
         }
       }
     },
-    "%@ over %@" : {
+    "%@ now · %@ average" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ over %@"
+            "value" : "%@ now · %@ average"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ por encima de %2$@"
+            "value" : "%1$@ ahora · %2$@ en promedio"
           }
         }
       }
     },
-    "%@ saved of %@" : {
+    "No transactions." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ saved of %@"
+            "value" : "No transactions."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ ahorrados de %2$@"
+            "value" : "No hay transacciones."
           }
         }
       }
     },
-    "%@ income of %@" : {
+    "Couldn't load your reports." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ income of %@"
+            "value" : "Couldn't load your reports."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ de ingreso de %2$@"
-          }
-        }
-      }
-    },
-    "%@ of %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ of %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ de %2$@"
+            "value" : "No pudimos cargar tus informes."
           }
         }
       }
@@ -533,6 +517,22 @@
         }
       }
     },
+    "%@ · due %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · due %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · vence %2$@"
+          }
+        }
+      }
+    },
     "%@ connected %lld bank(s) to %@, but their account isn't on a paid plan, so those transactions won't be imported. Bank sync is per person, so they'll need to upgrade." : {
       "localizations" : {
         "en" : {
@@ -545,6 +545,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ conectó %lld banco(s) a %@, pero su cuenta no tiene un plan pago, así que esas transacciones no se importarán. La sincronización bancaria es por persona, así que necesita mejorar su plan."
+          }
+        }
+      }
+    },
+    "%@ expenses" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ expenses"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ en gastos"
           }
         }
       }
@@ -597,6 +613,22 @@
         }
       }
     },
+    "%@ income of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ income of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ de ingreso de %2$@"
+          }
+        }
+      }
+    },
     "%@ invited you as %@" : {
       "localizations" : {
         "en" : {
@@ -609,6 +641,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ te invitó como %2$@"
+          }
+        }
+      }
+    },
+    "%@ left of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ restantes de %2$@"
           }
         }
       }
@@ -629,6 +677,38 @@
         }
       }
     },
+    "%@ of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ de %2$@"
+          }
+        }
+      }
+    },
+    "%@ over %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ over %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ por encima de %2$@"
+          }
+        }
+      }
+    },
     "%@ over %@ planned" : {
       "comment" : "How much combined spend has exceeded the overall planned total.",
       "localizations" : {
@@ -636,6 +716,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ por encima de %@ planeados"
+          }
+        }
+      }
+    },
+    "%@ remaining of %@ income" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ remaining of %@ income"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ restantes de %2$@ de ingreso"
+          }
+        }
+      }
+    },
+    "%@ saved of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ saved of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ ahorrados de %2$@"
+          }
+        }
+      }
+    },
+    "%@ savings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ savings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ en ahorros"
+          }
+        }
+      }
+    },
+    "%@: fixed bills are %@ over the manual amount" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: fixed bills are %@ over the manual amount"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: los gastos fijos superan el monto manual por %2$@"
           }
         }
       }
@@ -672,6 +816,54 @@
         }
       }
     },
+    "%lld bills this period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bills this period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld gastos este período"
+          }
+        }
+      }
+    },
+    "%lld categories" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld categories"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld categorías"
+          }
+        }
+      }
+    },
+    "%lld ending soon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ending soon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld por terminar"
+          }
+        }
+      }
+    },
     "%lld over plan: %@" : {
       "localizations" : {
         "en" : {
@@ -684,6 +876,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$lld por encima del plan: %2$@"
+          }
+        }
+      }
+    },
+    "%lld payment plans" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld payment plans"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld planes de pago"
           }
         }
       }
@@ -1254,6 +1462,7 @@
     },
     "Amount" : {
       "comment" : "Label for the amount column in the pie/bar chart legend.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {
@@ -2351,6 +2560,7 @@
       }
     },
     "Chart type" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -2475,6 +2685,7 @@
     },
     "Committed (with savings)" : {
       "comment" : "Plan totals: committed spend including savings.",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2492,6 +2703,7 @@
     },
     "Committed (without savings)" : {
       "comment" : "Plan totals: committed spend excluding savings.",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3441,6 +3653,7 @@
       }
     },
     "Due %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3955,6 +4168,38 @@
         }
       }
     },
+    "Expenses with savings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expenses with savings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastos con ahorros"
+          }
+        }
+      }
+    },
+    "Expenses without savings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expenses without savings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastos sin ahorros"
+          }
+        }
+      }
+    },
     "Expenses: %@" : {
       "comment" : "Transactions card: spending without savings.",
       "localizations" : {
@@ -4152,7 +4397,6 @@
       }
     },
     "Fixed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4214,6 +4458,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gastos fijos de este período"
+          }
+        }
+      }
+    },
+    "Fixed this period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fixed this period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fijos este período"
           }
         }
       }
@@ -5572,6 +5832,7 @@
     },
     "No data yet." : {
       "comment" : "A message displayed when there is no data to show in the expense chart.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {
@@ -5838,6 +6099,22 @@
         }
       }
     },
+    "Not due this period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not due this period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No vencen este período"
+          }
+        }
+      }
+    },
     "Not due this period — next due %@" : {
       "localizations" : {
         "en" : {
@@ -5866,22 +6143,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ahora no"
-          }
-        }
-      }
-    },
-    "Remaining" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remaining"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restante"
           }
         }
       }
@@ -6122,6 +6383,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Otro"
+          }
+        }
+      }
+    },
+    "Other spending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other spending"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otros gastos"
           }
         }
       }
@@ -6556,6 +6833,22 @@
         }
       }
     },
+    "Payment plans" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment plans"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planes de pago"
+          }
+        }
+      }
+    },
     "Payment to %@" : {
       "comment" : "Payments tab: a paired card payment, named after the card that received it.",
       "localizations" : {
@@ -6816,6 +7109,7 @@
     },
     "Planned income" : {
       "comment" : "Overview totals: income as planned.",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6827,6 +7121,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ingreso planeado"
+          }
+        }
+      }
+    },
+    "Planned this period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planned this period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planeado este período"
           }
         }
       }
@@ -7091,6 +7401,22 @@
         }
       }
     },
+    "Recurring bills" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recurring bills"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastos recurrentes"
+          }
+        }
+      }
+    },
     "Register" : {
       "localizations" : {
         "en" : {
@@ -7103,6 +7429,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Registrarse"
+          }
+        }
+      }
+    },
+    "Remaining" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remaining"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restante"
           }
         }
       }
@@ -7126,6 +7468,7 @@
     },
     "Remaining (with savings)" : {
       "comment" : "Plan totals: planned income minus committed incl. savings.",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7143,6 +7486,7 @@
     },
     "Remaining (without savings)" : {
       "comment" : "Plan totals: planned income minus committed excl. savings.",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7871,6 +8215,22 @@
         }
       }
     },
+    "Shared (no person)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared (no person)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartido (sin persona)"
+          }
+        }
+      }
+    },
     "Show all %lld categories" : {
       "localizations" : {
         "en" : {
@@ -8359,6 +8719,7 @@
       }
     },
     "Tap a bar for details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8375,6 +8736,7 @@
       }
     },
     "Tap a slice for details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9182,6 +9544,7 @@
     },
     "Value" : {
       "comment" : "Label for the value axis in a chart.",
+      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {

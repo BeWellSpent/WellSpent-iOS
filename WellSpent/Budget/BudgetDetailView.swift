@@ -721,8 +721,8 @@ struct BudgetDetailView: View {
 
     @ViewBuilder
     private var reportsContent: some View {
-        if let authenticatedRESTClient {
-            ReportsPlaceholderView(authenticatedRESTClient: authenticatedRESTClient)
+        if let authenticatedRESTClient, let profileID = viewModel?.profile.id {
+            ReportsView(budgetProfileID: profileID, currencyCode: currencyCode, localeIdentifier: localeIdentifier, authenticatedRESTClient: authenticatedRESTClient)
         } else {
             ProgressView()
         }
