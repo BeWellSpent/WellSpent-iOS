@@ -22,10 +22,13 @@ final class ExpenseOverviewViewModel {
     /// considered actual spend, silently dropping planned-but-unspent
     /// categories from `visibleCategories`/every total derived from it.
     private(set) var summary: Wellspent_V1_GetExpenseSummaryResponse?
-    /// `actualIncomeTotal`/`remainderActualIncome`/`actualIncomeByPerson` —
-    /// see `BudgetRESTMapping.ActualIncomeSummary`'s doc comment for why this
-    /// is carried separately from `summary`.
-    private(set) var actualIncomeSummary: BudgetRESTMapping.ActualIncomeSummary?
+    /// Per-person period figures and the plan's "not planned yet" — REST-only,
+    /// so carried beside `summary` rather than inside the generated type.
+    private(set) var personSummaries: [BudgetRESTMapping.PersonPeriodSummary] = []
+    private(set) var unattributedSpent: Wellspent_V1_Money?
+    private(set) var remainderPlanIncludingSavings: Wellspent_V1_Money?
+    /// Set while the Chart style menu's choice is being saved; overrides the stored one meanwhile.
+    private(set) var chartTypeOverride: ExpenseChartView.ChartType?
     private(set) var errorMessage: String?
 
     let budgetPeriodID: String
@@ -33,19 +36,15 @@ final class ExpenseOverviewViewModel {
     let currencyCode: String
     let localeIdentifier: String
     let currentUserID: String?
-    /// For `IncomeArrivalTiming.arrivedEarly` — this period's own start date,
-    /// not fetched again here (`BudgetDetailViewModel` already has it).
-    let periodStartDate: Date
 
     private let restClient: WellSpentREST.Client
 
-    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, periodStartDate: Date = .distantPast, restClient: WellSpentREST.Client) {
+    init(budgetPeriodID: String, budgetProfileID: String, currencyCode: String, localeIdentifier: String, currentUserID: String?, restClient: WellSpentREST.Client) {
         self.budgetPeriodID = budgetPeriodID
         self.budgetProfileID = budgetProfileID
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
         self.currentUserID = currentUserID
-        self.periodStartDate = periodStartDate
         self.restClient = restClient
     }
 
@@ -69,63 +68,98 @@ final class ExpenseOverviewViewModel {
         TransactionAmountFormatting.tuple(from: summary?.uncategorizedActual)
     }
 
-    var incomeTotal: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: summary?.incomeFromEntries)
+    // MARK: Plan card
+
+    var plannedIncome: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: summary?.incomeFromSources)
     }
 
-    var totalActual: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: summary?.totalActual)
+    var plannedExpensesIncludingSavings: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: summary?.totalCommittedIncludingSavings)
     }
 
-    /// Mirrors web's `totalPlanned` in `ExpenseOverviewPanel.tsx`, shown
-    /// alongside `totalActual` for comparison.
-    var totalPlanned: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: summary?.totalPlanned)
+    var plannedExpenses: (units: Int64, nanos: Int32) {
+        TransactionAmountFormatting.tuple(from: summary?.totalCommitted)
     }
 
-    /// Mirrors web's `totalOverBudget`.
-    var totalOverBudgetAmount: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: summary?.totalOverBudget)
+    /// Nil from a server that predates it, so the row hides rather than reading $0.
+    var remainingPlan: (units: Int64, nanos: Int32)? {
+        remainderPlanIncludingSavings.map { TransactionAmountFormatting.tuple(from: $0) }
     }
 
-    /// Mirrors web's `totalUnplanned`.
-    var totalUnplannedAmount: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: summary?.totalUnplanned)
+    // MARK: People
+
+    /// Person cards in the budget's own order. Under focused view the server
+    /// sends only the caller, so only that card shows.
+    var personCards: [(person: Wellspent_V1_BudgetPerson, summary: BudgetRESTMapping.PersonPeriodSummary)] {
+        personSummaries.compactMap { summary in
+            people.first { $0.id == summary.budgetPersonID }.map { (person: $0, summary: summary) }
+        }
     }
 
-    /// `totalActual` with Savings folded back in (issue #94) — Savings is excluded from `totalActual` itself.
-    var totalActualIncludingSavings: (units: Int64, nanos: Int32) {
+    var unattributedSpentAmount: (units: Int64, nanos: Int32)? {
+        guard let unattributedSpent else { return nil }
+        let amount = TransactionAmountFormatting.tuple(from: unattributedSpent)
+        return HomeOverviewCalculations.isZero(amount) ? nil : amount
+    }
+
+    // MARK: Categories
+
+    var categoriesSpent: (units: Int64, nanos: Int32) {
         TransactionAmountFormatting.tuple(from: summary?.totalActualIncludingSavings)
     }
 
-    /// `totalPlanned` with Savings folded back in.
-    var totalPlannedIncludingSavings: (units: Int64, nanos: Int32) {
+    var categoriesPlanned: (units: Int64, nanos: Int32) {
         TransactionAmountFormatting.tuple(from: summary?.totalPlannedIncludingSavings)
     }
 
-    /// The first real (not planned) income figure in the app — sum of
-    /// non-excluded "Income"-category transactions assigned to this period.
-    var actualIncomeTotal: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: actualIncomeSummary?.total)
+    var overCategories: [Wellspent_V1_Category] {
+        visibleCategories.filter { isOver(for: $0) }
     }
 
-    /// `actualIncomeTotal - totalActual` — the only remainder figure built
-    /// from two real, actual numbers rather than a planned one.
-    var remainderActualIncomeTotal: (units: Int64, nanos: Int32) {
-        TransactionAmountFormatting.tuple(from: actualIncomeSummary?.remainder)
+    func chartSegments(otherName: String) -> [HomeOverviewCalculations.Segment] {
+        HomeOverviewCalculations.segments(
+            visibleCategories.map { .init(id: String($0.id), name: $0.displayName, colorHex: $0.color, amount: actualTotal(for: $0)) },
+            otherName: otherName
+        )
     }
 
-    /// Income transactions counted into this period despite being dated
-    /// before it started — the early-arrival-tolerance mechanism (issue
-    /// #101). Surfaced as a count rather than per-row here, since Income
-    /// rows don't otherwise appear in this screen's drill-down
-    /// (`ExpenseOverviewCalculations.isTransactionExcluded` always excludes
-    /// them) — the Transactions tab shows the per-row badge instead.
-    var earlyIncomeTransactionCount: Int {
-        guard let incomeCategoryID else { return 0 }
-        return transactions.filter {
-            $0.categoryID == incomeCategoryID && IncomeArrivalTiming.arrivedEarly($0, periodStartDate: periodStartDate)
-        }.count
+    /// The person's saved Overview chart preference, or the shared default.
+    var chartType: ExpenseChartView.ChartType {
+        if let chartTypeOverride { return chartTypeOverride }
+        let me = ChartPreference.myPerson(currentUserID: currentUserID, people: people)
+        return ChartPreference.chartType(for: me?.overviewChartType ?? .unspecified)
+    }
+
+    /// Saves the Chart style menu's choice as the person's Overview
+    /// preference, the same one Preferences sets, keeping their Plan
+    /// preference as it is. Shown at once and rolled back if the save fails.
+    func setChartType(_ type: ExpenseChartView.ChartType) async {
+        let previous = chartType
+        chartTypeOverride = type
+        let me = ChartPreference.myPerson(currentUserID: currentUserID, people: people)
+        let plan = me?.planChartType ?? .unspecified
+        do {
+            let output = try await restClient.updateMyBudgetPreferences(.init(
+                path: .init(id: budgetProfileID),
+                body: .json(.init(
+                    planChartType: BudgetRESTMapping.restChartType(from: plan),
+                    overviewChartType: BudgetRESTMapping.restChartType(from: ChartPreference.stored(for: type))
+                ))
+            ))
+            guard case .ok = output else {
+                RESTNetworkError.logUnexpectedOutput(output)
+                chartTypeOverride = previous
+                return
+            }
+            if let fetched = await fetchPeople() {
+                people = fetched
+                chartTypeOverride = nil
+            }
+        } catch {
+            _ = RESTNetworkError.connectivityMessage(for: error)
+            chartTypeOverride = previous
+        }
     }
 
     func actualTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
@@ -181,13 +215,6 @@ final class ExpenseOverviewViewModel {
         )
     }
 
-    /// Chart data for the actual-spend chart — always the category's own
-    /// color, even when overspent (issue #91); overspend is conveyed by the
-    /// row's red number/chip instead, via `isOver(for:)`.
-    var chartData: [ExpenseChartCalculations.Datum] {
-        ExpenseChartCalculations.data(categories: visibleCategories, amount: { [self] in actualTotal(for: $0) })
-    }
-
     func isOver(for category: Wellspent_V1_Category) -> Bool {
         categorySummary(for: category.id)?.isOver ?? false
     }
@@ -229,16 +256,28 @@ final class ExpenseOverviewViewModel {
 
         if let fetched = await summaryResult {
             summary = fetched.summary
-            actualIncomeSummary = fetched.actualIncome
+            personSummaries = fetched.people
+            unattributedSpent = fetched.unattributed
+            remainderPlanIncludingSavings = fetched.remainderPlan
         } else if errorMessage == nil {
             errorMessage = "Couldn't load the expense summary."
         }
     }
 
-    private func fetchSummary(focusedView: Bool) async -> (summary: Wellspent_V1_GetExpenseSummaryResponse, actualIncome: BudgetRESTMapping.ActualIncomeSummary)? {
+    private func fetchSummary(focusedView: Bool) async -> (
+        summary: Wellspent_V1_GetExpenseSummaryResponse,
+        people: [BudgetRESTMapping.PersonPeriodSummary],
+        unattributed: Wellspent_V1_Money?,
+        remainderPlan: Wellspent_V1_Money?
+    )? {
         guard let output = try? await restClient.getExpenseSummary(.init(path: .init(id: budgetPeriodID), query: .init(focusedView: focusedView))),
               case .ok(let ok) = output, let body = try? ok.body.json else { return nil }
-        return (BudgetRESTMapping.expenseSummary(from: body), BudgetRESTMapping.actualIncomeSummary(from: body))
+        return (
+            BudgetRESTMapping.expenseSummary(from: body),
+            BudgetRESTMapping.personPeriodSummaries(from: body),
+            BudgetRESTMapping.unattributedSpent(from: body),
+            BudgetRESTMapping.remainderPlanIncludingSavings(from: body)
+        )
     }
 
     private func fetchCategories() async -> [Wellspent_V1_Category]? {
