@@ -44,6 +44,36 @@ struct UpcomingFixedExpenseRow: View {
     let canEdit: Bool
     let onEdit: () -> Void
 
+    /// Only for a template with an end: its kind, how far along it is, and when it finishes.
+    @ViewBuilder
+    private var planSummary: some View {
+        if let kind = FixedExpensePlanSummary.kind(for: expense) {
+            let endingSoon = FixedExpensePlanSummary.isEndingSoon(expense)
+            HStack(spacing: 6) {
+                (kind == .installments ? Text("Installments") : Text("Payment plan"))
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(Color.accentColor.opacity(0.15))
+                    .foregroundStyle(Color.accentColor)
+                    .clipShape(Capsule())
+                    .accessibilityIdentifier("fixedExpenseKind_\(expense.name)")
+                if let progress = FixedExpensePlanSummary.progressText(for: expense) {
+                    Text(progress)
+                        .accessibilityIdentifier("fixedExpenseProgress_\(expense.name)")
+                }
+                if let ends = FixedExpensePlanSummary.endsText(for: expense, localeIdentifier: localeIdentifier) {
+                    Text("·")
+                    Text(ends)
+                        .foregroundStyle(endingSoon ? .orange : .secondary)
+                        .accessibilityIdentifier("fixedExpenseEnds_\(expense.name)")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
@@ -65,6 +95,8 @@ struct UpcomingFixedExpenseRow: View {
             ))
             .font(.caption)
             .foregroundStyle(.secondary)
+
+            planSummary
 
             HStack(spacing: 4) {
                 let nextDue = UpcomingFixedExpenses.nextDueText(for: expense, localeIdentifier: localeIdentifier)
