@@ -1,8 +1,9 @@
 import SwiftUI
 import WellSpentAPI
 
-/// How each recent period went against the plan it had: a headline count and
-/// streak, one row per period, and this period by category so far.
+/// How each recent period went against the plan it had (canvas "Reports" page,
+/// Scorecard): a headline card with the range, streak and a status strip, a row
+/// per period, and this period by category so far.
 struct PlanScorecardReportView: View {
     let viewModel: ReportsViewModel
 
@@ -27,11 +28,16 @@ struct PlanScorecardReportView: View {
         }
     }
 
-    // MARK: Hero
+    // MARK: Headline
 
     private func hero(_ scorecard: ReportsRESTMapping.Scorecard) -> some View {
         HomeCard {
-            Text("On plan").font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Text("On plan").font(.footnote).foregroundStyle(.secondary)
+                Spacer()
+                ReportRangePicker(viewModel: viewModel)
+            }
+
             if scorecard.scoredCount == 0 {
                 Text("Your first score arrives when this period closes.")
                     .font(.subheadline)
@@ -39,25 +45,53 @@ struct PlanScorecardReportView: View {
                     .accessibilityIdentifier("scorecardNoScore")
             } else {
                 Text("\(scorecard.onPlanCount) of \(scorecard.scoredCount) periods")
-                    .font(.title2.bold())
+                    .font(.title.bold())
                     .monospacedDigit()
                     .accessibilityIdentifier("scorecardOnPlan")
                 if scorecard.streak > 0 {
                     Label {
                         Text("\(scorecard.streak) in a row under plan")
                     } icon: {
-                        Image(systemName: "flame.fill").foregroundStyle(.orange)
+                        Image(systemName: "flame.fill")
                     }
-                    .font(.subheadline.weight(.semibold))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.orange)
+                    .padding(.horizontal, 10)
+                    .frame(height: 26)
+                    .background(Color.orange.opacity(0.14), in: Capsule())
                     .accessibilityIdentifier("scorecardStreak")
                 }
             }
-            ReportRangePicker(viewModel: viewModel)
-                .padding(.top, 4)
+
+            strip(scorecard)
+                .padding(.top, 10)
+
             if !viewModel.isPro {
-                ProLockedNote(message: Text("Older periods and 6 or 12 period ranges are Pro."))
+                ProUpsellNote()
+                    .padding(.top, 6)
             }
         }
+    }
+
+    /// One square per period, oldest first, with its status icon and month.
+    private func strip(_ scorecard: ReportsRESTMapping.Scorecard) -> some View {
+        HStack(spacing: 8) {
+            ForEach(Array(scorecard.periods.enumerated()), id: \.element.id) { index, period in
+                let look = Look(status(period))
+                let isCurrent = index == scorecard.periods.count - 1
+                VStack(spacing: 4) {
+                    Image(systemName: look.icon)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(look.fg)
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                        .background(look.bg, in: RoundedRectangle(cornerRadius: 8))
+                    Text(period.start.formatted(Date.FormatStyle().month(.abbreviated).locale(Locale(identifier: viewModel.localeIdentifier))))
+                        .font(.caption2.weight(isCurrent ? .bold : .medium))
+                        .foregroundStyle(isCurrent ? .primary : .secondary)
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     // MARK: Periods
@@ -73,20 +107,26 @@ struct PlanScorecardReportView: View {
     }
 
     private func periodRow(_ period: ReportsRESTMapping.ScorecardPeriod) -> some View {
-        let status = ReportsCalculations.scorecardStatus(locked: period.locked, inProgress: period.inProgress, planRecorded: period.planRecorded, onPlan: period.onPlan)
+        let status = status(period)
+        let look = Look(status)
         return HStack(alignment: .top, spacing: 12) {
-            statusIcon(status)
+            Image(systemName: look.icon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(look.fg)
+                .frame(width: 32, height: 32)
+                .background(look.bg, in: Circle())
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                HStack {
+                HStack(alignment: .firstTextBaseline) {
                     Text(period.start.formatted(Date.FormatStyle().month(.wide).year().locale(Locale(identifier: viewModel.localeIdentifier))))
                         .font(.subheadline.weight(.semibold))
                     Spacer()
-                    statusText(status)
+                    look.label
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(tint(status))
+                        .foregroundStyle(look.fg)
                 }
                 details(period, status: status)
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -119,39 +159,30 @@ struct PlanScorecardReportView: View {
         }
     }
 
-    private func statusIcon(_ status: ReportsCalculations.ScorecardStatus) -> some View {
-        let name = switch status {
-        case .onPlan: "checkmark"
-        case .over: "xmark"
-        case .inProgress: "clock"
-        case .locked: "lock.fill"
-        case .noPlan, .notScored: "minus"
-        }
-        return Image(systemName: name)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(tint(status))
-            .frame(width: 32, height: 32)
-            .background(tint(status).opacity(0.15), in: Circle())
-            .accessibilityHidden(true)
+    private func status(_ period: ReportsRESTMapping.ScorecardPeriod) -> ReportsCalculations.ScorecardStatus {
+        ReportsCalculations.scorecardStatus(locked: period.locked, inProgress: period.inProgress, planRecorded: period.planRecorded, onPlan: period.onPlan)
     }
 
-    private func statusText(_ status: ReportsCalculations.ScorecardStatus) -> Text {
-        switch status {
-        case .onPlan: Text("On plan")
-        case .over: Text("Over plan")
-        case .inProgress: Text("In progress")
-        case .locked: Text("Pro")
-        case .noPlan: Text("No plan")
-        case .notScored: Text("Nothing planned")
-        }
-    }
+    /// Icon, colours and label for a status, shared by the strip and the rows.
+    private struct Look {
+        let icon: String
+        let fg: Color
+        let bg: Color
+        let label: Text
 
-    private func tint(_ status: ReportsCalculations.ScorecardStatus) -> Color {
-        switch status {
-        case .onPlan: .green
-        case .over: .red
-        case .inProgress: .accentColor
-        case .locked, .noPlan, .notScored: .secondary
+        init(_ status: ReportsCalculations.ScorecardStatus) {
+            switch status {
+            case .onPlan: (icon, fg, label) = ("checkmark", .green, Text("On plan"))
+            case .over: (icon, fg, label) = ("xmark", .red, Text("Over plan"))
+            case .inProgress: (icon, fg, label) = ("clock", .accentColor, Text("In progress"))
+            case .noPlan: (icon, fg, label) = ("minus", .secondary, Text("No plan"))
+            case .notScored: (icon, fg, label) = ("minus", .secondary, Text("Nothing planned"))
+            case .locked: (icon, fg, label) = ("lock.fill", Color(.tertiaryLabel), Text("Pro"))
+            }
+            bg = switch status {
+            case .onPlan, .over, .inProgress: fg.opacity(0.14)
+            case .noPlan, .notScored, .locked: Color(.tertiarySystemFill)
+            }
         }
     }
 
@@ -179,20 +210,21 @@ struct PlanScorecardReportView: View {
         let planned = TransactionAmountFormatting.tuple(from: category.planned)
         let hasPlan = HomeOverviewCalculations.decimal(planned) > 0
         let isOver = hasPlan && HomeOverviewCalculations.isOver(spent: actual, planned: planned)
+        let colorHex = viewModel.categoryColor(category.categoryID)
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                ColorDotView(hex: viewModel.categoryColor(category.categoryID), diameter: 10)
+                ColorDotView(hex: colorHex, diameter: 10)
                 Text(viewModel.categoryName(category.categoryID))
                 Spacer()
                 (hasPlan ? Text("\(format(category.actual)) of \(format(category.planned))") : Text("\(format(category.actual)) · not planned"))
-                    .font(.subheadline)
-                    .foregroundStyle(isOver ? .red : .secondary)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(isOver ? .red : .primary)
                     .monospacedDigit()
                 Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
             }
             if hasPlan {
                 ProgressView(value: HomeOverviewCalculations.fraction(actual, of: planned))
-                    .tint(isOver ? .red : Color(hexString: viewModel.categoryColor(category.categoryID)))
+                    .tint(isOver ? .red : Color(hexString: colorHex))
                     .padding(.leading, 20)
             }
         }

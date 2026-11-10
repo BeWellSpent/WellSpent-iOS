@@ -181,6 +181,22 @@
         }
       }
     },
+    "%@ · not planned" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · not planned"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · sin planificar"
+          }
+        }
+      }
+    },
     "%@ / period" : {
       "localizations" : {
         "en" : {
@@ -482,6 +498,38 @@
         }
       }
     },
+    "%@ spent · no plan recorded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ spent · no plan recorded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ gastado · sin plan registrado"
+          }
+        }
+      }
+    },
+    "%@ spent of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ spent of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ gastado de %2$@"
+          }
+        }
+      }
+    },
     "%@: fixed bills are %@ over the manual amount" : {
       "localizations" : {
         "en" : {
@@ -591,6 +639,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld por terminar"
+          }
+        }
+      }
+    },
+    "%lld in a row under plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld in a row under plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld seguidos dentro del plan"
+          }
+        }
+      }
+    },
+    "%lld of %lld categories within plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld categories within plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld de %2$lld categorías dentro del plan"
+          }
+        }
+      }
+    },
+    "%lld of %lld periods" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld periods"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld de %2$lld períodos"
           }
         }
       }
@@ -4680,6 +4776,22 @@
         }
       }
     },
+    "In progress" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In progress"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En curso"
+          }
+        }
+      }
+    },
     "In-App" : {
       "localizations" : {
         "en" : {
@@ -5897,6 +6009,22 @@
         }
       }
     },
+    "No plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin plan"
+          }
+        }
+      }
+    },
     "No release notes yet." : {
       "localizations" : {
         "en" : {
@@ -6089,6 +6217,22 @@
         }
       }
     },
+    "Nothing planned" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing planned"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada planificado"
+          }
+        }
+      }
+    },
     "Nothing to review" : {
       "localizations" : {
         "en" : {
@@ -6180,6 +6324,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Los períodos anteriores y los rangos de 6 o 12 períodos son Pro."
+          }
+        }
+      }
+    },
+    "On plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dentro del plan"
           }
         }
       }
@@ -6355,6 +6515,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sobre el presupuesto"
+          }
+        }
+      }
+    },
+    "Over plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Over plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre el plan"
           }
         }
       }
@@ -6918,6 +7094,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Período"
+          }
+        }
+      }
+    },
+    "Periods" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Periods"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Períodos"
           }
         }
       }
@@ -7861,6 +8053,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Limita Plan, Resumen, Transacciones, Ingresos y Ahorros a tus propios números más lo que no esté atribuido a nadie. Las revisiones pendientes siempre muestran a todos, marcadas cuando involucran a otra persona."
+          }
+        }
+      }
+    },
+    "Scorecard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scorecard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cumplimiento"
           }
         }
       }
@@ -8965,6 +9173,22 @@
         }
       }
     },
+    "This period so far" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This period so far"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este período hasta ahora"
+          }
+        }
+      }
+    },
     "This transaction will be matched to the new fixed expense and marked paid." : {
       "localizations" : {
         "en" : {
@@ -9144,7 +9368,6 @@
       }
     },
     "Trends" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10002,102 +10225,6 @@
         }
       }
     },
-    "Scorecard" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scorecard"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cumplimiento"
-          }
-        }
-      }
-    },
-    "Periods" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Periods"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Períodos"
-          }
-        }
-      }
-    },
-    "This period so far" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This period so far"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este período hasta ahora"
-          }
-        }
-      }
-    },
-    "On plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On plan"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dentro del plan"
-          }
-        }
-      }
-    },
-    "%lld of %lld periods" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld of %lld periods"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld de %2$lld períodos"
-          }
-        }
-      }
-    },
-    "%lld in a row under plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld in a row under plan"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld seguidos dentro del plan"
-          }
-        }
-      }
-    },
     "Your first score arrives when this period closes." : {
       "localizations" : {
         "en" : {
@@ -10114,130 +10241,18 @@
         }
       }
     },
-    "%@ spent · no plan recorded" : {
+    "Older periods and 6–12 period ranges are Pro. Pro is coming soon." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ spent · no plan recorded"
+            "value" : "Older periods and 6–12 period ranges are Pro. Pro is coming soon."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ gastado · sin plan registrado"
-          }
-        }
-      }
-    },
-    "%@ spent of %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ spent of %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ gastado de %2$@"
-          }
-        }
-      }
-    },
-    "%lld of %lld categories within plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld of %lld categories within plan"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld de %2$lld categorías dentro del plan"
-          }
-        }
-      }
-    },
-    "Over plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Over plan"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sobre el plan"
-          }
-        }
-      }
-    },
-    "In progress" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In progress"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En curso"
-          }
-        }
-      }
-    },
-    "No plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No plan"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sin plan"
-          }
-        }
-      }
-    },
-    "Nothing planned" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nothing planned"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nada planificado"
-          }
-        }
-      }
-    },
-    "%@ · not planned" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · not planned"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · sin planificar"
+            "value" : "Los períodos anteriores y los rangos de 6–12 períodos son Pro. Pro llega pronto."
           }
         }
       }

@@ -114,25 +114,31 @@ struct ReportsView: View {
     }
 }
 
-/// The Transactions screens' switch: a grey track with the selected option on a white pill.
+/// The Transactions screens' switch: a grey track with the selected option on a
+/// white pill. `compact` is the in-card size the reports use for range and units.
 struct PillSegmentedControl<Value: Hashable>: View {
     let options: [(Value, Text)]
     @Binding var selection: Value
+    var compact = false
+    var disabled: Set<Value> = []
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: compact ? 2 : 4) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                 let selected = option.0 == selection
+                let isDisabled = disabled.contains(option.0)
                 Button {
                     selection = option.0
                 } label: {
                     option.1
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(selected ? .primary : .secondary)
-                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .font(compact ? .footnote.weight(.semibold) : .subheadline.weight(.semibold))
+                        .foregroundStyle(selected ? .primary : (isDisabled ? .tertiary : .secondary))
+                        .padding(.horizontal, compact ? 10 : 0)
+                        .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 30 : 36)
+                        .frame(minWidth: compact ? 40 : nil)
                         .background {
                             if selected {
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: compact ? 8 : 10)
                                     .fill(Color(.secondarySystemGroupedBackground))
                                     .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
                             }
@@ -140,41 +146,48 @@ struct PillSegmentedControl<Value: Hashable>: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .disabled(isDisabled)
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-        .padding(4)
-        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 14))
+        .padding(compact ? 3 : 4)
+        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: compact ? 10 : 14))
     }
 }
 
-/// 3, 6 or 12 periods; the longer ranges show a lock on Free.
+/// 3, 6 or 12 periods; the longer ranges are locked on Free.
 struct ReportRangePicker: View {
     let viewModel: ReportsViewModel
 
     var body: some View {
-        HStack(spacing: 4) {
-            ForEach(ReportsCalculations.trendRanges, id: \.self) { range in
-                let locked = ReportsCalculations.isRangeLocked(range, isPro: viewModel.isPro)
-                let selected = viewModel.range == range
-                Button {
-                    Task { await viewModel.selectRange(range) }
-                } label: {
-                    HStack(spacing: 3) {
-                        Text("\(range) periods")
-                        if locked { Image(systemName: "lock.fill").font(.caption2) }
-                    }
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(selected ? Color.primary : Color(.tertiarySystemFill), in: Capsule())
-                    .foregroundStyle(selected ? Color(.systemBackground) : (locked ? .secondary : .primary))
-                }
-                .buttonStyle(.plain)
-                .disabled(locked)
-                .accessibilityIdentifier("reportsRange_\(range)")
-            }
+        let locked = Set(ReportsCalculations.trendRanges.filter { ReportsCalculations.isRangeLocked($0, isPro: viewModel.isPro) })
+        PillSegmentedControl(
+            options: ReportsCalculations.trendRanges.map { range in
+                (range, locked.contains(range) ? Text("\(range) periods") + Text(verbatim: " ") + Text(Image(systemName: "lock.fill")).font(.caption2) : Text("\(range) periods"))
+            },
+            selection: Binding(get: { viewModel.range }, set: { newRange in Task { await viewModel.selectRange(newRange) } }),
+            compact: true,
+            disabled: locked
+        )
+        .accessibilityIdentifier("reportsRangePicker")
+    }
+}
+
+/// The reports' one-line Free note.
+struct ProUpsellNote: View {
+    var body: some View {
+        Label {
+            Text("Older periods and 6–12 period ranges are Pro. Pro is coming soon.")
+        } icon: {
+            Image(systemName: "lock.fill")
         }
+        .font(.footnote)
+        .foregroundStyle(Color.accentColor)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityIdentifier("reportsProNote")
     }
 }
 

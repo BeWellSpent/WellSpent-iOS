@@ -32,12 +32,11 @@ struct CategoryTrendsReportView: View {
             HStack {
                 ReportRangePicker(viewModel: viewModel)
                 Spacer()
-                Picker("Units", selection: Binding(get: { viewModel.showPercent }, set: { viewModel.showPercent = $0 })) {
-                    Text(verbatim: "$").tag(false)
-                    Text(verbatim: "%").tag(true)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 100)
+                PillSegmentedControl(
+                    options: [(false, Text(verbatim: "$")), (true, Text(verbatim: "%"))],
+                    selection: Binding(get: { viewModel.showPercent }, set: { viewModel.showPercent = $0 }),
+                    compact: true
+                )
                 .accessibilityIdentifier("reportsUnitsPicker")
             }
 
@@ -75,7 +74,7 @@ struct CategoryTrendsReportView: View {
             legend(report)
 
             if !viewModel.isPro {
-                ProLockedNote(message: Text("Older periods and 6 or 12 period ranges are Pro."))
+                ProUpsellNote()
             }
         }
     }
