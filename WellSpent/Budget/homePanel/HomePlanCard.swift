@@ -24,17 +24,17 @@ struct HomePlanCard: View {
             row(Text("Expenses with savings"), amount: withSavings, dot: .green, id: "homePlannedWithSavings")
             row(Text("Expenses without savings"), amount: withoutSavings, dot: .accentColor, id: "homePlannedWithoutSavings")
 
-            if let notPlanned = viewModel.notPlannedYet {
+            if let remaining = viewModel.remainingPlan {
                 Divider()
                 LabeledContent {
-                    Text(format(notPlanned))
+                    Text(format(remaining))
                         .fontWeight(.semibold)
-                        .foregroundStyle(MoneyFormatting.isNegative(units: notPlanned.units, nanos: notPlanned.nanos) ? .red : .green)
+                        .foregroundStyle(MoneyFormatting.isNegative(units: remaining.units, nanos: remaining.nanos) ? .red : .green)
                 } label: {
-                    Text("Not planned yet").foregroundStyle(.secondary)
+                    Text("Remaining").foregroundStyle(.secondary)
                 }
                 .font(.subheadline)
-                .accessibilityIdentifier("homeNotPlannedYet")
+                .accessibilityIdentifier("homeRemaining")
             }
         }
     }

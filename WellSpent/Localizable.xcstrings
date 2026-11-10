@@ -5614,18 +5614,18 @@
         }
       }
     },
-    "Not planned yet" : {
+    "Remaining" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Not planned yet"
+            "value" : "Remaining"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aún sin planear"
+            "value" : "Restante"
           }
         }
       }

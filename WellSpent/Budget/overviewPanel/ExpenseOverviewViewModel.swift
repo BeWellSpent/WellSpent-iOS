@@ -83,7 +83,7 @@ final class ExpenseOverviewViewModel {
     }
 
     /// Nil from a server that predates it, so the row hides rather than reading $0.
-    var notPlannedYet: (units: Int64, nanos: Int32)? {
+    var remainingPlan: (units: Int64, nanos: Int32)? {
         remainderPlanIncludingSavings.map { TransactionAmountFormatting.tuple(from: $0) }
     }
 
