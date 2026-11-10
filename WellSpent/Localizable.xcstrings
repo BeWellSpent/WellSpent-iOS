@@ -1,354 +1,34 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Report" : {
+    "%@ / period" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Report"
+            "value" : "%@ / period"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Informe"
+            "value" : "%@ / período"
           }
         }
       }
     },
-    "Commitments" : {
+    "%@ in %@ · %@ average" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Commitments"
+            "value" : "%@ in %@ · %@ average"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Compromisos"
-          }
-        }
-      }
-    },
-    "Trends" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trends"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tendencias"
-          }
-        }
-      }
-    },
-    "Everyone" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Everyone"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todos"
-          }
-        }
-      }
-    },
-    "Pro is coming soon" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro is coming soon"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro llegará pronto"
-          }
-        }
-      }
-    },
-    "Committed each period" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Committed each period"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comprometido cada período"
-          }
-        }
-      }
-    },
-    "Coming up" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coming up"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Próximamente"
-          }
-        }
-      }
-    },
-    "By category" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "By category"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Por categoría"
-          }
-        }
-      }
-    },
-    "%@ of income" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ of income"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ del ingreso"
-          }
-        }
-      }
-    },
-    "%lld bills" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld bills"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld gastos"
-          }
-        }
-      }
-    },
-    "See when your fixed costs go down" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See when your fixed costs go down"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mira cuándo bajan tus gastos fijos"
-          }
-        }
-      }
-    },
-    "No payment plans end in the next six months." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No payment plans end in the next six months."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ningún plan de pago termina en los próximos seis meses."
-          }
-        }
-      }
-    },
-    "Units" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Units"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unidades"
-          }
-        }
-      }
-    },
-    "Spending by period" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spending by period"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gasto por período"
-          }
-        }
-      }
-    },
-    "Older periods and 6 or 12 period ranges are Pro." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Older periods and 6 or 12 period ranges are Pro."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los períodos anteriores y los rangos de 6 o 12 períodos son Pro."
-          }
-        }
-      }
-    },
-    "Biggest movers" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Biggest movers"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mayores cambios"
-          }
-        }
-      }
-    },
-    "vs 3-period average" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vs 3-period average"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vs. promedio de 3 períodos"
-          }
-        }
-      }
-    },
-    "%lld periods" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld periods"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld períodos"
-          }
-        }
-      }
-    },
-    "Trends appear once you have a few periods." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trends appear once you have a few periods."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las tendencias aparecen cuando tienes algunos períodos."
-          }
-        }
-      }
-    },
-    "%@ now · %@ average" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ now · %@ average"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ ahora · %2$@ en promedio"
-          }
-        }
-      }
-    },
-    "No transactions." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No transactions."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No hay transacciones."
-          }
-        }
-      }
-    },
-    "Couldn't load your reports." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't load your reports."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pudimos cargar tus informes."
+            "value" : "%1$@ en %2$@ · %3$@ en promedio"
           }
         }
       }
@@ -677,6 +357,22 @@
         }
       }
     },
+    "%@ now · %@ average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ now · %@ average"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ ahora · %2$@ en promedio"
+          }
+        }
+      }
+    },
     "%@ of %@" : {
       "localizations" : {
         "en" : {
@@ -689,6 +385,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ de %2$@"
+          }
+        }
+      }
+    },
+    "%@ of income" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of income"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ del ingreso"
           }
         }
       }
@@ -816,6 +528,22 @@
         }
       }
     },
+    "%lld bills" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bills"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld gastos"
+          }
+        }
+      }
+    },
     "%lld bills this period" : {
       "localizations" : {
         "en" : {
@@ -892,6 +620,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld planes de pago"
+          }
+        }
+      }
+    },
+    "%lld periods" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld periods"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld períodos"
           }
         }
       }
@@ -1348,6 +1092,7 @@
       }
     },
     "Aggregated spending trends across budget periods will land here in a future update." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1462,7 +1207,6 @@
     },
     "Amount" : {
       "comment" : "Label for the amount column in the pie/bar chart legend.",
-      "extractionState" : "stale",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "es" : {
@@ -1748,6 +1492,22 @@
         }
       }
     },
+    "Biggest movers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biggest movers"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mayores cambios"
+          }
+        }
+      }
+    },
     "Both" : {
       "localizations" : {
         "en" : {
@@ -1808,6 +1568,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Presupuestos"
+          }
+        }
+      }
+    },
+    "By category" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By category"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por categoría"
           }
         }
       }
@@ -2683,6 +2459,38 @@
         }
       }
     },
+    "Coming up" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximamente"
+          }
+        }
+      }
+    },
+    "Commitments" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commitments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compromisos"
+          }
+        }
+      }
+    },
     "Committed (with savings)" : {
       "comment" : "Plan totals: committed spend including savings.",
       "extractionState" : "stale",
@@ -2715,6 +2523,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comprometido (sin ahorros)"
+          }
+        }
+      }
+    },
+    "Committed each period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Committed each period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprometido cada período"
           }
         }
       }
@@ -2939,6 +2763,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No se pudo cargar la lista de países. Revisa tu conexión e inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "Couldn't load your reports." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load your reports."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos cargar tus informes."
           }
         }
       }
@@ -4035,6 +3875,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Todas las categorías ya están en el plan."
+          }
+        }
+      }
+    },
+    "Everyone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everyone"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos"
           }
         }
       }
@@ -5955,6 +5811,22 @@
         }
       }
     },
+    "No payment plans end in the next six months." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No payment plans end in the next six months."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún plan de pago termina en los próximos seis meses."
+          }
+        }
+      }
+    },
     "No people yet." : {
       "localizations" : {
         "en" : {
@@ -6063,6 +5935,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aún no hay transacciones."
+          }
+        }
+      }
+    },
+    "No transactions." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No transactions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay transacciones."
           }
         }
       }
@@ -6254,6 +6142,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "de %@ planificado"
+          }
+        }
+      }
+    },
+    "Older periods and 6 or 12 period ranges are Pro." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Older periods and 6 or 12 period ranges are Pro."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los períodos anteriores y los rangos de 6 o 12 períodos son Pro."
           }
         }
       }
@@ -7222,6 +7126,22 @@
         }
       }
     },
+    "Pro is coming soon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro is coming soon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro llegará pronto"
+          }
+        }
+      }
+    },
     "Profile" : {
       "localizations" : {
         "en" : {
@@ -7598,6 +7518,22 @@
         }
       }
     },
+    "Report" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informe"
+          }
+        }
+      }
+    },
     "Reports" : {
       "localizations" : {
         "en" : {
@@ -7615,6 +7551,7 @@
       }
     },
     "Reports are coming soon" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7951,6 +7888,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ver todo el presupuesto sin cambiar nada."
+          }
+        }
+      }
+    },
+    "See when your fixed costs go down" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See when your fixed costs go down"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mira cuándo bajan tus gastos fijos"
           }
         }
       }
@@ -8453,6 +8406,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gasto por categoría"
+          }
+        }
+      }
+    },
+    "Spending by period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spending by period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gasto por período"
           }
         }
       }
@@ -9151,6 +9120,38 @@
         }
       }
     },
+    "Trends" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trends"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tendencias"
+          }
+        }
+      }
+    },
+    "Trends appear once you have a few periods." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trends appear once you have a few periods."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las tendencias aparecen cuando tienes algunos períodos."
+          }
+        }
+      }
+    },
     "Try again" : {
       "localizations" : {
         "en" : {
@@ -9260,6 +9261,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Deshacer división"
+          }
+        }
+      }
+    },
+    "Units" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Units"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unidades"
           }
         }
       }
@@ -9632,6 +9649,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Espectador"
+          }
+        }
+      }
+    },
+    "vs 3-period average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs 3-period average"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs. promedio de 3 períodos"
           }
         }
       }

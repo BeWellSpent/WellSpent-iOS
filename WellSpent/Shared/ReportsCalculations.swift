@@ -27,6 +27,22 @@ nonisolated enum ReportsCalculations {
         abs(value) < 10 ? String(format: "%.1f%%", value) : String(format: "%.0f%%", value.rounded())
     }
 
+    /// "$4.6k" above a Trends column; whole amounts under 1,000. Built by hand:
+    /// compact currency notation needs iOS 18 and the app supports 17.
+    static func compactMoneyText(_ amount: (units: Int64, nanos: Int32), currencyCode: String, localeIdentifier: String) -> String {
+        let locale = Locale(identifier: localeIdentifier)
+        let value = HomeOverviewCalculations.decimal(amount)
+        guard abs(value) >= 1000 else {
+            return value.formatted(.currency(code: currencyCode).precision(.fractionLength(0)).locale(locale))
+        }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        formatter.locale = locale
+        let thousands = (value / 1000).formatted(.number.precision(.fractionLength(0...1)).locale(locale))
+        return "\(formatter.currencySymbol ?? "")\(thousands)k"
+    }
+
     /// A mover up means more spending: red. Down: green.
     static func isIncrease(_ delta: (units: Int64, nanos: Int32)) -> Bool {
         HomeOverviewCalculations.decimal(delta) > 0

@@ -57,8 +57,29 @@ struct CommitmentReportView: View {
     @ViewBuilder
     private func comingUp(_ report: ReportsRESTMapping.Commitments) -> some View {
         if report.projectionLocked {
-            ProLockedNote(message: Text("See when your fixed costs go down"))
-                .accessibilityIdentifier("reportsProjectionLocked")
+            // Placeholder rows, not real data: Free never receives the projection.
+            HomeCard {
+                ForEach(0..<2, id: \.self) { index in
+                    if index > 0 { Divider() }
+                    HStack(spacing: 12) {
+                        Circle().fill(Color.green.opacity(0.15)).frame(width: 32, height: 32)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(verbatim: "December 2026").font(.subheadline.weight(.semibold))
+                            Text(verbatim: "Payment plan ends").font(.caption)
+                        }
+                        Spacer()
+                        Text(verbatim: "−$420").font(.subheadline.weight(.bold))
+                    }
+                }
+            }
+            .redacted(reason: .placeholder)
+            .blur(radius: 4)
+            .accessibilityHidden(true)
+            .overlay {
+                ProLockedNote(message: Text("See when your fixed costs go down"))
+                    .padding(.horizontal, 24)
+            }
+            .accessibilityIdentifier("reportsProjectionLocked")
         } else if let drops = report.projection, !drops.isEmpty {
             HomeCard {
                 ForEach(Array(drops.enumerated()), id: \.offset) { index, drop in
@@ -76,7 +97,7 @@ struct CommitmentReportView: View {
                             Text(drop.names.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Text("−\(format(TransactionAmountFormatting.tuple(from: drop.amount)))")
+                        Text(verbatim: "−\(format(TransactionAmountFormatting.tuple(from: drop.amount)))")
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(.green)
                             .monospacedDigit()
@@ -125,7 +146,7 @@ struct CommitmentReportView: View {
                     HStack {
                         Text(plan.name)
                         Spacer()
-                        Text(format((plan.plannedAmount.units, plan.plannedAmount.nanos))).fontWeight(.semibold).monospacedDigit()
+                        Text("\(format((plan.plannedAmount.units, plan.plannedAmount.nanos))) / period").fontWeight(.semibold).monospacedDigit()
                     }
                     if plan.totalPayments > 0 {
                         ProgressView(value: Double(plan.paymentsMade), total: Double(plan.totalPayments))

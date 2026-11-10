@@ -41,19 +41,28 @@ struct CategoryTrendsReportView: View {
                 .accessibilityIdentifier("reportsUnitsPicker")
             }
 
+            let ghost = ghostHeight(report)
             Chart {
                 ForEach(report.periods, id: \.id) { period in
-                    let label = period.start.formatted(Date.FormatStyle().month(.abbreviated).locale(Locale(identifier: viewModel.localeIdentifier)))
+                    let label = monthLabel(period.start)
                     if period.locked {
-                        BarMark(x: .value("Period", label), y: .value("Amount", 1))
+                        // A locked period's amount is unknown: a ghost column at a share of the tallest real one.
+                        BarMark(x: .value("Period", label), y: .value("Amount", ghost))
                             .foregroundStyle(Color(.tertiarySystemFill))
-                            .annotation(position: .overlay) {
-                                Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.secondary)
+                            .annotation(position: .overlay, alignment: .top) {
+                                Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.secondary).padding(.top, 6)
                             }
                     } else {
-                        ForEach(period.categories, id: \.categoryID) { category in
-                            BarMark(x: .value("Period", label), y: .value("Amount", value(category)))
+                        ForEach(Array(period.categories.enumerated()), id: \.element.categoryID) { index, category in
+                            let bar = BarMark(x: .value("Period", label), y: .value("Amount", value(category)))
                                 .foregroundStyle(Color(hexString: viewModel.categoryColor(category.categoryID)))
+                            if index == period.categories.count - 1 {
+                                bar.annotation(position: .top) {
+                                    Text(totalLabel(period)).font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                                }
+                            } else {
+                                bar
+                            }
                         }
                     }
                 }
@@ -71,6 +80,25 @@ struct CategoryTrendsReportView: View {
         }
     }
 
+    private func monthLabel(_ date: Date) -> String {
+        date.formatted(Date.FormatStyle().month(.abbreviated).locale(Locale(identifier: viewModel.localeIdentifier)))
+    }
+
+    /// 60% of the tallest unlocked column, in whichever unit is showing.
+    private func ghostHeight(_ report: ReportsRESTMapping.Trends) -> Double {
+        let tallest = report.periods.filter { !$0.locked }.map { $0.categories.reduce(0) { $0 + value($1) } }.max() ?? 0
+        return tallest > 0 ? tallest * 0.6 : 1
+    }
+
+    /// The column's total above it: "$4.6k", or the share of that period's income.
+    private func totalLabel(_ period: ReportsRESTMapping.Period) -> String {
+        if viewModel.showPercent {
+            return period.percentOfIncome.map(ReportsCalculations.percentText) ?? ""
+        }
+        guard let total = period.amount else { return "" }
+        return ReportsCalculations.compactMoneyText(TransactionAmountFormatting.tuple(from: total), currencyCode: viewModel.currencyCode, localeIdentifier: viewModel.localeIdentifier)
+    }
+
     /// Percent of income when that's on and known; locked bars get a placeholder height above.
     private func value(_ category: ReportsRESTMapping.CategoryAmount) -> Double {
         if viewModel.showPercent { return category.percentOfIncome ?? 0 }
@@ -85,7 +113,7 @@ struct CategoryTrendsReportView: View {
                     Task { await viewModel.selectRange(range) }
                 } label: {
                     HStack(spacing: 3) {
-                        Text("\(range)")
+                        Text("\(range) periods")
                         if locked { Image(systemName: "lock.fill").font(.caption2) }
                     }
                     .font(.caption.weight(.semibold))
@@ -96,7 +124,6 @@ struct CategoryTrendsReportView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(locked)
-                .accessibilityLabel(Text("\(range) periods"))
                 .accessibilityIdentifier("reportsRange_\(range)")
             }
         }
@@ -122,7 +149,7 @@ struct CategoryTrendsReportView: View {
                             drillDown = ReportDrillDown(periodID: periodID, categoryID: mover.categoryID, fixedOnly: false)
                         }
                     } label: {
-                        moverRow(mover)
+                        moverRow(mover, currentMonth: report.periods.last.map { monthLabel($0.start) } ?? "")
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("reportsMover_\(mover.categoryID)")
@@ -131,7 +158,7 @@ struct CategoryTrendsReportView: View {
         }
     }
 
-    private func moverRow(_ mover: ReportsRESTMapping.Mover) -> some View {
+    private func moverRow(_ mover: ReportsRESTMapping.Mover, currentMonth: String) -> some View {
         let delta = TransactionAmountFormatting.tuple(from: mover.delta)
         let up = ReportsCalculations.isIncrease(delta)
         let tint: Color = up ? .red : .green
@@ -154,7 +181,7 @@ struct CategoryTrendsReportView: View {
                     ColorDotView(hex: viewModel.categoryColor(mover.categoryID), diameter: 8)
                     Text(viewModel.categoryName(mover.categoryID))
                 }
-                Text("\(format(TransactionAmountFormatting.tuple(from: mover.current))) now · \(format(TransactionAmountFormatting.tuple(from: mover.average))) average")
+                Text("\(format(TransactionAmountFormatting.tuple(from: mover.current))) in \(currentMonth) · \(format(TransactionAmountFormatting.tuple(from: mover.average))) average")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
