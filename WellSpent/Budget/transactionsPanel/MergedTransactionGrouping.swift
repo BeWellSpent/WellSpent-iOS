@@ -63,7 +63,6 @@ nonisolated enum MergedTransactionGrouping {
         exceededOnly: Bool,
         excludedOnly: Bool,
         searchQuery: String,
-        incomeCategoryID: Int32?,
         overBudgetTransactionIDs: Set<String>,
         categoryName: (Int32) -> String?,
         ownerName: (String) -> String?,
@@ -78,7 +77,7 @@ nonisolated enum MergedTransactionGrouping {
                 hasPendingMatch: hasPendingMatch
             ) else { return false }
             if exceededOnly && !overBudgetTransactionIDs.contains(transaction.id) { return false }
-            if excludedOnly && !ExpenseOverviewCalculations.isTransactionExcluded(transaction, incomeCategoryID: incomeCategoryID) { return false }
+            if excludedOnly && !ExpenseOverviewCalculations.isTransactionExcluded(transaction) { return false }
             return TransactionFiltering.matchesSearch(
                 name: transaction.name,
                 categoryName: categoryName(transaction.categoryID),

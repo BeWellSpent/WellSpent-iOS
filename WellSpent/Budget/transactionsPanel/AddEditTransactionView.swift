@@ -18,6 +18,7 @@ struct AddEditTransactionView: View {
         isArchivedPeriod: Bool = false,
         forceLocked: Bool = false,
         defaultCategoryID: Int32 = 0,
+        defaultFlow: TransactionFlowKind = .spend,
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_Transaction) -> Void
     ) {
@@ -28,6 +29,7 @@ struct AddEditTransactionView: View {
             isArchivedPeriod: isArchivedPeriod,
             forceLocked: forceLocked,
             defaultCategoryID: defaultCategoryID,
+            defaultFlow: defaultFlow,
             restClient: restClient
         ))
         self.categories = categories
@@ -44,6 +46,7 @@ struct AddEditTransactionView: View {
         NavigationStack {
             Form {
                 amountSection
+                flowSection
                 detailsSection
                 errorSection
             }
@@ -83,13 +86,13 @@ struct AddEditTransactionView: View {
     private var amountSection: some View {
         Section {
             if viewModel.isLocked {
-                Text("Only the category can be changed for this transaction.")
+                Text("Only the category and what it was can be changed for this transaction.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("transactionLockedNotice")
             }
 
-            Picker("Flow", selection: $viewModel.isReceived) {
+            Picker("Direction", selection: $viewModel.isReceived) {
                 Text("Money Out").tag(false)
                 Text("Money In").tag(true)
             }
@@ -103,6 +106,42 @@ struct AddEditTransactionView: View {
                 disabled: viewModel.isLocked,
                 accessibilityIdentifier: "transactionAmountField"
             )
+        }
+    }
+
+    /// "What was it?": the flow chips for the chosen direction and what that choice means.
+    /// A card payment (added from the Payments tab) shows only its explanation.
+    @ViewBuilder
+    private var flowSection: some View {
+        Section {
+            if viewModel.flow != .payment {
+                HStack(spacing: 8) {
+                    ForEach(TransactionFlowKind.choices(moneyIn: viewModel.isReceived), id: \.self) { kind in
+                        let selected = viewModel.flow == kind
+                        Button {
+                            viewModel.flow = kind
+                        } label: {
+                            Text(kind.label)
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .foregroundStyle(selected ? Color.accentColor : .primary)
+                                .background(selected ? Color.accentColor.opacity(0.12) : Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+                                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.accentColor : Color(.separator), lineWidth: selected ? 1.5 : 1))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                        .accessibilityIdentifier("transactionFlow_\(kind.rawValue)")
+                    }
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+            }
+            Text(viewModel.flow.hint)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("transactionFlowHint")
+        } header: {
+            Text("What was it?")
         }
     }
 

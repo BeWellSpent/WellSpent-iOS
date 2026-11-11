@@ -20,6 +20,19 @@ nonisolated enum ReportsRESTMapping {
         let amount: Wellspent_V1_Money?
         let percentOfIncome: Double?
         let categories: [CategoryAmount]
+        /// Money in · out · moved; nil when locked.
+        var flows: Flows? = nil
+    }
+
+    struct Flows: Equatable {
+        let moneyIn: Wellspent_V1_Money
+        let moneyOut: Wellspent_V1_Money
+        let income: Wellspent_V1_Money
+        let refunds: Wellspent_V1_Money
+        let transfersIn: Wellspent_V1_Money
+        let spent: Wellspent_V1_Money
+        let transfersOut: Wellspent_V1_Money
+        let paidToCards: Wellspent_V1_Money
     }
 
     struct Mover: Equatable {
@@ -86,13 +99,20 @@ nonisolated enum ReportsRESTMapping {
             periods: r.periods.map {
                 Period(id: $0.value1.budgetPeriodId, start: date($0.value1.startDate), locked: $0.value1.locked,
                        amount: $0.value2.total.map(BudgetRESTMapping.money(from:)), percentOfIncome: $0.value2.totalPercentOfIncome,
-                       categories: $0.value2.categories.map(categoryAmount(from:)))
+                       categories: $0.value2.categories.map(categoryAmount(from:)),
+                       flows: $0.value2.flows.map(flows(from:)))
             },
             movers: r.movers.map {
                 Mover(categoryID: $0.categoryId, current: BudgetRESTMapping.money(from: $0.current), average: BudgetRESTMapping.money(from: $0.average),
                       delta: BudgetRESTMapping.money(from: $0.delta), deltaPercentOfIncome: $0.deltaPercentOfIncome)
             }
         )
+    }
+
+    private static func flows(from f: Components.Schemas.FlowTotals) -> Flows {
+        let m = BudgetRESTMapping.money(from:)
+        return Flows(moneyIn: m(f.moneyIn), moneyOut: m(f.moneyOut), income: m(f.income), refunds: m(f.refunds),
+                     transfersIn: m(f.transfersIn), spent: m(f.spent), transfersOut: m(f.transfersOut), paidToCards: m(f.paidToCards))
     }
 
     private static func categoryAmount(from c: Components.Schemas.CategoryAmount) -> CategoryAmount {

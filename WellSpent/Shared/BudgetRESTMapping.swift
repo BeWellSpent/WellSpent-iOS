@@ -326,6 +326,7 @@ nonisolated enum BudgetRESTMapping {
             $0.isPlaidImported = t.isPlaidImported
             $0.installmentFixedExpenseID = t.installmentFixedExpenseId ?? ""
             $0.carriedFromBudgetPeriodID = t.carriedFromBudgetPeriodId ?? ""
+            $0.flow = t.flow.rawValue
         }
     }
 

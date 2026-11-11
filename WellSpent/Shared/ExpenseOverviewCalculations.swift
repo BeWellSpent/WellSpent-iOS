@@ -10,11 +10,10 @@ import WellSpentAPI
 /// over/under indicator; the category-level equivalent is now the server's
 /// `CategoryExpenseSummary.isOver` field directly).
 nonisolated enum ExpenseOverviewCalculations {
-    /// A transaction is excluded from totals if manually flagged, or if its
-    /// category is the system "Income" category — regardless of the flag
-    /// (docs/features/transactions.md).
-    static func isTransactionExcluded(_ transaction: Wellspent_V1_Transaction, incomeCategoryID: Int32?) -> Bool {
-        transaction.isExcluded || (incomeCategoryID != nil && transaction.categoryID == incomeCategoryID)
+    /// Left out of spending: flagged by hand, or a flow that never counts
+    /// (income, card payment) — the server's rule (docs/features/transaction-flow.md).
+    static func isTransactionExcluded(_ transaction: Wellspent_V1_Transaction) -> Bool {
+        transaction.isExcluded || !TransactionFlowKind.of(transaction).countsAsSpending
     }
 
     static func isOver(actual: (units: Int64, nanos: Int32), planned: (units: Int64, nanos: Int32)) -> Bool {

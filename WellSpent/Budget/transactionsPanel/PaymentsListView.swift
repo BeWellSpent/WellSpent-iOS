@@ -108,7 +108,6 @@ struct PaymentsListView: View {
     @ViewBuilder
     private func content(viewModel: TransactionsViewModel) -> some View {
         let reviews = reviewViewModel?.reviews ?? []
-        let paymentCategoryID = viewModel.categories.first { $0.isSystem(.payment) }?.id ?? 0
         // Pairing runs on every payment row so search never changes which rows pair up
         // (or the total); a group shows when any of its legs matches the search.
         let visibleGroups = viewModel.paymentGroups(reviews: reviews).filter { group in
@@ -166,7 +165,7 @@ struct PaymentsListView: View {
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
-                defaultCategoryID: paymentCategoryID,
+                defaultFlow: .payment,
                 restClient: authenticatedRESTClient
             ) { transaction in
                 viewModel.addTransaction(transaction)

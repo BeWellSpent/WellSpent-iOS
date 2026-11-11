@@ -29,7 +29,49 @@ struct AddEditTransactionViewModelTests {
         #expect(!viewModel.canSubmit)
 
         viewModel.paymentMethodID = "pm-1"
+        #expect(!viewModel.canSubmit) // spending needs a category
+
+        viewModel.categoryID = 3
         #expect(viewModel.canSubmit)
+    }
+
+    @Test("income and transfers don't need a category; spend and refund do")
+    func categoryRequiredByFlow() {
+        let viewModel = makeViewModel()
+        viewModel.name = "Venmo from Alex"
+        viewModel.amountText = "24"
+        viewModel.paymentMethodID = "pm-1"
+        viewModel.isReceived = true
+        #expect(viewModel.flow == .refund) // money in starts on the first "in" choice
+        #expect(!viewModel.canSubmit)
+        viewModel.flow = .transfer
+        #expect(viewModel.canSubmit)
+        viewModel.flow = .income
+        #expect(viewModel.canSubmit)
+    }
+
+    @Test("switching direction keeps a flow that still fits and replaces one that doesn't")
+    func directionChangeNormalizesFlow() {
+        let viewModel = makeViewModel()
+        viewModel.flow = .transfer
+        viewModel.isReceived = true
+        #expect(viewModel.flow == .transfer)
+        viewModel.flow = .income
+        viewModel.isReceived = false
+        #expect(viewModel.flow == .spend)
+    }
+
+    @Test("editing reads the transaction's flow")
+    func editReadsFlow() {
+        let transaction = Wellspent_V1_Transaction.with {
+            $0.id = "tx-9"
+            $0.name = "Venmo from Alex"
+            $0.amount = .with { $0.units = -24; $0.currency = "USD" }
+            $0.flow = "transfer"
+        }
+        let viewModel = AddEditTransactionViewModel(mode: .edit(transaction), budgetPeriodID: "p", currencyCode: "USD", restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1"))
+        #expect(viewModel.flow == .transfer)
+        #expect(viewModel.isReceived)
     }
 
     @Test("editing an existing Spent transaction pre-fills fields with isReceived false")

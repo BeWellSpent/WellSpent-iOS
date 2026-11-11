@@ -48,10 +48,6 @@ final class ExpenseOverviewViewModel {
         self.restClient = restClient
     }
 
-    private var incomeCategoryID: Int32? {
-        categories.first { $0.isSystem(.income) }?.id
-    }
-
     // Already visible-filtered (actual spend OR has a plan) and sorted by
     // actual descending, server-side.
     var visibleCategories: [Wellspent_V1_Category] {
@@ -183,7 +179,7 @@ final class ExpenseOverviewViewModel {
     func transactions(for category: Wellspent_V1_Category) -> [Wellspent_V1_Transaction] {
         transactions.filter {
             $0.categoryID == category.id
-                && !ExpenseOverviewCalculations.isTransactionExcluded($0, incomeCategoryID: incomeCategoryID)
+                && !ExpenseOverviewCalculations.isTransactionExcluded($0)
                 && !($0.transactionTypeID == TransactionsViewModel.fixedTypeID && !$0.isPaid)
         }
     }
