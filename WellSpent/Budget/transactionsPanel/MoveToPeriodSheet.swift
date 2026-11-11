@@ -13,10 +13,9 @@ struct MoveToPeriodSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    /// Can't move into the current period (nothing to do) or an archived one
-    /// (the endpoint rejects it with a 403).
+    /// Any period but the one it's already in; closed periods are editable (#120).
     private var selectablePeriods: [Wellspent_V1_BudgetPeriod] {
-        periods.filter { $0.id != transaction.budgetPeriodID && !$0.isArchived }
+        periods.filter { $0.id != transaction.budgetPeriodID }
     }
 
     var body: some View {

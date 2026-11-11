@@ -52,7 +52,6 @@ final class BudgetDetailViewModel {
     /// marking paid/excluding are all blocked. Manage panels (Categories,
     /// Payment Methods, People, Savings/Income Sources) are unaffected,
     /// since they're profile-level, not period-level.
-    var isArchivedPeriod: Bool { currentPeriod?.isArchived ?? false }
 
     /// The period that just cycled for real and hasn't been reviewed yet, if
     /// any — see docs/features/month-cycling-review.md. At most one by

@@ -31,12 +31,9 @@ final class AddEditTransactionViewModel {
 
     let mode: Mode
 
-    /// True once a transaction's other fields are frozen — either its
-    /// period has archived, it's Plaid-imported (`isPlaidImported`), or the
-    /// caller passed `forceLocked` (e.g. tap-to-recategorize, see
-    /// `TransactionsViewModel.updateCategory`) — and only its category can
-    /// still change. See docs/features/budget-list-view-rework.md. Never
-    /// true in `.add` mode.
+    /// True when only the category and flow may change: a Plaid-imported row, or the
+    /// caller passed `forceLocked` (tap-to-recategorize). Closed periods are editable
+    /// (#120). Never true in `.add` mode.
     let isLocked: Bool
 
     private let budgetPeriodID: String
@@ -59,7 +56,7 @@ final class AddEditTransactionViewModel {
             && (!flow.categoryRequired || categoryID != 0)
     }
 
-    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, forceLocked: Bool = false, defaultCategoryID: Int32 = 0, defaultFlow: TransactionFlowKind = .spend, restClient: WellSpentREST.Client) {
+    init(mode: Mode, budgetPeriodID: String, currencyCode: String, forceLocked: Bool = false, defaultCategoryID: Int32 = 0, defaultFlow: TransactionFlowKind = .spend, restClient: WellSpentREST.Client) {
         self.mode = mode
         self.budgetPeriodID = budgetPeriodID
         self.currencyCode = currencyCode
@@ -86,8 +83,8 @@ final class AddEditTransactionViewModel {
             paymentMethodID = transaction.paymentMethodID
             recurring = transaction.transactionFrequencyID != 1
             date = transaction.date.dateOnly
-            isLocked = isArchivedPeriod || transaction.isPlaidImported || forceLocked
-            Self.logger.info("opened in edit mode transactionID=\(transaction.id, privacy: .public) isArchivedPeriod=\(isArchivedPeriod, privacy: .public) isPlaidImported=\(transaction.isPlaidImported, privacy: .public) forceLocked=\(forceLocked, privacy: .public) isLocked=\(self.isLocked, privacy: .public)")
+            isLocked = transaction.isPlaidImported || forceLocked
+            Self.logger.info("opened in edit mode transactionID=\(transaction.id, privacy: .public) isPlaidImported=\(transaction.isPlaidImported, privacy: .public) forceLocked=\(forceLocked, privacy: .public) isLocked=\(self.isLocked, privacy: .public)")
         }
     }
 

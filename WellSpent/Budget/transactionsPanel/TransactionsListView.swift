@@ -78,18 +78,10 @@ struct TransactionsListView: View {
     /// web's `TransactionsPanel.tsx`.
     var reviewViewModel: TransactionReviewViewModel? = nil
     let canEdit: Bool
-    /// True when viewing an archived (past) period — see
-    /// docs/features/budget-list-view-rework.md. Editing a Variable row's
-    /// category stays reachable via `canEdit` alone (see
-    /// `AddEditTransactionViewModel`'s `isLocked`); `canMutate` additionally
-    /// requires the period not be archived, gating delete/exclude/mark-paid
-    /// specifically.
-    var isArchivedPeriod: Bool = false
     let searchQuery: String
     /// See `TransactionsViewModel.onDataChanged`.
     var onDataChanged: () -> Void = {}
 
-    private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
     @Environment(SessionStore.self) private var session
     @State private var viewModel: TransactionsViewModel?
@@ -317,7 +309,6 @@ struct TransactionsListView: View {
                 currencyCode: currencyCode,
                 categories: viewModel.categories,
                 paymentMethods: viewModel.paymentMethods,
-                isArchivedPeriod: isArchivedPeriod,
                 restClient: authenticatedRESTClient
             ) { updated in
                 viewModel.replaceTransaction(updated)
@@ -571,7 +562,7 @@ struct TransactionsListView: View {
         // Restores the "unmark paid" action for a Fixed bill whose confirmed
         // match hides its own row (issue #97) — mirrors `fixedLeadingSwipeActions`
         // exactly, but unmarks the matched Fixed transaction, not this row.
-        if canMutate, let matchedFixed, matchedFixed.isPaid, let viewModel {
+        if canEdit, let matchedFixed, matchedFixed.isPaid, let viewModel {
             Button {
                 Self.logger.info("unmark paid tapped (via matched variable) transactionID=\(matchedFixed.id, privacy: .public)")
                 Task {
@@ -598,7 +589,7 @@ struct TransactionsListView: View {
             .accessibilityIdentifier("flagForReview_\(transaction.name)")
         }
 
-        if canMutate {
+        if canEdit {
             Button {
                 Task { await viewModel.toggleExcluded(transaction) }
             } label: {
@@ -611,7 +602,7 @@ struct TransactionsListView: View {
             .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
         }
 
-        if canMutate && !transaction.isPlaidImported {
+        if canEdit && !transaction.isPlaidImported {
             Button(role: .destructive) {
                 requestDelete(transaction, viewModel: viewModel)
             } label: {
@@ -837,7 +828,7 @@ struct TransactionsListView: View {
             viewModel: viewModel,
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier,
-            canMutate: canMutate,
+            canMutate: canEdit,
             autoUpdatePlannedAmount: viewModel.autoUpdatePlannedAmount
         )
         .swipeActions(edge: .leading) {
@@ -850,7 +841,7 @@ struct TransactionsListView: View {
 
     @ViewBuilder
     private func fixedLeadingSwipeActions(for transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
-        if canMutate {
+        if canEdit {
             if transaction.isPaid {
                 // No mockup analog for an "unmark" action — deliberately not
                 // toast+Undo'd: the only real "undo" of an unmark is
@@ -891,7 +882,7 @@ struct TransactionsListView: View {
 
     @ViewBuilder
     private func fixedTrailingSwipeActions(for transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
-        if canMutate && !transaction.isPaid {
+        if canEdit && !transaction.isPaid {
             Button {
                 activeSheet = .matchTransactions(transaction)
             } label: {
@@ -901,7 +892,7 @@ struct TransactionsListView: View {
             .accessibilityIdentifier("matchTransactions_\(transaction.name)")
         }
 
-        if canMutate {
+        if canEdit {
             Button {
                 requestToggleExcludedFixed(transaction, viewModel: viewModel)
             } label: {

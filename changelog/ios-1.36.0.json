@@ -461,6 +461,11 @@
       "changeType": "changed",
       "summaryEn": "Income, Payment and Transfer are no longer categories; what kind a transaction was is chosen on its own. Fixed expenses can be a transfer or a card payment too. Transfers you had under Transfer show as uncategorized, ready to file under what they were for.",
       "summaryEs": "Ingreso, Pago y Transferencia ya no son categorías; el tipo de transacción se elige aparte. Los gastos fijos también pueden ser una transferencia o un pago de tarjeta. Las transferencias que tenías en Transferencia aparecen sin categoría, listas para asignarles lo que fueron."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Past periods are no longer read-only: add, edit, move, exclude and review transactions in any period. Bank-imported transactions still only let you change their category and type.",
+      "summaryEs": "Los períodos anteriores ya no son de solo lectura: agrega, edita, mueve, excluye y revisa transacciones en cualquier período. Las transacciones importadas del banco solo permiten cambiar su categoría y tipo."
     }
   ]
 }

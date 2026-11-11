@@ -34,7 +34,6 @@ struct PeriodReviewTransactionsView: View {
             isActive: true,
             reviewViewModel: reviewViewModel,
             canEdit: canEdit,
-            isArchivedPeriod: false,
             searchQuery: ""
         )
     }
