@@ -48,6 +48,7 @@ struct EditFixedExpenseView: View {
     var body: some View {
         NavigationStack {
             Form {
+                TransactionFlowChips(choices: TransactionFlowKind.fixedChoices, selection: $viewModel.flow)
                 detailsSection
                 scheduleSection
                 paymentPlanSection

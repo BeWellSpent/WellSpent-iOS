@@ -251,9 +251,6 @@ nonisolated enum BudgetRESTMapping {
         case "savings": return .savings
         case "shopping": return .shopping
         case "family": return .family
-        case "income": return .income
-        case "payment": return .payment
-        case "transfer": return .transfer
         case "transportation": return .transportation
         case "utilities": return .utilities
         case "debt": return .debt
@@ -526,6 +523,7 @@ nonisolated enum BudgetRESTMapping {
             $0.name = f.name
             $0.plannedAmount = money(from: f.plannedAmount)
             $0.categoryID = f.categoryId
+            $0.flow = f.flow.rawValue
             $0.paymentMethodID = f.paymentMethodId ?? ""
             $0.dayOfMonth = f.dayOfMonth
             $0.isActive = f.isActive

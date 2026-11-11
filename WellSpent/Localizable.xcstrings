@@ -2035,23 +2035,6 @@
         }
       }
     },
-    "category.income" : {
-      "comment" : "Seeded system category name.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Income"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ingresos"
-          }
-        }
-      }
-    },
     "category.insurance" : {
       "comment" : "Seeded system category name.",
       "localizations" : {
@@ -2099,23 +2082,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Varios"
-          }
-        }
-      }
-    },
-    "category.payment" : {
-      "comment" : "Seeded system category name.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Payment"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago"
           }
         }
       }
@@ -2218,23 +2184,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suscripción"
-          }
-        }
-      }
-    },
-    "category.transfer" : {
-      "comment" : "Seeded system category name.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transfer"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transferencia"
           }
         }
       }

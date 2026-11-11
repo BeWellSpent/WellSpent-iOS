@@ -20,6 +20,7 @@ final class EditFixedExpenseViewModel {
     private(set) var intervalMonths: Int
     private(set) var intervalWeeks: Int
     var categoryID: Int32
+    var flow: TransactionFlowKind
     var paymentMethodID: String
 
     /// See `AddFixedExpenseViewModel`'s payment-plan doc comment — same
@@ -92,6 +93,7 @@ final class EditFixedExpenseViewModel {
         intervalMonths = expense.intervalMonths > 0 ? Int(expense.intervalMonths) : 1
         intervalWeeks = expense.intervalWeeks > 0 ? Int(expense.intervalWeeks) : 1
         categoryID = expense.categoryID
+        flow = TransactionFlowKind(rawValue: expense.flow) ?? .spend
         paymentMethodID = expense.paymentMethodID
         paymentsText = expense.totalPayments > 0 ? String(expense.totalPayments) : ""
         endDate = expense.hasEndDate ? expense.endDate.dateOnly : nil
@@ -183,6 +185,7 @@ final class EditFixedExpenseViewModel {
                     intervalWeeks: Int32(intervalWeeks),
                     dayOfWeek: FixedExpenseScheduling.dayOfWeek(for: startDate),
                     endDate: endDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
+                    flow: Components.Schemas.TransactionFlow(rawValue: flow.rawValue),
                     totalPayments: totalPayments
                 ))
             ))

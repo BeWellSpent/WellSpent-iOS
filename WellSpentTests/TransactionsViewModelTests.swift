@@ -24,7 +24,7 @@ struct TransactionsViewModelTests {
         $0.id = 1
         $0.name = "Payment"
         $0.isSystem = true
-        $0.systemCategory = .payment
+        $0.systemCategory = .unspecified // card payments are a flow now, not a category (#119)
     }
 
     private let groceriesCategory = Wellspent_V1_Category.with {

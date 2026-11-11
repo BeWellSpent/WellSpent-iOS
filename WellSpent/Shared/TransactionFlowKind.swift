@@ -16,10 +16,16 @@ nonisolated enum TransactionFlowKind: String, CaseIterable {
 
     var categoryRequired: Bool { self == .spend || self == .refund }
 
+    /// Whether a row without a category should prompt for one: everything that counts toward a category.
+    var categoryExpected: Bool { countsAsSpending }
+
     /// The "What was it?" chips for a direction. Payment is chosen from the Payments tab instead.
     static func choices(moneyIn: Bool) -> [TransactionFlowKind] {
         moneyIn ? [.refund, .income, .transfer] : [.spend, .transfer]
     }
+
+    /// A fixed expense is always money going out.
+    static let fixedChoices: [TransactionFlowKind] = [.spend, .transfer, .payment]
 
     /// Keeps a flow that still fits the direction; otherwise the direction's first choice.
     static func fitting(_ flow: TransactionFlowKind, moneyIn: Bool) -> TransactionFlowKind {

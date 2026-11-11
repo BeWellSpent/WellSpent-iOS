@@ -39,7 +39,7 @@ struct SystemCategoryNamesTests {
     @Test("Every system category resolves to a real catalog string")
     func everyCaseHasAString() {
         let all = Wellspent_V1_SystemCategory.allCases.filter { $0 != .unspecified }
-        #expect(all.count == 25)
+        #expect(all.count == 22) // Income, Payment and Transfer retired (#119)
         for value in all {
             let name = SystemCategoryNames.displayName(systemCategory: value, fallback: "FALLBACK")
             #expect(name != "FALLBACK", "\(value) has no catalog entry — it fell back to the English name")
@@ -48,23 +48,23 @@ struct SystemCategoryNamesTests {
         }
     }
 
-    // A user could name their own category "Income". Before this change, that
+    // A user could name their own category "Savings". Before this change, that
     // category would have been excluded from every spending total.
     @Test("isSystem(_:) matches on the enum, not on the name")
     func isSystemMatchesEnumNotName() {
         // Already translated — the check must still hold.
-        #expect(category(.income, name: "Ingresos").isSystem(.income))
-        #expect(!category(.income, name: "Income").isSystem(.savings))
+        #expect(category(.savings, name: "Ahorros").isSystem(.savings))
+        #expect(!category(.savings, name: "Savings").isSystem(.groceries))
         // A user category that happens to share the display name.
-        let impostor = category(.unspecified, name: "Income", isSystem: false)
-        #expect(!impostor.isSystem(.income))
+        let impostor = category(.unspecified, name: "Savings", isSystem: false)
+        #expect(!impostor.isSystem(.savings))
     }
 
     // A system category flag without the matching enum value shouldn't match
     // either: both halves have to agree.
     @Test("isSystem(_:) requires both the flag and the enum value")
     func isSystemRequiresBoth() {
-        #expect(!category(.unspecified, name: "Income").isSystem(.income))
+        #expect(!category(.unspecified, name: "Savings").isSystem(.savings))
     }
 
     @Test("sorted orders by the displayed name")

@@ -456,6 +456,11 @@
       "changeType": "added",
       "summaryEn": "Reports show money in, out and moved for the period: income, refunds, transfers, spending and card payments.",
       "summaryEs": "Los informes muestran el dinero que entra, sale y se mueve en el período: ingresos, reembolsos, transferencias, gastos y pagos de tarjeta."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Income, Payment and Transfer are no longer categories; what kind a transaction was is chosen on its own. Fixed expenses can be a transfer or a card payment too. Transfers you had under Transfer show as uncategorized, ready to file under what they were for.",
+      "summaryEs": "Ingreso, Pago y Transferencia ya no son categorías; el tipo de transacción se elige aparte. Los gastos fijos también pueden ser una transferencia o un pago de tarjeta. Las transferencias que tenías en Transferencia aparecen sin categoría, listas para asignarles lo que fueron."
     }
   ]
 }

@@ -109,40 +109,12 @@ struct AddEditTransactionView: View {
         }
     }
 
-    /// "What was it?": the flow chips for the chosen direction and what that choice means.
     /// A card payment (added from the Payments tab) shows only its explanation.
-    @ViewBuilder
     private var flowSection: some View {
-        Section {
-            if viewModel.flow != .payment {
-                HStack(spacing: 8) {
-                    ForEach(TransactionFlowKind.choices(moneyIn: viewModel.isReceived), id: \.self) { kind in
-                        let selected = viewModel.flow == kind
-                        Button {
-                            viewModel.flow = kind
-                        } label: {
-                            Text(kind.label)
-                                .font(.subheadline.weight(.semibold))
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .foregroundStyle(selected ? Color.accentColor : .primary)
-                                .background(selected ? Color.accentColor.opacity(0.12) : Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
-                                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.accentColor : Color(.separator), lineWidth: selected ? 1.5 : 1))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(selected ? .isSelected : [])
-                        .accessibilityIdentifier("transactionFlow_\(kind.rawValue)")
-                    }
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-            }
-            Text(viewModel.flow.hint)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("transactionFlowHint")
-        } header: {
-            Text("What was it?")
-        }
+        TransactionFlowChips(
+            choices: viewModel.flow == .payment ? [.payment] : TransactionFlowKind.choices(moneyIn: viewModel.isReceived),
+            selection: $viewModel.flow
+        )
     }
 
     /// One merged section — name, category, payment method, date, recurring —
