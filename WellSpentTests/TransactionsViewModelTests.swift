@@ -24,7 +24,7 @@ struct TransactionsViewModelTests {
         $0.id = 1
         $0.name = "Payment"
         $0.isSystem = true
-        $0.systemCategory = .payment
+        $0.systemCategory = .unspecified // card payments are a flow now, not a category (#119)
     }
 
     private let groceriesCategory = Wellspent_V1_Category.with {
@@ -37,7 +37,20 @@ struct TransactionsViewModelTests {
             $0.id = id
             $0.categoryID = categoryID
             $0.amount = .with { $0.units = units; $0.currency = "USD" }
+            if categoryID == paymentCategory.id { $0.flow = "payment" } // as the server sends it
         }
+    }
+
+    @Test("the Payments tab follows the flow, not the category")
+    func paymentsFollowTheFlow() {
+        let viewModel = makeViewModel()
+        var transferInPaymentCategory = tx(id: "a", categoryID: groceriesCategory.id)
+        transferInPaymentCategory.flow = "payment"
+        let groceries = tx(id: "b", categoryID: groceriesCategory.id)
+        viewModel.setStateForTesting(transactions: [transferInPaymentCategory, groceries], categories: [groceriesCategory])
+
+        #expect(viewModel.paymentTransactions(reviews: []).map(\.id) == ["a"])
+        #expect(viewModel.visibleTransactions(reviews: []).map(\.id) == ["b"])
     }
 
     @Test("a card-payment row is excluded from the Variable list")
@@ -123,6 +136,7 @@ struct TransactionsViewModelTests {
             .with {
                 $0.id = id
                 $0.categoryID = paymentCategory.id
+                $0.flow = "payment"
                 $0.amount = .with { $0.units = units; $0.currency = "USD" }
                 $0.paymentMethodID = method
                 $0.isExcluded = excluded
@@ -152,6 +166,7 @@ struct TransactionsViewModelTests {
             transactions: [.with {
                 $0.id = "refund"
                 $0.categoryID = paymentCategory.id
+                $0.flow = "payment"
                 $0.amount = .with { $0.units = -30; $0.currency = "USD" }
             }],
             categories: [paymentCategory]

@@ -18,6 +18,7 @@ struct AddEditTransactionView: View {
         isArchivedPeriod: Bool = false,
         forceLocked: Bool = false,
         defaultCategoryID: Int32 = 0,
+        defaultFlow: TransactionFlowKind = .spend,
         restClient: WellSpentREST.Client,
         onDone: @escaping (Wellspent_V1_Transaction) -> Void
     ) {
@@ -28,6 +29,7 @@ struct AddEditTransactionView: View {
             isArchivedPeriod: isArchivedPeriod,
             forceLocked: forceLocked,
             defaultCategoryID: defaultCategoryID,
+            defaultFlow: defaultFlow,
             restClient: restClient
         ))
         self.categories = categories
@@ -44,6 +46,7 @@ struct AddEditTransactionView: View {
         NavigationStack {
             Form {
                 amountSection
+                flowSection
                 detailsSection
                 errorSection
             }
@@ -83,13 +86,13 @@ struct AddEditTransactionView: View {
     private var amountSection: some View {
         Section {
             if viewModel.isLocked {
-                Text("Only the category can be changed for this transaction.")
+                Text("Only the category and what it was can be changed for this transaction.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("transactionLockedNotice")
             }
 
-            Picker("Flow", selection: $viewModel.isReceived) {
+            Picker("Direction", selection: $viewModel.isReceived) {
                 Text("Money Out").tag(false)
                 Text("Money In").tag(true)
             }
@@ -104,6 +107,14 @@ struct AddEditTransactionView: View {
                 accessibilityIdentifier: "transactionAmountField"
             )
         }
+    }
+
+    /// A card payment (added from the Payments tab) shows only its explanation.
+    private var flowSection: some View {
+        TransactionFlowChips(
+            choices: viewModel.flow == .payment ? [.payment] : TransactionFlowKind.choices(moneyIn: viewModel.isReceived),
+            selection: $viewModel.flow
+        )
     }
 
     /// One merged section — name, category, payment method, date, recurring —

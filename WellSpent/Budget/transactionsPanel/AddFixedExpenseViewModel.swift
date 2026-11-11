@@ -16,6 +16,7 @@ final class AddFixedExpenseViewModel {
     private(set) var intervalMonths = 1
     private(set) var intervalWeeks = 1
     var categoryID: Int32 = 0
+    var flow: TransactionFlowKind = .spend
     var paymentMethodID = ""
 
     /// Payment plan (optional): number-of-payments and end-date are kept in
@@ -109,7 +110,7 @@ final class AddFixedExpenseViewModel {
         let anchorTimestamp = Google_Protobuf_Timestamp(dateOnly: startDate)
         let totalPayments = Int32(paymentsText) ?? 0
         let fallback = "Couldn't create that fixed expense."
-        Self.logger.info("creating fixed expense name=\(self.name, privacy: .public) hasPaymentPlan=\(self.endDate != nil, privacy: .public) totalPayments=\(totalPayments, privacy: .public)")
+        Self.logger.info("creating fixed expense name=\(self.name, privacy: .public) flow=\(self.flow.rawValue, privacy: .public) hasPaymentPlan=\(self.endDate != nil, privacy: .public) totalPayments=\(totalPayments, privacy: .public)")
 
         do {
             let output = try await restClient.createFixedExpense(.init(
@@ -126,6 +127,7 @@ final class AddFixedExpenseViewModel {
                     intervalWeeks: Int32(intervalWeeks),
                     dayOfWeek: FixedExpenseScheduling.dayOfWeek(for: startDate),
                     endDate: endDate.map { Google_Protobuf_Timestamp(dateOnly: $0).restDateString },
+                    flow: Components.Schemas.TransactionFlow(rawValue: flow.rawValue),
                     totalPayments: totalPayments
                 ))
             ))

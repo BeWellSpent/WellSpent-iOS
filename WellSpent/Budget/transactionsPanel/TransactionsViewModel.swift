@@ -256,12 +256,10 @@ final class TransactionsViewModel {
         return body.fixedExpenses.map(BudgetRESTMapping.fixedExpense(from:))
     }
 
-    /// Card payments, as identified by the system "Payment" category — their
-    /// own tab now (issue #76), so they're carved out of the Variable list
-    /// below rather than shown there. Loan payments and transfers use
-    /// different system categories and stay in Variable.
-    private var paymentCategoryID: Int32 {
-        categories.first { $0.isSystem(.payment) }?.id ?? -1
+    /// Card payments are their own tab (issue #76), identified by their flow
+    /// (#118); loan payments and transfers are other flows and stay in Variable.
+    private static func isCardPayment(_ transaction: Wellspent_V1_Transaction) -> Bool {
+        TransactionFlowKind.of(transaction) == .payment
     }
 
     /// Excludes Fixed occurrences settled by a confirmed match (issue #97:
@@ -269,15 +267,13 @@ final class TransactionsViewModel {
     /// card-payment rows, which now live on their own tab (issue #76).
     func visibleTransactions(reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_Transaction] {
         let confirmedFixedIDs = TransactionReviewMatching.confirmedFixedTransactionIDs(reviews)
-        let paymentCategoryID = paymentCategoryID
-        return transactions.filter { !confirmedFixedIDs.contains($0.id) && $0.categoryID != paymentCategoryID }
+        return transactions.filter { !confirmedFixedIDs.contains($0.id) && !Self.isCardPayment($0) }
     }
 
     /// Card-payment rows, carved out of `visibleTransactions` above.
     func paymentTransactions(reviews: [Wellspent_V1_TransactionReview]) -> [Wellspent_V1_Transaction] {
         let confirmedFixedIDs = TransactionReviewMatching.confirmedFixedTransactionIDs(reviews)
-        let paymentCategoryID = paymentCategoryID
-        return transactions.filter { !confirmedFixedIDs.contains($0.id) && $0.categoryID == paymentCategoryID }
+        return transactions.filter { !confirmedFixedIDs.contains($0.id) && Self.isCardPayment($0) }
     }
 
     /// One entry per card payment: the outflow and its matching inflow folded together,

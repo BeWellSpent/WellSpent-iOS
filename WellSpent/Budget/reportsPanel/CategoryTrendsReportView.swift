@@ -12,6 +12,14 @@ struct CategoryTrendsReportView: View {
     var body: some View {
         if let report = viewModel.trends {
             VStack(alignment: .leading, spacing: 10) {
+                if let current = report.periods.last(where: { $0.flows != nil }), let flows = current.flows {
+                    FlowTotalsCard(
+                        flows: flows,
+                        periodLabel: current.start.formatted(Date.FormatStyle().month(.wide).locale(Locale(identifier: viewModel.localeIdentifier))),
+                        currencyCode: viewModel.currencyCode,
+                        localeIdentifier: viewModel.localeIdentifier
+                    )
+                }
                 chartCard(report)
 
                 HStack(alignment: .firstTextBaseline) {

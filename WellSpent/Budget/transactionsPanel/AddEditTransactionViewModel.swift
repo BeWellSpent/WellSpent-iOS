@@ -16,7 +16,11 @@ final class AddEditTransactionViewModel {
 
     var name: String
     var amountText: String
-    var isReceived: Bool
+    /// Money in (stored negative) or out. Changing it keeps the flow only if it still fits.
+    var isReceived: Bool {
+        didSet { flow = TransactionFlowKind.fitting(flow, moneyIn: isReceived) }
+    }
+    var flow: TransactionFlowKind
     var categoryID: Int32
     var paymentMethodID: String
     var recurring: Bool
@@ -52,9 +56,10 @@ final class AddEditTransactionViewModel {
         return !name.trimmingCharacters(in: .whitespaces).isEmpty
             && MoneyInput.parseAmount(amountText) != nil
             && !paymentMethodID.isEmpty
+            && (!flow.categoryRequired || categoryID != 0)
     }
 
-    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, forceLocked: Bool = false, defaultCategoryID: Int32 = 0, restClient: WellSpentREST.Client) {
+    init(mode: Mode, budgetPeriodID: String, currencyCode: String, isArchivedPeriod: Bool = false, forceLocked: Bool = false, defaultCategoryID: Int32 = 0, defaultFlow: TransactionFlowKind = .spend, restClient: WellSpentREST.Client) {
         self.mode = mode
         self.budgetPeriodID = budgetPeriodID
         self.currencyCode = currencyCode
@@ -65,15 +70,17 @@ final class AddEditTransactionViewModel {
             name = ""
             amountText = ""
             isReceived = false
+            flow = defaultFlow
             categoryID = defaultCategoryID
             paymentMethodID = ""
             recurring = false
             date = Date()
             isLocked = false
-            Self.logger.info("opened in add mode budgetPeriodID=\(budgetPeriodID, privacy: .public)")
+            Self.logger.info("opened in add mode budgetPeriodID=\(budgetPeriodID, privacy: .public) flow=\(defaultFlow.rawValue, privacy: .public)")
         case .edit(let transaction):
             name = transaction.name
             isReceived = TransactionAmountFormatting.isReceived(units: transaction.amount.units, nanos: transaction.amount.nanos)
+            flow = TransactionFlowKind.of(transaction)
             amountText = MoneyInput.formatForEditing(units: abs(transaction.amount.units), nanos: abs(transaction.amount.nanos))
             categoryID = transaction.categoryID
             paymentMethodID = transaction.paymentMethodID
@@ -82,6 +89,10 @@ final class AddEditTransactionViewModel {
             isLocked = isArchivedPeriod || transaction.isPlaidImported || forceLocked
             Self.logger.info("opened in edit mode transactionID=\(transaction.id, privacy: .public) isArchivedPeriod=\(isArchivedPeriod, privacy: .public) isPlaidImported=\(transaction.isPlaidImported, privacy: .public) forceLocked=\(forceLocked, privacy: .public) isLocked=\(self.isLocked, privacy: .public)")
         }
+    }
+
+    private var restFlow: Components.Schemas.TransactionFlow? {
+        Components.Schemas.TransactionFlow(rawValue: flow.rawValue)
     }
 
     func submit() async -> Wellspent_V1_Transaction? {
@@ -123,7 +134,8 @@ final class AddEditTransactionViewModel {
                         categoryId: categoryID,
                         paymentMethodId: current.paymentMethodID,
                         transactionFrequency: BudgetRESTMapping.restTransactionFrequency(from: current.transactionFrequencyID),
-                        transactionType: BudgetRESTMapping.restExpenseType(from: current.transactionTypeID)
+                        transactionType: BudgetRESTMapping.restExpenseType(from: current.transactionTypeID),
+                        flow: restFlow
                     ))
                 ))
                 guard case .ok(let ok) = output, let body = try? ok.body.json else {
@@ -153,7 +165,8 @@ final class AddEditTransactionViewModel {
                     categoryId: categoryID,
                     paymentMethodId: paymentMethodID,
                     transactionFrequency: BudgetRESTMapping.restTransactionFrequency(from: transactionFrequencyID),
-                    transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID)
+                    transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID),
+                    flow: restFlow
                 ))))
                 guard case .ok(let ok) = output, let body = try? ok.body.json else {
                     errorMessage = fallback
@@ -180,7 +193,8 @@ final class AddEditTransactionViewModel {
                         categoryId: categoryID,
                         paymentMethodId: paymentMethodID,
                         transactionFrequency: BudgetRESTMapping.restTransactionFrequency(from: transactionFrequencyID),
-                        transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID)
+                        transactionType: BudgetRESTMapping.restExpenseType(from: TransactionsViewModel.variableTypeID),
+                        flow: restFlow
                     ))
                 ))
                 guard case .ok(let ok) = output, let body = try? ok.body.json else {

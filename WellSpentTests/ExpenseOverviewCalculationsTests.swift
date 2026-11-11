@@ -25,19 +25,30 @@ struct ExpenseOverviewCalculationsTests {
     @Test("isTransactionExcluded is true for manually excluded transactions")
     func manuallyExcluded() {
         let tx = transaction(categoryID: 1, amount: 10, isExcluded: true)
-        #expect(ExpenseOverviewCalculations.isTransactionExcluded(tx, incomeCategoryID: nil))
+        #expect(ExpenseOverviewCalculations.isTransactionExcluded(tx))
     }
 
-    @Test("isTransactionExcluded is true for the Income category regardless of the flag")
-    func incomeCategoryAlwaysExcluded() {
-        let tx = transaction(categoryID: 99, amount: 10, isExcluded: false)
-        #expect(ExpenseOverviewCalculations.isTransactionExcluded(tx, incomeCategoryID: 99))
+    @Test("isTransactionExcluded is true for income and card payments, whatever the category")
+    func nonSpendFlowsExcluded() {
+        var income = transaction(categoryID: 1, amount: -10)
+        income.flow = "income"
+        var payment = transaction(categoryID: 1, amount: 10)
+        payment.flow = "payment"
+        #expect(ExpenseOverviewCalculations.isTransactionExcluded(income))
+        #expect(ExpenseOverviewCalculations.isTransactionExcluded(payment))
+    }
+
+    @Test("isTransactionExcluded is false for a transfer: it counts toward its category")
+    func transferCounts() {
+        var transfer = transaction(categoryID: 1, amount: -12)
+        transfer.flow = "transfer"
+        #expect(!ExpenseOverviewCalculations.isTransactionExcluded(transfer))
     }
 
     @Test("isTransactionExcluded is false otherwise")
     func notExcluded() {
         let tx = transaction(categoryID: 1, amount: 10)
-        #expect(!ExpenseOverviewCalculations.isTransactionExcluded(tx, incomeCategoryID: 99))
+        #expect(!ExpenseOverviewCalculations.isTransactionExcluded(tx))
     }
 
     @Test("isOver is false when planned is zero or negative")

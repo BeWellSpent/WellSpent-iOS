@@ -42,6 +42,15 @@ struct EditFixedExpenseViewModelTests {
         #expect(viewModel.intervalMonths == 1)
     }
 
+    @Test("pre-fills the template's flow; one without a known flow is spending")
+    func prefillsFlow() {
+        var expense = makeExpense()
+        expense.flow = "transfer"
+        #expect(makeViewModel(expense: expense).flow == .transfer)
+        expense.flow = ""
+        #expect(makeViewModel(expense: expense).flow == .spend)
+    }
+
     @Test("pre-fills a weekly template's interval, not months")
     func prefillsWeeklyExpense() {
         let expense = Wellspent_V1_FixedExpense.with {

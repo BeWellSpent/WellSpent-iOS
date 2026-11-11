@@ -191,7 +191,6 @@ struct TransactionsListView: View {
             exceededOnly: variableExceededOnly,
             excludedOnly: variableExcludedOnly,
             searchQuery: searchQuery,
-            incomeCategoryID: viewModel.categories.first { $0.isSystem(.income) }?.id,
             overBudgetTransactionIDs: variableExceededOnly ? viewModel.overBudgetTransactionIDs : [],
             categoryName: viewModel.categoryName,
             ownerName: viewModel.ownerName,
@@ -728,7 +727,11 @@ struct TransactionsListView: View {
                 }
             }
             HStack(spacing: 4) {
-                categoryChip(transaction, viewModel: viewModel)
+                // Income and card payments need no category (#119); only spending prompts to categorize.
+                if TransactionFlowKind.of(transaction).categoryExpected || transaction.categoryID != 0 {
+                    categoryChip(transaction, viewModel: viewModel)
+                }
+                TransactionFlowTag(flow: TransactionFlowKind.of(transaction))
                 if let methodName = viewModel.paymentMethodName(for: transaction.paymentMethodID) {
                     Text("·")
                         .font(.caption)
