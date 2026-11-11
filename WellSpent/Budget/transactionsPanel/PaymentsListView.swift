@@ -42,13 +42,10 @@ struct PaymentsListView: View {
     /// Owned by `BudgetDetailView` — see `TransactionsListView.reviewViewModel`.
     var reviewViewModel: TransactionReviewViewModel? = nil
     let canEdit: Bool
-    /// See `TransactionsListView.isArchivedPeriod`.
-    var isArchivedPeriod: Bool = false
     let searchQuery: String
     /// See `TransactionsViewModel.onDataChanged`.
     var onDataChanged: () -> Void = {}
 
-    private var canMutate: Bool { canEdit && !isArchivedPeriod }
 
     @Environment(SessionStore.self) private var session
     @State private var viewModel: TransactionsViewModel?
@@ -180,7 +177,6 @@ struct PaymentsListView: View {
                     currencyCode: currencyCode,
                     categories: viewModel.categories,
                     paymentMethods: viewModel.paymentMethods,
-                    isArchivedPeriod: isArchivedPeriod,
                     restClient: authenticatedRESTClient
                 ) { updated in
                     viewModel.replaceTransaction(updated)
@@ -201,7 +197,7 @@ struct PaymentsListView: View {
         if group.isPair {
             pairRow(group, viewModel: viewModel)
                 .swipeActions(edge: .trailing) {
-                    if canMutate {
+                    if canEdit {
                         Button {
                             requestToggleExcluded(group, viewModel: viewModel)
                         } label: {
@@ -210,7 +206,7 @@ struct PaymentsListView: View {
                         .tint(.gray)
                         .accessibilityIdentifier("excludePayment_\(group.id)")
                     }
-                    if canMutate && !group.transactions.contains(where: \.isPlaidImported) {
+                    if canEdit && !group.transactions.contains(where: \.isPlaidImported) {
                         Button(role: .destructive) {
                             requestDelete(group, viewModel: viewModel)
                         } label: {
@@ -258,7 +254,7 @@ struct PaymentsListView: View {
 
     @ViewBuilder
     private func trailingActions(for transaction: Wellspent_V1_Transaction, viewModel: TransactionsViewModel) -> some View {
-        if canMutate {
+        if canEdit {
             Button {
                 requestToggleExcluded(transaction, viewModel: viewModel)
             } label: {
@@ -267,7 +263,7 @@ struct PaymentsListView: View {
             .tint(.gray)
             .accessibilityIdentifier("excludeTransaction_\(transaction.name)")
         }
-        if canMutate && !transaction.isPlaidImported {
+        if canEdit && !transaction.isPlaidImported {
             Button(role: .destructive) {
                 requestDelete(transaction, viewModel: viewModel)
             } label: {

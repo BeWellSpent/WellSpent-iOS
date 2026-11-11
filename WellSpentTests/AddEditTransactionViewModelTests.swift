@@ -6,12 +6,11 @@ import WellSpentREST
 @Suite("AddEditTransactionViewModel")
 @MainActor
 struct AddEditTransactionViewModelTests {
-    private func makeViewModel(mode: AddEditTransactionViewModel.Mode = .add, isArchivedPeriod: Bool = false, defaultCategoryID: Int32 = 0) -> AddEditTransactionViewModel {
+    private func makeViewModel(mode: AddEditTransactionViewModel.Mode = .add, defaultCategoryID: Int32 = 0) -> AddEditTransactionViewModel {
         AddEditTransactionViewModel(
             mode: mode,
             budgetPeriodID: "period-1",
             currencyCode: "USD",
-            isArchivedPeriod: isArchivedPeriod,
             defaultCategoryID: defaultCategoryID,
             restClient: RESTClient.makePublicClient(baseURL: "http://localhost:1")
         )
@@ -111,28 +110,28 @@ struct AddEditTransactionViewModelTests {
 
     @Test("add mode is never locked")
     func addModeNeverLocked() {
-        let viewModel = makeViewModel(mode: .add, isArchivedPeriod: true)
+        let viewModel = makeViewModel(mode: .add)
         #expect(!viewModel.isLocked)
     }
 
-    @Test("editing in an archived period locks the transaction")
-    func editModeLockedWhenArchived() {
+    @Test("editing a manual transaction in any period is not locked (#120)")
+    func editModeNotLockedForManualRows() {
         let transaction = Wellspent_V1_Transaction.with {
             $0.id = "tx-1"
             $0.paymentMethodID = "pm-1"
         }
-        let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: true)
-        #expect(viewModel.isLocked)
+        let viewModel = makeViewModel(mode: .edit(transaction))
+        #expect(!viewModel.isLocked)
     }
 
-    @Test("editing a Plaid-imported transaction locks it regardless of archive state")
+    @Test("editing a Plaid-imported transaction locks it")
     func editModeLockedWhenPlaidImported() {
         let transaction = Wellspent_V1_Transaction.with {
             $0.id = "tx-1"
             $0.paymentMethodID = "pm-1"
             $0.isPlaidImported = true
         }
-        let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: false)
+        let viewModel = makeViewModel(mode: .edit(transaction))
         #expect(viewModel.isLocked)
     }
 
@@ -142,7 +141,7 @@ struct AddEditTransactionViewModelTests {
             $0.id = "tx-1"
             $0.paymentMethodID = "pm-1"
         }
-        let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: false)
+        let viewModel = makeViewModel(mode: .edit(transaction))
         #expect(!viewModel.isLocked)
     }
 
@@ -174,8 +173,9 @@ struct AddEditTransactionViewModelTests {
         let transaction = Wellspent_V1_Transaction.with {
             $0.id = "tx-1"
             $0.paymentMethodID = ""
+            $0.isPlaidImported = true
         }
-        let viewModel = makeViewModel(mode: .edit(transaction), isArchivedPeriod: true)
+        let viewModel = makeViewModel(mode: .edit(transaction))
         #expect(viewModel.canSubmit)
     }
 }

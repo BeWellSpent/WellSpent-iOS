@@ -159,9 +159,6 @@ struct BudgetDetailView: View {
 
     private var content: some View {
         VStack(spacing: 0) {
-            if viewModel?.isArchivedPeriod == true {
-                archivedPeriodBanner
-            }
             Group {
                 if let viewModel {
                     if horizontalSizeClass == .regular {
@@ -318,21 +315,6 @@ struct BudgetDetailView: View {
         }
     }
 
-    /// Shown above the tab content, regardless of which tab is selected —
-    /// mirrors web's `BudgetView.tsx` banner placement.
-    private var archivedPeriodBanner: some View {
-        Label {
-            Text("You're viewing a past period. Adding, deleting, marking paid, and excluding transactions are disabled — you can still change a transaction's category.")
-                .font(.caption)
-        } icon: {
-            Image(systemName: "info.circle")
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.blue.opacity(0.1))
-        .accessibilityIdentifier("archivedPeriodBanner")
-    }
-
     private func tabView(viewModel: BudgetDetailViewModel) -> some View {
         TabView(selection: tabSelection) {
             NavigationStack {
@@ -393,7 +375,7 @@ struct BudgetDetailView: View {
                     }
                     .accessibilityIdentifier("transactionsSearchToggleButton")
                 }
-                if viewModel?.canEdit == true && viewModel?.isArchivedPeriod != true {
+                if viewModel?.canEdit == true {
                     ToolbarItem(placement: .topBarTrailing) {
                         // Transactions merged Variable+Fixed into one list
                         // (Stage 2) with no sub-picker of its own to say which
@@ -641,7 +623,6 @@ struct BudgetDetailView: View {
                 isActive: selectedSection == .home && overviewSelectedSubTab == .transactions,
                 reviewViewModel: reviewViewModel,
                 canEdit: viewModel.canEdit,
-                isArchivedPeriod: viewModel.isArchivedPeriod,
                 searchQuery: transactionsSearchQuery,
                 onDataChanged: { Task { await overviewViewModel?.load() } }
             )
@@ -666,7 +647,6 @@ struct BudgetDetailView: View {
                 isActive: selectedSection == .home && overviewSelectedSubTab == .payments,
                 reviewViewModel: reviewViewModel,
                 canEdit: viewModel.canEdit,
-                isArchivedPeriod: viewModel.isArchivedPeriod,
                 searchQuery: transactionsSearchQuery,
                 onDataChanged: { Task { await overviewViewModel?.load() } }
             )
