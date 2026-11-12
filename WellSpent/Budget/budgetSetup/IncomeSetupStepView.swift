@@ -44,31 +44,46 @@ struct IncomeSetupStepView: View {
     }
 
     var body: some View {
-        Form {
+        SetupStepScaffold(step: .income) {
             if !addedSourceNames.isEmpty {
-                Section("Added so far") {
-                    ForEach(addedSourceNames, id: \.self) { name in
-                        Text(name)
-                    }
+                HomeSectionHeader(title: Text("Added so far"))
+                SetupAddedList(items: addedSourceNames) { name in
+                    SetupRowText(title: name, detail: "")
                 }
             }
 
-            Section {
-                TextField("Name", text: $viewModel.name)
-                    .accessibilityIdentifier("setupIncomeNameField")
+            HomeSectionHeader(title: Text("Add income"))
+            addForm
 
-                AmountTextField(text: $viewModel.amountText)
-                    .accessibilityIdentifier("setupIncomeAmountField")
+            if let errorMessage = viewModel.errorMessage {
+                InlineErrorBanner(message: errorMessage)
+            }
+        } action: {
+            Button("Continue") { onContinue() }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .accessibilityIdentifier("setupSkipButton")
+        }
+    }
 
-                Toggle("Recurring", isOn: $viewModel.recurring)
-
-                if viewModel.showBeforeTaxToggle {
-                    Toggle("Before tax", isOn: $viewModel.beforeTax)
+    private var addForm: some View {
+        HomeCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 10) {
+                    LabeledFieldBox(label: Text("Name")) {
+                        TextField("e.g. Salary", text: $viewModel.name)
+                            .accessibilityIdentifier("setupIncomeNameField")
+                    }
+                    .layoutPriority(1)
+                    LabeledFieldBox(label: Text("Amount")) {
+                        AmountTextField(text: $viewModel.amountText)
+                            .multilineTextAlignment(.trailing)
+                            .accessibilityIdentifier("setupIncomeAmountField")
+                    }
                 }
 
                 if !people.isEmpty {
                     ColorDotPickerField(
-                        title: "Person",
+                        title: "Who earns it",
                         selection: $viewModel.personID,
                         options: people.map { ColorDotOption(id: $0.id, name: $0.userName, hex: $0.color) },
                         noneOption: (id: Int64(0), label: "Unattributed"),
@@ -76,7 +91,22 @@ struct IncomeSetupStepView: View {
                     )
                 }
 
-                Button {
+                Toggle("Recurring", isOn: $viewModel.recurring)
+                    .tint(.green)
+
+                if viewModel.showBeforeTaxToggle {
+                    Toggle(isOn: $viewModel.beforeTax) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Before tax")
+                            Text("We set aside an estimated tax reserve")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .tint(.green)
+                }
+
+                SetupAddButton(title: Text("Add income"), isWorking: viewModel.isSubmitting) {
                     Task {
                         let name = viewModel.name
                         if await viewModel.submit() {
@@ -90,26 +120,9 @@ struct IncomeSetupStepView: View {
                             )
                         }
                     }
-                } label: {
-                    if viewModel.isSubmitting {
-                        ProgressView()
-                    } else {
-                        Text("Add")
-                    }
                 }
                 .disabled(!viewModel.canSubmit)
                 .accessibilityIdentifier("setupAddIncomeButton")
-            }
-
-            if let errorMessage = viewModel.errorMessage {
-                Section {
-                    Text(errorMessage).foregroundStyle(.red)
-                }
-            }
-
-            Section {
-                Button("Continue") { onContinue() }
-                    .accessibilityIdentifier("setupSkipButton")
             }
         }
     }

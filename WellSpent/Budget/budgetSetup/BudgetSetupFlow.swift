@@ -74,41 +74,25 @@ struct BudgetSetupFlow: View {
                     )
                 }
             }
-            .sheetChrome(Text("Step \(viewModel.step.rawValue + 1) of \(BudgetSetupViewModel.Step.allCases.count) — \(viewModel.step.title)"))
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if viewModel.step == .create {
                     ToolbarItem(placement: .cancellationAction) {
                         SheetCancelButton { dismiss() }
                     }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button {
-                            Task {
-                                if let profile = await createViewModel.submit() {
-                                    onCreated(profile)
-                                    await viewModel.budgetCreated(profile)
-                                }
-                            }
-                        } label: {
-                            if createViewModel.isSubmitting {
-                                ProgressView()
-                            } else {
-                                Text("Create")
-                            }
-                        }
-                        .disabled(!createViewModel.canSubmit)
-                        .accessibilityIdentifier("createBudgetButton")
-                    }
                 } else {
+                    // Asks before deleting anything, so the usual ✕ can't lose a budget by muscle memory.
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Finish Later") { dismiss() }
-                            .accessibilityIdentifier("finishSetupLaterButton")
+                        Button { isConfirmingCancel = true } label: {
+                            Label("Cancel Setup", systemImage: "xmark")
+                        }
+                        .labelStyle(.iconOnly)
+                        .accessibilityIdentifier("cancelSetupButton")
                     }
-                    // Destructive, so it does not sit where "Cancel" normally
-                    // does — someone reaching for the usual dismiss must not
-                    // delete their budget by muscle memory.
-                    ToolbarItem(placement: .destructiveAction) {
-                        Button("Cancel Setup", role: .destructive) { isConfirmingCancel = true }
-                            .accessibilityIdentifier("cancelSetupButton")
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Finish Later") { dismiss() }
+                            .fontWeight(.semibold)
+                            .accessibilityIdentifier("finishSetupLaterButton")
                     }
                 }
             }
@@ -140,27 +124,73 @@ struct BudgetSetupFlow: View {
     }
 
     private var createStep: some View {
-        Form {
-            Section {
-                TextField("Budget name", text: $createViewModel.name)
-                    .accessibilityIdentifier("budgetNameField")
-
-                Picker("Cycle", selection: $createViewModel.cycle) {
-                    ForEach(BudgetCycleLabel.selectable, id: \.self) { cycle in
-                        Text(BudgetCycleLabel.text(for: cycle)).tag(cycle)
-                    }
+        SetupStepScaffold(step: .create) {
+            HomeCard {
+                LabeledFieldBox(label: Text("Budget name")) {
+                    TextField("Budget name", text: $createViewModel.name)
+                        .accessibilityIdentifier("budgetNameField")
                 }
-                .accessibilityIdentifier("budgetCyclePicker")
             }
+
+            HomeSectionHeader(title: Text("How often do you budget?"))
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(BudgetCycleLabel.selectable, id: \.self) { cycle in
+                    cycleCard(cycle)
+                }
+            }
+            .accessibilityIdentifier("budgetCyclePicker")
+
+            Text("Once you add income with pay dates, periods follow your paydays instead of the calendar.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
 
             if let errorMessage = createViewModel.errorMessage {
-                Section {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("createBudgetErrorMessage")
+                InlineErrorBanner(message: errorMessage)
+                    .accessibilityIdentifier("createBudgetErrorMessage")
+            }
+        } action: {
+            Button {
+                Task {
+                    if let profile = await createViewModel.submit() {
+                        onCreated(profile)
+                        await viewModel.budgetCreated(profile)
+                    }
+                }
+            } label: {
+                if createViewModel.isSubmitting {
+                    ProgressView().tint(.white)
+                } else {
+                    Text("Create budget")
                 }
             }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .disabled(!createViewModel.canSubmit)
+            .accessibilityIdentifier("createBudgetButton")
         }
+    }
+
+    private func cycleCard(_ cycle: Wellspent_V1_BudgetCycle) -> some View {
+        let isSelected = createViewModel.cycle == cycle
+        return Button {
+            createViewModel.cycle = cycle
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(BudgetCycleLabel.text(for: cycle))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(BudgetCycleLabel.hint(for: cycle))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
+            .padding(.horizontal, 14)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
 

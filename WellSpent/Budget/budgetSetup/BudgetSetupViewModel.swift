@@ -35,6 +35,32 @@ final class BudgetSetupViewModel {
             case .savings: return String(localized: "Add Savings", bundle: bundle, locale: locale)
             }
         }
+
+        /// The large heading inside the step.
+        var heading: String {
+            let locale = AppLanguageStore.currentLocale
+            let bundle = AppLanguageStore.currentBundle
+            switch self {
+            case .create: return String(localized: "Name your budget", bundle: bundle, locale: locale)
+            case .people: return String(localized: "Who shares it?", bundle: bundle, locale: locale)
+            case .paymentMethods: return String(localized: "How do you pay?", bundle: bundle, locale: locale)
+            case .income: return String(localized: "What comes in?", bundle: bundle, locale: locale)
+            case .savings: return String(localized: "What do you set aside?", bundle: bundle, locale: locale)
+            }
+        }
+
+        /// Why the step matters, in one sentence under the heading.
+        var subtitle: String {
+            let locale = AppLanguageStore.currentLocale
+            let bundle = AppLanguageStore.currentBundle
+            switch self {
+            case .create: return String(localized: "Most people use one budget for the whole household.", bundle: bundle, locale: locale)
+            case .people: return String(localized: "You're already on it. Add a partner or housemate; an email invites them to the app.", bundle: bundle, locale: locale)
+            case .paymentMethods: return String(localized: "Cards and accounts you spend from. Every transaction needs one.", bundle: bundle, locale: locale)
+            case .income: return String(localized: "Your pay sets how much there is to plan.", bundle: bundle, locale: locale)
+            case .savings: return String(localized: "Money kept apart from spending: an emergency fund, a holiday, anything.", bundle: bundle, locale: locale)
+            }
+        }
     }
 
     private(set) var step: Step = .create

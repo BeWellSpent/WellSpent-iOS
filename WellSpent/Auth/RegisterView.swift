@@ -10,115 +10,161 @@ struct RegisterView: View {
     }
 
     var body: some View {
-        Form {
-            personalInfoSection
-            locationSection
-            errorSection
-            actionsSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                OnboardingHeading(
+                    title: Text("Create your account"),
+                    subtitle: Text("Takes a minute. Then we'll set up your first budget together.")
+                )
+                .padding(.bottom, 8)
+
+                HomeSectionHeader(title: Text("About you"))
+                aboutYouCard
+
+                HomeSectionHeader(title: Text("Where you live"))
+                locationCard
+                Text(viewModel.isUnitedStates
+                     ? "Sets your currency and lets WellSpent estimate taxes on before-tax income."
+                     : "Sets your currency. You can change it later in Settings.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+
+                if let errorMessage = viewModel.errorMessage {
+                    InlineErrorBanner(message: errorMessage)
+                        .accessibilityIdentifier("registerErrorMessage")
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
         }
-        .navigationTitle("Register")
+        .background(Color(.systemGroupedBackground))
+        .scrollDismissesKeyboard(.interactively)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Image("BrandMark")
+                    .resizable()
+                    .frame(width: 32, height: 32)
+                    .accessibilityHidden(true)
+            }
+        }
+        .pinnedActionBar {
+            Button {
+                Task { await viewModel.submit(session: session) }
+            } label: {
+                if viewModel.isSubmitting {
+                    ProgressView().tint(.white)
+                } else {
+                    Text("Create Account")
+                }
+            }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .disabled(!viewModel.canSubmit)
+            .accessibilityIdentifier("registerButton")
+        }
         .accessibilityIdentifier("registerView")
         .task {
             await viewModel.loadCountries()
         }
     }
 
-    // Split out of `body` so SwiftUI's result-builder type checker only ever
-    // has to solve one small, explicitly-typed expression at a time instead
-    // of one giant chained Form — avoids "Cannot infer contextual base"-style
-    // timeouts in Xcode's live type checker on larger forms.
-    @ViewBuilder
-    private var personalInfoSection: some View {
-        Section {
-            TextField("First name", text: $viewModel.firstName)
-                .textContentType(.givenName)
-                .accessibilityIdentifier("firstNameField")
-
-            TextField("Last name", text: $viewModel.lastName)
-                .textContentType(.familyName)
-                .accessibilityIdentifier("lastNameField")
-
-            TextField("Email", text: $viewModel.email)
-                .textContentType(.username)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .accessibilityIdentifier("registerEmailField")
-
-            SecureField("Password", text: $viewModel.password)
-                // .password, not .newPassword — the latter triggers iOS's
-                // "Use Strong Password?" system sheet on focus, which
-                // steals keystrokes mid-typeText under XCUITest. .password
-                // still enables password-manager autofill, just skips the
-                // strong-password-generator interstitial.
-                .textContentType(.password)
-                .accessibilityIdentifier("registerPasswordField")
-
-            passwordHint
-        }
-    }
-
-    @ViewBuilder
-    private var passwordHint: some View {
-        if let passwordError = RegisterViewModel.passwordError(for: viewModel.password), !viewModel.password.isEmpty {
-            Text(passwordError)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder
-    private var locationSection: some View {
-        Section {
-            Picker("Country", selection: $viewModel.countryCode) {
-                Text("Select a country").tag("")
-                ForEach(viewModel.countries, id: \.code) { country in
-                    Text(country.name).tag(country.code)
-                }
-            }
-            .accessibilityIdentifier("countryPicker")
-
-            if viewModel.isUnitedStates {
-                Picker("State", selection: $viewModel.stateCode) {
-                    Text("Select a state").tag("")
-                    ForEach(USState.all, id: \.code) { state in
-                        Text(state.name).tag(state.code)
+    private var aboutYouCard: some View {
+        HomeCard {
+            VStack(spacing: 14) {
+                HStack(alignment: .top, spacing: 10) {
+                    LabeledFieldBox(label: Text("First name")) {
+                        TextField("First name", text: $viewModel.firstName)
+                            .textContentType(.givenName)
+                            .accessibilityIdentifier("firstNameField")
+                    }
+                    LabeledFieldBox(label: Text("Last name")) {
+                        TextField("Last name", text: $viewModel.lastName)
+                            .textContentType(.familyName)
+                            .accessibilityIdentifier("lastNameField")
                     }
                 }
-                .accessibilityIdentifier("stateField")
+
+                LabeledFieldBox(label: Text("Email"), footnote: Text("We'll send a link to confirm it.")) {
+                    TextField("Email", text: $viewModel.email)
+                        .textContentType(.username)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("registerEmailField")
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    LabeledFieldBox(label: Text("Password")) {
+                        // .password, not .newPassword: the latter's "Use Strong Password?" sheet steals keystrokes under XCUITest.
+                        SecureField("Password", text: $viewModel.password)
+                            .textContentType(.password)
+                            .accessibilityIdentifier("registerPasswordField")
+                    }
+                    PasswordRuleChecklist(password: viewModel.password)
+                }
             }
         }
     }
 
-    @ViewBuilder
-    private var errorSection: some View {
-        if let errorMessage = viewModel.errorMessage {
-            Section {
-                Text(errorMessage)
-                    .foregroundStyle(.red)
-                    .accessibilityIdentifier("registerErrorMessage")
-            }
-        }
-    }
+    private var locationCard: some View {
+        HomeCard {
+            VStack(spacing: 0) {
+                pickerRow(Text("Country")) {
+                    Picker("Country", selection: $viewModel.countryCode) {
+                        Text("Select a country").tag("")
+                        ForEach(viewModel.countries, id: \.code) { country in
+                            Text(country.name).tag(country.code)
+                        }
+                    }
+                    .accessibilityIdentifier("countryPicker")
+                }
 
-    @ViewBuilder
-    private var actionsSection: some View {
-        Section {
-            Button {
-                Task { await viewModel.submit(session: session) }
-            } label: {
-                HStack {
-                    Text("Create Account")
-                    if viewModel.isSubmitting {
-                        Spacer()
-                        ProgressView()
+                if viewModel.isUnitedStates {
+                    Divider()
+                    pickerRow(Text("State")) {
+                        Picker("State", selection: $viewModel.stateCode) {
+                            Text("Select a state").tag("")
+                            ForEach(USState.all, id: \.code) { state in
+                                Text(state.name).tag(state.code)
+                            }
+                        }
+                        .accessibilityIdentifier("stateField")
                     }
                 }
             }
-            .disabled(!viewModel.canSubmit)
-            .accessibilityIdentifier("registerButton")
+        }
+    }
 
-            SocialSignInButtons()
+    private func pickerRow<P: View>(_ label: Text, @ViewBuilder picker: () -> P) -> some View {
+        HStack {
+            label
+            Spacer()
+            picker()
+                .labelsHidden()
+                .pickerStyle(.menu)
+        }
+        .frame(minHeight: 48)
+    }
+}
+
+/// The four password rules, each ticked as it's met, instead of an error after submitting.
+private struct PasswordRuleChecklist: View {
+    let password: String
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], spacing: 6) {
+            ForEach(PasswordRule.allCases, id: \.self) { rule in
+                let met = rule.isMet(by: password)
+                Label {
+                    Text(rule.label)
+                } icon: {
+                    Image(systemName: met ? "checkmark.circle.fill" : "circle")
+                }
+                .font(.footnote)
+                .foregroundStyle(met ? Color.green : Color.secondary)
+                .accessibilityValue(met ? Text("Done") : Text("Missing"))
+            }
         }
     }
 }

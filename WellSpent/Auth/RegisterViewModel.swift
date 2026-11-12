@@ -95,17 +95,10 @@ final class RegisterViewModel {
     /// least one uppercase, lowercase, digit, and punctuation/symbol
     /// character. Returns a user-facing message, or `nil` if valid.
     static func passwordError(for password: String) -> String? {
-        guard password.count >= 8 else {
+        guard PasswordRule.length.isMet(by: password) else {
             return "Password must be at least 8 characters."
         }
-        var hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false
-        for character in password {
-            if character.isUppercase { hasUpper = true }
-            if character.isLowercase { hasLower = true }
-            if character.isNumber { hasDigit = true }
-            if character.isPunctuation || character.isSymbol { hasSpecial = true }
-        }
-        guard hasUpper, hasLower, hasDigit, hasSpecial else {
+        guard PasswordRule.allCases.allSatisfy({ $0.isMet(by: password) }) else {
             return "Password must contain an uppercase letter, lowercase letter, digit, and special character."
         }
         return nil

@@ -42,87 +42,87 @@ struct SavingsSetupStepView: View {
     }
 
     var body: some View {
-        Form {
-            Section {
-                Text("Set money aside each period — an emergency fund, a holiday, anything you want kept apart from spending.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
+        SetupStepScaffold(step: .savings) {
             if !addedSources.isEmpty {
-                Section("Added so far") {
-                    ForEach(addedSources, id: \.id) { source in
-                        Text(source.name)
+                HomeSectionHeader(title: Text("Added so far"))
+                SetupAddedList(items: addedSources) { source in
+                    HStack(spacing: 12) {
+                        Image(systemName: "lock")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.green)
+                            .frame(width: 28, height: 28)
+                            .background(Color.green.opacity(0.12), in: Circle())
+                            .accessibilityHidden(true)
+                        SetupRowText(title: source.name, detail: "")
                     }
                 }
             }
 
-            // Without a payment method there is nothing to spend from, so the
-            // form would refuse to submit no matter what was typed into it.
-            // Saying so beats a permanently disabled Add button.
+            HomeSectionHeader(title: Text("Add savings"))
+            // Without a payment method there is nothing to save from; saying so beats a dead Add button.
             if paymentMethods.isEmpty {
-                Section {
+                HomeCard {
                     Text("Add a payment method first — savings come out of one.")
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("setupSavingsNeedsPaymentMethod")
                 }
             } else {
-                Section {
-                    TextField("Name", text: $viewModel.name)
-                        .accessibilityIdentifier("setupSavingsNameField")
-
-                    AmountTextField(text: $viewModel.amountText)
-                        .accessibilityIdentifier("setupSavingsAmountField")
-
-                    ColorDotPickerField(
-                        title: "Payment Method",
-                        selection: $viewModel.paymentMethodID,
-                        options: paymentMethods.map {
-                            ColorDotOption(id: $0.id, name: $0.alias.isEmpty ? $0.name : $0.alias, hex: $0.color)
-                        },
-                        noneOption: (id: "", label: "None"),
-                        accessibilityIdentifier: "setupSavingsPaymentMethodPicker"
-                    )
-                }
-
-                Section {
-                    SavingsPaymentDaysGrid(selectedDays: $viewModel.paymentDays, daysInMonth: viewModel.daysInMonth)
-                }
-
-                Section {
-                    Button {
-                        Task {
-                            if let source = await viewModel.submit() {
-                                addedSources.append(source)
-                                viewModel = AddSavingsSourceViewModel(
-                                    budgetProfileID: budgetProfileID,
-                                    currencyCode: currencyCode,
-                                    periodStartDate: nil,
-                                    restClient: restClient
-                                )
-                            }
-                        }
-                    } label: {
-                        if viewModel.isSubmitting {
-                            ProgressView()
-                        } else {
-                            Text("Add")
-                        }
-                    }
-                    .disabled(!viewModel.canSubmit)
-                    .accessibilityIdentifier("setupAddSavingsButton")
-                }
+                addForm
             }
 
             if let errorMessage = viewModel.errorMessage {
-                Section {
-                    Text(errorMessage).foregroundStyle(.red)
-                }
+                InlineErrorBanner(message: errorMessage)
             }
+        } action: {
+            Button("Finish setup") { onFinish() }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .accessibilityIdentifier("setupSkipButton")
+        }
+    }
 
-            Section {
-                Button("Finish") { onFinish() }
-                    .accessibilityIdentifier("setupSkipButton")
+    private var addForm: some View {
+        HomeCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 10) {
+                    LabeledFieldBox(label: Text("Name")) {
+                        TextField("e.g. Holiday", text: $viewModel.name)
+                            .accessibilityIdentifier("setupSavingsNameField")
+                    }
+                    .layoutPriority(1)
+                    LabeledFieldBox(label: Text("Amount")) {
+                        AmountTextField(text: $viewModel.amountText)
+                            .multilineTextAlignment(.trailing)
+                            .accessibilityIdentifier("setupSavingsAmountField")
+                    }
+                }
+
+                ColorDotPickerField(
+                    title: "Comes out of",
+                    selection: $viewModel.paymentMethodID,
+                    options: paymentMethods.map {
+                        ColorDotOption(id: $0.id, name: $0.alias.isEmpty ? $0.name : $0.alias, hex: $0.color)
+                    },
+                    noneOption: (id: "", label: "None"),
+                    accessibilityIdentifier: "setupSavingsPaymentMethodPicker"
+                )
+
+                SavingsPaymentDaysGrid(selectedDays: $viewModel.paymentDays, daysInMonth: viewModel.daysInMonth)
+
+                SetupAddButton(title: Text("Add savings"), isWorking: viewModel.isSubmitting) {
+                    Task {
+                        if let source = await viewModel.submit() {
+                            addedSources.append(source)
+                            viewModel = AddSavingsSourceViewModel(
+                                budgetProfileID: budgetProfileID,
+                                currencyCode: currencyCode,
+                                periodStartDate: nil,
+                                restClient: restClient
+                            )
+                        }
+                    }
+                }
+                .disabled(!viewModel.canSubmit)
+                .accessibilityIdentifier("setupAddSavingsButton")
             }
         }
     }

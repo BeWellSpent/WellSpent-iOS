@@ -52,6 +52,8 @@ struct BudgetSetupViewModelTests {
     func everyStepHasATitle() {
         for step in BudgetSetupViewModel.Step.allCases {
             #expect(!step.title.isEmpty)
+            #expect(!step.heading.isEmpty)
+            #expect(!step.subtitle.isEmpty)
         }
     }
 
