@@ -174,101 +174,166 @@ final class VerifyEmailGateViewModel {
 /// Google and Apple sign-ups are verified at creation and never see this.
 struct VerifyEmailGateView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(\.openURL) private var openURL
     @Bindable var viewModel: VerifyEmailGateViewModel
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    Text("We sent a verification link to \(viewModel.email). Confirm your address to start using WellSpent. The link expires in 10 minutes.")
-                        .font(.subheadline)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Image(systemName: "envelope")
+                        .font(.system(size: 28))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 64, height: 64)
+                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 20))
+                        .padding(.horizontal, 4)
+                        .padding(.bottom, 8)
+                        .accessibilityHidden(true)
+
+                    OnboardingHeading(
+                        title: Text("Check your inbox"),
+                        subtitle: Text("Tap the link we sent to confirm your email. Come back here afterwards and you'll go straight in.")
+                    )
+                    .padding(.bottom, 8)
+
+                    sentToCard
+
+                    Text("Not there? Check spam or promotions.")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
                 }
-
-                Section {
-                    Button {
-                        Task { await viewModel.resend() }
-                    } label: {
-                        HStack {
-                            viewModel.isInCooldown ? Text("Email sent") : Text("Resend verification email")
-                            if viewModel.isResending {
-                                Spacer()
-                                ProgressView()
-                            }
-                        }
-                    }
-                    .disabled(viewModel.isResending || viewModel.isInCooldown)
-                    .accessibilityIdentifier("resendVerificationButton")
-
-                    if let errorMessage = viewModel.errorMessage {
-                        Text(errorMessage)
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                            .accessibilityIdentifier("verifyGateErrorMessage")
-                    }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
+            }
+            .background(Color(.systemGroupedBackground))
+            .scrollDismissesKeyboard(.interactively)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Image("BrandMark")
+                        .resizable()
+                        .frame(width: 32, height: 32)
+                        .accessibilityHidden(true)
                 }
-
-                changeEmailSection
-
-                Section {
-                    Button("Log out", role: .destructive) {
-                        session.endSession()
-                    }
-                    .accessibilityIdentifier("verifyGateLogoutButton")
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Log out") { session.endSession() }
+                        .accessibilityIdentifier("verifyGateLogoutButton")
                 }
             }
-            .navigationTitle("Verify your email")
+            .pinnedActionBar {
+                Button("Open Mail") {
+                    // The Mail app's own scheme opens its inbox, not a compose sheet.
+                    if let url = URL(string: "message://") { openURL(url) }
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .accessibilityIdentifier("verifyGateOpenMailButton")
+
+                resendButton
+            }
+        }
+    }
+
+    private var sentToCard: some View {
+        HomeCard {
+            VStack(alignment: .leading, spacing: 12) {
+                if viewModel.isChangingEmail {
+                    changeEmailForm
+                } else {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sent to")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Text(verbatim: viewModel.email)
+                            .font(.headline)
+                    }
+
+                    Label("The link works for 10 minutes.", systemImage: "clock")
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+
+                    if let errorMessage = viewModel.errorMessage {
+                        InlineErrorBanner(message: errorMessage)
+                            .accessibilityIdentifier("verifyGateErrorMessage")
+                    }
+
+                    Button {
+                        viewModel.beginChangingEmail()
+                    } label: {
+                        HStack {
+                            Text("Wrong address? Change it")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .accessibilityIdentifier("verifyGateChangeEmailButton")
+                }
+            }
         }
     }
 
     @ViewBuilder
-    private var changeEmailSection: some View {
-        if viewModel.isChangingEmail {
-            Section {
-                TextField("New email address", text: $viewModel.newEmail)
-                    .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .accessibilityIdentifier("verifyGateNewEmailField")
+    private var changeEmailForm: some View {
+        LabeledFieldBox(label: Text("New email address"), footnote: Text("We'll send a new verification link to this address.")) {
+            TextField("New email address", text: $viewModel.newEmail)
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .accessibilityIdentifier("verifyGateNewEmailField")
+        }
 
-                if let changeEmailErrorMessage = viewModel.changeEmailErrorMessage {
-                    Text(changeEmailErrorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("verifyGateChangeEmailErrorMessage")
-                }
+        if let changeEmailErrorMessage = viewModel.changeEmailErrorMessage {
+            InlineErrorBanner(message: changeEmailErrorMessage)
+                .accessibilityIdentifier("verifyGateChangeEmailErrorMessage")
+        }
 
-                Button {
-                    Task { await viewModel.changeEmail() }
-                } label: {
-                    HStack {
-                        Text("Save and resend")
-                        if viewModel.isSavingEmail {
-                            Spacer()
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(!viewModel.canSubmitEmailChange)
-                .accessibilityIdentifier("verifyGateSaveEmailButton")
-
-                Button("Cancel", role: .cancel) {
-                    viewModel.cancelChangingEmail()
-                }
-                .disabled(viewModel.isSavingEmail)
-            } header: {
-                Text("Change email address")
-            } footer: {
-                Text("We'll send a new verification link to this address.")
+        Button {
+            Task { await viewModel.changeEmail() }
+        } label: {
+            if viewModel.isSavingEmail {
+                ProgressView()
+            } else {
+                Text("Save and resend")
             }
-        } else {
-            Section {
-                Button("Wrong email address? Change it") {
-                    viewModel.beginChangingEmail()
+        }
+        .buttonStyle(TintedActionButtonStyle())
+        .disabled(!viewModel.canSubmitEmailChange)
+        .accessibilityIdentifier("verifyGateSaveEmailButton")
+
+        Button("Cancel", role: .cancel) {
+            viewModel.cancelChangingEmail()
+        }
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .disabled(viewModel.isSavingEmail)
+    }
+
+    /// Counts down the 60-second cooldown instead of a static "Email sent".
+    private var resendButton: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let remaining = Int((viewModel.cooldownEndsAt?.timeIntervalSince(context.date) ?? 0).rounded(.up))
+            Button {
+                Task { await viewModel.resend() }
+            } label: {
+                if viewModel.isResending {
+                    ProgressView()
+                } else if remaining > 0 {
+                    Text("Resend in \(Duration.seconds(remaining).formatted(.time(pattern: .minuteSecond)))")
+                        .monospacedDigit()
+                } else {
+                    Text("Resend email")
                 }
-                .accessibilityIdentifier("verifyGateChangeEmailButton")
             }
+            .buttonStyle(OutlinedActionButtonStyle())
+            .disabled(viewModel.isResending || remaining > 0)
+            .accessibilityIdentifier("resendVerificationButton")
         }
     }
 }

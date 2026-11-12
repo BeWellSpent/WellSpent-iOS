@@ -37,10 +37,7 @@ struct SheetCancelButton: View {
 /// already localized at runtime and must not be looked up a second time (those
 /// pass `Text(verbatim:)`).
 ///
-/// `onCancel` is optional for the one sheet whose leading button is not a
-/// cancel — `BudgetSetupFlow` says "Finish Later" past its first step, which
-/// is a statement a glyph can't make. Those callers supply their own
-/// `.cancellationAction` item and take only the title treatment.
+/// `onCancel` is optional for sheets that supply their own `.cancellationAction`.
 struct SheetChrome: ViewModifier {
     let title: Text
     let onCancel: (() -> Void)?

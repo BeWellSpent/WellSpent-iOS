@@ -21,19 +21,27 @@ final class LoginViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
+        let attest = await session.appAttest.proof(action: "login", email: email)
         do {
             let output = try await session.publicRESTClient.login(.init(body: .json(.init(
                 email: email,
                 password: password,
                 rememberMe: rememberMe,
-                deviceId: session.deviceID
+                deviceId: session.deviceID,
+                appAttest: attest.assertion,
+                appAttestUnavailable: attest.unavailable
             ))))
             switch output {
             case .ok(let ok):
                 let body = try ok.body.json
                 session.startSession(accessToken: body.accessToken, refreshToken: body.refreshToken)
-            case .badRequest:
-                errorMessage = "Incorrect email or password."
+            case .badRequest(let badRequest):
+                let message = (try? badRequest.body.json.message) ?? ""
+                errorMessage = message.contains("device")
+                    ? String(localized: "We couldn't verify this device. Please update the app and try again.", locale: AppLanguageStore.currentLocale)
+                    : "Incorrect email or password."
+            case .tooManyRequests:
+                errorMessage = String(localized: "Too many attempts. Please try again later.", locale: AppLanguageStore.currentLocale)
             case .forbidden(let forbidden):
                 errorMessage = (try? forbidden.body.json.message) ?? "This account can't sign in right now."
             default:

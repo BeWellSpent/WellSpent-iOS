@@ -25,35 +25,59 @@ struct PaymentMethodsSetupStepView: View {
     }
 
     var body: some View {
-        Form {
+        SetupStepScaffold(step: .paymentMethods) {
             if !addedMethods.isEmpty {
-                Section("Added so far") {
-                    ForEach(addedMethods, id: \.id) { method in
-                        Text(method.name)
+                HomeSectionHeader(title: Text("Added so far"))
+                SetupAddedList(items: addedMethods) { method in
+                    HStack(spacing: 12) {
+                        ColorDotView(hex: method.color)
+                        SetupRowText(title: method.name, detail: detail(for: method))
                     }
                 }
             }
 
-            Section {
-                TextField("Name", text: $viewModel.name)
-                    .accessibilityIdentifier("setupPaymentMethodNameField")
+            HomeSectionHeader(title: Text("Add a card or account"))
+            addForm
 
-                Picker("Type", selection: $viewModel.type) {
-                    ForEach(PaymentTypeLabel.selectable, id: \.self) { type in
-                        Text(PaymentTypeLabel.text(for: type)).tag(type)
+            if let errorMessage = viewModel.errorMessage {
+                InlineErrorBanner(message: errorMessage)
+            }
+        } action: {
+            Button("Continue") { onFinish() }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .accessibilityIdentifier("setupSkipButton")
+        }
+    }
+
+    private var addForm: some View {
+        HomeCard {
+            VStack(alignment: .leading, spacing: 14) {
+                LabeledFieldBox(label: Text("Name")) {
+                    TextField("e.g. Amex Gold", text: $viewModel.name)
+                        .accessibilityIdentifier("setupPaymentMethodNameField")
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Type")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 8)], alignment: .leading, spacing: 8) {
+                        ForEach(PaymentTypeLabel.selectable, id: \.self) { type in
+                            typeChip(type)
+                        }
                     }
                 }
 
                 if people.count > 1 {
                     ColorDotPickerField(
-                        title: "Owner",
+                        title: "Belongs to",
                         selection: $viewModel.personID,
                         options: people.map { ColorDotOption(id: $0.id, name: $0.userName, hex: $0.color) },
                         accessibilityIdentifier: "setupOwnerPicker"
                     )
                 }
 
-                Button {
+                SetupAddButton(title: Text("Add payment method"), isWorking: viewModel.isSubmitting) {
                     Task {
                         if let method = await viewModel.submit() {
                             addedMethods.append(method)
@@ -62,28 +86,36 @@ struct PaymentMethodsSetupStepView: View {
                             viewModel = fresh
                         }
                     }
-                } label: {
-                    if viewModel.isSubmitting {
-                        ProgressView()
-                    } else {
-                        Text("Add")
-                    }
                 }
                 .disabled(!viewModel.canSubmit)
                 .accessibilityIdentifier("setupAddPaymentMethodButton")
             }
-
-            if let errorMessage = viewModel.errorMessage {
-                Section {
-                    Text(errorMessage).foregroundStyle(.red)
-                }
-            }
-
-            Section {
-                Button("Finish") { onFinish() }
-                    .accessibilityIdentifier("setupSkipButton")
-            }
         }
+    }
+
+    private func typeChip(_ type: Wellspent_V1_PaymentType) -> some View {
+        let isSelected = viewModel.type == type
+        return Button {
+            viewModel.type = type
+        } label: {
+            Text(PaymentTypeLabel.text(for: type))
+                .font(.subheadline.weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .padding(.horizontal, 8)
+                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear, in: Capsule())
+                .overlay(Capsule().strokeBorder(isSelected ? Color.accentColor : Color(.separator)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+
+    private func detail(for method: Wellspent_V1_PaymentMethod) -> String {
+        let owner = people.first { $0.id == method.budgetPersonID }?.userName
+        return [PaymentTypeLabel.text(for: method.type), owner].compactMap { $0 }.joined(separator: " · ")
     }
 }
 

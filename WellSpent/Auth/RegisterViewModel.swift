@@ -56,6 +56,7 @@ final class RegisterViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
+        let attest = await session.appAttest.proof(action: "register", email: email)
         do {
             let output = try await session.publicRESTClient.registerUser(.init(body: .json(.init(
                 email: email,
@@ -67,7 +68,9 @@ final class RegisterViewModel {
                 language: "",
                 currency: "",
                 captchaToken: "",
-                deviceId: session.deviceID
+                deviceId: session.deviceID,
+                appAttest: attest.assertion,
+                appAttestUnavailable: attest.unavailable
             ))))
             switch output {
             case .ok(let ok):
@@ -78,6 +81,8 @@ final class RegisterViewModel {
                 errorMessage = "An account with that email already exists."
             case .badRequest(let badRequest):
                 errorMessage = (try? badRequest.body.json.message) ?? "Please check your details and try again."
+            case .tooManyRequests:
+                errorMessage = String(localized: "Too many attempts. Please try again later.", locale: AppLanguageStore.currentLocale)
             default:
                 errorMessage = "Something went wrong. Please try again."
             }
@@ -90,17 +95,10 @@ final class RegisterViewModel {
     /// least one uppercase, lowercase, digit, and punctuation/symbol
     /// character. Returns a user-facing message, or `nil` if valid.
     static func passwordError(for password: String) -> String? {
-        guard password.count >= 8 else {
+        guard PasswordRule.length.isMet(by: password) else {
             return "Password must be at least 8 characters."
         }
-        var hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false
-        for character in password {
-            if character.isUppercase { hasUpper = true }
-            if character.isLowercase { hasLower = true }
-            if character.isNumber { hasDigit = true }
-            if character.isPunctuation || character.isSymbol { hasSpecial = true }
-        }
-        guard hasUpper, hasLower, hasDigit, hasSpecial else {
+        guard PasswordRule.allCases.allSatisfy({ $0.isMet(by: password) }) else {
             return "Password must contain an uppercase letter, lowercase letter, digit, and special character."
         }
         return nil

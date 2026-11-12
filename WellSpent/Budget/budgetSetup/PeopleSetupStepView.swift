@@ -25,55 +25,71 @@ struct PeopleSetupStepView: View {
     }
 
     var body: some View {
-        Form {
-            Section("People on this budget") {
-                if viewModel.people.isEmpty {
-                    Text("Loading…")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(viewModel.people, id: \.id) { person in
-                        HStack {
-                            ColorDotView(hex: person.color)
-                            Text(person.userName)
-                        }
+        SetupStepScaffold(step: .people) {
+            HomeSectionHeader(title: Text("On this budget"))
+            if viewModel.people.isEmpty {
+                HomeCard { Text("Loading…").foregroundStyle(.secondary) }
+            } else {
+                SetupAddedList(items: viewModel.people) { person in
+                    HStack(spacing: 12) {
+                        ColorDotView(hex: person.color)
+                        SetupRowText(title: person.userName, detail: BudgetRoleLabel.text(for: person.role))
                     }
                 }
             }
 
-            Section {
-                TextField("Name", text: $name)
-                    .accessibilityIdentifier("setupPersonNameField")
+            HomeSectionHeader(title: Text("Add someone"))
+            addForm
 
-                TextField("Email (optional)", text: $email)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.emailAddress)
-                    .accessibilityIdentifier("setupPersonEmailField")
+            if let errorMessage = viewModel.errorMessage {
+                InlineErrorBanner(message: errorMessage)
+            }
+        } action: {
+            Button("Continue") { viewModel.advance() }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .accessibilityIdentifier("setupSkipButton")
+        }
+    }
 
-                if isEmailInvalid {
-                    Text("That doesn't look like an email address.")
-                        .font(.caption)
-                        .foregroundStyle(.red)
+    private var addForm: some View {
+        HomeCard {
+            VStack(alignment: .leading, spacing: 14) {
+                LabeledFieldBox(label: Text("Name")) {
+                    TextField("e.g. Sam", text: $name)
+                        .accessibilityIdentifier("setupPersonNameField")
                 }
 
-                // Only meaningful alongside an email — a person with no account
-                // has nothing to hold a role. Disabled rather than hidden so
-                // the row does not appear and vanish as the email is typed.
-                Picker("They can", selection: $role) {
-                    ForEach(InviteEmail.invitableRoles, id: \.self) { option in
-                        Text(BudgetRoleLabel.text(for: option)).tag(option)
+                LabeledFieldBox(
+                    label: Text("Email (optional)"),
+                    footnote: isEmailInvalid ? Text("That doesn't look like an email address.") : Text("Sends them an invite to the app.")
+                ) {
+                    TextField("sam@example.com", text: $email)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.emailAddress)
+                        .accessibilityIdentifier("setupPersonEmailField")
+                }
+
+                // Only meaningful with an email: a person with no account has nothing to hold a role.
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("They can")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Picker("They can", selection: $role) {
+                        ForEach(InviteEmail.invitableRoles, id: \.self) { option in
+                            Text(BudgetRoleLabel.text(for: option)).tag(option)
+                        }
                     }
-                }
-                .disabled(trimmedEmail.isEmpty)
-                .accessibilityIdentifier("setupPersonRolePicker")
-
-                if !trimmedEmail.isEmpty {
+                    .pickerStyle(.segmented)
+                    .disabled(trimmedEmail.isEmpty)
+                    .accessibilityIdentifier("setupPersonRolePicker")
                     Text(InviteEmail.roleDescription(for: role))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .opacity(trimmedEmail.isEmpty ? 0.5 : 1)
 
-                Button {
+                SetupAddButton(title: Text("Add person"), isWorking: isAdding) {
                     Task {
                         isAdding = true
                         await viewModel.addPerson(name: name, email: trimmedEmail, role: role)
@@ -82,28 +98,9 @@ struct PeopleSetupStepView: View {
                         role = .collaborator
                         isAdding = false
                     }
-                } label: {
-                    if isAdding {
-                        ProgressView()
-                    } else {
-                        Text("Add")
-                    }
                 }
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isEmailInvalid || isAdding)
                 .accessibilityIdentifier("setupAddPersonButton")
-            }
-
-            if let errorMessage = viewModel.errorMessage {
-                Section {
-                    Text(errorMessage).foregroundStyle(.red)
-                }
-            }
-
-            Section {
-                Button("Continue") {
-                    viewModel.advance()
-                }
-                .accessibilityIdentifier("setupSkipButton")
             }
         }
     }

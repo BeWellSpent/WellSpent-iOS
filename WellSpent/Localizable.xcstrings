@@ -789,6 +789,22 @@
         }
       }
     },
+    "8+ characters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8+ characters"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8+ caracteres"
+          }
+        }
+      }
+    },
     "A bank-imported transaction is queued for review." : {
       "localizations" : {
         "en" : {
@@ -817,6 +833,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comienza un nuevo período de presupuesto."
+          }
+        }
+      }
+    },
+    "A number" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A number"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un número"
+          }
+        }
+      }
+    },
+    "A paycheck or other income. Shows as income, never as spending." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A paycheck or other income. Shows as income, never as spending."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un sueldo u otro ingreso. Cuenta como ingreso, nunca como gasto."
+          }
+        }
+      }
+    },
+    "A symbol" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A symbol"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un símbolo"
+          }
+        }
+      }
+    },
+    "About you" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre ti"
           }
         }
       }
@@ -966,6 +1046,22 @@
         }
       }
     },
+    "Add a card or account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a card or account"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar una tarjeta o cuenta"
+          }
+        }
+      }
+    },
     "Add a payment method" : {
       "localizations" : {
         "en" : {
@@ -1062,6 +1158,22 @@
         }
       }
     },
+    "Add income" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add income"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar ingreso"
+          }
+        }
+      }
+    },
     "Add Income" : {
       "localizations" : {
         "en" : {
@@ -1074,6 +1186,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Agregar ingreso"
+          }
+        }
+      }
+    },
+    "Add payment method" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add payment method"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar método de pago"
           }
         }
       }
@@ -1126,6 +1254,22 @@
         }
       }
     },
+    "Add savings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add savings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar ahorro"
+          }
+        }
+      }
+    },
     "Add Savings" : {
       "localizations" : {
         "en" : {
@@ -1138,6 +1282,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Agregar ahorro"
+          }
+        }
+      }
+    },
+    "Add someone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add someone"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar a alguien"
           }
         }
       }
@@ -1300,6 +1460,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Todas las transacciones que usan \"%@\" se moverán al método de reemplazo."
+          }
+        }
+      }
+    },
+    "Already counted as spending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already counted as spending"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya contado como gasto"
           }
         }
       }
@@ -1575,6 +1751,22 @@
         }
       }
     },
+    "Belongs to" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Belongs to"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pertenece a"
+          }
+        }
+      }
+    },
     "Bi-weekly" : {
       "localizations" : {
         "en" : {
@@ -1587,6 +1779,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quincenal"
+          }
+        }
+      }
+    },
+    "Big-picture only" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Big-picture only"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo a grandes rasgos"
           }
         }
       }
@@ -1782,6 +1990,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pago de tarjeta"
+          }
+        }
+      }
+    },
+    "Cards and accounts you spend from. Every transaction needs one." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cards and accounts you spend from. Every transaction needs one."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjetas y cuentas con las que gastas. Cada transacción necesita una."
           }
         }
       }
@@ -2257,6 +2481,7 @@
       }
     },
     "Change email address" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2411,6 +2636,22 @@
         }
       }
     },
+    "Check your inbox" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your inbox"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisa tu bandeja de entrada"
+          }
+        }
+      }
+    },
     "Choose a Budget" : {
       "localizations" : {
         "en" : {
@@ -2487,6 +2728,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Color"
+          }
+        }
+      }
+    },
+    "Comes out of" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comes out of"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sale de"
           }
         }
       }
@@ -2718,6 +2975,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continuar"
+          }
+        }
+      }
+    },
+    "Continue with Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue with Apple"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuar con Apple"
           }
         }
       }
@@ -2978,6 +3251,22 @@
         }
       }
     },
+    "Counts toward its category." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Counts toward its category."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuenta en su categoría."
+          }
+        }
+      }
+    },
     "Counts up to %lld day(s) early" : {
       "localizations" : {
         "en" : {
@@ -3043,6 +3332,38 @@
         }
       }
     },
+    "Create an account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create an account"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea una cuenta"
+          }
+        }
+      }
+    },
+    "Create budget" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create budget"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear presupuesto"
+          }
+        }
+      }
+    },
     "Create Budget" : {
       "localizations" : {
         "en" : {
@@ -3071,6 +3392,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Crear plan"
+          }
+        }
+      }
+    },
+    "Create your account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create your account"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea tu cuenta"
           }
         }
       }
@@ -3462,6 +3799,22 @@
         }
       }
     },
+    "Direction" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direction"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dirección"
+          }
+        }
+      }
+    },
     "Disconnect" : {
       "localizations" : {
         "en" : {
@@ -3528,6 +3881,7 @@
       }
     },
     "Don't have an account? Register" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3572,6 +3926,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vence %@"
+          }
+        }
+      }
+    },
+    "e.g. Amex Gold" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Amex Gold"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "p. ej., Amex Gold"
+          }
+        }
+      }
+    },
+    "e.g. Holiday" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Holiday"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "p. ej., Vacaciones"
+          }
+        }
+      }
+    },
+    "e.g. Salary" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Salary"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "p. ej., Salario"
+          }
+        }
+      }
+    },
+    "e.g. Sam" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Sam"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "p. ej., Sam"
           }
         }
       }
@@ -3755,6 +4173,7 @@
       }
     },
     "Email sent" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3942,6 +4361,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Todas las categorías ya están en el plan."
+          }
+        }
+      }
+    },
+    "Every week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada semana"
           }
         }
       }
@@ -4240,6 +4675,7 @@
       }
     },
     "Finish" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4267,6 +4703,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Finalizar más tarde"
+          }
+        }
+      }
+    },
+    "Finish setup" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish setup"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminar configuración"
           }
         }
       }
@@ -4419,6 +4871,7 @@
       }
     },
     "Flow" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4446,6 +4899,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vista enfocada — mostrar solo mis datos"
+          }
+        }
+      }
+    },
+    "For 90 days on this phone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For 90 days on this phone"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durante 90 días en este teléfono"
           }
         }
       }
@@ -4725,6 +5194,54 @@
         }
       }
     },
+    "How do you pay?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How do you pay?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo pagas?"
+          }
+        }
+      }
+    },
+    "How often do you budget?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How often do you budget?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cada cuánto presupuestas?"
+          }
+        }
+      }
+    },
+    "In" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entra"
+          }
+        }
+      }
+    },
     "In progress" : {
       "localizations" : {
         "en" : {
@@ -4949,6 +5466,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mantener los gastos fijos alineados con la realidad"
+          }
+        }
+      }
+    },
+    "Keep me signed in" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep me signed in"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantener la sesión iniciada"
           }
         }
       }
@@ -5206,6 +5739,22 @@
         }
       }
     },
+    "Lowered their categories" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lowered their categories"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redujeron sus categorías"
+          }
+        }
+      }
+    },
     "Make Fixed" : {
       "localizations" : {
         "en" : {
@@ -5448,6 +5997,54 @@
         }
       }
     },
+    "Matches biweekly pay" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matches biweekly pay"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para pagos quincenales"
+          }
+        }
+      }
+    },
+    "Missing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falta"
+          }
+        }
+      }
+    },
+    "Money back on a purchase. Lowers its category's spending." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Money back on a purchase. Lowers its category's spending."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dinero devuelto por una compra. Reduce el gasto de su categoría."
+          }
+        }
+      }
+    },
     "Money In" : {
       "localizations" : {
         "en" : {
@@ -5460,6 +6057,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dinero recibido"
+          }
+        }
+      }
+    },
+    "Money in · out · moved" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Money in · out · moved"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dinero que entra · sale · se mueve"
+          }
+        }
+      }
+    },
+    "Money kept apart from spending: an emergency fund, a holiday, anything." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Money kept apart from spending: an emergency fund, a holiday, anything."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dinero apartado del gasto: un fondo de emergencia, unas vacaciones, lo que sea."
           }
         }
       }
@@ -5529,6 +6158,38 @@
         }
       }
     },
+    "Most common" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most common"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El más común"
+          }
+        }
+      }
+    },
+    "Most people use one budget for the whole household." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most people use one budget for the whole household."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La mayoría usa un solo presupuesto para todo el hogar."
+          }
+        }
+      }
+    },
     "Move to Period" : {
       "localizations" : {
         "en" : {
@@ -5557,6 +6218,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nombre"
+          }
+        }
+      }
+    },
+    "Name your budget" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name your budget"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponle nombre a tu presupuesto"
           }
         }
       }
@@ -5637,6 +6314,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nueva contraseña"
+          }
+        }
+      }
+    },
+    "New to WellSpent?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New to WellSpent?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eres nuevo en WellSpent?"
           }
         }
       }
@@ -6166,6 +6859,22 @@
         }
       }
     },
+    "Not there? Check spam or promotions." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not there? Check spam or promotions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿No está? Revisa spam o promociones."
+          }
+        }
+      }
+    },
     "Nothing planned" : {
       "localizations" : {
         "en" : {
@@ -6310,6 +7019,38 @@
         }
       }
     },
+    "On this budget" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On this budget"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En este presupuesto"
+          }
+        }
+      }
+    },
+    "Once you add income with pay dates, periods follow your paydays instead of the calendar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once you add income with pay dates, periods follow your paydays instead of the calendar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando agregues ingresos con fechas de pago, los períodos seguirán tus días de pago en lugar del calendario."
+          }
+        }
+      }
+    },
     "One more thing" : {
       "localizations" : {
         "en" : {
@@ -6390,6 +7131,22 @@
         }
       }
     },
+    "Only the category and what it was can be changed for this transaction." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the category and what it was can be changed for this transaction."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se pueden cambiar la categoría y qué fue esta transacción."
+          }
+        }
+      }
+    },
     "Only the category can be changed for this transaction — it's either from a past period or was imported from your bank." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6408,6 +7165,7 @@
       }
     },
     "Only the category can be changed for this transaction." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6419,6 +7177,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Solo se puede cambiar la categoría de esta transacción."
+          }
+        }
+      }
+    },
+    "Open Mail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Mail"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Mail"
+          }
+        }
+      }
+    },
+    "or" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "or"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "o"
           }
         }
       }
@@ -6451,6 +7241,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Otros gastos"
+          }
+        }
+      }
+    },
+    "Out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sale"
           }
         }
       }
@@ -6618,6 +7424,22 @@
         }
       }
     },
+    "Paid to cards" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paid to cards"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagado a tarjetas"
+          }
+        }
+      }
+    },
     "Pair" : {
       "localizations" : {
         "en" : {
@@ -6766,6 +7588,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Los cambios del calendario de pago aplican desde tu próximo período. El período actual conserva sus fechas."
+          }
+        }
+      }
+    },
+    "Paying off a card. Not counted as spending; the purchases already were." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paying off a card. Not counted as spending; the purchases already were."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El pago de una tarjeta. No cuenta como gasto; las compras ya contaron."
+          }
+        }
+      }
+    },
+    "Payment" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago"
           }
         }
       }
@@ -7017,6 +7871,7 @@
       }
     },
     "People on this budget" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7126,6 +7981,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plan"
+          }
+        }
+      }
+    },
+    "Plan your money before you spend it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan your money before you spend it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planifica tu dinero antes de gastarlo."
           }
         }
       }
@@ -7517,6 +8388,38 @@
         }
       }
     },
+    "Refund" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refund"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reembolso"
+          }
+        }
+      }
+    },
+    "Refunds" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refunds"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reembolsos"
+          }
+        }
+      }
+    },
     "Register" : {
       "localizations" : {
         "en" : {
@@ -7603,6 +8506,7 @@
       }
     },
     "Remember me" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7748,7 +8652,6 @@
       }
     },
     "Resend email" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7764,7 +8667,24 @@
         }
       }
     },
+    "Resend in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend in %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reenviar en %@"
+          }
+        }
+      }
+    },
     "Resend verification email" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7889,6 +8809,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Salario"
+          }
+        }
+      }
+    },
+    "sam@example.com" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sam@example.com"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sam@example.com"
           }
         }
       }
@@ -8280,6 +9216,38 @@
         }
       }
     },
+    "Sends them an invite to the app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sends them an invite to the app."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les envía una invitación a la app."
+          }
+        }
+      }
+    },
+    "Sent to" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent to"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviado a"
+          }
+        }
+      }
+    },
     "Server" : {
       "localizations" : {
         "en" : {
@@ -8297,6 +9265,7 @@
       }
     },
     "Set money aside each period — an emergency fund, a holiday, anything you want kept apart from spending." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8308,6 +9277,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aparta dinero cada período: un fondo de emergencia, unas vacaciones, lo que quieras mantener separado del gasto."
+          }
+        }
+      }
+    },
+    "Sets your currency and lets WellSpent estimate taxes on before-tax income." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets your currency and lets WellSpent estimate taxes on before-tax income."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define tu moneda y permite a WellSpent estimar impuestos sobre ingresos antes de impuestos."
+          }
+        }
+      }
+    },
+    "Sets your currency. You can change it later in Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets your currency. You can change it later in Settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define tu moneda. Puedes cambiarla después en Ajustes."
           }
         }
       }
@@ -8493,6 +9494,7 @@
       }
     },
     "Sign in with Apple" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8590,6 +9592,22 @@
         }
       }
     },
+    "Spend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spend"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gasto"
+          }
+        }
+      }
+    },
     "Spending by category" : {
       "localizations" : {
         "en" : {
@@ -8655,7 +9673,6 @@
       }
     },
     "Spent" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8787,6 +9804,7 @@
       }
     },
     "Step %lld of %lld — %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8798,6 +9816,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paso %1$lld de %2$lld — %3$@"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Step %lld of %lld · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paso %lld de %lld · %@"
           }
         }
       }
@@ -8866,6 +9900,22 @@
         }
       }
     },
+    "Takes a minute. Then we'll set up your first budget together." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takes a minute. Then we'll set up your first budget together."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es un minuto. Después configuramos juntos tu primer presupuesto."
+          }
+        }
+      }
+    },
     "Tap + to create your first budget." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8913,6 +9963,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Toca una porción para ver detalles"
+          }
+        }
+      }
+    },
+    "Tap the link we sent to confirm your email. Come back here afterwards and you'll go straight in." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the link we sent to confirm your email. Come back here afterwards and you'll go straight in."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca el enlace que te enviamos para confirmar tu correo. Al volver aquí entrarás directamente."
           }
         }
       }
@@ -8973,6 +10039,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ese enlace de invitación no es válido."
+          }
+        }
+      }
+    },
+    "The link works for 10 minutes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The link works for 10 minutes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace funciona durante 10 minutos."
           }
         }
       }
@@ -9219,6 +10301,22 @@
         }
       }
     },
+    "Too many attempts. Please try again later." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many attempts. Please try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demasiados intentos. Vuelve a intentarlo más tarde."
+          }
+        }
+      }
+    },
     "Total" : {
       "localizations" : {
         "en" : {
@@ -9328,6 +10426,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Las transacciones necesitan un método de pago — efectivo, una tarjeta o una cuenta bancaria — para poder ver a dónde fue el dinero. Agrega uno y podrás registrar transacciones de inmediato."
+          }
+        }
+      }
+    },
+    "Transfer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transferencia"
+          }
+        }
+      }
+    },
+    "Transfers in" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfers in"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transferencias recibidas"
+          }
+        }
+      }
+    },
+    "Transfers out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfers out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transferencias enviadas"
           }
         }
       }
@@ -9721,6 +10867,22 @@
         }
       }
     },
+    "Upper & lower case" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upper & lower case"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mayúsculas y minúsculas"
+          }
+        }
+      }
+    },
     "USD" : {
       "localizations" : {
         "en" : {
@@ -9803,6 +10965,7 @@
       }
     },
     "Verify your email" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9898,7 +11061,24 @@
         }
       }
     },
+    "We couldn't verify this device. Please update the app and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't verify this device. Please update the app and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos verificar este dispositivo. Actualiza la app e inténtalo de nuevo."
+          }
+        }
+      }
+    },
     "We sent a verification link to %@. Confirm your address to start using WellSpent. The link expires in 10 minutes." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9910,6 +11090,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enviamos un enlace de verificación a %@. Confirma tu dirección para empezar a usar WellSpent. El enlace vence en 10 minutos."
+          }
+        }
+      }
+    },
+    "We set aside an estimated tax reserve" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We set aside an estimated tax reserve"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apartamos una reserva estimada para impuestos"
+          }
+        }
+      }
+    },
+    "We'll send a link to confirm it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll send a link to confirm it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te enviaremos un enlace para confirmarlo."
           }
         }
       }
@@ -9964,6 +11176,38 @@
         }
       }
     },
+    "Welcome back" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome back"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hola de nuevo"
+          }
+        }
+      }
+    },
+    "WellSpent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WellSpent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WellSpent"
+          }
+        }
+      }
+    },
     "WellSpent will ask for this bank's full transaction history again, starting now. Transactions you deleted will come back. Ones already imported won't be duplicated. Available once a day per bank." : {
       "localizations" : {
         "en" : {
@@ -9976,6 +11220,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "WellSpent le pedirá a este banco todo su historial de transacciones otra vez, empezando ahora. Las transacciones que eliminaste volverán a aparecer. Las ya importadas no se duplicarán. Disponible una vez al día por banco."
+          }
+        }
+      }
+    },
+    "What comes in?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What comes in?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué ingresos tienes?"
+          }
+        }
+      }
+    },
+    "What do you set aside?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do you set aside?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué apartas?"
+          }
+        }
+      }
+    },
+    "What was it?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What was it?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué fue?"
           }
         }
       }
@@ -10079,6 +11371,54 @@
         }
       }
     },
+    "Where you live" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you live"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dónde vives"
+          }
+        }
+      }
+    },
+    "Who earns it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who earns it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quién lo gana"
+          }
+        }
+      }
+    },
+    "Who shares it?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who shares it?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quién lo comparte?"
+          }
+        }
+      }
+    },
     "Whole Budget" : {
       "localizations" : {
         "en" : {
@@ -10095,7 +11435,24 @@
         }
       }
     },
+    "Wrong address? Change it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wrong address? Change it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Dirección incorrecta? Cámbiala"
+          }
+        }
+      }
+    },
     "Wrong email address? Change it" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10159,7 +11516,24 @@
         }
       }
     },
+    "You're already on it. Add a partner or housemate; an email invites them to the app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're already on it. Add a partner or housemate; an email invites them to the app."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú ya estás incluido. Agrega a tu pareja o compañero de piso; con un correo los invitas a la app."
+          }
+        }
+      }
+    },
     "You're viewing a past period. Adding, deleting, marking paid, and excluding transactions are disabled — you can still change a transaction's category." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10207,114 +11581,18 @@
         }
       }
     },
-    "Spend" : {
+    "Your pay sets how much there is to plan." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spend"
+            "value" : "Your pay sets how much there is to plan."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gasto"
-          }
-        }
-      }
-    },
-    "Refund" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refund"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reembolso"
-          }
-        }
-      }
-    },
-    "Transfer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transfer"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transferencia"
-          }
-        }
-      }
-    },
-    "Payment" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Payment"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago"
-          }
-        }
-      }
-    },
-    "Counts toward its category." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Counts toward its category."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cuenta en su categoría."
-          }
-        }
-      }
-    },
-    "Money back on a purchase. Lowers its category's spending." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Money back on a purchase. Lowers its category's spending."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dinero devuelto por una compra. Reduce el gasto de su categoría."
-          }
-        }
-      }
-    },
-    "A paycheck or other income. Shows as income, never as spending." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A paycheck or other income. Shows as income, never as spending."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un sueldo u otro ingreso. Cuenta como ingreso, nunca como gasto."
+            "value" : "Tus ingresos definen cuánto hay para planificar."
           }
         }
       }
@@ -10331,214 +11609,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zelle, Venmo o una transferencia bancaria. Cuenta en su categoría: por ejemplo, un amigo que te devuelve las bebidas reduce Comer fuera. ¿Mueves dinero entre tus propias cuentas? Exclúyela."
-          }
-        }
-      }
-    },
-    "Paying off a card. Not counted as spending; the purchases already were." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Paying off a card. Not counted as spending; the purchases already were."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El pago de una tarjeta. No cuenta como gasto; las compras ya contaron."
-          }
-        }
-      }
-    },
-    "What was it?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What was it?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Qué fue?"
-          }
-        }
-      }
-    },
-    "Only the category and what it was can be changed for this transaction." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Only the category and what it was can be changed for this transaction."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo se pueden cambiar la categoría y qué fue esta transacción."
-          }
-        }
-      }
-    },
-    "Direction" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Direction"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dirección"
-          }
-        }
-      }
-    },
-    "Money in · out · moved" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Money in · out · moved"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dinero que entra · sale · se mueve"
-          }
-        }
-      }
-    },
-    "In" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entra"
-          }
-        }
-      }
-    },
-    "Out" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Out"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sale"
-          }
-        }
-      }
-    },
-    "Refunds" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refunds"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reembolsos"
-          }
-        }
-      }
-    },
-    "Lowered their categories" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lowered their categories"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redujeron sus categorías"
-          }
-        }
-      }
-    },
-    "Transfers in" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transfers in"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transferencias recibidas"
-          }
-        }
-      }
-    },
-    "Transfers out" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transfers out"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transferencias enviadas"
-          }
-        }
-      }
-    },
-    "Paid to cards" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Paid to cards"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pagado a tarjetas"
-          }
-        }
-      }
-    },
-    "Already counted as spending" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Already counted as spending"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ya contado como gasto"
           }
         }
       }

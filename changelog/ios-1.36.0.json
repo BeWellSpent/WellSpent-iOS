@@ -466,6 +466,16 @@
       "changeType": "changed",
       "summaryEn": "Past periods are no longer read-only: add, edit, move, exclude and review transactions in any period. Bank-imported transactions still only let you change their category and type.",
       "summaryEs": "Los períodos anteriores ya no son de solo lectura: agrega, edita, mueve, excluye y revisa transacciones en cualquier período. Las transacciones importadas del banco solo permiten cambiar su categoría y tipo."
+    },
+    {
+      "changeType": "added",
+      "summaryEn": "Sign-up and sign-in now confirm they come from the genuine WellSpent app on a real device, which keeps automated accounts out. Nothing changes for you.",
+      "summaryEs": "El registro y el inicio de sesión ahora confirman que provienen de la app genuina de WellSpent en un dispositivo real, lo que mantiene fuera las cuentas automatizadas. No cambia nada para ti."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Redesigned log in, sign up, email confirmation and budget setup: clearer headings, a password checklist as you type, and a progress bar through setup.",
+      "summaryEs": "Rediseñamos el inicio de sesión, el registro, la confirmación de correo y la configuración del presupuesto: títulos más claros, una lista de requisitos de contraseña mientras escribes y una barra de progreso en la configuración."
     }
   ]
 }

@@ -166,6 +166,8 @@ struct UnauthenticatedMiddleware: ClientMiddleware {
 /// rather than `Components.Schemas.StatusBanner`. The equivalent of the
 /// `Wellspent_V1_` types on the Connect side.
 public typealias Country = Components.Schemas.Country
+public typealias AppAttestAssertion = Components.Schemas.AppAttestAssertion
+public typealias AppAttestUnavailable = Components.Schemas.AppAttestUnavailable
 public typealias StatusBanner = Components.Schemas.StatusBanner
 public typealias StatusBannerSeverity = Components.Schemas.StatusBannerSeverity
 public typealias ChangelogItem = Components.Schemas.ChangelogItem

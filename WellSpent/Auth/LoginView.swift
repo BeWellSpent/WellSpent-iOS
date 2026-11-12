@@ -5,79 +5,108 @@ struct LoginView: View {
     @State private var viewModel = LoginViewModel()
 
     var body: some View {
-        Form {
-            credentialsSection
-            errorSection
-            actionsSection
-            registerLinkSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Image("BrandLockup")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 56, alignment: .leading)
+                    .padding(.leading, -6)
+                    .padding(.bottom, 14)
+                    .accessibilityLabel("WellSpent")
+
+                OnboardingHeading(title: Text("Welcome back"), subtitle: Text("Plan your money before you spend it."))
+                    .padding(.bottom, 8)
+
+                credentialsCard
+                divider
+                SocialSignInButtons()
+                registerLink
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 24)
+            .padding(.bottom, 24)
         }
-        .navigationTitle("Log In")
+        .background(Color(.systemGroupedBackground))
+        .scrollDismissesKeyboard(.interactively)
+        .toolbar(.hidden, for: .navigationBar)
         .accessibilityIdentifier("loginView")
     }
 
-    // Split out of `body` so SwiftUI's result-builder type checker only ever
-    // has to solve one small, explicitly-typed expression at a time instead
-    // of one giant chained Form — avoids "Cannot infer contextual base"-style
-    // timeouts in Xcode's live type checker on larger forms.
-    @ViewBuilder
-    private var credentialsSection: some View {
-        Section {
-            TextField("Email", text: $viewModel.email)
-                .textContentType(.username)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .accessibilityIdentifier("emailField")
+    private var credentialsCard: some View {
+        HomeCard {
+            VStack(spacing: 14) {
+                LabeledFieldBox(label: Text("Email")) {
+                    TextField("Email", text: $viewModel.email)
+                        .textContentType(.username)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("emailField")
+                }
 
-            SecureField("Password", text: $viewModel.password)
-                .textContentType(.password)
-                .accessibilityIdentifier("passwordField")
+                LabeledFieldBox(label: Text("Password")) {
+                    SecureField("Password", text: $viewModel.password)
+                        .textContentType(.password)
+                        .accessibilityIdentifier("passwordField")
+                }
 
-            Toggle("Remember me", isOn: $viewModel.rememberMe)
-                .accessibilityIdentifier("rememberMeToggle")
-        }
-    }
-
-    @ViewBuilder
-    private var errorSection: some View {
-        if let errorMessage = viewModel.errorMessage {
-            Section {
-                Text(errorMessage)
-                    .foregroundStyle(.red)
-                    .accessibilityIdentifier("loginErrorMessage")
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var actionsSection: some View {
-        Section {
-            Button {
-                Task { await viewModel.submit(session: session) }
-            } label: {
-                HStack {
-                    Text("Log In")
-                    if viewModel.isSubmitting {
-                        Spacer()
-                        ProgressView()
+                Toggle(isOn: $viewModel.rememberMe) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Keep me signed in")
+                        Text("For 90 days on this phone")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-            }
-            .disabled(!viewModel.canSubmit)
-            .accessibilityIdentifier("loginButton")
+                .tint(.green)
+                .accessibilityIdentifier("rememberMeToggle")
 
-            SocialSignInButtons()
+                if let errorMessage = viewModel.errorMessage {
+                    InlineErrorBanner(message: errorMessage)
+                        .accessibilityIdentifier("loginErrorMessage")
+                }
+
+                Button {
+                    Task { await viewModel.submit(session: session) }
+                } label: {
+                    if viewModel.isSubmitting {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("Log In")
+                    }
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .disabled(!viewModel.canSubmit)
+                .accessibilityIdentifier("loginButton")
+            }
         }
     }
 
-    @ViewBuilder
-    private var registerLinkSection: some View {
-        Section {
-            NavigationLink("Don't have an account? Register") {
+    private var divider: some View {
+        HStack(spacing: 12) {
+            Rectangle().fill(Color(.separator)).frame(height: 1)
+            Text("or").font(.footnote).foregroundStyle(.secondary)
+            Rectangle().fill(Color(.separator)).frame(height: 1)
+        }
+        .padding(.vertical, 6)
+        .accessibilityHidden(true)
+    }
+
+    private var registerLink: some View {
+        HStack(spacing: 4) {
+            Text("New to WellSpent?")
+                .foregroundStyle(.secondary)
+            NavigationLink("Create an account") {
                 RegisterView(publicRESTClient: session.publicRESTClient)
             }
+            .fontWeight(.semibold)
+            .frame(minHeight: 44)
             .accessibilityIdentifier("goToRegisterLink")
         }
+        .font(.subheadline)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 12)
     }
 }
 
