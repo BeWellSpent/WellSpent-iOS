@@ -43,7 +43,6 @@ struct BudgetDetailView: View {
         case overview
         case transactions
         case payments
-        case review
 
         var title: String {
             let locale = AppLanguageStore.currentLocale
@@ -51,7 +50,6 @@ struct BudgetDetailView: View {
             case .overview: return String(localized: "Overview", bundle: AppLanguageStore.currentBundle, locale: locale)
             case .transactions: return String(localized: "Transactions", bundle: AppLanguageStore.currentBundle, locale: locale)
             case .payments: return String(localized: "Payments", bundle: AppLanguageStore.currentBundle, locale: locale)
-            case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
             }
         }
     }
@@ -326,13 +324,19 @@ struct BudgetDetailView: View {
             }
             .tabItem { Label(BudgetSection.home.title, systemImage: BudgetSection.home.systemImage) }
             .tag(BudgetSection.home)
-            .badge(reviewViewModel?.pendingReviews.count ?? 0)
 
             NavigationStack {
                 planContent(viewModel: viewModel)
             }
             .tabItem { Label(BudgetSection.plan.title, systemImage: BudgetSection.plan.systemImage) }
             .tag(BudgetSection.plan)
+
+            NavigationStack {
+                reviewContent(viewModel: viewModel)
+            }
+            .tabItem { Label(BudgetSection.review.title, systemImage: BudgetSection.review.systemImage) }
+            .tag(BudgetSection.review)
+            .badge(reviewViewModel?.pendingReviews.count ?? 0)
 
             NavigationStack {
                 reportsContent
@@ -358,7 +362,7 @@ struct BudgetDetailView: View {
     private var toolbarContent: some ToolbarContent {
         switch selectedSection {
         case .home:
-            if overviewSelectedSubTab != .review, let viewModel {
+            if let viewModel {
                 ToolbarItem(placement: .principal) {
                     TransactionsPeriodControl(
                         currentPeriod: viewModel.currentPeriod,
@@ -436,7 +440,7 @@ struct BudgetDetailView: View {
                     .accessibilityIdentifier(planSelectedSubTab == .commitment ? "addPlanCategoryButton" : "addFixedExpenseTemplateButton")
                 }
             }
-        case .reports, .more:
+        case .review, .reports, .more:
             ToolbarItemGroup {}
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -478,6 +482,10 @@ struct BudgetDetailView: View {
             case .plan:
                 NavigationStack {
                     planContent(viewModel: viewModel)
+                }
+            case .review:
+                NavigationStack {
+                    reviewContent(viewModel: viewModel)
                 }
             case .reports:
                 NavigationStack {
@@ -538,7 +546,6 @@ struct BudgetDetailView: View {
                 Text(OverviewSubTab.overview.title).tag(OverviewSubTab.overview)
                 Text(OverviewSubTab.transactions.title).tag(OverviewSubTab.transactions)
                 Text(OverviewSubTab.payments.title).tag(OverviewSubTab.payments)
-                Text(reviewSubTabLabel).tag(OverviewSubTab.review)
             }
             .pickerStyle(.segmented)
             .padding([.horizontal, .top])
@@ -556,8 +563,6 @@ struct BudgetDetailView: View {
                     transactionsSubTabContent(viewModel: viewModel)
                 case .payments:
                     paymentsSubTabContent(viewModel: viewModel)
-                case .review:
-                    reviewContent(viewModel: viewModel)
                 }
             }
             .frame(maxHeight: .infinity)
@@ -599,16 +604,6 @@ struct BudgetDetailView: View {
     /// `.task`.
     private func overviewLoadKey(viewModel: BudgetDetailViewModel) -> String {
         "\(viewModel.currentPeriod?.id ?? "")|\(focusedViewToken)"
-    }
-
-    /// In-content indicator for the Review sub-tab, since it no longer has
-    /// its own `.tabItem` `.badge(_:)` to carry one (that moved to the
-    /// Overview tab item itself — see `tabView`). Plain count suffix rather
-    /// than a true `.badge(_:)` modifier: a segmented `Picker`'s individual
-    /// segments don't support that modifier.
-    private var reviewSubTabLabel: String {
-        let count = reviewViewModel?.pendingReviews.count ?? 0
-        return count > 0 ? "\(OverviewSubTab.review.title) (\(count))" : OverviewSubTab.review.title
     }
 
     @ViewBuilder
@@ -695,9 +690,11 @@ struct BudgetDetailView: View {
     private func reviewContent(viewModel: BudgetDetailViewModel) -> some View {
         TransactionReviewListView(
             viewModel: reviewViewModel,
+            periods: viewModel.periods,
+            currentPeriodID: viewModel.currentPeriod?.id,
             currencyCode: currencyCode,
             localeIdentifier: localeIdentifier,
-            isActive: selectedSection == .home && overviewSelectedSubTab == .review,
+            isActive: selectedSection == .review,
             canEdit: viewModel.canEdit,
             onConfirmed: { transactionsRefreshToken = UUID() }
         )
