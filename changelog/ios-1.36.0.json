@@ -476,6 +476,11 @@
       "changeType": "changed",
       "summaryEn": "Redesigned log in, sign up, email confirmation and budget setup: clearer headings, a password checklist as you type, and a progress bar through setup.",
       "summaryEs": "Rediseñamos el inicio de sesión, el registro, la confirmación de correo y la configuración del presupuesto: títulos más claros, una lista de requisitos de contraseña mientras escribes y una barra de progreso en la configuración."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "The More menu is redesigned: every budget option, alerts, preferences and your account are now in one place, with Just me right next to the budget.",
+      "summaryEs": "Rediseñamos el menú Más: todas las opciones del presupuesto, alertas, preferencias y tu cuenta ahora están en un solo lugar, con Solo yo junto al presupuesto."
     }
   ]
 }

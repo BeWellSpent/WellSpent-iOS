@@ -94,7 +94,8 @@ struct BudgetHomeView: View {
                     localeIdentifier: viewModel.localeIdentifier,
                     onUpdated: { viewModel.replaceProfile($0) },
                     onUserUpdated: { viewModel.replaceCurrentUser($0) },
-                    onDeleted: { viewModel.removeProfile(id: profile.id) }
+                    onDeleted: { viewModel.removeProfile(id: profile.id) },
+                    currentUser: viewModel.currentUser
                 )
                 .id(profile.id)
             } else if viewModel.isLoading {

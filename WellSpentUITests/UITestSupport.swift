@@ -29,14 +29,10 @@ func openBudgetMenu(_ app: XCUIApplication, timeout: TimeInterval = 15) -> Bool 
     return true
 }
 
-/// Opens the ☰ menu and drills into the Manage panels, where People, Income,
-/// Categories, Payment Methods and the rest live.
+/// Opens the More sheet, where People, Income, Categories, Payment Methods
+/// and the rest are listed directly.
 func openManagePanels(_ app: XCUIApplication, timeout: TimeInterval = 15) -> Bool {
-    guard openBudgetMenu(app, timeout: timeout) else { return false }
-    let manageLink = app.buttons["manageBudgetLink"]
-    guard manageLink.waitForExistence(timeout: 5) else { return false }
-    manageLink.tap()
-    return true
+    openBudgetMenu(app, timeout: timeout)
 }
 
 /// Waits for the budget home screen to be showing an actual budget — the tab

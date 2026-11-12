@@ -24,7 +24,7 @@ import WellSpentREST
 /// and `.navigationTitle` from an inner stack never surfaces at all. So all
 /// title/toolbar content lives here, driven by `selectedSection` and the
 /// per-tab sub-state below, rather than on `ExpensePlanView` /
-/// `TransactionsListView` / `FixedExpensesListView` / `BudgetManageView`
+/// `TransactionsListView` / `FixedExpensesListView`
 /// themselves (which still declare their own for canvas-preview accuracy in
 /// isolation, but those never render in the real, nested app).
 struct BudgetDetailView: View {
@@ -64,6 +64,7 @@ struct BudgetDetailView: View {
     private let onUpdated: (Wellspent_V1_BudgetProfile) -> Void
     private let onUserUpdated: (Wellspent_V1_User) -> Void
     private let onDeleted: () -> Void
+    private let currentUser: Wellspent_V1_User?
 
     @State private var viewModel: BudgetDetailViewModel?
     @State private var selectedSection: BudgetSection = .home
@@ -120,8 +121,10 @@ struct BudgetDetailView: View {
         localeIdentifier: String,
         onUpdated: @escaping (Wellspent_V1_BudgetProfile) -> Void,
         onUserUpdated: @escaping (Wellspent_V1_User) -> Void,
-        onDeleted: @escaping () -> Void
+        onDeleted: @escaping () -> Void,
+        currentUser: Wellspent_V1_User? = nil
     ) {
+        self.currentUser = currentUser
         self.authenticatedRESTClient = authenticatedRESTClient
         self.currencyCode = currencyCode
         self.localeIdentifier = localeIdentifier
@@ -172,7 +175,7 @@ struct BudgetDetailView: View {
             }
         }
         .task {
-            // Hoisted up from BudgetManageView so the Overview section has
+            // Hoisted up here so the Overview section has
             // `currentPeriod.id` (needed for `budget_period_id`) available
             // regardless of which tab is initially selected, not only once
             // the user happens to open Manage.
@@ -214,6 +217,7 @@ struct BudgetDetailView: View {
                 BudgetMenuSheet(
                     viewModel: viewModel,
                     authenticatedRESTClient: authenticatedRESTClient,
+                    currentUser: currentUser,
                     currencyCode: currencyCode,
                     localeIdentifier: localeIdentifier,
                     onUpdated: onUpdated,
