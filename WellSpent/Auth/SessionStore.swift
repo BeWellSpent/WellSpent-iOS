@@ -33,6 +33,8 @@ final class SessionStore {
     private(set) var userID: String?
 
     let publicRESTClient: WellSpentREST.Client
+    /// Signs register and login requests with this install's App Attest key (#121).
+    @ObservationIgnored let appAttest: AppAttestClient
     private(set) var authenticatedRESTClient: WellSpentREST.Client?
 
     private let tokenStore: KeychainTokenStore
@@ -72,6 +74,7 @@ final class SessionStore {
         self.biometricPreferenceDefaults = biometricPreferenceDefaults
         self.refreshCallOverride = refreshCallOverride
         self.publicRESTClient = RESTClient.makePublicClient(baseURL: baseURL)
+        self.appAttest = AppAttestClient(restClient: publicRESTClient)
 
         isAuthenticated = false
         userID = nil

@@ -56,6 +56,7 @@ final class RegisterViewModel {
         errorMessage = nil
         defer { isSubmitting = false }
 
+        let attest = await session.appAttest.proof(action: "register", email: email)
         do {
             let output = try await session.publicRESTClient.registerUser(.init(body: .json(.init(
                 email: email,
@@ -67,7 +68,9 @@ final class RegisterViewModel {
                 language: "",
                 currency: "",
                 captchaToken: "",
-                deviceId: session.deviceID
+                deviceId: session.deviceID,
+                appAttest: attest.assertion,
+                appAttestUnavailable: attest.unavailable
             ))))
             switch output {
             case .ok(let ok):
@@ -78,6 +81,8 @@ final class RegisterViewModel {
                 errorMessage = "An account with that email already exists."
             case .badRequest(let badRequest):
                 errorMessage = (try? badRequest.body.json.message) ?? "Please check your details and try again."
+            case .tooManyRequests:
+                errorMessage = String(localized: "Too many attempts. Please try again later.", locale: AppLanguageStore.currentLocale)
             default:
                 errorMessage = "Something went wrong. Please try again."
             }

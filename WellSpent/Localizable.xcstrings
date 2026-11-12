@@ -1,6 +1,38 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Too many attempts. Please try again later." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many attempts. Please try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demasiados intentos. Vuelve a intentarlo más tarde."
+          }
+        }
+      }
+    },
+    "We couldn't verify this device. Please update the app and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't verify this device. Please update the app and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos verificar este dispositivo. Actualiza la app e inténtalo de nuevo."
+          }
+        }
+      }
+    },
     "— %@" : {
       "localizations" : {
         "en" : {
