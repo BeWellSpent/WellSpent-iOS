@@ -2,7 +2,7 @@ import SwiftUI
 import WellSpentAPI
 import WellSpentREST
 
-/// The budget-scoped Plaid screen, pushed from `BudgetManageView`.
+/// The budget-scoped Plaid screen, pushed from the More sheet.
 ///
 /// A thin wrapper: `PlaidConnectionsView` does the work, this only supplies
 /// the screen chrome and the explanation of why other people's banks are

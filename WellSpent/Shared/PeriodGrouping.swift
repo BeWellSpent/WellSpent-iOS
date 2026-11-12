@@ -71,9 +71,7 @@ nonisolated enum PeriodGrouping {
     /// perfectly calendar-aligned one — not just a month name, since a period's
     /// boundaries may now follow an income schedule rather than the calendar
     /// month (docs/features/income-defined-budget-periods.md, issue #104).
-    /// Same en-dash convention `BudgetManageView.periodRangeText` already
-    /// uses; year omitted, mirroring that period rows are already grouped
-    /// under a year header (`PeriodYearGroup`) elsewhere.
+    /// Year omitted: period rows are already grouped under a year header elsewhere.
     static func label(for period: Wellspent_V1_BudgetPeriod, localeIdentifier: String) -> String {
         let style = Date.FormatStyle(locale: Locale(identifier: localeIdentifier)).month(.abbreviated).day()
         let start = period.startDate.dateOnly.formatted(style)

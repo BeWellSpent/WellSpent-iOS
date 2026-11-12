@@ -8,7 +8,7 @@ import WellSpentREST
 /// With no `budgetProfileID` it is the caller's own connections across every
 /// budget, embedded in `SettingsView`'s "Connected Bank Accounts" section
 /// (US-only, matching web's `{isUS && <PlaidSection />}`). With one, it is
-/// every member's connections on that budget, reached from `BudgetManageView`
+/// every member's connections on that budget, reached from the More sheet
 /// — a broken connection stops transactions for everyone on the budget, but
 /// only its owner could previously see it.
 ///
