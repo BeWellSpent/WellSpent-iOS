@@ -389,6 +389,14 @@ nonisolated enum BudgetRESTMapping {
             $0.matchedTransactionName = r.matchedTransactionName ?? ""
             $0.transactionPersonID = r.transactionPersonId
             $0.matchedTransactionPersonID = r.matchedTransactionPersonId
+            if let date = r.transactionDate.flatMap({ SwiftProtobuf.Google_Protobuf_Timestamp(restDate: $0) }) {
+                $0.transactionDate = date
+            }
+            $0.transactionPaymentMethodName = r.transactionPaymentMethodName ?? ""
+            $0.transactionImported = r.transactionImported ?? false
+            if let planned = r.matchedTransactionPlannedAmount {
+                $0.matchedTransactionPlannedAmount = money(from: planned)
+            }
         }
     }
 

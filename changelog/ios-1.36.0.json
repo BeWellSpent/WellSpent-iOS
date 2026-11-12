@@ -481,6 +481,11 @@
       "changeType": "changed",
       "summaryEn": "The More menu is redesigned: every budget option, alerts, preferences and your account are now in one place, with Just me right next to the budget.",
       "summaryEs": "Rediseñamos el menú Más: todas las opciones del presupuesto, alertas, preferencias y tu cuenta ahora están en un solo lugar, con Solo yo junto al presupuesto."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "Review is now its own tab, between Plan and Reports, with every match grouped by period. Collapse a period, or filter by period, by strong or possible matches, or to bank imports only. Each match shows when it happened, which card it was on and what the bill was planned at.",
+      "summaryEs": "Revisión ahora es su propia pestaña, entre Plan y Reportes, con cada coincidencia agrupada por período. Contrae un período o filtra por período, por coincidencias fuertes o posibles, o solo importaciones del banco. Cada coincidencia muestra cuándo ocurrió, con qué tarjeta y cuánto se había planificado para la factura."
     }
   ]
 }

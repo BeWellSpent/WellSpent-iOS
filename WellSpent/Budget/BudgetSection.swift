@@ -24,6 +24,8 @@ import Foundation
 enum BudgetSection: CaseIterable, Hashable {
     case home
     case plan
+    /// Pending matches from every period, so it's its own tab rather than a Home sub-tab.
+    case review
     case reports
     /// Presents the menu sheet. Never becomes `selectedSection` — see
     /// `BudgetDetailView.tabSelection`.
@@ -36,6 +38,7 @@ enum BudgetSection: CaseIterable, Hashable {
         switch self {
         case .home: return String(localized: "Home", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .plan: return String(localized: "Plan", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .reports: return String(localized: "Reports", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .more: return String(localized: "More", bundle: AppLanguageStore.currentBundle, locale: locale)
         }
@@ -50,6 +53,7 @@ enum BudgetSection: CaseIterable, Hashable {
         switch self {
         case .home: return String(localized: "Home", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .plan: return String(localized: "Expense Plan", bundle: AppLanguageStore.currentBundle, locale: locale)
+        case .review: return String(localized: "Review", bundle: AppLanguageStore.currentBundle, locale: locale)
         case .reports: return String(localized: "Reports", bundle: AppLanguageStore.currentBundle, locale: locale)
         // Never displayed — `more` is never the selected section.
         case .more: return String(localized: "More", bundle: AppLanguageStore.currentBundle, locale: locale)
@@ -63,6 +67,7 @@ enum BudgetSection: CaseIterable, Hashable {
         switch self {
         case .home: return "house"
         case .plan: return "chart.pie"
+        case .review: return "checklist"
         case .reports: return "chart.bar.doc.horizontal"
         case .more: return "ellipsis"
         }
