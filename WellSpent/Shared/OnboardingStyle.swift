@@ -18,7 +18,7 @@ struct LabeledFieldBox<Field: View>: View {
             field
                 .font(.body)
                 .padding(.horizontal, 14)
-                .frame(minHeight: 48)
+                .frame(maxWidth: .infinity, minHeight: 48)
                 .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color(.separator)))
             if let footnote {

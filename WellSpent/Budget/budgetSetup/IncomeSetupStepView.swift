@@ -68,12 +68,12 @@ struct IncomeSetupStepView: View {
     private var addForm: some View {
         HomeCard {
             VStack(alignment: .leading, spacing: 14) {
+                // Even split, as on Register: a priority on Name squeezed Amount to nothing.
                 HStack(alignment: .top, spacing: 10) {
                     LabeledFieldBox(label: Text("Name")) {
                         TextField("e.g. Salary", text: $viewModel.name)
                             .accessibilityIdentifier("setupIncomeNameField")
                     }
-                    .layoutPriority(1)
                     LabeledFieldBox(label: Text("Amount")) {
                         AmountTextField(text: $viewModel.amountText)
                             .multilineTextAlignment(.trailing)
