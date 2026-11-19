@@ -482,6 +482,8 @@ nonisolated enum BudgetRESTMapping {
         /// Nil from a server that predates them.
         let plannedExpenses: Wellspent_V1_Money?
         let plannedRemaining: Wellspent_V1_Money?
+        /// Spent without savings, compared with `plannedExpenses`. Nil from a server that predates it.
+        let expensesActual: Wellspent_V1_Money?
     }
 
     /// The Plan tab's extra figures: planned amounts belonging to no one, the
@@ -509,7 +511,8 @@ nonisolated enum BudgetRESTMapping {
                 spentActual: money(from: $0.spentActual), spentPlanned: money(from: $0.spentPlanned),
                 savedActual: money(from: $0.savedActual), savedPlanned: money(from: $0.savedPlanned),
                 incomeActual: money(from: $0.incomeActual), incomePlanned: money(from: $0.incomePlanned),
-                plannedExpenses: $0.plannedExpenses.map(money(from:)), plannedRemaining: $0.plannedRemaining.map(money(from:))
+                plannedExpenses: $0.plannedExpenses.map(money(from:)), plannedRemaining: $0.plannedRemaining.map(money(from:)),
+                expensesActual: $0.expensesActual.map(money(from:))
             )
         }
     }

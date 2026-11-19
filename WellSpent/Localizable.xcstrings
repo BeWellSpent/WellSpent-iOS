@@ -675,6 +675,22 @@
         }
       }
     },
+    "%lld matches waiting across %lld periods" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld matches waiting across %lld periods"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld coincidencias pendientes en %lld períodos"
+          }
+        }
+      }
+    },
     "%lld of %lld categories within plan" : {
       "localizations" : {
         "en" : {
@@ -772,7 +788,40 @@
         }
       }
     },
+    "%lld%% · possible" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%% · possible"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%% · posible"
+          }
+        }
+      }
+    },
+    "%lld%% · strong" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%% · strong"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%% · fuerte"
+          }
+        }
+      }
+    },
     "%lld%% match" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1463,6 +1512,22 @@
         }
       }
     },
+    "All periods" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All periods"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los períodos"
+          }
+        }
+      }
+    },
     "All transactions" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1701,6 +1766,22 @@
         }
       }
     },
+    "Bank" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bank"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Banco"
+          }
+        }
+      }
+    },
     "Bank Connections" : {
       "localizations" : {
         "en" : {
@@ -1729,6 +1810,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Conexiones bancarias que alimentan este presupuesto, de todos sus integrantes. Solo puedes modificar las tuyas."
+          }
+        }
+      }
+    },
+    "Bank only" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bank only"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo banco"
           }
         }
       }
@@ -2796,6 +2893,22 @@
         }
       }
     },
+    "Closed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Closed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrado"
+          }
+        }
+      }
+    },
     "Collaborator" : {
       "localizations" : {
         "en" : {
@@ -2808,6 +2921,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Colaborador"
+          }
+        }
+      }
+    },
+    "Collapse all" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse all"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraer todo"
           }
         }
       }
@@ -3584,6 +3713,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moneda"
+          }
+        }
+      }
+    },
+    "Current" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actual"
           }
         }
       }
@@ -4554,6 +4699,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Solo excluidas"
+          }
+        }
+      }
+    },
+    "Expand all" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand all"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir todo"
           }
         }
       }
@@ -5534,6 +5695,7 @@
       }
     },
     "Involves someone else's data — switch to Full View to review it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5545,6 +5707,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Incluye datos de otra persona — cambia a Vista completa para revisarlo."
+          }
+        }
+      }
+    },
+    "Involves someone else's data. Turn off Just me to review it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Involves someone else's data. Turn off Just me to review it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Involucra datos de otra persona. Desactiva Solo yo para revisarla."
           }
         }
       }
@@ -6144,6 +6322,22 @@
         }
       }
     },
+    "Matches %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matches %@ · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coincide con %@ · %@"
+          }
+        }
+      }
+    },
     "Matches biweekly pay" : {
       "localizations" : {
         "en" : {
@@ -6670,6 +6864,22 @@
         }
       }
     },
+    "No matches fit these filters." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matches fit these filters."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna coincidencia cumple estos filtros."
+          }
+        }
+      }
+    },
     "No matches." : {
       "localizations" : {
         "en" : {
@@ -6922,6 +7132,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ninguno"
+          }
+        }
+      }
+    },
+    "Not a match" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not a match"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No coincide"
           }
         }
       }
@@ -8304,6 +8530,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Por favor verifica tu dirección de correo electrónico."
+          }
+        }
+      }
+    },
+    "Possible" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Possible"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posibles"
           }
         }
       }
@@ -10016,6 +10258,22 @@
         }
       }
     },
+    "Strong matches" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strong matches"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coincidencias fuertes"
+          }
+        }
+      }
+    },
     "Subscription" : {
       "localizations" : {
         "en" : {
@@ -10481,6 +10739,22 @@
         }
       }
     },
+    "Together" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Together"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En total"
+          }
+        }
+      }
+    },
     "Too many attempts. Please try again later." : {
       "localizations" : {
         "en" : {
@@ -10718,6 +10992,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tipo"
+          }
+        }
+      }
+    },
+    "Typed in" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typed in"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargada a mano"
           }
         }
       }
@@ -11484,6 +11774,22 @@
         }
       }
     },
+    "When a bank import or a transaction you type looks like one of your bills, it waits here so it isn't counted twice." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When a bank import or a transaction you type looks like one of your bills, it waits here so it isn't counted twice."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando una importación del banco o una transacción que cargas se parece a una de tus facturas, espera aquí para no contarse dos veces."
+          }
+        }
+      }
+    },
     "When a fixed expense is paid differently than planned, update its template for future periods: the amount actually paid, the day it was actually paid (not the original due day), and — when matching a bank transaction reveals a different one — its category and payment method. The period you're paying keeps its own values; only later ones change. Turn this off to keep your fixed expense templates exactly as you set them." : {
       "localizations" : {
         "en" : {
@@ -11805,310 +12111,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zelle, Venmo o una transferencia bancaria. Cuenta en su categoría: por ejemplo, un amigo que te devuelve las bebidas reduce Comer fuera. ¿Mueves dinero entre tus propias cuentas? Exclúyela."
-          }
-        }
-      }
-    },
-    "Bank" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bank"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Banco"
-          }
-        }
-      }
-    },
-    "Typed in" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Typed in"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cargada a mano"
-          }
-        }
-      }
-    },
-    "%lld matches waiting across %lld periods" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld matches waiting across %lld periods"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld coincidencias pendientes en %lld períodos"
-          }
-        }
-      }
-    },
-    "Collapse all" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collapse all"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contraer todo"
-          }
-        }
-      }
-    },
-    "Expand all" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expand all"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expandir todo"
-          }
-        }
-      }
-    },
-    "No matches fit these filters." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No matches fit these filters."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ninguna coincidencia cumple estos filtros."
-          }
-        }
-      }
-    },
-    "All periods" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All periods"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todos los períodos"
-          }
-        }
-      }
-    },
-    "Strong matches" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Strong matches"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coincidencias fuertes"
-          }
-        }
-      }
-    },
-    "Possible" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Possible"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Posibles"
-          }
-        }
-      }
-    },
-    "Bank only" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bank only"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo banco"
-          }
-        }
-      }
-    },
-    "Current" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Current"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actual"
-          }
-        }
-      }
-    },
-    "Closed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Closed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cerrado"
-          }
-        }
-      }
-    },
-    "When a bank import or a transaction you type looks like one of your bills, it waits here so it isn't counted twice." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When a bank import or a transaction you type looks like one of your bills, it waits here so it isn't counted twice."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cuando una importación del banco o una transacción que cargas se parece a una de tus facturas, espera aquí para no contarse dos veces."
-          }
-        }
-      }
-    },
-    "Together" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Together"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En total"
-          }
-        }
-      }
-    },
-    "Involves someone else's data. Turn off Just me to review it." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Involves someone else's data. Turn off Just me to review it."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Involucra datos de otra persona. Desactiva Solo yo para revisarla."
-          }
-        }
-      }
-    },
-    "Not a match" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not a match"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No coincide"
-          }
-        }
-      }
-    },
-    "%lld%% · strong" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% · strong"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% · fuerte"
-          }
-        }
-      }
-    },
-    "%lld%% · possible" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% · possible"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% · posible"
-          }
-        }
-      }
-    },
-    "Matches %@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Matches %@ · %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coincide con %@ · %@"
           }
         }
       }
