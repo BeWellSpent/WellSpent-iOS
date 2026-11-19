@@ -486,6 +486,11 @@
       "changeType": "changed",
       "summaryEn": "Review is now its own tab, between Plan and Reports, with every match grouped by period. Collapse a period, or filter by period, by strong or possible matches, or to bank imports only. Each match shows when it happened, which card it was on and what the bill was planned at.",
       "summaryEs": "Revisión ahora es su propia pestaña, entre Plan y Reportes, con cada coincidencia agrupada por período. Contrae un período o filtra por período, por coincidencias fuertes o posibles, o solo importaciones del banco. Cada coincidencia muestra cuándo ocurrió, con qué tarjeta y cuánto se había planificado para la factura."
+    },
+    {
+      "changeType": "fixed",
+      "summaryEn": "On Home, each person's card now shows spending without savings against planned spending, with savings on its own line, instead of counting savings twice.",
+      "summaryEs": "En Inicio, la tarjeta de cada persona ahora muestra el gasto sin el ahorro frente al gasto planificado, con el ahorro en su propia línea, en lugar de contar el ahorro dos veces."
     }
   ]
 }

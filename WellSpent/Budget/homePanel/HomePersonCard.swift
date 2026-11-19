@@ -1,8 +1,9 @@
 import SwiftUI
 import WellSpentAPI
 
-/// One person's period: what they spent (savings included) against their
-/// plan, then how much of it was saved and how much income arrived.
+/// One person's period: the total they spent (savings included), then that
+/// total split into spending against planned spending, savings against
+/// planned savings, and the income that arrived.
 struct HomePersonCard: View {
     let person: Wellspent_V1_BudgetPerson
     let summary: BudgetRESTMapping.PersonPeriodSummary
@@ -15,7 +16,12 @@ struct HomePersonCard: View {
         let spent = TransactionAmountFormatting.tuple(from: summary.spentActual)
         let planned = TransactionAmountFormatting.tuple(from: summary.spentPlanned)
         let isOver = Calc.isOver(spent: spent, planned: planned)
-        let remaining = Calc.remaining(spent: spent, planned: planned)
+        let saved = TransactionAmountFormatting.tuple(from: summary.savedActual)
+        let savedPlanned = TransactionAmountFormatting.tuple(from: summary.savedPlanned)
+        // Older servers lack the without-savings figures; derive them until every server sends them.
+        let expenses = summary.expensesActual.map(TransactionAmountFormatting.tuple(from:)) ?? Calc.remaining(spent: saved, planned: spent)
+        let expensesPlanned = summary.plannedExpenses.map(TransactionAmountFormatting.tuple(from:)) ?? Calc.remaining(spent: savedPlanned, planned: planned)
+        let expensesOver = Calc.isOver(spent: expenses, planned: expensesPlanned)
 
         HomeCard {
             HStack(spacing: 8) {
@@ -36,18 +42,13 @@ struct HomePersonCard: View {
                 .padding(.bottom, 4)
 
             VStack(alignment: .leading, spacing: 8) {
-                let plannedText = format(planned)
                 line(
-                    isOver
-                        ? Text("\(format(remaining)) over \(plannedText)")
-                        : Text("\(format(remaining)) left of \(plannedText)"),
-                    systemImage: isOver ? "exclamationmark" : "wallet.bifold",
-                    status: isOver ? .over : .neutral
+                    Text("\(format(expenses)) spent of \(format(expensesPlanned))"),
+                    systemImage: expensesOver ? "exclamationmark" : "cart",
+                    status: expensesOver ? .over : .neutral
                 )
                 .accessibilityIdentifier("homePersonLeft_\(person.userName)")
 
-                let saved = TransactionAmountFormatting.tuple(from: summary.savedActual)
-                let savedPlanned = TransactionAmountFormatting.tuple(from: summary.savedPlanned)
                 let savedStatus = Calc.savedStatus(saved: saved, planned: savedPlanned)
                 line(
                     Text("\(format(saved)) saved of \(format(savedPlanned))"),
