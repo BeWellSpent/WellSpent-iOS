@@ -358,6 +358,7 @@
       }
     },
     "%@ left of %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -440,6 +441,7 @@
       }
     },
     "%@ over %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -526,6 +528,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ gastado · sin plan registrado"
+          }
+        }
+      }
+    },
+    "%@ other spending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ other spending"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ en otros gastos"
+          }
+        }
+      }
+    },
+    "%@ of %@ planned paid" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@ planned paid"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ de %2$@ planificado pagado"
+          }
+        }
+      }
+    },
+    "%@ of %@ planned paid · %@ to pay" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@ planned paid · %@ to pay"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ de %2$@ planificado pagado · %3$@ por pagar"
           }
         }
       }
