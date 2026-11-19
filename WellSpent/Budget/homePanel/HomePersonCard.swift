@@ -81,7 +81,7 @@ struct HomePersonCard: View {
         .accessibilityIdentifier("homePersonCard_\(person.userName)")
     }
 
-    /// Fixed transactions: paid of the total, and what's still to pay. Hidden when the person has none.
+    /// Fixed transactions paid of the total; checkmark once nothing is left. Hidden when the person has none.
     @ViewBuilder
     private func plannedLine(paid: Wellspent_V1_Money, toPay: Wellspent_V1_Money, total: Wellspent_V1_Money) -> some View {
         let total = TransactionAmountFormatting.tuple(from: total)
@@ -90,7 +90,7 @@ struct HomePersonCard: View {
         if total != (units: 0, nanos: 0) {
             let isDone = toPay == (units: 0, nanos: 0)
             line(
-                isDone ? Text("\(paid) of \(format(total)) planned paid") : Text("\(paid) of \(format(total)) planned paid · \(format(toPay)) to pay"),
+                Text("\(paid) of \(format(total)) planned paid"),
                 systemImage: isDone ? "checkmark" : "calendar",
                 status: isDone ? .met : .neutral
             )
