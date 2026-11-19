@@ -484,6 +484,11 @@ nonisolated enum BudgetRESTMapping {
         let plannedRemaining: Wellspent_V1_Money?
         /// Spent without savings, compared with `plannedExpenses`. Nil from a server that predates it.
         let expensesActual: Wellspent_V1_Money?
+        /// Fixed transactions paid and still to pay, and spending that isn't fixed. Nil from older servers.
+        var fixedPaid: Wellspent_V1_Money? = nil
+        var fixedToPay: Wellspent_V1_Money? = nil
+        var fixedTotal: Wellspent_V1_Money? = nil
+        var otherSpent: Wellspent_V1_Money? = nil
     }
 
     /// The Plan tab's extra figures: planned amounts belonging to no one, the
@@ -512,7 +517,9 @@ nonisolated enum BudgetRESTMapping {
                 savedActual: money(from: $0.savedActual), savedPlanned: money(from: $0.savedPlanned),
                 incomeActual: money(from: $0.incomeActual), incomePlanned: money(from: $0.incomePlanned),
                 plannedExpenses: $0.plannedExpenses.map(money(from:)), plannedRemaining: $0.plannedRemaining.map(money(from:)),
-                expensesActual: $0.expensesActual.map(money(from:))
+                expensesActual: $0.expensesActual.map(money(from:)),
+                fixedPaid: $0.fixedPaid.map(money(from:)), fixedToPay: $0.fixedToPay.map(money(from:)),
+                fixedTotal: $0.fixedTotal.map(money(from:)), otherSpent: $0.otherSpent.map(money(from:))
             )
         }
     }

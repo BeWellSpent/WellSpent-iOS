@@ -491,6 +491,11 @@
       "changeType": "fixed",
       "summaryEn": "On Home, each person's card now shows spending without savings against planned spending, with savings on its own line, instead of counting savings twice.",
       "summaryEs": "En Inicio, la tarjeta de cada persona ahora muestra el gasto sin el ahorro frente al gasto planificado, con el ahorro en su propia línea, en lugar de contar el ahorro dos veces."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "On Home, each person's card separates other spending from planned expenses, showing how much of the planned is already paid.",
+      "summaryEs": "En Inicio, la tarjeta de cada persona separa el resto del gasto de los gastos planificados, mostrando cuánto de lo planificado ya está pagado."
     }
   ]
 }
