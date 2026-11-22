@@ -494,19 +494,24 @@ nonisolated enum BudgetRESTMapping {
     }
 
     /// The Plan tab's extra figures: planned amounts belonging to no one, the
-    /// fixed bills due this period, and which templates those are. Nil/empty
-    /// from a server that predates them.
+    /// fixed bills due this period, which templates those are, and per category
+    /// the fixed bills added on top of manual amounts. Nil/empty from a server
+    /// that predates them.
     struct PlanSummaryExtras {
         let unattributedPlanned: Wellspent_V1_Money?
         let fixedDuePlannedTotal: Wellspent_V1_Money?
         let dueFixedExpenseIDs: Set<String>?
+        var fixedOutsideManualByCategory: [Int32: Wellspent_V1_Money] = [:]
     }
 
     static func planSummaryExtras(from s: Components.Schemas.GetExpenseSummaryResponse) -> PlanSummaryExtras {
         PlanSummaryExtras(
             unattributedPlanned: s.unattributedPlanned.map(money(from:)),
             fixedDuePlannedTotal: s.fixedDuePlannedTotal.map(money(from:)),
-            dueFixedExpenseIDs: s.dueFixedExpenseIds.map(Set.init)
+            dueFixedExpenseIDs: s.dueFixedExpenseIds.map(Set.init),
+            fixedOutsideManualByCategory: Dictionary(uniqueKeysWithValues: s.planCategories.compactMap { c in
+                c.fixedOutsideManualTotal.map { (c.categoryId, money(from: $0)) }
+            })
         )
     }
 

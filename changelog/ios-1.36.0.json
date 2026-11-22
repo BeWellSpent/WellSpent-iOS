@@ -496,6 +496,11 @@
       "changeType": "changed",
       "summaryEn": "On Home, each person's card shows how much of their plan is used, the bills still to pay, spending over plan and unplanned spending separately, and what they have left after bills — or how much they need transferred to cover them. Savings is optional and never counts against what is left.",
       "summaryEs": "En Inicio, la tarjeta de cada persona muestra cuánto de su plan ya se usó, los gastos por pagar, el gasto sobre lo planificado y el gasto sin planificar por separado, y lo que le queda después de pagos — o cuánto necesita que le transfieran para cubrirlos. El ahorro es opcional y nunca resta de lo que queda."
+    },
+    {
+      "changeType": "changed",
+      "summaryEn": "In Plan, a category shared between people now adds up each person's plan: one person's manual amount no longer hides another person's fixed bills, and the row shows fixed plus manual.",
+      "summaryEs": "En Plan, una categoría compartida entre personas ahora suma el plan de cada una: el monto manual de una persona ya no oculta los gastos fijos de otra, y la fila muestra fijos más manual."
     }
   ]
 }

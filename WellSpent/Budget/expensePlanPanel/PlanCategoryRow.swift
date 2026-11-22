@@ -3,7 +3,8 @@ import WellSpentAPI
 
 /// One planned category: where its amount comes from (Manual, From fixed
 /// expenses, Savings), a bar split into fixed bills (solid) and other spending
-/// (light), and, with both, how much of the manual amount fixed bills take.
+/// (light), and, with both, either how much of the manual amount fixed bills
+/// take or, when they belong to someone without one, fixed plus manual.
 /// A category with only a not-yet-due bill is muted and counts toward nothing.
 struct PlanCategoryRow: View {
     let category: Wellspent_V1_Category
@@ -21,6 +22,8 @@ struct PlanCategoryRow: View {
         let total = Calc.categoryTotal(planned: planned, notDue: notDue)
         let allocated = viewModel.allocatedTotal(for: category)
         let fixedDue = viewModel.fixedDueTotal(for: category)
+        let fixedOutside = viewModel.fixedOutsideManualTotal(for: category)
+        let fixedInside = viewModel.fixedInsideManualTotal(for: category)
         let isSavings = category.isSystem(.savings)
         let source = Calc.source(allocated: allocated, fixedDue: fixedDue)
         let tint = category.color.isEmpty ? Color.accentColor : Color(hexString: category.color)
@@ -36,9 +39,9 @@ struct PlanCategoryRow: View {
                     .fontWeight(.semibold)
                     .monospacedDigit()
             }
-            splitBar(fixed: fixedFraction(source: source, allocated: allocated, fixedDue: fixedDue, isSavings: isSavings, isNotDue: total.isNotDue), tint: tint)
+            splitBar(fixed: fixedFraction(source: source, planned: total.amount, fixedDue: fixedDue, isSavings: isSavings, isNotDue: total.isNotDue), tint: tint)
                 .padding(.leading, 20)
-            note(total: total, source: source, allocated: allocated, fixedDue: fixedDue)
+            note(total: total, source: source, allocated: allocated, fixedInside: fixedInside, fixedOutside: fixedOutside)
                 .padding(.leading, 20)
         }
         .padding(.vertical, 10)
@@ -83,13 +86,13 @@ struct PlanCategoryRow: View {
     }
 
     /// How much of the bar is fixed bills; the rest is other spending.
-    private func fixedFraction(source: Calc.PlanAmountSource, allocated: (units: Int64, nanos: Int32), fixedDue: (units: Int64, nanos: Int32), isSavings: Bool, isNotDue: Bool) -> Double {
+    private func fixedFraction(source: Calc.PlanAmountSource, planned: (units: Int64, nanos: Int32), fixedDue: (units: Int64, nanos: Int32), isSavings: Bool, isNotDue: Bool) -> Double {
         if isSavings { return 0 }
         if isNotDue { return 1 }
         switch source {
         case .fixed: return 1
         case .manual, .none: return 0
-        case .manualAndFixed: return HomeOverviewCalculations.fraction(fixedDue, of: allocated)
+        case .manualAndFixed: return HomeOverviewCalculations.fraction(fixedDue, of: planned)
         }
     }
 
@@ -106,7 +109,7 @@ struct PlanCategoryRow: View {
     }
 
     @ViewBuilder
-    private func note(total: (amount: (units: Int64, nanos: Int32), isNotDue: Bool), source: Calc.PlanAmountSource, allocated: (units: Int64, nanos: Int32), fixedDue: (units: Int64, nanos: Int32)) -> some View {
+    private func note(total: (amount: (units: Int64, nanos: Int32), isNotDue: Bool), source: Calc.PlanAmountSource, allocated: (units: Int64, nanos: Int32), fixedInside: (units: Int64, nanos: Int32), fixedOutside: (units: Int64, nanos: Int32)) -> some View {
         if total.isNotDue {
             let dueText = viewModel.nextDueText(for: category)
             if !dueText.isEmpty {
@@ -115,13 +118,20 @@ struct PlanCategoryRow: View {
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("planCategoryNotDue_\(category.name)")
             }
+        } else if source == .manualAndFixed && fixedOutside != (units: 0, nanos: 0) {
+            // Someone's fixed bills add to the manual amounts rather than sit inside them.
+            Text("\(format(fixedOutside)) fixed · \(format(allocated)) manual")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .accessibilityIdentifier("planCategoryBreakdown_\(category.name)")
         } else if source == .manualAndFixed {
-            let room = Calc.roomLeft(allocated: allocated, fixedDue: fixedDue)
+            let room = Calc.roomLeft(allocated: allocated, fixedDue: fixedInside)
             let over = MoneyFormatting.isNegative(units: room.units, nanos: room.nanos)
             let roomText = format(over ? (-room.units, -room.nanos) : room)
             (over
-                ? Text("\(format(fixedDue)) fixed · \(roomText) over the manual amount")
-                : Text("\(format(fixedDue)) fixed · \(roomText) other spending"))
+                ? Text("\(format(fixedInside)) fixed · \(roomText) over the manual amount")
+                : Text("\(format(fixedInside)) fixed · \(roomText) other spending"))
                 .font(.caption)
                 .foregroundStyle(over ? .orange : .secondary)
                 .monospacedDigit()

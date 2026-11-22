@@ -261,6 +261,22 @@
         }
       }
     },
+    "%@ fixed · %@ manual" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ fixed · %@ manual"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ fijos · %2$@ manual"
+          }
+        }
+      }
+    },
     "%@ fixed · %@ other spending" : {
       "localizations" : {
         "en" : {

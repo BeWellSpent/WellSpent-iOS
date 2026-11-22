@@ -119,7 +119,7 @@ struct PlanCategoriesCard: View {
     /// Orange, not red: nothing is overspent yet, the plan just doesn't cover the bills.
     private func fixedOverManualLine(_ over: [Wellspent_V1_Category]) -> some View {
         let details = over.map { category in
-            let excess = HomeOverviewCalculations.remaining(spent: viewModel.allocatedTotal(for: category), planned: viewModel.fixedDueTotal(for: category))
+            let excess = HomeOverviewCalculations.remaining(spent: viewModel.allocatedTotal(for: category), planned: viewModel.fixedInsideManualTotal(for: category))
             return String(localized: "\(category.displayName): fixed bills are \(format(excess)) over the manual amount", bundle: AppLanguageStore.currentBundle, locale: AppLanguageStore.currentLocale)
         }.joined(separator: " · ")
         return Label {

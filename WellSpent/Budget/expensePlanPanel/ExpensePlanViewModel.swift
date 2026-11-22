@@ -81,8 +81,8 @@ final class ExpensePlanViewModel {
     /// Categories whose fixed bills due this period exceed their manual amount.
     var fixedOverManualCategories: [Wellspent_V1_Category] {
         visibleCategories.filter {
-            ExpensePlanCalculations.source(allocated: allocatedTotal(for: $0), fixedDue: fixedDueTotal(for: $0)) == .manualAndFixed
-                && HomeOverviewCalculations.isOver(spent: fixedDueTotal(for: $0), planned: allocatedTotal(for: $0))
+            ExpensePlanCalculations.source(allocated: allocatedTotal(for: $0), fixedDue: fixedInsideManualTotal(for: $0)) == .manualAndFixed
+                && HomeOverviewCalculations.isOver(spent: fixedInsideManualTotal(for: $0), planned: allocatedTotal(for: $0))
         }
     }
 
@@ -162,6 +162,16 @@ final class ExpensePlanViewModel {
     func fixedDueTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
         guard let row = planRow(for: category), row.hasFixedDueTotal else { return (0, 0) }
         return TransactionAmountFormatting.tuple(from: row.fixedDueTotal)
+    }
+
+    /// Fixed bills whose owner has no manual amount here, so they add to it. Zero from older servers.
+    func fixedOutsideManualTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
+        extras?.fixedOutsideManualByCategory[category.id].map(TransactionAmountFormatting.tuple(from:)) ?? (0, 0)
+    }
+
+    /// Fixed bills that sit inside a manual amount (same owner).
+    func fixedInsideManualTotal(for category: Wellspent_V1_Category) -> (units: Int64, nanos: Int32) {
+        HomeOverviewCalculations.remaining(spent: fixedOutsideManualTotal(for: category), planned: fixedDueTotal(for: category))
     }
 
     /// When this category next costs anything, for the not-due caption.
