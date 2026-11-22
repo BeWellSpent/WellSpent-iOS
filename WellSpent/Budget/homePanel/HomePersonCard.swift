@@ -69,11 +69,6 @@ struct HomePersonCard: View {
                 )
                 .accessibilityIdentifier("homePersonSaved_\(person.userName)")
 
-                if let savingsToPay = summary.savingsToPay.map(TransactionAmountFormatting.tuple(from:)), !isZero(savingsToPay) {
-                    line(Text("\(format(savingsToPay)) savings still to transfer"), systemImage: "arrow.right", status: .short)
-                        .accessibilityIdentifier("homePersonSavingsToPay_\(person.userName)")
-                }
-
                 let income = TransactionAmountFormatting.tuple(from: summary.incomeActual)
                 let incomePlanned = TransactionAmountFormatting.tuple(from: summary.incomePlanned)
                 let incomeStatus = Calc.incomeStatus(received: income, planned: incomePlanned)

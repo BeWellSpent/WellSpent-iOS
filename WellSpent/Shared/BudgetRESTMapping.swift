@@ -490,7 +490,6 @@ nonisolated enum BudgetRESTMapping {
         var overPlan: Wellspent_V1_Money? = nil
         var unplanned: Wellspent_V1_Money? = nil
         var fixedToPay: Wellspent_V1_Money? = nil
-        var savingsToPay: Wellspent_V1_Money? = nil
         var leftAfterBills: Wellspent_V1_Money? = nil
     }
 
@@ -523,7 +522,7 @@ nonisolated enum BudgetRESTMapping {
                 expensesActual: $0.expensesActual.map(money(from:)),
                 plannedSpent: $0.plannedSpent.map(money(from:)), overPlan: $0.overPlan.map(money(from:)),
                 unplanned: $0.unplanned.map(money(from:)), fixedToPay: $0.fixedToPay.map(money(from:)),
-                savingsToPay: $0.savingsToPay.map(money(from:)), leftAfterBills: $0.leftAfterBills.map(money(from:))
+                leftAfterBills: $0.leftAfterBills.map(money(from:))
             )
         }
     }
