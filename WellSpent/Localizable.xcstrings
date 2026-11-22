@@ -532,18 +532,98 @@
         }
       }
     },
-    "%@ other spending" : {
+    "%@ left after bills" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ other spending"
+            "value" : "%@ left after bills"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ en otros gastos"
+            "value" : "%@ disponibles después de pagos"
+          }
+        }
+      }
+    },
+    "%@ over plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ over plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sobre lo planificado"
+          }
+        }
+      }
+    },
+    "%@ savings still to transfer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ savings still to transfer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ de ahorro por transferir"
+          }
+        }
+      }
+    },
+    "%@ still to pay" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ still to pay"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ por pagar"
+          }
+        }
+      }
+    },
+    "%@ unplanned" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ unplanned"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sin planificar"
+          }
+        }
+      }
+    },
+    "Needs %@ to finish the month and savings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs %@ to finish the month and savings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesita %@ para terminar el mes y ahorrar"
           }
         }
       }

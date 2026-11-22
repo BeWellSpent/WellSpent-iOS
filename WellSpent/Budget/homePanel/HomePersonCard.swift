@@ -1,9 +1,9 @@
 import SwiftUI
 import WellSpentAPI
 
-/// One person's period: the total they spent (savings included), then that
-/// total split into other spending, spending against the plan, savings against
-/// planned savings, and the income that arrived.
+/// One person's period: the total they spent (savings included), then the plan
+/// used, what is still to pay, spending over or outside the plan, savings,
+/// income, and whether the month can be finished or needs a transfer.
 struct HomePersonCard: View {
     let person: Wellspent_V1_BudgetPerson
     let summary: BudgetRESTMapping.PersonPeriodSummary
@@ -11,17 +11,19 @@ struct HomePersonCard: View {
     let localeIdentifier: String
 
     private typealias Calc = HomeOverviewCalculations
+    private typealias Amount = (units: Int64, nanos: Int32)
 
     var body: some View {
         let spent = TransactionAmountFormatting.tuple(from: summary.spentActual)
         let planned = TransactionAmountFormatting.tuple(from: summary.spentPlanned)
-        let isOver = Calc.isOver(spent: spent, planned: planned)
         let saved = TransactionAmountFormatting.tuple(from: summary.savedActual)
         let savedPlanned = TransactionAmountFormatting.tuple(from: summary.savedPlanned)
         // Older servers lack the without-savings figures; derive them until every server sends them.
         let expenses = summary.expensesActual.map(TransactionAmountFormatting.tuple(from:)) ?? Calc.remaining(spent: saved, planned: spent)
         let expensesPlanned = summary.plannedExpenses.map(TransactionAmountFormatting.tuple(from:)) ?? Calc.remaining(spent: savedPlanned, planned: planned)
         let expensesOver = Calc.isOver(spent: expenses, planned: expensesPlanned)
+        let left = summary.leftAfterBills.map(TransactionAmountFormatting.tuple(from:))
+        let needsTransfer = left.map(isNegative) ?? false
 
         HomeCard {
             HStack(spacing: 8) {
@@ -38,14 +40,18 @@ struct HomePersonCard: View {
                 .monospacedDigit()
                 .accessibilityIdentifier("homePersonSpent_\(person.userName)")
             ProgressView(value: Calc.fraction(spent, of: planned))
-                .tint(isOver ? .red : .accentColor)
+                .tint(Calc.isOver(spent: spent, planned: planned) || needsTransfer ? .red : .accentColor)
                 .padding(.bottom, 4)
 
             VStack(alignment: .leading, spacing: 8) {
-                if let otherSpent = summary.otherSpent, let plannedSpent = summary.plannedSpent {
-                    line(Text("\(format(TransactionAmountFormatting.tuple(from: otherSpent))) other spending"), systemImage: "cart", status: .neutral)
-                        .accessibilityIdentifier("homePersonUnplanned_\(person.userName)")
-                    plannedLine(spent: TransactionAmountFormatting.tuple(from: plannedSpent), planned: expensesPlanned)
+                if let plannedSpent = summary.plannedSpent, let overPlan = summary.overPlan, let unplanned = summary.unplanned,
+                   let toPay = summary.fixedToPay {
+                    planLines(
+                        used: TransactionAmountFormatting.tuple(from: plannedSpent), planned: expensesPlanned,
+                        toPay: TransactionAmountFormatting.tuple(from: toPay),
+                        overPlan: TransactionAmountFormatting.tuple(from: overPlan),
+                        unplanned: TransactionAmountFormatting.tuple(from: unplanned)
+                    )
                 } else {
                     line(
                         Text("\(format(expenses)) spent of \(format(expensesPlanned))"),
@@ -63,6 +69,11 @@ struct HomePersonCard: View {
                 )
                 .accessibilityIdentifier("homePersonSaved_\(person.userName)")
 
+                if let savingsToPay = summary.savingsToPay.map(TransactionAmountFormatting.tuple(from:)), !isZero(savingsToPay) {
+                    line(Text("\(format(savingsToPay)) savings still to transfer"), systemImage: "arrow.right", status: .short)
+                        .accessibilityIdentifier("homePersonSavingsToPay_\(person.userName)")
+                }
+
                 let income = TransactionAmountFormatting.tuple(from: summary.incomeActual)
                 let incomePlanned = TransactionAmountFormatting.tuple(from: summary.incomePlanned)
                 let incomeStatus = Calc.incomeStatus(received: income, planned: incomePlanned)
@@ -72,6 +83,18 @@ struct HomePersonCard: View {
                     status: incomeStatus
                 )
                 .accessibilityIdentifier("homePersonIncome_\(person.userName)")
+
+                if let left {
+                    Divider()
+                    Group {
+                        if needsTransfer {
+                            line(Text("Needs \(format(left)) to finish the month and savings"), systemImage: "exclamationmark", status: .over)
+                        } else {
+                            line(Text("\(format(left)) left after bills"), systemImage: "checkmark", status: .met)
+                        }
+                    }
+                    .accessibilityIdentifier("homePersonLeftAfterBills_\(person.userName)")
+                }
             }
             .font(.subheadline)
             .monospacedDigit()
@@ -80,17 +103,26 @@ struct HomePersonCard: View {
         .accessibilityIdentifier("homePersonCard_\(person.userName)")
     }
 
-    /// Spending in planned categories against the whole plan; red once over. Hidden when the person has no plan.
+    /// Plan used (capped per category on the server), bills still to pay, then spending over and outside the plan.
     @ViewBuilder
-    private func plannedLine(spent: (units: Int64, nanos: Int32), planned: (units: Int64, nanos: Int32)) -> some View {
-        if planned != (units: 0, nanos: 0) {
-            let isOver = Calc.isOver(spent: spent, planned: planned)
+    private func planLines(used: Amount, planned: Amount, toPay: Amount, overPlan: Amount, unplanned: Amount) -> some View {
+        if !isZero(planned) {
+            line(Text("\(format(used)) of \(format(planned)) planned"), systemImage: "calendar", status: .neutral)
+                .accessibilityIdentifier("homePersonPlanned_\(person.userName)")
             line(
-                Text("\(format(spent)) of \(format(planned)) planned"),
-                systemImage: isOver ? "exclamationmark" : "calendar",
-                status: isOver ? .over : .neutral
+                Text("\(format(toPay)) still to pay"),
+                systemImage: isZero(toPay) ? "checkmark" : "hourglass",
+                status: isZero(toPay) ? .met : .neutral
             )
-            .accessibilityIdentifier("homePersonPlanned_\(person.userName)")
+            .accessibilityIdentifier("homePersonToPay_\(person.userName)")
+        }
+        if !isZero(overPlan) {
+            line(Text("\(format(overPlan)) over plan"), systemImage: "exclamationmark", status: .over)
+                .accessibilityIdentifier("homePersonOverPlan_\(person.userName)")
+        }
+        if !isZero(unplanned) {
+            line(Text("\(format(unplanned)) unplanned"), systemImage: "plus", status: .neutral)
+                .accessibilityIdentifier("homePersonUnplanned_\(person.userName)")
         }
     }
 
@@ -113,7 +145,11 @@ struct HomePersonCard: View {
         }
     }
 
-    private func format(_ amount: (units: Int64, nanos: Int32)) -> String {
+    private func isZero(_ amount: Amount) -> Bool { amount == (units: 0, nanos: 0) }
+
+    private func isNegative(_ amount: Amount) -> Bool { amount.units < 0 || amount.nanos < 0 }
+
+    private func format(_ amount: Amount) -> String {
         let magnitude = (units: abs(amount.units), nanos: abs(amount.nanos))
         return MoneyFormatting.format(units: magnitude.units, nanos: magnitude.nanos, currencyCode: currencyCode, localeIdentifier: localeIdentifier)
     }
