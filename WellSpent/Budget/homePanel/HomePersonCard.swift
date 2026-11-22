@@ -3,7 +3,7 @@ import WellSpentAPI
 
 /// One person's period: the total they spent (savings included), then the plan
 /// used, what is still to pay, spending over or outside the plan, savings,
-/// income, and whether the month can be finished or needs a transfer.
+/// income, and whether bills can be covered (savings, being optional, never count).
 struct HomePersonCard: View {
     let person: Wellspent_V1_BudgetPerson
     let summary: BudgetRESTMapping.PersonPeriodSummary
@@ -88,7 +88,7 @@ struct HomePersonCard: View {
                     Divider()
                     Group {
                         if needsTransfer {
-                            line(Text("Needs \(format(left)) to finish the month and savings"), systemImage: "exclamationmark", status: .over)
+                            line(Text("Needs \(format(left)) transferred to cover bills"), systemImage: "exclamationmark", status: .over)
                         } else {
                             line(Text("\(format(left)) left after bills"), systemImage: "checkmark", status: .met)
                         }
