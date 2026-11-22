@@ -612,18 +612,18 @@
         }
       }
     },
-    "Needs %@ to finish the month and savings" : {
+    "Needs %@ transferred to cover bills" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Needs %@ to finish the month and savings"
+            "value" : "Needs %@ transferred to cover bills"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Necesita %@ para terminar el mes y ahorrar"
+            "value" : "Necesita que le transfieran %@ para cubrir los pagos"
           }
         }
       }
