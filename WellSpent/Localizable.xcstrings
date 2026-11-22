@@ -548,18 +548,18 @@
         }
       }
     },
-    "%@ of %@ planned paid" : {
+    "%@ of %@ planned" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ of %@ planned paid"
+            "value" : "%@ of %@ planned"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ de %2$@ planificado pagado"
+            "value" : "%1$@ de %2$@ planificado"
           }
         }
       }
