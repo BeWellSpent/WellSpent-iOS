@@ -564,22 +564,6 @@
         }
       }
     },
-    "%@ savings still to transfer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ savings still to transfer"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ de ahorro por transferir"
-          }
-        }
-      }
-    },
     "%@ still to pay" : {
       "localizations" : {
         "en" : {
