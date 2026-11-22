@@ -494,8 +494,8 @@
     },
     {
       "changeType": "changed",
-      "summaryEn": "On Home, each person's card separates other spending from planned expenses, showing how much of the planned is already paid.",
-      "summaryEs": "En Inicio, la tarjeta de cada persona separa el resto del gasto de los gastos planificados, mostrando cuánto de lo planificado ya está pagado."
+      "summaryEn": "On Home, each person's card separates other spending from spending against their plan, which now counts the whole plan: category amounts and fixed bills alike.",
+      "summaryEs": "En Inicio, la tarjeta de cada persona separa el resto del gasto del gasto contra su plan, que ahora cuenta todo el plan: montos por categoría y gastos fijos por igual."
     }
   ]
 }

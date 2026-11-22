@@ -2,8 +2,8 @@ import SwiftUI
 import WellSpentAPI
 
 /// One person's period: the total they spent (savings included), then that
-/// total split into other spending, planned (fixed) paid and to pay, savings
-/// against planned savings, and the income that arrived.
+/// total split into other spending, spending against the plan, savings against
+/// planned savings, and the income that arrived.
 struct HomePersonCard: View {
     let person: Wellspent_V1_BudgetPerson
     let summary: BudgetRESTMapping.PersonPeriodSummary
@@ -42,11 +42,10 @@ struct HomePersonCard: View {
                 .padding(.bottom, 4)
 
             VStack(alignment: .leading, spacing: 8) {
-                if let otherSpent = summary.otherSpent, let fixedPaid = summary.fixedPaid,
-                   let fixedToPay = summary.fixedToPay, let fixedTotal = summary.fixedTotal {
+                if let otherSpent = summary.otherSpent, let plannedSpent = summary.plannedSpent {
                     line(Text("\(format(TransactionAmountFormatting.tuple(from: otherSpent))) other spending"), systemImage: "cart", status: .neutral)
                         .accessibilityIdentifier("homePersonUnplanned_\(person.userName)")
-                    plannedLine(paid: fixedPaid, toPay: fixedToPay, total: fixedTotal)
+                    plannedLine(spent: TransactionAmountFormatting.tuple(from: plannedSpent), planned: expensesPlanned)
                 } else {
                     line(
                         Text("\(format(expenses)) spent of \(format(expensesPlanned))"),
@@ -81,18 +80,15 @@ struct HomePersonCard: View {
         .accessibilityIdentifier("homePersonCard_\(person.userName)")
     }
 
-    /// Fixed transactions paid of the total; checkmark once nothing is left. Hidden when the person has none.
+    /// Spending in planned categories against the whole plan; red once over. Hidden when the person has no plan.
     @ViewBuilder
-    private func plannedLine(paid: Wellspent_V1_Money, toPay: Wellspent_V1_Money, total: Wellspent_V1_Money) -> some View {
-        let total = TransactionAmountFormatting.tuple(from: total)
-        let toPay = TransactionAmountFormatting.tuple(from: toPay)
-        let paid = format(TransactionAmountFormatting.tuple(from: paid))
-        if total != (units: 0, nanos: 0) {
-            let isDone = toPay == (units: 0, nanos: 0)
+    private func plannedLine(spent: (units: Int64, nanos: Int32), planned: (units: Int64, nanos: Int32)) -> some View {
+        if planned != (units: 0, nanos: 0) {
+            let isOver = Calc.isOver(spent: spent, planned: planned)
             line(
-                Text("\(paid) of \(format(total)) planned paid"),
-                systemImage: isDone ? "checkmark" : "calendar",
-                status: isDone ? .met : .neutral
+                Text("\(format(spent)) of \(format(planned)) planned"),
+                systemImage: isOver ? "exclamationmark" : "calendar",
+                status: isOver ? .over : .neutral
             )
             .accessibilityIdentifier("homePersonPlanned_\(person.userName)")
         }
